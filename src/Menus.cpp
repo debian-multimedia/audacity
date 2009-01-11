@@ -32,6 +32,7 @@ simplifies construction of menu items.
 
 #include "Audacity.h"
 
+#include <iterator>
 #include <math.h>
 
 #include <wx/defs.h>
@@ -45,13 +46,16 @@ simplifies construction of menu items.
 #include <wx/ffile.h>
 
 #include "Project.h"
-#include "effects/Effect.h"
+#include "effects/EffectManager.h"
 
 #include "AudacityApp.h"
 #include "AudioIO.h"
 #include "Dependencies.h"
+#include "float_cast.h"
 #include "LabelTrack.h"
+#ifdef USE_MIDI
 #include "import/ImportMIDI.h"
+#endif // USE_MIDI
 #include "import/ImportRaw.h"
 #include "export/Export.h"
 #include "export/ExportMultiple.h"
@@ -65,7 +69,9 @@ simplifies construction of menu items.
 #include "Prefs.h"
 #include "Printing.h"
 #include "UploadDialog.h"
+#ifdef USE_MIDI
 #include "NoteTrack.h"
+#endif // USE_MIDI
 #include "Tags.h"
 #include "Mix.h"
 #include "AboutDialog.h"
@@ -80,17 +86,25 @@ simplifies construction of menu items.
 #include "toolbars/ToolManager.h"
 #include "toolbars/ControlToolBar.h"
 #include "toolbars/ToolsToolBar.h"
+#include "toolbars/EditToolBar.h"
 
 #include "Experimental.h"
 #include "PlatformCompatibility.h"
 #include "FileNames.h"
 #include "TimeDialog.h"
-#include "SmartRecordDialog.h"
+#include "TimerRecordDialog.h"
+#include "SoundActivatedRecord.h"
 #include "LabelDialog.h"
 
 #include "FileDialog.h"
 #include "SplashDialog.h"
 #include "widgets/ErrorDialog.h"
+
+#ifdef EXPERIMENTAL_SCOREALIGN
+#include "audioreader.h"
+#include "scorealign.h"
+#include "scorealign-glue.h"
+#endif /* EXPERIMENTAL_SCOREALIGN */
 
 enum {
    kAlignZero=0,
@@ -125,9 +139,21 @@ public:
       mCommandListFunction = commandFunction;
    }
 
+   AudacityProjectCommandFunctor(AudacityProject *project,
+                                 audCommandListFunction commandFunction,
+                                 wxArrayInt explicitIndices)
+   {
+      mProject = project;
+      mCommandFunction = NULL;
+      mCommandListFunction = commandFunction;
+      mExplicitIndices = explicitIndices;
+   }
+
    virtual void operator()(int index = 0)
    {
-      if (mCommandListFunction)
+      if (mCommandListFunction && mExplicitIndices.GetCount() > 0)
+         (mProject->*(mCommandListFunction)) (mExplicitIndices[index]);
+      else if (mCommandListFunction)
          (mProject->*(mCommandListFunction)) (index);
       else
          (mProject->*(mCommandFunction)) ();
@@ -137,9 +163,11 @@ private:
    AudacityProject *mProject;
    audCommandFunction mCommandFunction;
    audCommandListFunction mCommandListFunction;
+   wxArrayInt mExplicitIndices;
 };
 
 #define FN(X) new AudacityProjectCommandFunctor(this, &AudacityProject:: X )
+#define FNI(X, I) new AudacityProjectCommandFunctor(this, &AudacityProject:: X, I)
 
 /// CreateMenusAndCommands builds the menus, and also rebuilds them after
 /// changes in configured preferences - for example changes in key-bindings
@@ -149,9 +177,13 @@ private:
 void AudacityProject::CreateMenusAndCommands()
 {
    CommandManager *c = &mCommandManager;
+   EffectManager& em = EffectManager::Get();
    EffectArray *effects;
    wxArrayString names;
-   unsigned int i;
+   wxArrayInt indices;
+#ifndef EFFECT_CATEGORIES
+    unsigned int i;
+#endif
 
    wxMenuBar *menubar = c->AddMenuBar(wxT("appmenu"));
 
@@ -176,6 +208,9 @@ void AudacityProject::CreateMenusAndCommands()
                          AudioIONotBusyFlag | UnsavedChangesFlag,
                          AudioIONotBusyFlag | UnsavedChangesFlag);
       c->AddItem(wxT("SaveAs"),         _("Save Project &As..."),            FN(OnSaveAs));
+      #ifdef USE_LIBVORBIS
+         c->AddItem(wxT("SaveCompressed"), _("Save Compressed Copy of Project..."),  FN(OnSaveCompressed));
+      #endif
    }
 
    c->AddItem(wxT("CheckDeps"),      _("Chec&k Dependencies..."),          FN(OnCheckDependencies));
@@ -191,11 +226,13 @@ void AudacityProject::CreateMenusAndCommands()
 	{
       c->AddSeparator();
       
-      c->BeginSubMenu(_("&Import..."));
+      c->BeginSubMenu(_("&Import"));
 		c->SetDefaultFlags(AudioIONotBusyFlag, AudioIONotBusyFlag);
 		c->AddItem(wxT("ImportAudio"),    _("&Audio...\tCtrl+Shift+I"),	FN(OnImport));
 		c->AddItem(wxT("ImportLabels"),   _("&Labels..."),					FN(OnImportLabels));
+        #ifdef USE_MIDI
 		c->AddItem(wxT("ImportMIDI"),     _("&MIDI..."),							FN(OnImportMIDI));
+        #endif // USE_MIDI
 		c->AddItem(wxT("ImportRaw"),      _("&Raw Data..."),				FN(OnImportRaw));
       c->EndSubMenu();
       
@@ -204,25 +241,31 @@ void AudacityProject::CreateMenusAndCommands()
       c->AddItem(wxT("Export"),         _("&Export..."),           FN(OnExport));
       // Enable Export commands only when there are tracks
       c->SetCommandFlags(wxT("Export"),
-                         AudioIONotBusyFlag | TracksExistFlag,
-                         AudioIONotBusyFlag | TracksExistFlag);
+                         AudioIONotBusyFlag | WaveTracksExistFlag,
+                         AudioIONotBusyFlag | WaveTracksExistFlag);
 
       c->AddItem(wxT("ExportSel"),      _("Expo&rt Selection..."), FN(OnExportSelection));
       // Enable Export Selection commands only when there's a selection
       c->SetCommandFlags(wxT("ExportSel"),
-                         AudioIONotBusyFlag | TimeSelectedFlag | TracksSelectedFlag,
-                         AudioIONotBusyFlag | TimeSelectedFlag | TracksSelectedFlag);
+                         AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
+                         AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
       
       c->AddSeparator();
       c->AddItem(wxT("ExportLabels"),   _("Export &Labels..."),              FN(OnExportLabels));
       c->AddItem(wxT("ExportMultiple"),   _("Export &Multiple..."),              FN(OnExportMultiple));
-      
+#if defined(USE_MIDI)
+      c->AddItem(wxT("ExportMIDI"),   _("Export MIDI..."),              FN(OnExportMIDI));
+#endif
+
       c->SetCommandFlags(wxT("ExportLabels"),
                          AudioIONotBusyFlag | LabelTracksExistFlag,
                          AudioIONotBusyFlag | LabelTracksExistFlag);
       c->SetCommandFlags(wxT("ExportMultiple"),
                          AudioIONotBusyFlag | TracksExistFlag,
-                         AudioIONotBusyFlag | TracksExistFlag);                      
+                         AudioIONotBusyFlag | TracksExistFlag);
+      c->SetCommandFlags(wxT("ExportMIDI"),
+                         AudioIONotBusyFlag | NoteTracksSelectedFlag,
+                         AudioIONotBusyFlag | NoteTracksSelectedFlag);
    }
 
    c->AddSeparator();
@@ -334,7 +377,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddSeparator();
    c->AddItem(wxT("Delete"),         _("&Delete\tCtrl+K"),                FN(OnDelete));
    c->AddItem(wxT("SplitDelete"),    _("Split D&elete\tCtrl+Alt+K"),       FN(OnSplitDelete));
-   c->AddItem(wxT("Silence"),        _("&Silence\tCtrl+L"),               FN(OnSilence));
+   c->AddItem(wxT("Silence"),        _("Silence Audi&o\tCtrl+L"),               FN(OnSilence));
    c->AddSeparator();
    c->AddItem(wxT("Split"),          _("Sp&lit\tCtrl+I"),                         FN(OnSplit));
    c->SetCommandFlags(wxT("Split"),
@@ -346,23 +389,22 @@ void AudacityProject::CreateMenusAndCommands()
       AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
       AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
 
-   c->AddItem(wxT("Join"),           _("&Join\tCtrl+J"),                  FN(OnJoin));
-   c->AddItem(wxT("Disjoin"),        _("Disj&oin\tCtrl+Alt+J"),                       FN(OnDisjoin));
-   
-   c->AddItem(wxT("Duplicate"),      _("Duplic&ate\tCtrl+D"),             FN(OnDuplicate));
+   c->AddItem(wxT("Join"),           _("&Join\tCtrl+J"),                   FN(OnJoin));
+   c->AddItem(wxT("Disjoin"),        _("Detac&h at Silences\tCtrl+Alt+J"), FN(OnDisjoin));
+   c->AddItem(wxT("Duplicate"),      _("Duplic&ate\tCtrl+D"),              FN(OnDuplicate));
 
    // An anomaly... StereoToMono is added here for CleanSpeech, 
-   // which doesn't have a Project menu, but is under Project for normal Audacity.
+   // which doesn't have a Tracks menu, but is under Tracks for normal Audacity.
    if( mCleanSpeechMode )
 	{
-      c->AddItem(wxT("Stereo to Mono"),      _("&Stereo to Mono"),            FN(OnStereoToMono));
+      c->AddItem(wxT("Stereo to Mono"),      _("Stereo Trac&k to Mono"),  FN(OnStereoToMono));
       c->SetCommandFlags(wxT("Stereo to Mono"),
          AudioIONotBusyFlag | StereoRequiredFlag | WaveTracksSelectedFlag,
          AudioIONotBusyFlag | StereoRequiredFlag | WaveTracksSelectedFlag);
 	}
    c->AddSeparator();
 
-   c->BeginSubMenu( _( "La&beled Regions..." ) );
+   c->BeginSubMenu( _( "La&beled Regions" ) );
    /* i18n-hint: Labeled Regions submenu */
    c->AddItem( wxT( "CutLabels" ), _( "&Cut\tAlt+X" ), 
          FN( OnCutLabels ) );
@@ -406,13 +448,12 @@ void AudacityProject::CreateMenusAndCommands()
    c->SetCommandFlags( wxT( "JoinLabels" ), LabelsSelectedFlag, 
          LabelsSelectedFlag );
    /* i18n-hint: Labeled Regions submenu */
-   c->AddItem( wxT( "DisjoinLabels" ), _( "Disj&oin\tShift+Alt+J" ), 
-         FN( OnDisjoinLabels ) );
+   c->AddItem( wxT( "DisjoinLabels" ), _( "Detac&h at Silences\tShift+Alt+J" ),  FN( OnDisjoinLabels ) );
    c->SetCommandFlags( wxT( "DisjoinLabels" ), LabelsSelectedFlag, 
          LabelsSelectedFlag );
    c->EndSubMenu();
    
-   c->BeginSubMenu(_("Select&..."));
+   c->BeginSubMenu(_("&Select"));
    c->AddItem(wxT("SelectAll"),      _("&All\tCtrl+A"),                   FN(OnSelectAll));
    c->AddItem(wxT("SelectNone"),     _("&None\tCtrl+Shift+A"),            FN(OnSelectNone));
    c->SetCommandFlags(TracksExistFlag, TracksExistFlag,
@@ -432,7 +473,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->AddItem(wxT("ZeroCross"),      _("Find &Zero Crossings\tZ"),         FN(OnZeroCrossing));
 
-   c->BeginSubMenu(_("Mo&ve Cursor..."));
+   c->BeginSubMenu(_("Mo&ve Cursor"));
 
    c->AddItem(wxT("CursSelStart"),   _("to Selection Star&t"),             FN(OnCursorSelStart));
    c->AddItem(wxT("CursSelEnd"),     _("to Selection En&d"),               FN(OnCursorSelEnd));
@@ -447,7 +488,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->EndSubMenu();
 
    c->AddSeparator();
-   c->AddItem(wxT("SelSave"),        _("Re&gion Save"),                 FN(OnSelectionSave));
+   c->AddItem(wxT("SelSave"),        _("Re&gion Save"),                FN(OnSelectionSave));
    c->AddItem(wxT("SelRestore"),     _("Regio&n Restore"),             FN(OnSelectionRestore));
 
    c->SetCommandFlags(wxT("SelSave"),
@@ -459,7 +500,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->AddSeparator();
 
-   c->BeginSubMenu(_("Pla&y Region..."));
+   c->BeginSubMenu(_("Pla&y Region"));
    c->AddItem(wxT("LockPlayRegion"), _("&Lock"), FN(OnLockPlayRegion));
    c->AddItem(wxT("UnlockPlayRegion"), _("&Unlock"), FN(OnUnlockPlayRegion));
    c->SetCommandFlags(wxT("LockPlayRegion"), PlayRegionNotLockedFlag, PlayRegionNotLockedFlag);
@@ -475,11 +516,11 @@ void AudacityProject::CreateMenusAndCommands()
    // Moved Preferences from File Menu 02/09/05 Richard Ash.
   #ifdef __WXMAC__
    /* i18n-hint: Mac OS X Preferences shortcut should be Ctrl+, */
-   c->AddItem(wxT("Preferences"),    _("&Preferences...\tCtrl+,"),        FN(OnPreferences));
+   c->AddItem(wxT("Preferences"),    _("Pre&ferences...\tCtrl+,"),        FN(OnPreferences));
   #else
    /* i18n-hint: On Windows and Linux, the Preferences shortcut is usually Ctrl+P */
    c->AddSeparator();
-   c->AddItem(wxT("Preferences"),    _("&Preferences...\tCtrl+P"),        FN(OnPreferences));
+   c->AddItem(wxT("Preferences"),    _("Pre&ferences...\tCtrl+P"),        FN(OnPreferences));
   #endif
    c->SetCommandFlags(wxT("Preferences"), AudioIONotBusyFlag, AudioIONotBusyFlag);
 
@@ -522,7 +563,7 @@ void AudacityProject::CreateMenusAndCommands()
                       AudioIONotBusyFlag | UndoAvailableFlag);
 
    c->AddSeparator();
-   c->BeginSubMenu(_("&Toolbars..."));
+   c->BeginSubMenu(_("&Toolbars"));
    c->AddItem(wxT("ShowControlTB"),       _("&Control Toolbar"),       FN(OnShowControlToolBar), 0);
    c->AddItem(wxT("ShowDeviceTB"),        _("&Device Toolbar"),        FN(OnShowDeviceToolBar), 0);
    c->AddItem(wxT("ShowEditTB"),          _("&Edit Toolbar"),          FN(OnShowEditToolBar), 0);
@@ -538,6 +579,42 @@ void AudacityProject::CreateMenusAndCommands()
    c->EndMenu();
 
    //
+   // Transport Menu
+   //
+
+   /*i18n-hint: 'Transport' is the name given to the set of controls that
+   play, record, pause etc. */
+   c->BeginMenu(_("T&ransport"));
+   c->SetDefaultFlags(0, 0);
+      c->AddItem(wxT("Play"), _("Play\tSpacebar"), FN(OnPlayStop));
+      c->SetCommandFlags(wxT("Play"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("PlayLooped"), _("&Loop Play\tShift+Spacebar"), FN(OnPlayLooped));
+      c->SetCommandFlags(wxT("PlayLooped"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("Pause"), _("&Pause\tP"), FN(OnPause));
+      c->AddItem(wxT("Stop"), _("&Stop\tSpacebar"), FN(OnStop));
+      c->AddItem(wxT("SkipStart"), _("Skip to Start\tHome"), FN(OnSkipStart));
+      c->SetCommandFlags(wxT("SkipStart"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("SkipEnd"), _("Skip to End\tEnd"), FN(OnSkipEnd));
+      c->SetCommandFlags(wxT("SkipEnd"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+   c->AddSeparator();
+      c->AddItem(wxT("Record"), _("&Record\tR"), FN(OnRecord));
+      c->SetCommandFlags(wxT("Record"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("TimerRecord"), _("&Timer Record...\tShift+T"), FN(OnTimerRecord));
+      c->SetCommandFlags(wxT("TimerRecord"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("RecordAppend"), _("Append Record\tShift+R"), FN(OnRecordAppend));
+      c->SetCommandFlags(wxT("RecordAppend"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+   c->AddSeparator();
+      c->AddItem(wxT("Duplex"), _("Overdub (on/off)"), FN(OnTogglePlayRecording), 0);
+      c->SetCommandFlags(wxT("Duplex"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("SWPlaythrough"), _("Software Playthrough (on/off)"), FN(OnToggleSWPlaythrough), 0);
+      c->SetCommandFlags(wxT("SWPlaythrough"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      // Sound Activated recording options
+      c->AddItem(wxT("SoundActivation"), _("Sound Activated Recording (on/off)"), FN(OnToggleSoundActivated), 0);
+      c->SetCommandFlags(wxT("SoundActivation"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+      c->AddItem(wxT("SoundActivationLevel"), _("Sound Activation Level..."), FN(OnSoundActivated));
+      c->SetCommandFlags(wxT("SoundActivationLevel"), AudioIONotBusyFlag, AudioIONotBusyFlag);
+
+   //
    // Tracks Menu (formerly Project Menu)
    //
 	if( !mCleanSpeechMode )
@@ -549,19 +626,17 @@ void AudacityProject::CreateMenusAndCommands()
 
       c->AddSeparator();*/
 		
-		c->BeginSubMenu(_("Add &New..."));
+		c->BeginSubMenu(_("Add &New"));
 			c->AddItem(wxT("NewAudioTrack"),  _("&Audio Track\tCtrl+Shift+N"),               FN(OnNewWaveTrack));
 			c->AddItem(wxT("NewStereoTrack"), _("&Stereo Track"),              FN(OnNewStereoTrack));
 			c->AddItem(wxT("NewLabelTrack"),  _("&Label Track"),               FN(OnNewLabelTrack));
 			c->AddItem(wxT("NewTimeTrack"),   _("&Time Track"),                FN(OnNewTimeTrack));
 		c->EndSubMenu();
 
-      c->AddItem(wxT("SmartRecord"), _("&Timer Record..."), FN(OnSmartRecord));
-
       c->AddSeparator();
-      // StereoToMono moves elsewhere in the menu when in CleanSpeech mode.
+      // StereoToMono moves to the Edit menu when in CleanSpeech mode.
       // It belongs here normally, because it is a kind of mix-down.
-      c->AddItem(wxT("Stereo to Mono"),      _("&Stereo to Mono"),            FN(OnStereoToMono));
+      c->AddItem(wxT("Stereo to Mono"),      _("Stereo Trac&k to Mono"),            FN(OnStereoToMono));
       c->SetCommandFlags(wxT("Stereo to Mono"),
          AudioIONotBusyFlag | StereoRequiredFlag | WaveTracksSelectedFlag,
          AudioIONotBusyFlag | StereoRequiredFlag | WaveTracksSelectedFlag);
@@ -603,7 +678,7 @@ void AudacityProject::CreateMenusAndCommands()
       alignLabels.Add(_("Align End with Selection En&d"));
       alignLabels.Add(_("Align Tracks To&gether"));
    
-      c->BeginSubMenu(_("&Align Tracks..."));
+      c->BeginSubMenu(_("&Align Tracks"));
       c->AddItemList(wxT("Align"), alignLabels, FN(OnAlign));
       c->SetCommandFlags(wxT("Align"),
                          AudioIONotBusyFlag | TracksSelectedFlag,
@@ -612,14 +687,25 @@ void AudacityProject::CreateMenusAndCommands()
    
       alignLabels.RemoveAt(7); // Can't align together and move cursor
    
-      c->BeginSubMenu(_("Ali&gn And Move Cursor..."));
+      c->BeginSubMenu(_("Ali&gn and Move Cursor"));
       c->AddItemList(wxT("AlignMove"), alignLabels, FN(OnAlignMoveSel));
       c->SetCommandFlags(wxT("AlignMove"),
                          AudioIONotBusyFlag | TracksSelectedFlag,
                          AudioIONotBusyFlag | TracksSelectedFlag);
       c->EndSubMenu();
-   
-      c->AddSeparator();   
+#ifdef EXPERIMENTAL_SCOREALIGN
+      c->AddItem(wxT("ScoreAlign"),       _("Synchronize MIDI with Audio"), FN(OnScoreAlign));
+
+      c->SetCommandFlags(wxT("ScoreAlign"),
+                         AudioIONotBusyFlag | NoteTracksSelectedFlag | WaveTracksSelectedFlag,
+                         AudioIONotBusyFlag | NoteTracksSelectedFlag | WaveTracksSelectedFlag);
+#endif // EXPERIMENTAL_SCOREALIGN
+
+      c->AddSeparator(); 
+#ifdef EXPERIMENTAL_POSITION_LINKING
+      c->AddItem(wxT("StickyLabels"),       _("Link Audio and Label Tracks"), FN(OnStickyLabel), 0);  
+      c->AddSeparator(); 
+#endif
       c->AddItem(wxT("AddLabel"),       _("Add &Label At Selection\tCtrl+B"), FN(OnAddLabel));
       c->AddItem(wxT("AddLabelPlaying"),       _("Add Label At &Playback Position\tCtrl+M"), FN(OnAddLabelPlaying));
       c->SetCommandFlags(wxT("AddLabel"), 0, 0);
@@ -627,10 +713,10 @@ void AudacityProject::CreateMenusAndCommands()
       c->AddItem(wxT("EditLabels"),       _("&Edit Labels"), FN(OnEditLabels));
 
       c->AddSeparator();   
-      c->BeginSubMenu(_("S&ort tracks by..."));
-      c->AddItem(wxT("SortByTime"), _("&Start time"), FN(OnSortTime));
+      c->BeginSubMenu(_("S&ort tracks"));
+      c->AddItem(wxT("SortByTime"), _("by &Start time"), FN(OnSortTime));
       c->SetCommandFlags(wxT("SortByTime"), TracksExistFlag, TracksExistFlag);
-      c->AddItem(wxT("SortByName"), _("&Name"), FN(OnSortName));
+      c->AddItem(wxT("SortByName"), _("by &Name"), FN(OnSortName));
       c->SetCommandFlags(wxT("SortByName"), TracksExistFlag, TracksExistFlag);
       c->EndSubMenu();
 
@@ -640,19 +726,25 @@ void AudacityProject::CreateMenusAndCommands()
       // Generate, Effect & Analyze menus
       //
    
+
       c->BeginMenu(_("&Generate"));
       c->SetDefaultFlags(AudioIONotBusyFlag,
                          AudioIONotBusyFlag);
-   
-      effects = Effect::GetEffects(INSERT_EFFECT | BUILTIN_EFFECT);
+      
+      // Add sound generators
+      
+#ifndef EFFECT_CATEGORIES
+
+      effects = em.GetEffects(INSERT_EFFECT | BUILTIN_EFFECT);
       if(effects->GetCount()){
+         names.Clear();
          for(i=0; i<effects->GetCount(); i++)
             names.Add((*effects)[i]->GetEffectName());
          c->AddItemList(wxT("Generate"), names, FN(OnGenerateEffect));
       }
       delete effects;
-   
-      effects = Effect::GetEffects(INSERT_EFFECT | PLUGIN_EFFECT);
+      
+      effects = em.GetEffects(INSERT_EFFECT | PLUGIN_EFFECT);
       if (effects->GetCount()) {
          c->AddSeparator();
          names.Clear();
@@ -661,8 +753,45 @@ void AudacityProject::CreateMenusAndCommands()
          c->AddItemList(wxT("GeneratePlugin"), names, FN(OnGeneratePlugin), true);
       }
       delete effects;
+
+#else
+      
+      int flags;
+
+      flags = INSERT_EFFECT | BUILTIN_EFFECT | PLUGIN_EFFECT;
+      EffectCategory* ac = 
+         em.LookupCategory(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
+      CategorySet roots = ac->GetSubCategories();
+      EffectSet generators = ac->GetEffects();
+      EffectSet topLevel = CreateEffectSubmenus(c, roots, flags, 0);
+      std::copy(generators.begin(), generators.end(), 
+                std::insert_iterator<EffectSet>(topLevel, topLevel.begin()));
+      AddEffectsToMenu(c, topLevel);
+      
+      // Add all uncategorised effects in a special submenu
+      EffectSet unsorted = 
+         em.GetUnsortedEffects(flags);
+      if (unsorted.size() > 0) {
+         c->AddSeparator();
+         c->BeginSubMenu(_("Unsorted"));
+         names.Clear();
+         indices.Clear();
+         EffectSet::const_iterator iter;
+         for (iter = unsorted.begin(); iter != unsorted.end(); ++iter) {
+            names.Add((*iter)->GetEffectName());
+            indices.Add((*iter)->GetID());
+         }
+         c->AddItemList(wxT("Generate"), names, 
+                        FNI(OnProcessAny, indices), true);
+         c->EndSubMenu();
+      }
+
+#endif // EFFECT_CATEGORIES
+
+
       c->EndMenu();
-	}
+   }        
+
    c->BeginMenu(_("Effe&ct"));
    c->SetDefaultFlags(AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
                       AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
@@ -677,7 +806,13 @@ void AudacityProject::CreateMenusAndCommands()
    // set additionalEffects to zero to exclude the advanced effects.
    if( mCleanSpeechMode )
        additionalEffects = 0;
-   effects = Effect::GetEffects(PROCESS_EFFECT | BUILTIN_EFFECT | additionalEffects);
+
+   // this is really ugly but we need to keep all the old code to get any
+   // effects at all in the menu when EFFECT_CATEGORIES is undefined
+
+#ifndef EFFECT_CATEGORIES
+
+   effects = em.GetEffects(PROCESS_EFFECT | BUILTIN_EFFECT | additionalEffects);
    if(effects->GetCount()){
       names.Clear();
       for(i=0; i<effects->GetCount(); i++)
@@ -687,9 +822,9 @@ void AudacityProject::CreateMenusAndCommands()
    delete effects;
 
 
-	if( !mCleanSpeechMode )
-	{
-      effects = Effect::GetEffects(PROCESS_EFFECT | PLUGIN_EFFECT);
+   if( !mCleanSpeechMode ) {
+      
+      effects = em.GetEffects(PROCESS_EFFECT | PLUGIN_EFFECT);
       if (effects->GetCount()) {
          c->AddSeparator();
          names.Clear();
@@ -698,15 +833,57 @@ void AudacityProject::CreateMenusAndCommands()
          c->AddItemList(wxT("EffectPlugin"), names, FN(OnProcessPlugin), true);
       }
       delete effects;
-      c->EndMenu();
+      
+   }
+
+   c->EndMenu();
+
+#else
+   
+   // We want plugins and builtins in the same menus, but we don't want plugins
+   // or "advanced" effects if we are building CleanSpeech
+   int flags = PROCESS_EFFECT | BUILTIN_EFFECT;
+   if (!mCleanSpeechMode)
+      flags |= PLUGIN_EFFECT | ADVANCED_EFFECT;
+   
+   // The categories form a DAG, so we start at the roots (the categories
+   // without incoming links)
+   CategorySet roots = em.GetRootCategories();
+   EffectSet topLevel = CreateEffectSubmenus(c, roots, flags, 0);
+   AddEffectsToMenu(c, topLevel);
+   
+   // Add all uncategorised effects in a special submenu
+   EffectSet unsorted = 
+      em.GetUnsortedEffects(flags);
+   if (unsorted.size() > 0) {
+      c->AddSeparator();
+      c->BeginSubMenu(_("Unsorted"));
+      names.Clear();
+      indices.Clear();
+      EffectSet::const_iterator iter;
+      for (iter = unsorted.begin(); iter != unsorted.end(); ++iter) {
+         names.Add((*iter)->GetEffectName());
+         indices.Add((*iter)->GetID());
+      }
+      c->AddItemList(wxT("Effect"), names, FNI(OnProcessAny, indices), true);
+      c->EndSubMenu();
+   }
+   c->EndMenu();
+   
+#endif
+
+   if( !mCleanSpeechMode ) {
+
       c->BeginMenu(_("&Analyze"));
- 	   /* plot spectrum moved from view */
+      /* plot spectrum moved from view */
       c->AddItem(wxT("PlotSpectrum"), _("Plot Spectrum..."), FN(OnPlotSpectrum));
       c->SetCommandFlags(wxT("PlotSpectrum"),
-                           AudioIONotBusyFlag | WaveTracksSelectedFlag | TimeSelectedFlag,
-                           AudioIONotBusyFlag | WaveTracksSelectedFlag | TimeSelectedFlag);
+                         AudioIONotBusyFlag | WaveTracksSelectedFlag | TimeSelectedFlag,
+                         AudioIONotBusyFlag | WaveTracksSelectedFlag | TimeSelectedFlag);
       
-      effects = Effect::GetEffects(ANALYZE_EFFECT | BUILTIN_EFFECT);
+#ifndef EFFECT_CATEGORIES
+
+      effects = em.GetEffects(ANALYZE_EFFECT | BUILTIN_EFFECT);
       if(effects->GetCount()){
          names.Clear();
          for(i=0; i<effects->GetCount(); i++)
@@ -715,7 +892,7 @@ void AudacityProject::CreateMenusAndCommands()
       }
       delete effects;
       
-      effects = Effect::GetEffects(ANALYZE_EFFECT | PLUGIN_EFFECT);
+      effects = em.GetEffects(ANALYZE_EFFECT | PLUGIN_EFFECT);
       if (effects->GetCount()) {
          c->AddSeparator();
          names.Clear();
@@ -724,11 +901,44 @@ void AudacityProject::CreateMenusAndCommands()
          c->AddItemList(wxT("AnalyzePlugin"), names, FN(OnAnalyzePlugin), true);
       }
       delete effects;
-      c->EndMenu();
-	}
 
+#else
+      
+      flags = ANALYZE_EFFECT | BUILTIN_EFFECT | PLUGIN_EFFECT;
+      EffectCategory* ac = 
+         em.LookupCategory(wxT("http://lv2plug.in/ns/lv2core#AnalyserPlugin"));
+      CategorySet roots = ac->GetSubCategories();
+      EffectSet analyzers = ac->GetEffects();
+      EffectSet topLevel = CreateEffectSubmenus(c, roots, flags, 0);
+      std::copy(analyzers.begin(), analyzers.end(), 
+                std::insert_iterator<EffectSet>(topLevel, topLevel.begin()));
+      AddEffectsToMenu(c, topLevel);
+      
+      // Add all uncategorised effects in a special submenu
+      EffectSet unsorted = 
+         em.GetUnsortedEffects(flags);
+      if (unsorted.size() > 0) {
+         c->AddSeparator();
+         c->BeginSubMenu(_("Unsorted"));
+         names.Clear();
+         indices.Clear();
+         EffectSet::const_iterator iter;
+         for (iter = unsorted.begin(); iter != unsorted.end(); ++iter) {
+            names.Add((*iter)->GetEffectName());
+            indices.Add((*iter)->GetID());
+         }
+         c->AddItemList(wxT("Analyze"), names, 
+                        FNI(OnProcessAny, indices), true);
+         c->EndSubMenu();
+      }
+
+#endif // EFFECT_CATEGORIES
+
+      c->EndMenu();
+   }
+   
    // Resolve from list of all effects, 
-   effects = Effect::GetEffects(ALL_EFFECTS);
+   effects = em.GetEffects(ALL_EFFECTS);
    ResolveEffectIndices(effects);
    delete effects;
 
@@ -746,6 +956,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->AddItem(wxT("Welcome"),          _("&Show Welcome Message..."),      FN(OnHelpWelcome));
    c->AddItem(wxT("Help"),             _("&Index..."),                      FN(OnHelp));
+   c->AddItem(wxT("Log"),             _("Show &Log..."),                      FN(OnLog));
 
 
 #if 1 // Debugging tools are enabled in unstable builds
@@ -864,6 +1075,73 @@ void AudacityProject::CreateMenusAndCommands()
    mSel1save = 0;
 }
 
+#ifdef EFFECT_CATEGORIES
+
+EffectSet AudacityProject::CreateEffectSubmenus(CommandManager* c, 
+                                                const CategorySet& categories, 
+                                                int flags,
+                                                unsigned submenuThreshold) {
+   EffectSet topLevel;
+   
+   CategorySet::const_iterator iter;
+   for (iter = categories.begin(); iter != categories.end(); ++iter) {
+      
+      EffectSet effects = (*iter)->GetAllEffects(flags);
+      
+      // If the subgraph for this category only contains a single effect,
+      // add it directly in this menu
+      if (effects.size() <= submenuThreshold)
+         topLevel.insert(effects.begin(), effects.end());
+      
+      // If there are more than one effect, add a submenu for the category
+      else if (effects.size() > 0) {
+
+         EffectSet directEffects = (*iter)->GetEffects(flags);
+         CategorySet subCategories = (*iter)->GetSubCategories();
+         CategorySet nonEmptySubCategories;
+         
+         CategorySet::const_iterator sci;
+         for (sci = subCategories.begin(); sci != subCategories.end(); ++sci) {
+            if ((*sci)->GetAllEffects(flags).size() > 0)
+               nonEmptySubCategories.insert(*sci);
+         }
+         
+         // If there are no direct effects and only one subcategory,
+         // add the contents of that subcategory directly in this menu.
+         if (directEffects.size() == 0 && nonEmptySubCategories.size() == 1) {
+            EffectSet a = CreateEffectSubmenus(c, nonEmptySubCategories, 
+                                               flags);
+            topLevel.insert(a.begin(), a.end());
+         }
+         
+         // Else, add submenus for the subcategories
+         else {
+            c->BeginSubMenu((*iter)->GetName());
+            EffectSet a = CreateEffectSubmenus(c, subCategories, flags);
+            a.insert(directEffects.begin(), directEffects.end());
+            AddEffectsToMenu(c, a);
+            c->EndSubMenu();
+         }
+      }
+   }
+   
+   return topLevel;
+}
+
+void AudacityProject::AddEffectsToMenu(CommandManager* c, 
+                                       const EffectSet& effects) {
+   wxArrayString names;
+   wxArrayInt indices;
+   EffectSet::const_iterator iter;
+   for (iter = effects.begin(); iter != effects.end(); ++iter) {
+      names.Add((*iter)->GetEffectName());
+      indices.Add((*iter)->GetID());
+   }
+   c->AddItemList(wxT("Effects"), names, FNI(OnProcessAny, indices), true);
+}
+
+#endif
+
 void AudacityProject::CreateRecentFilesMenu(CommandManager *c)
 {
    // Recent Files and Recent Projects menus
@@ -873,7 +1151,7 @@ void AudacityProject::CreateRecentFilesMenu(CommandManager *c)
       wxMenu* pm = c->BeginSubMenu(_("Open Recent"));
    #else
       /* i18n-hint: This is the name of the menu item on Windows and Linux */
-      wxMenu* pm = c->BeginSubMenu(_("Recent &Files..."));
+      wxMenu* pm = c->BeginSubMenu(_("Recent &Files"));
    #endif
 
    c->EndSubMenu();
@@ -1080,6 +1358,18 @@ wxUint32 AudacityProject::GetUpdateFlags()
             }
          }
       }
+#if defined(USE_MIDI)
+      else if (t->GetKind() == Track::Note) {
+         NoteTrack *nt = (NoteTrack *) t;
+
+         flags |= NoteTracksExistFlag;
+
+         if (nt->GetSelected()) {
+            flags |= TracksSelectedFlag;
+            flags |= NoteTracksSelectedFlag;
+         }
+      }
+#endif
       t = iter.Next();
    }
 
@@ -1089,7 +1379,7 @@ wxUint32 AudacityProject::GetUpdateFlags()
    if (mUndoManager.UnsavedChanges())
       flags |= UnsavedChangesFlag;
 
-   if (Effect::GetLastEffect() != NULL)
+   if (EffectManager::Get().GetLastEffect() != NULL)
       flags |= HasLastEffectFlag;
 
    if (mUndoManager.UndoAvailable())
@@ -1148,6 +1438,14 @@ void AudacityProject::ModifyToolbarMenus()
                          mToolManager->IsVisible(ToolsBarID));
    mCommandManager.Check(wxT("ShowTranscriptionTB"),
                          mToolManager->IsVisible(TranscriptionBarID));
+   mCommandManager.Check(wxT("StickyLabels"), mStickyFlag);                         
+   bool active;
+   gPrefs->Read(wxT("/AudioIO/SoundActivatedRecord"),&active, false);
+   mCommandManager.Check(wxT("SoundActivation"), active);
+   gPrefs->Read(wxT("/AudioIO/Duplex"),&active, true);
+   mCommandManager.Check(wxT("Duplex"), active);
+   gPrefs->Read(wxT("/AudioIO/SWPlaythrough"),&active, false);
+   mCommandManager.Check(wxT("SWPlaythrough"), active);
 }
 
 void AudacityProject::UpdateMenus()
@@ -1463,6 +1761,30 @@ void AudacityProject::OnStopSelect()
    ModifyState();
 }
 
+void AudacityProject::OnToggleSoundActivated()
+{
+   bool pause;
+   gPrefs->Read(wxT("/AudioIO/SoundActivatedRecord"), &pause, false);
+   gPrefs->Write(wxT("/AudioIO/SoundActivatedRecord"), !pause);
+   ModifyToolbarMenus();
+}
+
+void AudacityProject::OnTogglePlayRecording()
+{
+   bool Duplex;
+   gPrefs->Read(wxT("/AudioIO/Duplex"), &Duplex, false);
+   gPrefs->Write(wxT("/AudioIO/Duplex"), !Duplex);
+   ModifyToolbarMenus();
+}
+
+void AudacityProject::OnToggleSWPlaythrough()
+{
+   bool SWPlaythrough;
+   gPrefs->Read(wxT("/AudioIO/SWPlaythrough"), &SWPlaythrough, false);
+   gPrefs->Write(wxT("/AudioIO/SWPlaythrough"), !SWPlaythrough);
+   ModifyToolbarMenus();
+}
+
 double AudacityProject::GetTime(Track *t)
 {
    double stime = 0.0;
@@ -1703,6 +2025,7 @@ void AudacityProject::OnSetLeftSelection()
          wxString fmt = gPrefs->Read(wxT("/SelectionFormat"), wxT(""));
 
          TimeDialog D(this, wxID_ANY, _("Set Left Selection Bound"));
+         D.SetSampleRate(mRate);
          D.SetFormatString(fmt);
          if(wxID_OK==D.ShowModal() )
             {
@@ -1737,6 +2060,7 @@ void AudacityProject::OnSetRightSelection()
          wxString fmt = gPrefs->Read(wxT("/SelectionFormat"), wxT(""));
 
          TimeDialog D(this, wxID_ANY, _("Set Right Selection Bound"));
+         D.SetSampleRate(mRate);
          D.SetFormatString(fmt);
          if(wxID_OK==D.ShowModal() )
             {
@@ -1887,7 +2211,7 @@ double AudacityProject::NearestZeroCrossing(double t0)
       WaveTrack *one = (WaveTrack *)track;
       int oneWindowSize = (int)(one->GetRate() / 100);
       float *oneDist = new float[oneWindowSize];
-      longSampleCount s = one->TimeToLongSamples(t0);
+      sampleCount s = one->TimeToLongSamples(t0);
       one->Get((samplePtr)oneDist, floatSample,
                s - oneWindowSize/2, oneWindowSize);
 
@@ -1953,7 +2277,7 @@ void AudacityProject::OnEffect(int type, int index)
    EffectArray *effects;
    Effect *f = NULL;
 
-   effects = Effect::GetEffects(type);
+   effects = EffectManager::Get().GetEffects(type);
 
    f = (*effects)[index];
    delete effects;
@@ -1984,6 +2308,7 @@ bool AudacityProject::OnEffect(int type, Effect * f)
    TrackListIterator iter(mTracks);
    Track *t = iter.First();
    WaveTrack *newTrack = NULL;
+   wxWindow *focus = wxWindow::FindFocus();
 
    //double prevEndTime = mTracks->GetEndTime();
    int count = 0;
@@ -2025,12 +2350,15 @@ bool AudacityProject::OnEffect(int type, Effect * f)
       //      OnZoomFit();
 
       RedrawProject();
+      if (focus != NULL) {
+         focus->SetFocus();
+      }
       mTrackPanel->EnsureVisible(mTrackPanel->GetFirstSelectedTrack());
 
       // Only remember a successful effect, don't rmemeber insert,
       // or analyze effects.
       if ((f->GetEffectFlags() & (INSERT_EFFECT | ANALYZE_EFFECT))==0) {
-         Effect::SetLastEffect( type, f );
+         EffectManager::Get().SetLastEffect( type, f );
          mCommandManager.Modify(wxT("RepeatLastEffect"),
             wxString::Format(_("Repeat %s\tCtrl+R"),
             shortDesc.c_str()));
@@ -2059,15 +2387,20 @@ void AudacityProject::OnGeneratePlugin(int index)
 
 void AudacityProject::OnRepeatLastEffect(int index)
 {
-   Effect *f = Effect::GetLastEffect();
+   EffectManager& em = EffectManager::Get();
+   Effect *f = em.GetLastEffect();
    if( f  != NULL )
    {
       // Setting the CONFIGURED_EFFECT bit prevents
       // prompting for parameters.
-      OnEffect( 
-         Effect::GetLastEffectType() | CONFIGURED_EFFECT,
-         f);
+      OnEffect(em.GetLastEffectType() | CONFIGURED_EFFECT, f);
    }
+}
+
+void AudacityProject::OnProcessAny(int index)
+{
+   Effect* e = EffectManager::Get().GetEffect(index);
+   OnEffect(ALL_EFFECTS, e);
 }
 
 void AudacityProject::OnProcessEffect(int index)
@@ -2129,6 +2462,13 @@ void AudacityProject::OnSaveAs()
    SaveAs();
 }
 
+#ifdef USE_LIBVORBIS
+   void AudacityProject::OnSaveCompressed()
+   {
+      SaveAs(true);
+   }
+#endif
+
 void AudacityProject::OnCheckDependencies()
 {
    ShowDependencyDialogIfNeeded(this, false);
@@ -2173,7 +2513,9 @@ void AudacityProject::OnExportLabels()
                         NULL,
                         fName,
                         wxT("txt"),
-                        wxT("*.txt"), wxSAVE | wxOVERWRITE_PROMPT, this);
+                        wxT("*.txt"),
+                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
+                        this);
 
    if (fName == wxT(""))
       return;
@@ -2223,6 +2565,89 @@ void AudacityProject::OnExportLabels()
 #endif
    f.Close();
 }
+
+
+#ifdef USE_MIDI
+void AudacityProject::OnExportMIDI(){
+   TrackListIterator iter(mTracks);
+   Track *t = iter.First();
+   int numNoteTracksSelected = 0;
+   NoteTrack *nt;
+
+   // Iterate through once to make sure that there is 
+   // exactly one NoteTrack selected.
+   while (t) {
+      if (t->GetSelected()) {
+         if(t->GetKind() == Track::Note) {
+            numNoteTracksSelected++;
+            nt = (NoteTrack *) t;
+         }
+      }
+      t = iter.Next();
+   }
+
+   if(numNoteTracksSelected > 1){
+      wxMessageBox(wxString::Format(wxT(
+         "Please select only one MIDI track at a time.")));
+      return;
+   }
+
+   assert(nt);
+
+   while(true){
+
+      wxString fName = wxT("");
+
+      fName = FileSelector(_("Export MIDI As:"),
+         NULL,
+         fName,
+         wxT(".mid|.gro"),
+         _("MIDI file (*.mid)|*.mid|Allegro file (*.gro)|*.gro"),
+         wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
+         this);
+
+      if (fName == wxT(""))
+         return;
+
+      if(!fName.Contains(wxT("."))) {
+         fName = fName + wxT(".mid");
+      }
+
+      // Move existing files out of the way.  Otherwise wxTextFile will
+      // append to (rather than replace) the current file.
+
+      if (wxFileExists(fName)) {
+#ifdef __WXGTK__
+         wxString safetyFileName = fName + wxT("~");
+#else
+         wxString safetyFileName = fName + wxT(".bak");
+#endif
+
+         if (wxFileExists(safetyFileName))
+            wxRemoveFile(safetyFileName);
+
+         wxRename(fName, safetyFileName);
+      }
+
+      if(fName.EndsWith(wxT(".mid")) || fName.EndsWith(wxT(".midi"))) {
+         nt->ExportMIDI(fName);
+      } else if(fName.EndsWith(wxT(".gro"))) {
+         nt->ExportAllegro(fName);
+      } else {
+         wxString msg = _("You have selected a filename with an unrecognized file extension.\nDo you want to continue?");
+         wxString title = _("Export MIDI");
+         int id = wxMessageBox(msg, title, wxYES_NO);
+         if (id == wxNO) {
+            continue;
+         } else if (id == wxYES) {
+            nt->ExportMIDI(fName);
+         }
+      }
+      break;
+   }
+}
+#endif // USE_MIDI
+
 
 void AudacityProject::OnExport()
 {
@@ -2342,10 +2767,14 @@ void AudacityProject::OnCut()
          if (n->GetKind() == Track::Wave && 
              gPrefs->Read(wxT("/GUI/EnableCutLines"), (long)0))
          {
-            ((WaveTrack*)n)->CutAndAddCutLine(mViewInfo.sel0, mViewInfo.sel1, &dest);
-         } else
-         {
+            ((WaveTrack*)n)->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
+#if defined(USE_MIDI)
+         } else if (n->GetKind() == Track::Note) {
+            // Since portsmf has a built-in cut operator, we use that instead
             n->Cut(mViewInfo.sel0, mViewInfo.sel1, &dest);
+#endif
+         } else {
+            n->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
          }
          if (dest) {
             dest->SetChannel(n->GetChannel());
@@ -2358,14 +2787,24 @@ void AudacityProject::OnCut()
       n = iter.Next();
    }
 
+#if defined(USE_MIDI)
+   n = iter.First();
+   while (n) {
+      if (n->GetSelected() && n->GetKind() != Track::Note)
+         //if NoteTrack, it was cut, so do not clear anything
+         n->Clear(mViewInfo.sel0, mViewInfo.sel1);
+      n = iter.Next();
+   }
+#endif
+
    msClipLen = (mViewInfo.sel1 - mViewInfo.sel0);
    msClipProject = this;
 
-   mViewInfo.sel1 = mViewInfo.sel0;
-
    PushState(_("Cut to the clipboard"), _("Cut"));
-
+   
    RedrawProject();
+   
+   mViewInfo.sel1 = mViewInfo.sel0;
 }
 
 
@@ -2483,6 +2922,7 @@ void AudacityProject::OnPaste()
       countTrack = iter2.Next();
    }
 
+   //If nothing's selected
    if (numSelected == 0) {
       TrackListIterator clipIter(msClipboard);
       Track *c = clipIter.First();
@@ -2498,11 +2938,11 @@ void AudacityProject::OnPaste()
             WaveTrack *w = (WaveTrack *)c;
             n = mTrackFactory->NewWaveTrack(w->GetSampleFormat(), w->GetRate());
             } break;
-
+         #ifdef USE_MIDI
          case Track::Note:
             n = mTrackFactory->NewNoteTrack();
             break;
-
+         #endif // USE_MIDI
          case Track::Label:
             n = mTrackFactory->NewLabelTrack();
             break;
@@ -2560,14 +3000,58 @@ void AudacityProject::OnPaste()
    Track *n = iter.First();
    Track *c = clipIter.First();
    Track *f = NULL;
+   Track *tmpSrc = NULL;
+   Track *tmpC = NULL;
+   Track *prev = NULL;
    
    bool pastedSomething = false;
+   bool trackTypeMismatch = false;
+   bool advanceClipboard = true;
+   double srcLength = c->GetEndTime();
 
    while (n && c) {
       if (n->GetSelected()) {
+         advanceClipboard = true;
+         if (tmpC) c = tmpC;
+         if (c->GetKind() != n->GetKind()){
+            if (!trackTypeMismatch) {
+               tmpSrc = prev;
+               tmpC = c;
+            }
+            trackTypeMismatch = true;
+            advanceClipboard = false;
+            c = tmpSrc;
+            
+            // If the types still don't match...
+            while (c && c->GetKind() != n->GetKind()){
+               prev = c;
+               c = clipIter.Next();
+            }
+         }
+         
+         // Handle case where the first track in clipboard
+         // is of different type than the first selected track
+         if (!c){
+            c = tmpC;
+            while (n && (c->GetKind() != n->GetKind()) )
+               n = iter.Next();
+            if (!n) c = NULL;               
+         }
+         
+         // The last possible case for cross-type pastes: triggered when we try to 
+         // paste 1+ tracks from one type into 1+ tracks of another type. If 
+         // there's a mix of types, this shouldn't run.
+         if (!c){
+            wxMessageBox(
+               _("Pasting one type of track into another is not allowed."),
+               _("Error"), wxICON_ERROR, this);
+            c = n;//so we don't trigger any !c conditions on our way out
+            break;
+         }
+         
          // When trying to copy from stereo to mono track, show error and exit
          // TODO: Automatically offer user to mix down to mono (unfortunately
-         //       this is not easy to implement
+         //       this is not easy to implement         
          if (c->GetLinked() && !n->GetLinked())
          {
             wxMessageBox(
@@ -2618,12 +3102,66 @@ void AudacityProject::OnPaste()
          if (msClipProject != this && c->GetKind() == Track::Wave)
             ((WaveTrack *) c)->Unlock();
 
-         c = clipIter.Next();
+         if (advanceClipboard){
+            prev = c;
+            c = clipIter.Next();
+         }
       }
 
       n = iter.Next();
    }
-
+   
+   // This block handles the cases where our clipboard is smaller
+   // than the amount of selected destination tracks. We take the 
+   // last wave track, and paste that one into the remaining
+   // selected tracks.
+   if ( n && !c ){
+      WaveTrack *tmp;
+      bool foundSrcTrack = false;
+      c = clipIter.Last();
+      // First, we find the last audio track. This is the track 
+      // we'll be pasting into the excess selected tracks.
+      if (c->GetKind() != Track::Wave){
+         Track *last = c;
+         Track *prev = NULL;
+         c = clipIter.First();
+         Track *first = c;
+         
+         while (!foundSrcTrack){
+            prev = c;
+            c = clipIter.Next();
+            if (c == last){
+               if (prev->GetKind()==Track::Wave) {
+                  c = prev;
+                  foundSrcTrack=true;
+               }else{
+                  last = prev;
+                  if (last == first){
+                     c = NULL;
+                     break;
+                  }
+                  c = clipIter.First();
+               }
+            }
+         }
+      }
+      
+      // We've found our source track, now we paste it in.
+      while (n){
+         if (n->GetSelected() && n->GetKind()==Track::Wave){
+            if (c && c->GetKind() == Track::Wave){
+               tmp = (WaveTrack*)c;
+            }else{
+               tmp = mTrackFactory->NewWaveTrack( ((WaveTrack*)n)->GetSampleFormat(), ((WaveTrack*)n)->GetRate());
+               tmp->InsertSilence(0.0, srcLength);
+               tmp->Flush();
+            }
+            ((WaveTrack *)n)->HandlePaste(t0, tmp);
+         }
+         n = iter.Next();
+      }
+   }
+   
    // TODO: What if we clicked past the end of the track?
 
    if (pastedSomething)
@@ -3409,7 +3947,7 @@ void AudacityProject::OnPlotSpectrum()
          WaveTrack *track = (WaveTrack *)t;
          if (selcount==0) {
             rate = track->GetRate();
-            longSampleCount start, end;
+            sampleCount start, end;
             start = track->TimeToLongSamples(mViewInfo.sel0);
             end = track->TimeToLongSamples(mViewInfo.sel1);
             len = (sampleCount)(end - start);
@@ -3426,7 +3964,7 @@ void AudacityProject::OnPlotSpectrum()
                delete[] buffer;
                return;
             }
-            longSampleCount start;
+            sampleCount start;
             start = track->TimeToLongSamples(mViewInfo.sel0);
             float *buffer2 = new float[len];
             track->Get((samplePtr)buffer2, floatSample, start, len);
@@ -3536,6 +4074,7 @@ void AudacityProject::OnImport()
       return;
    }
 
+   gPrefs->Write(wxT("/NewImportingSession"), true);
    for (size_t ff = 0; ff < selectedFiles.GetCount(); ff++) {
       wxString fileName = selectedFiles[ff];
 
@@ -3558,7 +4097,7 @@ void AudacityProject::OnImportLabels()
                     wxT(""),       // Name
                     wxT(".txt"),   // Extension
                     _("Text files (*.txt)|*.txt|All files (*.*)|*.*"),
-                    0,        // Flags
+                    wxRESIZE_BORDER,        // Flags
                     this);    // Parent
 
    if (fileName != wxT("")) {
@@ -3589,6 +4128,7 @@ void AudacityProject::OnImportLabels()
    }
 }
 
+#ifdef USE_MIDI
 void AudacityProject::OnImportMIDI()
 {
    wxString path = gPrefs->Read(wxT("/DefaultOpenPath"),::wxGetCwd());
@@ -3597,8 +4137,8 @@ void AudacityProject::OnImportMIDI()
                                     path,     // Path
                                     wxT(""),       // Name
                                     wxT(""),       // Extension
-                                    _("All files (*.*)|*.*|MIDI files (*.mid)|*.mid|Allegro files (*.gro)|*.gro"),
-                                    0,        // Flags
+                                    _("MIDI and Allegro files (*.mid;*.midi;*.gro)|*.mid;*.midi;*.gro|MIDI files (*.mid;*.midi)|*.mid;*.midi|Allegro files (*.gro)|*.gro|All files (*.*)|*.*"),
+                                    wxRESIZE_BORDER,        // Flags
                                     this);    // Parent
 
    if (fileName != wxT("")) {
@@ -3614,14 +4154,14 @@ void AudacityProject::OnImportMIDI()
          newTrack->SetSelected(true);
 
          PushState(wxString::Format(_("Imported MIDI from '%s'"),
-                                    fileName.c_str()),
-                   _("Import MIDI"));
+                                    fileName.c_str()), _("Import MIDI"));
 
          RedrawProject();
          mTrackPanel->EnsureVisible(newTrack);
       }
    }
 }
+#endif // USE_MIDI
 
 void AudacityProject::OnImportRaw()
 {
@@ -3633,7 +4173,7 @@ void AudacityProject::OnImportRaw()
                     wxT(""),       // Name
                     wxT(""),       // Extension
                     _("All files (*)|*"),
-                    0,        // Flags
+                    wxRESIZE_BORDER,        // Flags
                     this);    // Parent
 
    if (fileName == wxT(""))
@@ -3644,19 +4184,9 @@ void AudacityProject::OnImportRaw()
    
    Track **newTracks;
    int numTracks;
-   
-   mImportingRaw = true;
 
-   ProgressShow(_("Import"));
+   numTracks = ::ImportRaw(this, fileName, mTrackFactory, &newTracks);
 
-   numTracks = ::ImportRaw(this, fileName, mTrackFactory, &newTracks,
-                           AudacityProject::ImportProgressCallback,
-                           this);
-
-   ProgressHide();
-
-   mImportingRaw = false;
-   
    if (numTracks <= 0)
       return;
 
@@ -3940,6 +4470,83 @@ void AudacityProject::OnAlignMoveSel(int index)
    HandleAlign(index, true);
 }
 
+#ifdef EXPERIMENTAL_SCOREALIGN
+long mixer_process(void *mixer, float **buffer, long n)
+{
+   Mixer *mix = (Mixer *) mixer;
+   long frame_count = mix->Process(n);
+   *buffer = (float *) mix->GetBuffer();
+   return frame_count;
+}
+
+void AudacityProject::OnScoreAlign()
+{
+   TrackListIterator iter(mTracks);
+   Track *t = iter.First();
+   int numWaveTracksSelected = 0;
+   int numNoteTracksSelected = 0;
+   int numOtherTracksSelected = 0;
+   NoteTrack *nt;
+   double endTime = 0.0;
+
+   // Iterate through once to make sure that there is exactly
+   // one WaveTrack and one NoteTrack selected.
+   while (t) {
+      if (t->GetSelected()) {
+         if (t->GetKind() == Track::Wave) {
+            numWaveTracksSelected++;
+            WaveTrack *wt = (WaveTrack *) t;
+            endTime = endTime > wt->GetEndTime() ? endTime : wt->GetEndTime();
+         } else if(t->GetKind() == Track::Note) {
+            numNoteTracksSelected++;
+            nt = (NoteTrack *) t;
+         } else numOtherTracksSelected++;
+      }
+      t = iter.Next();
+   }
+
+   if(numWaveTracksSelected == 0 ||
+      numNoteTracksSelected != 1 ||
+      numOtherTracksSelected != 0){
+      wxMessageBox(wxString::Format(wxT("Please select at least one audio track and one MIDI track.")));
+      return;
+   }
+
+   WaveTrack **waveTracks;
+   mTracks->GetWaveTracks(true /* selectionOnly */, 
+                          &numWaveTracksSelected, &waveTracks);
+
+   Mixer *mix = new Mixer(numWaveTracksSelected,   // int numInputTracks
+                          waveTracks,              // WaveTrack **inputTracks
+                          mTracks->GetTimeTrack(), // TimeTrack *timeTrack
+                          0.0,                     // double startTime
+                          endTime,                 // double stopTime
+                          2,                       // int numOutChannels
+                          44100,                   // int outBufferSize
+                          true,                    // bool outInterleaved
+                          mRate,                   // double outRate
+                          floatSample,             // sampleFormat outFormat
+                          true,                    // bool highQuality = true
+                          NULL);                   // MixerSpec *mixerSpec = NULL
+
+   // debugging/testing
+   //float *buffer;
+   //long buffer_len = mixer_process((void *) mix, &buffer, 4096);
+   //while (buffer_len) 
+   //   buffer_len = mixer_process((void *) mix, &buffer, 4096);
+   
+   scorealign((void *) mix, &mixer_process,
+              2 /* channels */, 44100.0 /* srate */, endTime, nt->GetSequence());
+
+   delete mix;
+
+   PushState(_("Sync MIDI with Audio"), _("Sync MIDI with Audio"));
+
+   RedrawProject();
+
+   wxMessageBox(_("Alignment completed."));
+}
+#endif /* EXPERIMENTAL_SCOREALIGN */
 void AudacityProject::OnNewWaveTrack()
 {
    WaveTrack *t = mTrackFactory->NewWaveTrack(mDefaultFormat, mRate);
@@ -4012,9 +4619,15 @@ void AudacityProject::OnNewTimeTrack()
    mTrackPanel->EnsureVisible(t);
 }
 
-void AudacityProject::OnSmartRecord()
+void AudacityProject::OnTimerRecord()
 {
-   SmartRecordDialog dialog(this /* parent */ );
+   TimerRecordDialog dialog(this /* parent */ );
+   dialog.ShowModal();
+}
+
+void AudacityProject::OnSoundActivated()
+{
+   SoundActivatedRecord dialog(this /* parent */ );
    dialog.ShowModal();
 }
 
@@ -4062,6 +4675,13 @@ int AudacityProject::DoAddLabel(double left, double right)
    mTrackPanel->SetFocus();
 
    return index;
+}
+
+void AudacityProject::OnStickyLabel()
+{
+   mStickyFlag = !mStickyFlag;
+   EditToolBar *toolbar = GetEditToolBar();
+   toolbar->EnableDisableButtons();
 }
 
 void AudacityProject::OnAddLabel()
@@ -4115,7 +4735,7 @@ void AudacityProject::OnExportCleanSpeechPresets()
                            wxT("*.csp"),       // default file extension
                            extension,
                            _("CleanSpeech Presets (*.csp)|*.csp"),
-                           wxSAVE | wxOVERWRITE_PROMPT);
+                           wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER);
 
       if (fName.empty()) { // if cancel selected
          return;
@@ -4198,7 +4818,7 @@ void AudacityProject::OnImportCleanSpeechPresets()
                            wxT("*.csp"),       // default file name
                            extension,
                            wxT("CleanSpeech Presets (*.csp)|*.csp"),
-                           wxOPEN);
+                           wxFD_OPEN | wxRESIZE_BORDER);
 
       if (fName.empty()) { // if cancel selected
          return;
@@ -4383,6 +5003,11 @@ void AudacityProject::OnHelp()
       //wxT("http://audacity.sourceforge.net/help/documentation"  ));
 }
 
+void AudacityProject::OnLog()
+{
+   wxGetApp().mLogger->Show();
+}
+
 void AudacityProject::OnBenchmark()
 {
    ::RunBenchmark(this);
@@ -4417,8 +5042,6 @@ void AudacityProject::OnAudioDeviceInfo()
    dlg.Center();
    dlg.ShowModal();
 }
-
-//
 
 void AudacityProject::OnSeparator()
 {
@@ -4503,19 +5126,55 @@ void AudacityProject::OnResample()
    TrackListIterator iter(mTracks);
 
    int newRate;
-   
-   while (true) {
-      wxTextEntryDialog* dlg = new wxTextEntryDialog(this,
-         _("New sample rate (Hz):"), _("Resample"), wxT(""));
-      if (dlg->ShowModal() != wxID_OK)
-         return; // user cancelled dialog
-      newRate = atoi(dlg->GetValue().mb_str());
-      delete dlg;
-      if (newRate < 1 || newRate > 1000000)
-         wxMessageBox(_("The entered value is invalid"), _("Error"),
-                      wxICON_STOP, this);
-      else
+
+   while (true)
+   {
+      wxDialog dlg(this, wxID_ANY, wxString(_("Resample")));
+      ShuttleGui S(&dlg, eIsCreating);
+      wxString rate;
+      wxArrayString rates;
+      wxComboBox *cb;
+
+      rate.Printf(wxT("%d"), lrint(mRate));
+
+      rates.Add(wxT("8000"));
+      rates.Add(wxT("11025"));
+      rates.Add(wxT("16000"));
+      rates.Add(wxT("22050"));
+      rates.Add(wxT("44100"));
+      rates.Add(wxT("48000"));
+      rates.Add(wxT("96000"));
+
+      S.StartVerticalLay(true);
+      {
+         S.StartHorizontalLay(wxCENTER, false);
+         {
+            cb = S.AddCombo(_("New sample rate (Hz):"),
+                            rate,
+                            &rates);
+         }
+         S.EndHorizontalLay();
+         S.AddStandardButtons();
+      }
+      S.EndVerticalLay();
+
+      dlg.SetSize(dlg.GetSizer()->GetMinSize());
+      dlg.Center();
+
+      if (dlg.ShowModal() != wxID_OK)
+      {
+         return;  // user cancelled dialog
+      }
+
+      long lrate;
+      if (cb->GetValue().ToLong(&lrate) && lrate >= 1 && lrate <= 1000000)
+      {
+         newRate = (int)lrate;
          break;
+      }
+
+      wxMessageBox(_("The entered value is invalid"), _("Error"),
+                   wxICON_ERROR, this);
    }
 
    int ndx = 0;
@@ -4525,13 +5184,11 @@ void AudacityProject::OnResample()
       
       msg.Printf(_("Resampling track %d"), ++ndx);
 
-      GetActiveProject()->ProgressShow(_("Resample"),
-                                       msg);
+      ProgressDialog progress(_("Resample"), msg);
 
       if (t->GetSelected() && t->GetKind() == Track::Wave)
-         if (!((WaveTrack*)t)->Resample(newRate, true))
+         if (!((WaveTrack*)t)->Resample(newRate, &progress))
             break;
-      GetActiveProject()->ProgressHide();
    }
    
    PushState(_("Resampled audio track(s)"), _("Resample Track"));

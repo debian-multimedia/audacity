@@ -26,8 +26,24 @@ class TrackList;
 class MixerSpec;
 class FileDialog;
 
+class FormatInfo
+{
+   public:
+      FormatInfo(){};
+      ~FormatInfo(){};
+      wxString mFormat;
+      wxString mDescription;
+      wxString mExtension;
+      wxArrayString mExtensions;
+      wxString mMask;
+      int mMaxChannels;
+      bool mCanMetaData;
+};
+
+WX_DECLARE_OBJARRAY(FormatInfo *, FormatInfoArray);
+
 //----------------------------------------------------------------------------
-// Exporter Class
+// ExportPlugin
 //----------------------------------------------------------------------------
 class ExportPlugin
 {
@@ -37,26 +53,30 @@ public:
    virtual ~ExportPlugin();
    virtual void Destroy();
 
-   void SetFormat(const wxString & format);
-   void SetDescription(const wxString & description);
-   void SetExtension(const wxString & extension);
-   void SetExtensions(const wxArrayString & extensions);
-   void SetMask(const wxString & mask);
-   void SetMaxChannels(int maxchannels);
-   void SetCanMetaData(bool canmetadata);
+   int AddFormat();
+   void SetFormat(const wxString & format, int index);
+   void SetDescription(const wxString & description, int index);
+   void AddExtension(const wxString &extension,int index);
+   void SetExtensions(const wxArrayString & extensions, int index);
+   void SetMask(const wxString & mask, int index);
+   void SetMaxChannels(int maxchannels, int index);
+   void SetCanMetaData(bool canmetadata, int index);
    
-   virtual wxString GetFormat();
-   virtual wxString GetDescription();
-   virtual wxString GetExtension();
-   virtual wxArrayString GetExtensions();
-   virtual wxString GetMask();
-   virtual int GetMaxChannels();
-   virtual bool GetCanMetaData();
+   virtual int GetFormatCount();
+   virtual wxString GetFormat(int index);
+   virtual wxString GetDescription(int index);
+   virtual wxString GetExtension(int index);
+   virtual wxArrayString GetExtensions(int index);
+   virtual wxString GetMask(int index);
+   virtual int GetMaxChannels(int index);
+   virtual bool GetCanMetaData(int index);
    
-   virtual bool IsExtension(wxString & ext);
+   virtual bool IsExtension(wxString & ext, int index);
 
-   virtual bool DisplayOptions(AudacityProject *project = NULL);
-   virtual bool DoDisplayOptions(AudacityProject *project);
+   virtual bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   virtual bool DoDisplayOptions(AudacityProject *project, int format = 0);
+
+   virtual bool CheckFileName(wxFileName &filename, int format = 0);
 
    /** \brief called to export audio into a file.
     *
@@ -70,7 +90,8 @@ public:
                        double t0,
                        double t1,
                        MixerSpec *mixerSpec = NULL,
-                       Tags *metadata = NULL);
+                       Tags *metadata = NULL,
+                       int subformat = 0);
 
    virtual bool DoExport(AudacityProject *project,
                          int channels,
@@ -78,23 +99,18 @@ public:
                          bool selectedOnly,
                          double t0,
                          double t1,
-                         MixerSpec *mixerSpec);
+                         MixerSpec *mixerSpec,
+                         int subformat);
 
 private:
 
-   wxString mFormat;
-   wxString mDescription;
-   wxString mExtension;
-   wxArrayString mExtensions;
-   wxString mMask;
-   int mMaxChannels;
-   bool mCanMetaData;
+   FormatInfoArray mFormatInfos;
 };
 
 WX_DECLARE_OBJARRAY(ExportPlugin *, ExportPluginArray);
 
 //----------------------------------------------------------------------------
-// Export
+// Exporter
 //----------------------------------------------------------------------------
 class Exporter
 {
@@ -112,6 +128,7 @@ public:
                 bool selectedOnly, double t0, double t1);
 
    void DisplayOptions(int index);
+   int FindFormatIndex(int exportindex);
 
    const ExportPluginArray GetPlugins();
 
@@ -134,7 +151,9 @@ private:
 
    double mT0;
    double mT1;
+   int mFilterIndex;
    int mFormat;
+   int mSubFormat;
    int mNumSelected;
    int mNumLeft;
    int mNumRight;

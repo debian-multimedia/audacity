@@ -131,8 +131,8 @@ bool EffectTruncSilence::Process()
 
    // Transform the marker timepoints to samples
    t = (WaveTrack *) iter.First();
-   longSampleCount start = t->TimeToLongSamples(t0);
-   longSampleCount end = t->TimeToLongSamples(t1);
+   sampleCount start = t->TimeToLongSamples(t0);
+   sampleCount end = t->TimeToLongSamples(t1);
 
    // Bigger buffers reduce 'reset'
    blockLen *= 8;
@@ -162,11 +162,11 @@ bool EffectTruncSilence::Process()
    }
 
    // Start processing
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
-   TrackListIterator iterOut(m_pOutputWaveTracks);
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+   TrackListIterator iterOut(mOutputWaveTracks);
 
-   longSampleCount index = start;
-   longSampleCount outTrackOffset = start;
+   sampleCount index = start;
+   sampleCount outTrackOffset = start;
    bool cancelled = false;
    while (index < end) {
 
@@ -242,9 +242,8 @@ bool EffectTruncSilence::Process()
          truncIndex++;
       }
 
-      // Update tracks if any samples were removed
-      if (truncIndex < limit) {
-
+      // Update tracks if any samples were removed, now or before
+      if (outTrackOffset + truncIndex != index + limit) {
          // Put updated sample back into output tracks.
          tndx = 0;
          t = (WaveTrack *) iterOut.First();
@@ -323,7 +322,6 @@ TruncSilenceDialog::TruncSilenceDialog(EffectTruncSilence * effect,
    mEffect(effect)
 {
    Init();
-   effect->SetDialog(this);
 }
 
 void TruncSilenceDialog::PopulateOrExchange(ShuttleGui & S)

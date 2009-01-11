@@ -13,81 +13,54 @@
 #include <wx/ffile.h>
 #include <wx/intl.h>
 
+#include "../Audacity.h"
+
+#if defined(USE_MIDI)
+
 #include "../Internat.h"
 #include "../NoteTrack.h"
 #include "ImportMIDI.h"
 
 #include "allegro.h"
 #include "strparse.h"
-#include "allegrord.h"
 #include "mfmidi.h"
-#include "mfallegro.h"
 
 bool ImportMIDI(wxString fName, NoteTrack * dest)
 {
-   wxFFile mf(fName, wxT("rb"));
-
-   if (!mf.IsOpened()) {
-      wxMessageBox( _("Could not open file: ") + fName);
+   if (fName.Length() <= 4){
+      wxMessageBox( _("Could not open file ") + fName + _(": Filename too short."));
       return false;
    }
 
-   if (fName.Length() > 4 &&
-       !fName.Right(4).CmpNoCase(wxT(".gro"))) {
-
-      // Import Allegro file (Roger Dannenberg)
-
-      Allegro_reader reader(mf.fp());
-      reader.parse();
-      mf.Close();
-      
-      if (reader.seq.notes.len == 0) {
-         // TODO: is there a better way to see if an error occurred?
-         wxMessageBox(_("Error parsing Allegro file."));
-         return false;
-      }
-      // need a Seq_ptr to a seq on the heap, but all we have is a reader member
-      // so copy to the heap. Be careful because reader will be deleted.
-      Seq_ptr seq = new Seq;
-      *seq = reader.seq;
-      
-      // this is probably not necessary, and would be cleaner if reader returned
-      // a Seq_ptr:
-      reader.seq.notes.events = NULL;
-      reader.seq.notes.len = 0;
-      reader.seq.map.beats.beats = NULL;
-      reader.seq.map.beats.len = 0;
-      reader.seq.time_sig.time_sigs = NULL;
-      reader.seq.time_sig.len = 0;
-      dest->SetSequence(seq);
-   }
-   else {
-
-      // Import Standard MIDI file
-
-      Allegro_midifile_reader *reader = new Allegro_midifile_reader();
-      
-      reader->initialize(mf.fp());
-      
-      mf.Close();
-      
-      if (reader->seq->notes.len == 0) {
-         // TODO: is there a better way to see if an error occurred?
-         wxMessageBox(_("Error parsing MIDI file."));
-         return false;
-      }
-
-      // need a Seq_ptr to a seq on the heap, but all we have is a reader member
-      // so copy to the heap. Be careful because reader will be deleted.
-      //Seq_ptr seq = new Seq;
-      //*seq = *(reader.seq);
-      
-      dest->SetSequence(reader->seq);
-
+   bool is_midi = false;
+   if (fName.Right(4).CmpNoCase(wxT(".mid")) == 0 || fName.Right(5).CmpNoCase(wxT(".midi")) == 0)
+      is_midi = true;
+   else if(fName.Right(4).CmpNoCase(wxT(".gro")) != 0) {
+      wxMessageBox( _("Could not open file ") + fName + _(": Incorrect filetype."));
+      return false;
    }
 
+   wxFFile mf(fName, wxT("rb"));
+   if (!mf.IsOpened()) {
+      wxMessageBox( _("Could not open file ") + fName + wxT("."));
+      return false;
+   }
+
+   Alg_seq_ptr new_seq = new Alg_seq(fName.mb_str(), is_midi);
+
+   //Should we also check if(seq->tracks() == 0) ?
+   if(new_seq->get_read_error() == alg_error_open){
+      wxMessageBox( _("Could not open file ") + fName + wxT("."));
+      mf.Close();
+      return false;
+   }
+
+   dest->SetSequence(new_seq);
+   mf.Close();
    return true;
 }
+
+#endif
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

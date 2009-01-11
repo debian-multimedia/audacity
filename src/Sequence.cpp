@@ -110,6 +110,14 @@ bool Sequence::Lock()
    return true;
 }
 
+bool Sequence::CloseLock()
+{
+   for (unsigned int i = 0; i < mBlock->Count(); i++)
+      mBlock->Item(i)->f->CloseLock();
+
+   return true;
+}
+
 bool Sequence::Unlock()
 {
    for (unsigned int i = 0; i < mBlock->Count(); i++)
@@ -310,11 +318,11 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
       s = mNumSamples;
 
    // Quick check to make sure that it doesn't overflow
-   if (((double)mNumSamples) + ((double)src->mNumSamples) > 2147483647)
+   if (((double)mNumSamples) + ((double)src->mNumSamples) > wxLL(9223372036854775807))
       return false;
 
    BlockArray *srcBlock = src->mBlock;
-   int addedLen = src->mNumSamples;
+   sampleCount addedLen = src->mNumSamples;
    unsigned int srcNumBlocks = srcBlock->Count();
    int sampleSize = SAMPLE_SIZE(mSampleFormat);
 
@@ -325,7 +333,7 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
    unsigned int numBlocks = mBlock->Count();
 
    if (numBlocks == 0 ||
-       s == mNumSamples && mBlock->Item(numBlocks-1)->f->GetLength() >= mMinSamples) {
+       (s == mNumSamples && mBlock->Item(numBlocks-1)->f->GetLength() >= mMinSamples)) {
       // Special case: this track is currently empty, or it's safe to append
       // onto the end because the current last block is longer than the
       // minimum size
@@ -505,7 +513,7 @@ bool Sequence::SetSilence(sampleCount s0, sampleCount len)
 bool Sequence::InsertSilence(sampleCount s0, sampleCount len)
 {
    // Quick check to make sure that it doesn't overflow
-   if (((double)mNumSamples) + ((double)len) > 2147483647)
+   if (((double)mNumSamples) + ((double)len) > wxLL(9223372036854775807))
       return false;
 
    // Create a new track containing as much silence as we
@@ -543,18 +551,23 @@ bool Sequence::InsertSilence(sampleCount s0, sampleCount len)
 
 bool Sequence::AppendAlias(wxString fullPath,
                            sampleCount start,
-                           sampleCount len, int channel)
+                           sampleCount len, int channel,bool useOD)
 {
    // Quick check to make sure that it doesn't overflow
-   if (((double)mNumSamples) + ((double)len) > 2147483647)
+   if (((double)mNumSamples) + ((double)len) > wxLL(9223372036854775807))
       return false;
 
    SeqBlock *newBlock = new SeqBlock();
 
    newBlock->start = mNumSamples;
    newBlock->f =
+#ifdef EXPERIMENTAL_ONDEMAND
+   useOD?
+      mDirManager->NewODAliasBlockFile(fullPath, start, len, channel):
       mDirManager->NewAliasBlockFile(fullPath, start, len, channel);
-
+#else
+      mDirManager->NewAliasBlockFile(fullPath, start, len, channel);
+#endif
    mBlock->Add(newBlock);
    mNumSamples += newBlock->f->GetLength();
 
@@ -564,7 +577,7 @@ bool Sequence::AppendAlias(wxString fullPath,
 bool Sequence::AppendBlock(SeqBlock * b)
 {
    // Quick check to make sure that it doesn't overflow
-   if (((double)mNumSamples) + ((double)b->f->GetLength()) > 2147483647)
+   if (((double)mNumSamples) + ((double)b->f->GetLength()) > wxLL(9223372036854775807))
       return false;
 
    SeqBlock *newBlock = new SeqBlock();
@@ -795,6 +808,9 @@ int Sequence::FindBlock(sampleCount pos, sampleCount lo,
        pos < mBlock->Item(guess)->start + mBlock->Item(guess)->f->GetLength())
       return guess;
 
+   //this is a binary search, but we probably could benefit by something more like
+   //dictionary search where we guess something smarter than the binary division
+   //of the unsearched area, since samples are usually proportional to block file number.
    if (pos < mBlock->Item(guess)->start)
       return FindBlock(pos, lo, (lo + guess) / 2, guess);
    else
@@ -967,7 +983,7 @@ bool Sequence::Set(samplePtr buffer, sampleFormat format,
    return ConsistencyCheck(wxT("Set"));
 }
 
-bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,
+bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,int* bl,
                               int len, sampleCount *where,
                               double samplesPerPixel)
 {
@@ -986,17 +1002,18 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,
       s1 = mNumSamples;
 
    sampleCount srcX = s0;
-
+   
    unsigned int block0 = FindBlock(s0);
 
    float *temp = new float[mMaxSamples];
 
    int pixel = 0;
-   float theMin = 0;
-   float theMax = 0;
+   float theMin = 0.0;
+   float theMax = 0.0;
    float sumsq = float(0.0);
    unsigned int b = block0;
    int jcount = 0;
+   int blockStatus;
 
    while (srcX < s1) {
       // Get more samples
@@ -1014,14 +1031,35 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,
       case 1:
          Read((samplePtr)temp, floatSample, mBlock->Item(b),
               srcX - mBlock->Item(b)->start, num);
+              
+         blockStatus=b;
          break;
       case 256:
-         mBlock->Item(b)->f->Read256(temp,
+         //check to see if summary data has been computed
+         if(mBlock->Item(b)->f->IsSummaryAvailable())
+         {
+            mBlock->Item(b)->f->Read256(temp,
                  (srcX - mBlock->Item(b)->start) / divisor, num);
+            blockStatus=b;
+         }
+         else
+         {
+            //otherwise, mark the display as not yet computed
+            blockStatus=-1-b;
+         }
          break;
       case 65536:
-         mBlock->Item(b)->f->Read64K(temp,
+         //check to see if summary data has been computed
+         if(mBlock->Item(b)->f->IsSummaryAvailable())
+         {
+            mBlock->Item(b)->f->Read64K(temp,
                  (srcX - mBlock->Item(b)->start) / divisor, num);
+            blockStatus=b;
+         }
+         else
+         {
+            blockStatus=-1-b;
+         }
          break;
       }
       
@@ -1048,6 +1086,7 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,
             if (pixel > 0) {
                min[pixel - 1] = theMin;
                max[pixel - 1] = theMax;
+               bl[pixel - 1] = blockStatus;//MC
                if (jcount > 0)
                   rms[pixel - 1] = (float)sqrt(sumsq / jcount);
                else
@@ -1121,6 +1160,7 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,
    while (pixel <= len) {
       min[pixel - 1] = theMin;
       max[pixel - 1] = theMax;
+      bl[pixel - 1] = blockStatus;//mchinen
       if (jcount > 0)
          rms[pixel - 1] = (float)sqrt(sumsq / jcount);
       else
@@ -1153,7 +1193,7 @@ bool Sequence::Append(samplePtr buffer, sampleFormat format,
                       sampleCount len, XMLWriter* blockFileLog /*=NULL*/)
 {
    // Quick check to make sure that it doesn't overflow
-   if (((double)mNumSamples) + ((double)len) > 2147483647)
+   if (((double)mNumSamples) + ((double)len) > wxLL(9223372036854775807))
       return false;
 
    samplePtr temp = NULL;
@@ -1269,10 +1309,17 @@ BlockArray *Sequence::Blockify(samplePtr buffer, sampleCount len)
 
 bool Sequence::Delete(sampleCount start, sampleCount len)
 {
+
+
    if (len == 0)
       return true;
    if (len < 0 || start < 0 || start >= mNumSamples)
       return false;
+      
+   //TODO: add a ref-deref mechanism to SeqBlock/BlockArray so we don't have to make this a critical section.
+   //On-demand threads iterate over the mBlocks and the GUI thread deletes them, so for now put a mutex here over 
+   //both functions,
+   LockDeleteUpdateMutex();
 
    unsigned int numBlocks = mBlock->Count();
    unsigned int newNumBlocks = 0;
@@ -1312,6 +1359,8 @@ bool Sequence::Delete(sampleCount start, sampleCount len)
       delete b;
 
       mNumSamples -= len;
+      UnlockDeleteUpdateMutex();
+      
       return ConsistencyCheck(wxT("Delete - branch one"));
    }
 
@@ -1475,13 +1524,15 @@ bool Sequence::Delete(sampleCount start, sampleCount len)
 
    // Update total number of samples and do a consistency check.
    mNumSamples -= len;
+   
+   UnlockDeleteUpdateMutex();
    return ConsistencyCheck(wxT("Delete - branch two"));
 }
 
 bool Sequence::ConsistencyCheck(const wxChar *whereStr)
 {
    unsigned int i;
-   int pos = 0;
+   sampleCount pos = 0;
    unsigned int numBlocks = mBlock->Count();
    bool error = false;
 

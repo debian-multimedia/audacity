@@ -9,7 +9,7 @@
 *******************************************************************//**
 
 \class EffectChangeSpeed
-\brief An Effect that affects both pitch & tempo.
+\brief An Effect that affects both pitch & Speed.
 
 *//****************************************************************//**
 
@@ -26,6 +26,7 @@
 #include "../ShuttleGui.h"
 #include "../Envelope.h"
 #include "../Prefs.h"
+#include "../Project.h"
 
 #include <math.h>
 
@@ -57,7 +58,7 @@ wxString EffectChangeSpeed::GetEffectDescription() {
 
 bool EffectChangeSpeed::PromptUser()
 {
-   ChangeSpeedDialog dlog(this, mParent, -1, _("Change Speed"));
+   ChangeSpeedDialog dlog(this, mParent);
    dlog.m_PercentChange = m_PercentChange;
    dlog.m_FromVinyl = m_FromVinyl;
    dlog.m_ToVinyl = m_ToVinyl;
@@ -68,7 +69,7 @@ bool EffectChangeSpeed::PromptUser()
    dlog.CentreOnParent();
    dlog.ShowModal();
 
-   if (!dlog.GetReturnCode())
+   if (dlog.GetReturnCode() == wxID_CANCEL)
       return false;
 
    m_PercentChange = dlog.m_PercentChange;
@@ -88,13 +89,25 @@ bool EffectChangeSpeed::Process()
 	// Similar to EffectSoundTouch::Process()
 
    //Iterate over each track
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack* pOutWaveTrack = (WaveTrack*)(iter.First());
    mCurTrackNum = 0;
 	m_maxNewLength = 0.0;
+	
+   //Get start and end times from track
+   mCurT0 = pOutWaveTrack->GetStartTime();
+   mCurT1 = pOutWaveTrack->GetEndTime();
+
+   //Set the current bounds to whichever left marker is
+   //greater and whichever right marker is less:
+   mCurT0 = wxMax(mT0, mCurT0);
+   mCurT1 = wxMin(mT1, mCurT1);
+
+   double len = pOutWaveTrack->GetEndTime() - pOutWaveTrack->GetStartTime();
+   
    while (pOutWaveTrack != NULL)
    {
       //Get start and end times from track
@@ -107,11 +120,10 @@ bool EffectChangeSpeed::Process()
       mCurT1 = wxMin(mT1, mCurT1);
 
       // Process only if the right marker is to the right of the left marker
-      if (mCurT1 > mCurT0) {
-
+      if (mCurT1 > mCurT0) {       
          //Transform the marker timepoints to samples
-         longSampleCount start = pOutWaveTrack->TimeToLongSamples(mCurT0);
-         longSampleCount end = pOutWaveTrack->TimeToLongSamples(mCurT1);
+         sampleCount start = pOutWaveTrack->TimeToLongSamples(mCurT0);
+         sampleCount end = pOutWaveTrack->TimeToLongSamples(mCurT1);
 
          //ProcessOne() (implemented below) processes a single track
          if (!ProcessOne(pOutWaveTrack, start, end))
@@ -128,6 +140,18 @@ bool EffectChangeSpeed::Process()
 
    this->ReplaceProcessedWaveTracks(bGoodResult); 
 
+#ifdef EXPERIMENTAL_FULL_LINKING
+   AudacityProject *p = (AudacityProject*)mParent;
+   if( p && p->IsSticky() ){
+      pOutWaveTrack = (WaveTrack*)(iter.First());
+      double newLen = pOutWaveTrack->GetEndTime() - pOutWaveTrack->GetStartTime();
+      double timeAdded = newLen-len;
+      double sel = mCurT1-mCurT0;
+      double percent = (sel/(timeAdded+sel))*100 - 100;
+      if ( !(HandleGroupChangeSpeed(percent, mCurT0, mCurT1)) ) bGoodResult = false;
+   }
+#endif
+
 // mT1 = mT0 + m_maxNewLength; // Update selection.
 
    return bGoodResult;
@@ -136,7 +160,7 @@ bool EffectChangeSpeed::Process()
 // ProcessOne() takes a track, transforms it to bunch of buffer-blocks,
 // and calls libsamplerate code on these blocks.
 bool EffectChangeSpeed::ProcessOne(WaveTrack * track,
-												longSampleCount start, longSampleCount end)
+									sampleCount start, sampleCount end)
 {
 	if (track == NULL)
 		return false;
@@ -170,7 +194,7 @@ bool EffectChangeSpeed::ProcessOne(WaveTrack * track,
    //sample the current buffer starts at.
 	bool bLoopSuccess = true;
    sampleCount blockSize;
-  	longSampleCount samplePos = start;
+  	sampleCount samplePos = start;
    while (samplePos < end) {
       //Get a blockSize of samples (smaller than the size of the buffer)
       blockSize = track->GetBestBlockSize(samplePos);
@@ -219,8 +243,8 @@ bool EffectChangeSpeed::ProcessOne(WaveTrack * track,
    // Take the output track and insert it in place of the original
    // sample data
 	if (bLoopSuccess) {
-		track->Clear(mCurT0, mCurT1);
-		track->Paste(mCurT0, outputTrack);
+		track->HandleClear(mCurT0, mCurT1, false, false);
+		track->HandlePaste(mCurT0, outputTrack);
 	}
 
 	double newLength = outputTrack->GetEndTime(); 
@@ -261,10 +285,7 @@ enum {
 
 // event table for ChangeSpeedDialog
 
-BEGIN_EVENT_TABLE(ChangeSpeedDialog, wxDialog)
-    EVT_BUTTON(wxID_OK, ChangeSpeedDialog::OnOk)
-    EVT_BUTTON(wxID_CANCEL, ChangeSpeedDialog::OnCancel)
-
+BEGIN_EVENT_TABLE(ChangeSpeedDialog, EffectDialog)
     EVT_TEXT(ID_TEXT_PERCENTCHANGE, ChangeSpeedDialog::OnText_PercentChange)
     EVT_SLIDER(ID_SLIDER_PERCENTCHANGE, ChangeSpeedDialog::OnSlider_PercentChange)
     EVT_CHOICE(ID_CHOICE_FROMVINYL, ChangeSpeedDialog::OnChoice_FromVinyl)
@@ -273,16 +294,11 @@ BEGIN_EVENT_TABLE(ChangeSpeedDialog, wxDialog)
     EVT_BUTTON(ID_EFFECT_PREVIEW, ChangeSpeedDialog::OnPreview)
 END_EVENT_TABLE()
 
-ChangeSpeedDialog::ChangeSpeedDialog(EffectChangeSpeed * effect,
-													wxWindow * parent, wxWindowID id,
-													const wxString & title, 
-													const wxPoint & position, 
-													const wxSize & size, 
-													long style)
-: wxDialog(parent, id, title, position, size, style)
+ChangeSpeedDialog::ChangeSpeedDialog(EffectChangeSpeed *effect, wxWindow *parent)
+:  EffectDialog(parent, _("Change Speed"), PROCESS_EFFECT),
+   mEffect(effect)
 {
    m_bLoopDetect = false;
-	m_pEffect = effect;
 
 	// NULL out these control members because there are some cases where the 
 	// event table handlers get called during this method, and those handlers that 
@@ -297,109 +313,71 @@ ChangeSpeedDialog::ChangeSpeedDialog(EffectChangeSpeed * effect,
 	m_FromVinyl = 0; 
 	m_ToVinyl = 0; 
 
-	
-	// CREATE THE CONTROLS PROGRAMMATICALLY.
-	wxStaticText * pStaticText;
-
-   wxBoxSizer * pBoxSizer_Dialog = new wxBoxSizer(wxVERTICAL);
-
-	// heading
-   pStaticText = new wxStaticText(this, -1, 
-												_("Change Speed, affecting both Tempo and Pitch"),
-												wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_Dialog->Add(pStaticText, 0, wxALIGN_CENTER | wxALL, 8);
-
-   pStaticText = new wxStaticText(this, -1, 
-												_("by Vaughan Johnson && Dominic Mazzoni"),
-												wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_Dialog->Add(pStaticText, 0, wxALIGN_CENTER | wxTOP | wxLEFT | wxRIGHT, 8);
-
-   pStaticText = new wxStaticText(this, -1, 
-												_("using SampleRate, by Erik de Castro Lopo"),
-												wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_Dialog->Add(pStaticText, 0, wxALIGN_CENTER | wxBOTTOM | wxLEFT | wxRIGHT, 8);
-
-
-	// percent change controls
-
-	// Group percent controls with spacers, 
-	// rather than static box, so they don't look isolated.
-   pBoxSizer_Dialog->Add(0, 8, 0); // spacer
-
-   wxBoxSizer * pBoxSizer_PercentChange = new wxBoxSizer(wxHORIZONTAL);
-   
-   pStaticText = new wxStaticText(this, -1, _("Percent Change:"),
-												wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_PercentChange->Add(pStaticText, 0, 
-											wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, 4);
-
-	//v Override wxTextValidator to disallow negative values <= -100.0?
-   m_pTextCtrl_PercentChange = 
-		new wxTextCtrl(this, ID_TEXT_PERCENTCHANGE, wxT("0.0"), 
-							wxDefaultPosition, wxSize(60, -1), 0,
-							wxTextValidator(wxFILTER_NUMERIC));
-   pBoxSizer_PercentChange->Add(m_pTextCtrl_PercentChange, 0, 
-											wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT | wxALL, 4);
-
-   pBoxSizer_Dialog->Add(pBoxSizer_PercentChange, 0, wxALIGN_CENTER | wxALL, 4);
-
-   m_pSlider_PercentChange = 
-		new wxSlider(this, ID_SLIDER_PERCENTCHANGE, 0, 
-							PERCENTCHANGE_MIN, PERCENTCHANGE_MAX,
-							wxDefaultPosition, wxSize(100, -1), wxSL_HORIZONTAL);
-   pBoxSizer_Dialog->Add(m_pSlider_PercentChange, 1, 
-									wxGROW | wxALIGN_CENTER | wxLEFT | wxRIGHT, 4);
-
-   pBoxSizer_Dialog->Add(0, 8, 0); // spacer
-
-
-	// from/to Vinyl controls
-   wxBoxSizer * pBoxSizer_Vinyl = new wxBoxSizer(wxHORIZONTAL);
-
-	const wxString strArray_VinylRPM[] = {wxT("33 1/3"), wxT("45"), wxT("78"),
-                                         /* i18n-hint: n/a is an English
-                                            abbreviation meaning "not
-                                            applicable" (in other words,
-                                            unimportant, not relevant). */
-                                         _("n/a")};
-	const int numChoices = 4;
-
-   pStaticText = new wxStaticText(this, -1, _("Standard Vinyl RPM:   from"),
-									       wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_Vinyl->Add(pStaticText, 0, 
-								wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, 4);
-
-   m_pChoice_FromVinyl = 
-		new wxChoice(this, ID_CHOICE_FROMVINYL, 
-							wxDefaultPosition, wxDefaultSize, numChoices, strArray_VinylRPM);
-   pBoxSizer_Vinyl->Add(m_pChoice_FromVinyl, 0, wxALIGN_CENTER | wxALL, 4);
-
-   pStaticText = new wxStaticText(this, -1, _("to"),
-									       wxDefaultPosition, wxDefaultSize, 0);
-   pBoxSizer_Vinyl->Add(pStaticText, 0, 
-								wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, 4);
-
-   m_pChoice_ToVinyl = 
-		new wxChoice(this, ID_CHOICE_TOVINYL, 
-							wxDefaultPosition, wxDefaultSize, numChoices, strArray_VinylRPM);
-   pBoxSizer_Vinyl->Add(m_pChoice_ToVinyl, 0, wxALIGN_CENTER | wxALL, 4);
-
-   pBoxSizer_Dialog->Add(pBoxSizer_Vinyl, 0, wxALIGN_CENTER | wxALL, 4);
-
-   // Preview, OK, & Cancel buttons
-   pBoxSizer_Dialog->Add(CreateStdButtonSizer(this, ePreviewButton|eCancelButton|eOkButton), 0, wxEXPAND);
-
-   this->SetAutoLayout(true);
-   this->SetSizer(pBoxSizer_Dialog);
-   pBoxSizer_Dialog->Fit(this);
-   pBoxSizer_Dialog->SetSizeHints(this);
-
-   effect->SetDialog(this);
+   Init();
 }
 
-bool ChangeSpeedDialog::Validate()
+void ChangeSpeedDialog::PopulateOrExchange(ShuttleGui & S)
 {
-   return true; 
+   wxTextValidator numvld(wxFILTER_NUMERIC);
+   wxArrayString rpm;
+   
+   rpm.Add(wxT("33 1/3"));
+   rpm.Add(wxT("45"));
+   rpm.Add(wxT("78"));
+  /* i18n-hint: n/a is an English abbreviation meaning "not applicable"
+     (in other words, unimportant, not relevant). */
+   rpm.Add(_("n/a"));
+
+   S.SetBorder(10);
+   S.StartHorizontalLay(wxCENTER, false);
+   {
+      S.AddTitle(_("Change Speed, affecting both Tempo and Pitch") +
+                 wxString(wxT("\n\n")) +
+                 _("by Vaughan Johnson && Dominic Mazzoni") +
+                 wxString(wxT("\n")) +
+                 _("using SampleRate, by Erik de Castro Lopo"));
+   }
+   S.EndHorizontalLay();
+   S.SetBorder(5);
+
+   //
+   S.StartMultiColumn(2, wxCENTER);
+   {
+      m_pTextCtrl_PercentChange = S.Id(ID_TEXT_PERCENTCHANGE)
+         .AddTextBox(_("Percent Change:"), wxT(""), 12);
+      m_pTextCtrl_PercentChange->SetValidator(numvld);
+   }
+   S.EndMultiColumn();
+
+   //
+   S.StartHorizontalLay(wxEXPAND);
+   {
+      S.SetStyle(wxSL_HORIZONTAL);
+      m_pSlider_PercentChange = S.Id(ID_SLIDER_PERCENTCHANGE)
+         .AddSlider(wxT(""), 0, (int)PERCENTCHANGE_MAX, (int)PERCENTCHANGE_MIN);
+      m_pSlider_PercentChange->SetName(_("Percent Change"));
+   }
+   S.EndHorizontalLay();
+
+   // 
+   S.StartMultiColumn(5, wxCENTER);
+   {
+      //
+      S.AddUnits(_("Standard Vinyl RPM:"));
+
+      m_pChoice_FromVinyl = S.Id(ID_CHOICE_FROMVINYL)
+         .AddChoice(_("from"), wxT(""), &rpm);
+      m_pChoice_FromVinyl->SetName(_("From RPM"));
+      m_pChoice_FromVinyl->SetSizeHints(100, -1);
+
+      m_pChoice_ToVinyl = S.Id(ID_CHOICE_TOVINYL)
+         .AddChoice(_("to"), wxT(""), &rpm);
+      m_pChoice_ToVinyl->SetName(_("To RPM"));
+      m_pChoice_ToVinyl->SetSizeHints(100, -1);
+   }
+   S.EndMultiColumn();
+
+   return;
 }
 
 bool ChangeSpeedDialog::TransferDataToWindow()
@@ -522,27 +500,11 @@ void ChangeSpeedDialog::OnPreview(wxCommandEvent &event)
    TransferDataFromWindow();
 
 	// Save & restore parameters around Preview, because we didn't do OK.
-	double oldPercentChange = m_pEffect->m_PercentChange;
-   m_pEffect->m_PercentChange = m_PercentChange;
-   m_pEffect->Preview();
-   m_pEffect->m_PercentChange = oldPercentChange; 
+	double oldPercentChange = mEffect->m_PercentChange;
+   mEffect->m_PercentChange = m_PercentChange;
+   mEffect->Preview();
+   mEffect->m_PercentChange = oldPercentChange; 
 }
-
-void ChangeSpeedDialog::OnOk(wxCommandEvent & event)
-{
-   TransferDataFromWindow();
-   
-   if (Validate()) 
-      EndModal(true);
-   else 
-      event.Skip();
-}
-
-void ChangeSpeedDialog::OnCancel(wxCommandEvent & event)
-{
-   EndModal(false);
-}
-
 
 // helper fns
 
@@ -571,13 +533,14 @@ void ChangeSpeedDialog::Update_Slider_PercentChange()
 void ChangeSpeedDialog::Update_Vinyl() 
 // Update Vinyl controls for new percent change.
 {
-	if (m_pChoice_ToVinyl) 
+	if (m_pChoice_ToVinyl) {
 		// Chances are so low that the slider will exactly match a 
 		// standard ratio, just turn it "n/a" unless it's 0.0.
 		if ((m_PercentChange == 0.0) && m_pChoice_FromVinyl)
 			m_pChoice_ToVinyl->SetSelection(m_pChoice_FromVinyl->GetSelection());
 		else
 			m_pChoice_ToVinyl->SetSelection(CHOICE_NA);
+        }
 }
 
 void ChangeSpeedDialog::Update_PercentChange() 

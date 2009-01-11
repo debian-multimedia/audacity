@@ -5,6 +5,7 @@
   ImportPCM.cpp
 
   Dominic Mazzoni
+  Leland Lucius
 
 *//****************************************************************//**
 
@@ -24,6 +25,7 @@
 #include "../Tags.h"
 #include "ImportPCM.h"
 
+#include <wx/wx.h>
 #include <wx/string.h>
 #include <wx/utils.h>
 #include <wx/intl.h>
@@ -34,6 +36,11 @@
 #include <wx/stattext.h>
 
 #include "sndfile.h"
+
+#include "../ondemand/ODManager.h"
+#include "../ondemand/ODComputeSummaryTask.h"
+//temporarilly commented out till it is added to all projects
+//#include "../Profiler.h"
 
 #ifndef SNDFILE_1
 #error Requires libsndfile 1.0 or higher
@@ -49,8 +56,8 @@
 class PCMImportPlugin : public ImportPlugin
 {
 public:
-   PCMImportPlugin():
-      ImportPlugin(wxArrayString())
+   PCMImportPlugin()
+   :  ImportPlugin(wxArrayString())
    {
       mExtensions = sf_get_all_extensions();
    }
@@ -68,19 +75,21 @@ public:
    PCMImportFileHandle(wxString name, SNDFILE *file, SF_INFO info);
    ~PCMImportFileHandle();
 
-   void SetProgressCallback(progress_callback_t function,
-                            void *userData);
    wxString GetFileDescription();
    int GetFileUncompressedBytes();
-   bool Import(TrackFactory *trackFactory, Track ***outTracks,
-               int *outNumTracks, Tags *tags);
+   int Import(TrackFactory *trackFactory, Track ***outTracks,
+              int *outNumTracks, Tags *tags);
+
+   wxInt32 GetStreamCount(){ return 1; }
+
+   wxArrayString *GetStreamInfo(){ return NULL; }
+
+   void SetStreamUsage(wxInt32 StreamID, bool Use){}
+
 private:
-   wxString              mName;
    SNDFILE              *mFile;
    SF_INFO               mInfo;
    sampleFormat          mFormat;
-   void                 *mUserData;
-   progress_callback_t  mProgressCallback;
 };
 
 void GetPCMImportPlugin(ImportPluginList *importPluginList,
@@ -114,12 +123,10 @@ ImportFileHandle *PCMImportPlugin::Open(wxString filename)
 }
 
 PCMImportFileHandle::PCMImportFileHandle(wxString name,
-                                         SNDFILE *file, SF_INFO info):
-   mName(name),
+                                         SNDFILE *file, SF_INFO info)
+:  ImportFileHandle(name),
    mFile(file),
-   mInfo(info),
-   mUserData(NULL),
-   mProgressCallback(NULL)
+   mInfo(info)
 {
    //
    // Figure out the format to use.
@@ -137,13 +144,6 @@ PCMImportFileHandle::PCMImportFileHandle(wxString name,
       mFormat = floatSample;
 }
 
-void PCMImportFileHandle::SetProgressCallback(progress_callback_t progressCallback,
-                                      void *userData)
-{
-   mProgressCallback = progressCallback;
-   mUserData = userData;
-}
-
 wxString PCMImportFileHandle::GetFileDescription()
 {
    return sf_header_name(mInfo.format);
@@ -154,12 +154,14 @@ int PCMImportFileHandle::GetFileUncompressedBytes()
    return mInfo.frames * mInfo.channels * SAMPLE_SIZE(mFormat);
 }
 
-bool PCMImportFileHandle::Import(TrackFactory *trackFactory,
-                                 Track ***outTracks,
-                                 int *outNumTracks,
-                                 Tags *tags)
+int PCMImportFileHandle::Import(TrackFactory *trackFactory,
+                                Track ***outTracks,
+                                int *outNumTracks,
+                                Tags *tags)
 {
    wxASSERT(mFile);
+
+   CreateProgress();
 
    WaveTrack **channels = new WaveTrack *[mInfo.channels];
 
@@ -202,27 +204,66 @@ bool PCMImportFileHandle::Import(TrackFactory *trackFactory,
    // arbitrary location in the file.
    if (!mInfo.seekable)
       doEdit = false;
-
+   //for profiling, uncomment and look in audacity.app/exe's folder for AudacityProfile.txt
+   //BEGIN_TASK_PROFILING("ON Demand Load 2hr stereo wav");
+   
+   //BEGIN_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) Drag and Drop 5 80 mb files into audacity (average per file)");
+   //BEGIN_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) open an 80 mb wav stereo file");
+    //for profiling, uncomment and look in audacity.app/exe's folder for AudacityProfile.txt
+   //static int tempLog =0;
+   //if(tempLog++ % 5==0)
+   //   BEGIN_TASK_PROFILING("On Demand Drag and Drop 5 80 mb files into audacity, 5 wavs per task");
+   //BEGIN_TASK_PROFILING("On Demand open an 80 mb wav stereo file");   
    if (doEdit) {
+    wxLogDebug(wxT("Importing PCM Start\n"));
 
       // If this mode has been selected, we form the tracks as
       // aliases to the files we're editing, i.e. ("foo.wav", 12000-18000)
       // instead of actually making fresh copies of the samples.
       
+      // lets use OD only if the file is longer than 30 seconds.  Otherwise, why wake up extra threads.
+      //todo: make this a user pref.
+      bool useOD =fileTotalFrames>44100*30;
+      
       for (sampleCount i = 0; i < fileTotalFrames; i += maxBlockSize) {
+	  
          sampleCount blockLen = maxBlockSize;
          if (i + blockLen > fileTotalFrames)
             blockLen = fileTotalFrames - i;
 
          for (c = 0; c < mInfo.channels; c++)
-            channels[c]->AppendAlias(mName, i, blockLen, c);
+            channels[c]->AppendAlias(mFilename, i, blockLen, c,useOD);
 
-         if( mProgressCallback )
-            cancelled = mProgressCallback(mUserData,
-                                          i*1.0 / fileTotalFrames);
+         cancelled = !mProgress->Update(i, fileTotalFrames);
          if (cancelled)
             break;
       }
+      
+#ifdef EXPERIMENTAL_ONDEMAND
+      //now go over the wavetrack/waveclip/sequence and load all the blockfiles into a ComputeSummaryTask.  
+      //Add this task to the ODManager and the Track itself.      
+       wxLogDebug(wxT("Importing PCM \n"));
+       
+      if(useOD)
+      { 
+         ODComputeSummaryTask* computeTask=new ODComputeSummaryTask;
+         bool moreThanStereo = mInfo.channels>2;
+         for (c = 0; c < mInfo.channels; c++)
+         {
+            computeTask->AddWaveTrack(channels[c]);
+            if(moreThanStereo)
+            {
+               //if we have 3 more channels, they get imported on seperate tracks, so we add individual tasks for each.
+               ODManager::Instance()->AddNewTask(computeTask);
+               computeTask=new ODComputeSummaryTask;
+            }
+         }
+         //if we have a linked track, we add ONE task.
+         if(!moreThanStereo)
+            ODManager::Instance()->AddNewTask(computeTask);
+      }
+#endif      
+      
    }
    else {
       // Otherwise, we're in the "copy" mode, where we read in the actual
@@ -262,10 +303,8 @@ bool PCMImportFileHandle::Import(TrackFactory *trackFactory,
             framescompleted += block;
          }
 
-         if( mProgressCallback )
-            cancelled = mProgressCallback(mUserData,
-                                          framescompleted*1.0 /
-                                          fileTotalFrames);
+         cancelled = !mProgress->Update((long long unsigned)framescompleted,
+                                        (long long unsigned)fileTotalFrames);
          if (cancelled)
             break;
 
@@ -277,7 +316,7 @@ bool PCMImportFileHandle::Import(TrackFactory *trackFactory,
          delete channels[c];
       delete[] channels;
 
-      return false;
+      return eImportCancelled;
    }
 
    *outNumTracks = mInfo.channels;
@@ -320,7 +359,10 @@ bool PCMImportFileHandle::Import(TrackFactory *trackFactory,
       tags->SetTag(wxT("Software"), UTF8CTOWX(str));
    }
 
-   return true;
+   //comment out to undo profiling.
+   //END_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) open an 80 mb wav stereo file");
+
+   return eImportSuccess;
 }
 
 PCMImportFileHandle::~PCMImportFileHandle()
@@ -430,6 +472,7 @@ bool ImportPCM(wxWindow * parent,
       doEdit = false;
 
    if (doEdit) {
+ wxLogDebug(wxT("Importing PCM...ImportPCM \n"));
 
       // If this mode has been selected, we form the tracks as
       // aliases to the files we're editing, i.e. ("foo.wav", 12000-18000)

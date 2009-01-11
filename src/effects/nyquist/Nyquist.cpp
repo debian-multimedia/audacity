@@ -129,7 +129,7 @@ void EffectNyquist::Parse(wxString line)
       else if (line.GetChar(i)==wxT('"'))
          q = !q;
       else {
-         if (!q && !sl && line.GetChar(i)==wxT(' ') || line.GetChar(i)==wxT('\t')) {
+         if ((!q && !sl && line.GetChar(i)==wxT(' ')) || line.GetChar(i)==wxT('\t')) {
             tokens.Add(tok);
             tok = wxT("");
          }
@@ -220,6 +220,11 @@ void EffectNyquist::Parse(wxString line)
       ctrl.val = UNINITIALIZED_CONTROL;
 
       mControls.Add(ctrl);
+   }
+   
+   if (len>=2 && tokens[0]==wxT("categories")) {
+      for (size_t i = 1; i < tokens.GetCount(); ++i)
+         mCategories.insert(tokens[i]);
    }
 }
 
@@ -394,8 +399,8 @@ bool EffectNyquist::Process()
 {
    bool success = true;
    
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
-   TrackListIterator iter(m_pOutputWaveTracks);
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+   TrackListIterator iter(mOutputWaveTracks);
    mCurTrack[0] = (WaveTrack *) iter.First();
    mOutputTime = mT1 - mT0;
    mCount = 0;
@@ -419,7 +424,7 @@ bool EffectNyquist::Process()
          }
 
          mCurStart[0] = mCurTrack[0]->TimeToLongSamples(mT0);
-         longSampleCount end = mCurTrack[0]->TimeToLongSamples(mT1);
+         sampleCount end = mCurTrack[0]->TimeToLongSamples(mT1);
          mCurLen = (sampleCount)(end - mCurStart[0]);
 
          success = ProcessOne();
@@ -732,7 +737,7 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
                              const wxString & title,
                              wxString info,
                              NyqControlArray *controlArray)
-   :wxDialog(parent, id, title)
+:   wxDialog(parent, id, title)
 {
    mControls = controlArray;
    mInHandler = true; // prevents race condition on MSW
@@ -751,7 +756,7 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
       wxControl  *item;
       NyqControl *ctrl = &((*mControls)[i]);
 
-      item = new wxStaticText(this, -1, ctrl->name);
+      item = new wxStaticText(this, -1, ctrl->name + wxT(":"));
       grid->Add(item, 0, wxALIGN_RIGHT | 
                 wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
@@ -760,6 +765,7 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
 
          item = new wxTextCtrl(this, ID_NYQ_TEXT+i, ctrl->valStr,
                                wxDefaultPosition, wxSize(150, -1));
+         item->SetName(ctrl->name);
          grid->Add(item, 0, wxALIGN_CENTRE |
                    wxALIGN_CENTER_VERTICAL | wxALL, 5);
       }
@@ -786,9 +792,10 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
 
          wxChoice *choice = new wxChoice( this, ID_NYQ_CHOICE + i, 
                wxDefaultPosition, wxSize( 150, -1 ), choices );
+         choice->SetName(ctrl->name);
          
          int val = ( int )ctrl->val;
-         if( val >= 0 && val < choice->GetCount() )
+         if( val >= 0 && val < (int)choice->GetCount() )
             choice->SetSelection( val );
         
          grid->Add( 10, 10 );
@@ -802,11 +809,15 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
 
          item = new wxTextCtrl(this, ID_NYQ_TEXT+i, wxT(""),
                                wxDefaultPosition, wxSize(60, -1));
+         item->SetName(ctrl->name);
+
          grid->Add(item, 0, wxALIGN_CENTRE |
                    wxALIGN_CENTER_VERTICAL | wxALL, 5);
          
          item = new wxSlider(this, ID_NYQ_SLIDER+i, val, 0, ctrl->ticks,
                              wxDefaultPosition, wxSize(150, -1));
+         item->SetName(ctrl->name);
+
          grid->Add(item, 0, wxALIGN_CENTRE |
                    wxALIGN_CENTER_VERTICAL | wxALL, 5);
       }

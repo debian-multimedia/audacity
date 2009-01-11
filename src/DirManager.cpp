@@ -67,6 +67,7 @@
 #include "blockfile/SimpleBlockFile.h"
 #include "blockfile/SilentBlockFile.h"
 #include "blockfile/PCMAliasBlockFile.h"
+#include "blockfile/ODPCMAliasBlockFile.h"
 #include "DirManager.h"
 #include "Internat.h"
 #include "Project.h"
@@ -75,7 +76,7 @@
 #include "widgets/MultiDialog.h"
 
 #include "prefs/PrefsDialog.h"
-
+#include "ondemand/ODManager.h"
 // Static class variables
 
 int DirManager::numDirManagers = 0;
@@ -164,9 +165,9 @@ static int rm_dash_rf_enumerate_i(wxString dirpath,
                                   wxString dirspec,
                                   int files_p,int dirs_p,
                                   int progress_count,int progress_bias,
-                                  const wxChar *prompt){
-
-   AudacityProject *p = GetActiveProject();
+                                  const wxChar *prompt,
+                                  ProgressDialog * progress)
+{
    int count=0;
    bool cont;
 
@@ -184,9 +185,9 @@ static int rm_dash_rf_enumerate_i(wxString dirpath,
             
             cont = dir.GetNext(&name);
             
-            if (prompt && p)
-               p->ProgressUpdate(int ((count+progress_bias * 1000.0) / 
-                                 progress_count));
+            if (progress)
+               progress->Update(count + progress_bias,
+                                progress_count);
          }
       }
 
@@ -195,7 +196,7 @@ static int rm_dash_rf_enumerate_i(wxString dirpath,
          wxString subdirpath=dirpath + wxFILE_SEP_PATH + name;
          count+=rm_dash_rf_enumerate_i(subdirpath,flist,wxEmptyString,
                                      files_p,dirs_p,progress_count,
-                                     count+progress_bias,prompt);  
+                                     count+progress_bias,prompt,progress);  
          cont = dir.GetNext(&name);
       }
    }
@@ -214,18 +215,20 @@ static int rm_dash_rf_enumerate_prompt(wxString dirpath,
                                        wxString dirspec,
                                        int files_p,int dirs_p,
                                        int progress_count,
-                                       const wxChar *prompt){
-   AudacityProject *p = GetActiveProject();
+                                       const wxChar *prompt)
+{
+   ProgressDialog *progress = NULL;
 
-   if (p)
-      p->ProgressShow(_("Progress"), prompt);
+   if (prompt)
+      progress = new ProgressDialog(_("Progress"), prompt);
 
    int count=rm_dash_rf_enumerate_i(dirpath, flist, dirspec, files_p,dirs_p,
                                     progress_count,0,
-                                    prompt);
+                                    prompt,
+                                    progress);
 
-   if (p)
-      p->ProgressHide();
+   if (progress)
+      delete progress;
 
    return count;
 }
@@ -236,20 +239,20 @@ static int rm_dash_rf_enumerate(wxString dirpath,
                                 int files_p,int dirs_p){
 
    return rm_dash_rf_enumerate_i(dirpath, flist, dirspec, files_p,dirs_p,
-                                    0,0,NULL);
+                                    0,0,NULL,NULL);
 
 }
 
 
 static void rm_dash_rf_execute(wxArrayString &fList, 
                                int count, int files_p, int dirs_p,
-                               const wxChar *prompt){
+                               const wxChar *prompt)
+{
+   ProgressDialog *progress = NULL;
 
-   AudacityProject *p = GetActiveProject();
+   if (prompt)
+      progress = new ProgressDialog(_("Progress"), prompt);
 
-   if (prompt && p)
-      p->ProgressShow(_("Progress"), prompt);
-  
    for (int i = 0; i < count; i++) {
       const wxChar *file = fList[i].c_str();
       if(files_p){
@@ -259,12 +262,12 @@ static void rm_dash_rf_execute(wxArrayString &fList,
          wxRmdir(file);
       }
 
-      if (prompt && p)
-         p->ProgressUpdate(int ((i * 1000.0) / count));
+      if (progress)
+         progress->Update(i, count);
    }
    
-   if (prompt && p)
-      p->ProgressHide();
+   if (progress)
+      delete progress;
 }
 
 // static
@@ -314,6 +317,10 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
       chmod(OSFILENAME(projFull), 0775);
       #endif
 
+      #ifdef __WXMAC__
+      chmod(OSFILENAME(projFull), 0775);
+      #endif
+
    } else {
       #ifndef __WXMAC__
       if (!wxDirExists(projFull))
@@ -327,10 +334,8 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
       saved version of the old project must not be moved,
       otherwise the old project would not be safe. */
 
-   AudacityProject *p = GetActiveProject();
-   if (p)
-      p->ProgressShow(_("Progress"),
-                      _("Saving project data files"));
+   ProgressDialog *progress = new ProgressDialog(_("Progress"),
+                                                 _("Saving project data files"));
 
    int total=blockFileHash.size();
    int count=0;
@@ -346,8 +351,7 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
          success = MoveToNewProjectDirectory(b);
       }
 
-      if (p)
-         p->ProgressUpdate(int ((count * 1000.0) / total));
+      progress->Update(count, total);
 
       i++;
       count++;
@@ -367,8 +371,8 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
          BlockFile *b = i->second;
          MoveToNewProjectDirectory(b);
 
-         if (count>=0 && p)
-            p->ProgressUpdate(int ((count * 1000.0) / total));
+         if (count>=0)
+            progress->Update(count, total);
 
          i++;
          count--;
@@ -378,14 +382,12 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
       this->projPath = oldPath;
       this->projName = oldName;
 
-      if (p)
-         p->ProgressHide();
+      delete progress;
 
       return false;
    }
 
-   if (p)
-      p->ProgressHide();
+   delete progress;
 
    // Some subtlety; SetProject is used both to move a temp project
    // into a permanent home as well as just set up path variables when
@@ -400,7 +402,9 @@ bool DirManager::SetProject(wxString & projPath, wxString & projName,
       
       wxArrayString dirlist;
       count=rm_dash_rf_enumerate(cleanupLoc1,dirlist,wxEmptyString,0,1);
-      count+=rm_dash_rf_enumerate(cleanupLoc2,dirlist,wxEmptyString,0,1);
+//This destroys the empty dirs of the OD block files, which are yet to come. com
+//Dont know if this will make the project dirty, but I doubt it. (mchinen)
+//      count+=rm_dash_rf_enumerate(cleanupLoc2,dirlist,wxEmptyString,0,1);
       
       if(count)
          rm_dash_rf_execute(dirlist,count,0,1,_("Cleaning up cache directories"));
@@ -458,10 +462,18 @@ wxFileName DirManager::MakeBlockFilePath(wxString value){
       wxString topdir=value.Mid(0,3);
       wxString middir=wxT("d");
       middir.Append(value.Mid(3,2));
-      
-      dir.AppendDir(topdir);
+
+      dir.AppendDir(topdir);      
       dir.AppendDir(middir);
-      if(!dir.DirExists())dir.Mkdir(0777,wxPATH_MKDIR_FULL);
+
+      if(!dir.DirExists()) 
+      {
+         if(!dir.Mkdir(0777,wxPATH_MKDIR_FULL))
+         {
+            printf("mkdir in dirman failed\n");
+         }
+      }
+      
    }
    return dir;
 }
@@ -771,6 +783,22 @@ BlockFile *DirManager::NewAliasBlockFile(
    return newBlockFile;
 }
 
+BlockFile *DirManager::NewODAliasBlockFile(
+                                 wxString aliasedFile, sampleCount aliasStart,
+                                 sampleCount aliasLen, int aliasChannel)
+{
+   wxFileName fileName = MakeBlockFileName();
+
+   BlockFile *newBlockFile =
+       new ODPCMAliasBlockFile(fileName,
+                             aliasedFile, aliasStart, aliasLen, aliasChannel);
+
+   blockFileHash[fileName.GetName()]=newBlockFile;
+   aliasList.Add(aliasedFile);
+
+   return newBlockFile;
+}
+
 // Adds one to the reference count of the block file,
 // UNLESS it is "locked", then it makes a new copy of
 // the BlockFile.
@@ -787,10 +815,15 @@ BlockFile *DirManager::CopyBlockFile(BlockFile *b)
    // as the existing file
    newFile.SetExt(b->GetFileName().GetExt());
 
-   if( !wxCopyFile(b->GetFileName().GetFullPath(),
+   //some block files such as ODPCMAliasBlockFIle don't always have
+   //a summary file, so we should check before we copy.
+   if(b->IsSummaryAvailable())
+   {
+      if( !wxCopyFile(b->GetFileName().GetFullPath(),
                    newFile.GetFullPath()) )
-      return NULL;
-
+         return NULL;
+   }
+   
    BlockFile *b2 = b->Copy(newFile);
 
    if (b2 == NULL)
@@ -819,6 +852,14 @@ bool DirManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
       pBlockFile = SimpleBlockFile::BuildFromXML(*this, attrs);
    else if( !wxStricmp(tag, wxT("pcmaliasblockfile")) )
       pBlockFile = PCMAliasBlockFile::BuildFromXML(*this, attrs);
+   else if( !wxStricmp(tag, wxT("odpcmaliasblockfile")) )
+   {
+      pBlockFile = ODPCMAliasBlockFile::BuildFromXML(*this, attrs);
+      //in the case of loading an OD file, we need to schedule the ODManager to begin OD computing of summary
+      //However, because we don't have access to the track or even the Sequence from this call, we mark a flag
+      //in the ODMan and check it later.
+      ODManager::MarkLoadedODFlag();
+   }
    else if( !wxStricmp(tag, wxT("blockfile")) ||
             !wxStricmp(tag, wxT("legacyblockfile")) ) {
       // Support Audacity version 1.1.1 project files
@@ -888,24 +929,49 @@ bool DirManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
 bool DirManager::MoveToNewProjectDirectory(BlockFile *f)
 {
    wxFileName newFileName;
-   wxFileName oldFileName=f->mFileName;
-   AssignFile(newFileName,f->mFileName.GetFullName(),FALSE); 
+   wxFileName oldFileName=f->GetFileName();
+   AssignFile(newFileName,f->GetFileName().GetFullName(),FALSE); 
 
-   if ( !(newFileName == f->mFileName) ) {
-      bool ok = wxRenameFile(f->mFileName.GetFullPath(),
+   if ( !(newFileName == f->GetFileName()) ) {
+      bool ok = f->IsSummaryAvailable() && wxRenameFile(f->GetFileName().GetFullPath(),
                              newFileName.GetFullPath());
 
       if (ok)
-         f->mFileName = newFileName;
+         f->SetFileName(newFileName);
       else {
-         ok = wxCopyFile(f->mFileName.GetFullPath(),
-                         newFileName.GetFullPath());
-         if (ok) {
-            wxRemoveFile(f->mFileName.GetFullPath());
-            f->mFileName = newFileName;
+         
+         //check to see that summary exists before we copy.
+         bool summaryExisted =  f->IsSummaryAvailable();
+         if( summaryExisted)
+         {
+            if(!wxRenameFile(f->GetFileName().GetFullPath(),
+                             newFileName.GetFullPath()))
+                             /*wxCopyFile(f->GetFileName().GetFullPath(),
+                         newFileName.GetFullPath()))*/
+               return false;
+//            wxRemoveFile(f->GetFileName().GetFullPath());
          }
-         else
-            return false;
+         f->SetFileName(newFileName);
+            
+         //there is a small chance that the summary has begun to be computed on a different thread with the
+         //original filename.  we need to catch this case by waiting for it to finish and then copy.
+         if(!summaryExisted && (f->IsSummaryAvailable()||f->IsSummaryBeingComputed()))
+         {
+            //block to make sure OD files don't get written while we are changing file names.
+            //(It is important that OD files set this lock while computing their summary files.)
+            while(f->IsSummaryBeingComputed() && !f->IsSummaryAvailable())
+               ::wxMilliSleep(50);
+            
+            //check to make sure the oldfile exists.  
+            //if it doesn't, we can assume it was written to the new name, which is fine.
+            if(wxFileExists(oldFileName.GetFullPath()))
+            {
+               ok = wxCopyFile(oldFileName.GetFullPath(),
+                        newFileName.GetFullPath());
+               if(ok)
+                  wxRemoveFile(f->GetFileName().GetFullPath());
+            }
+         }
       }
    }
 
@@ -915,19 +981,62 @@ bool DirManager::MoveToNewProjectDirectory(BlockFile *f)
 bool DirManager::CopyToNewProjectDirectory(BlockFile *f)
 {
    wxFileName newFileName;
-   AssignFile(newFileName,f->mFileName.GetFullName(),FALSE); 
+   wxFileName oldFileName=f->GetFileName();
+   AssignFile(newFileName,f->GetFileName().GetFullName(),FALSE); 
 
-   if ( !(newFileName == f->mFileName) ) {
-      bool ok = wxCopyFile(f->mFileName.GetFullPath(),
-                           newFileName.GetFullPath());
-      if (ok) {
-         f->mFileName = newFileName;
+   //mchinen:5/31/08:adding OD support 
+   //But also I'm also wondering if we need to delete the copied file here, while i'm reimplementing.
+   //see original code below - I don't see where that file will ever get delted or used again.
+   if ( !(newFileName == f->GetFileName()) ) {
+      bool ok=true;
+      bool summaryExisted =  f->IsSummaryAvailable();
+      
+      if( summaryExisted)
+      {   
+        if(!wxCopyFile(f->GetFileName().GetFullPath(),
+                        newFileName.GetFullPath()))
+               return false;
+         //TODO:make sure we shouldn't delete               
+         //   wxRemoveFile(f->mFileName.GetFullPath());
+
+      }  
+        
+      f->SetFileName(newFileName);
+            
+      //there is a small chance that the summary has begun to be computed on a different thread with the
+      //original filename.  we need to catch this case by waiting for it to finish and then copy.
+      if(!summaryExisted && (f->IsSummaryAvailable()||f->IsSummaryBeingComputed()))
+      {
+         //block to make sure OD files don't get written while we are changing file names.
+         //(It is important that OD files set this lock while computing their summary files.)
+         while(f->IsSummaryBeingComputed() && !f->IsSummaryAvailable())
+            ::wxMilliSleep(50);
+            
+         //check to make sure the oldfile exists.  
+         //if it doesn't, we can assume it was written to the new name, which is fine.
+         if(wxFileExists(oldFileName.GetFullPath()))
+         {
+            ok = wxCopyFile(oldFileName.GetFullPath(),
+                     newFileName.GetFullPath());
+         //     if(ok)
+         //      wxRemoveFile(f->mFileName.GetFullPath());
+         }
       }
-      else
-         return false;
    }
-
    return true;
+//
+//   
+//   if ( !(newFileName == f->mFileName) ) {
+//      bool ok = wxCopyFile(f->mFileName.GetFullPath(),
+//                           newFileName.GetFullPath());
+//      if (ok) {
+//         f->mFileName = newFileName;
+//      }
+//      else
+//         return false;
+//   }
+//
+//   return true;
 }
 
 void DirManager::Ref(BlockFile * f)
@@ -1091,7 +1200,7 @@ void DirManager::Deref()
 // good thing; this is one reason why we use the hash and not the most
 // recent savefile.
 
-int DirManager::ProjectFSCK(bool forceerror, bool silentlycorrect)
+int DirManager::ProjectFSCK(bool forceerror, bool silentlycorrect, bool bIgnoreNonAUs /*= true*/)
 {
       
    // get a rough guess of how many blockfiles will be found/processed
@@ -1121,7 +1230,10 @@ int DirManager::ProjectFSCK(bool forceerror, bool silentlycorrect)
       wxString basename=fullname.GetName();
       
       diskFileHash[basename.c_str()]=0; // just needs to be defined
-      if(blockFileHash.find(basename) == blockFileHash.end()){
+      if ((blockFileHash.find(basename) == blockFileHash.end()) &&       // is orphaned
+            (!bIgnoreNonAUs ||      // check only AU, e.g., not an imported ogg or branding jpg
+               fullname.GetExt().IsSameAs(wxT("au"))))
+      {
          // the blockfile on disk is orphaned
          orphanList.Add(fullname.GetFullPath());
          if (!silentlycorrect)
@@ -1161,7 +1273,7 @@ int DirManager::ProjectFSCK(bool forceerror, bool silentlycorrect)
       wxString key=i->first;
       BlockFile *b=i->second;
       
-      if(b->IsAlias()){
+      if(b->IsAlias() && b->IsSummaryAvailable()){
          /* don't look in hash; that might find files the user moved
             that the Blockfile abstraction can't find itself */
          wxFileName file=MakeBlockFilePath(key);
@@ -1199,10 +1311,10 @@ int DirManager::ProjectFSCK(bool forceerror, bool silentlycorrect)
    
    // First, pop the log so the user can see what be up.
    if(forceerror ||
-      (!orphanList.IsEmpty() ||
+      ((!orphanList.IsEmpty() ||
       !missingAliasList.empty() ||
       !missingDataList.empty() ||
-      !missingSummaryList.empty()) && !silentlycorrect){
+      !missingSummaryList.empty()) && !silentlycorrect)){
 
       wxLogWarning(_("Project check found inconsistencies inspecting the loaded project data;\nclick 'Details' for a complete list of errors, or 'OK' to proceed to more options."));
       
@@ -1442,11 +1554,9 @@ void DirManager::FillBlockfilesCache()
    
    if (numNeed == 0)
       return;
-      
-   AudacityProject *p = GetActiveProject();
-   
-   p->ProgressShow(_("Caching audio"),
-      _("Caching audio into memory..."));
+
+   ProgressDialog progress(_("Caching audio"),
+                           _("Caching audio into memory..."));
 
    i = blockFileHash.begin();
    int current = 0;
@@ -1455,13 +1565,11 @@ void DirManager::FillBlockfilesCache()
       BlockFile *b = i->second;
       if (b->GetNeedFillCache())
          b->FillCache();
-      if (!p->ProgressUpdate((int)((current * 1000.0) / numNeed)))
+      if (!progress.Update(current, numNeed))
          break; // user cancelled progress dialog, stop caching
       i++;
       current++;
    }
-   
-   p->ProgressHide();
 }
 
 void DirManager::WriteCacheToDisk()
@@ -1480,11 +1588,9 @@ void DirManager::WriteCacheToDisk()
    
    if (numNeed == 0)
       return;
-      
-   AudacityProject *p = GetActiveProject();
-   
-   p->ProgressShow(_("Saving recorded audio"),
-      _("Saving recorded audio to disk..."));
+
+   ProgressDialog progress(_("Saving recorded audio"),
+                           _("Saving recorded audio to disk..."));
 
    i = blockFileHash.begin();
    int current = 0;
@@ -1494,13 +1600,11 @@ void DirManager::WriteCacheToDisk()
       if (b->GetNeedWriteCacheToDisk())
       {
          b->WriteCacheToDisk();
-         p->ProgressUpdate((int)((current * 1000.0) / numNeed));
+         progress.Update(current, numNeed);
       }
       i++;
       current++;
    }
-   
-   p->ProgressHide();
 }
 
 

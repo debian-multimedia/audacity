@@ -16,6 +16,7 @@
 #include "Sequence.h"
 #include "WaveClip.h"
 #include "Experimental.h"
+#include "widgets/ProgressDialog.h"
 
 #include <wx/gdicmn.h>
 #include <wx/longlong.h>
@@ -25,8 +26,6 @@
 // Tolerance for merging wave tracks (in seconds)
 //
 #define WAVETRACK_MERGE_POINT_TOLERANCE 0.01
-
-typedef wxLongLong_t longSampleCount; /* 64-bit int */
 
 /// \brief Structure to hold region of a wavetrack and a comparison function
 /// for sortability.
@@ -147,8 +146,12 @@ class AUDACITY_DLL_API WaveTrack: public Track {
 
    virtual bool Trim (double t0, double t1);
 
+   bool HandleGroupClear(double t0, double t1, bool addCutLines, bool split);
    bool HandleClear(double t0, double t1,
                     bool addCutLines, bool split);
+                    
+   bool HandleGroupPaste(double t0, Track *src);
+   bool HandlePaste(double t0, Track *src);
 
    // Returns true if there are no WaveClips in that region
    bool IsEmpty(double t0, double t1);
@@ -161,7 +164,13 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    bool Flush();
 
    bool AppendAlias(wxString fName, sampleCount start,
-                    sampleCount len, int channel);
+                    sampleCount len, int channel,bool useOD);
+                    
+   ///Deletes all clips' wavecaches.  Careful, This may not be threadsafe.
+   void DeleteWaveCaches();
+   
+   ///Adds an invalid region to the wavecache so it redraws that portion only.
+   void  AddInvalidRegion(sampleCount startSample, sampleCount endSample);
                     
    ///
    /// MM: Now that each wave track can contain multiple clips, we don't
@@ -174,9 +183,9 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    /// guaranteed that the same samples are affected.
    ///
    bool Get(samplePtr buffer, sampleFormat format,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
    bool Set(samplePtr buffer, sampleFormat format,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
    void GetEnvelopeValues(double *buffer, int bufferLen,
                          double t0, double tstep);
    bool GetMinMax(float *min, float *max,
@@ -198,7 +207,7 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    // for efficiency
    //
 
-   sampleCount GetBestBlockSize(longSampleCount t);
+   sampleCount GetBestBlockSize(sampleCount t);
    sampleCount GetMaxBlockSize();
    sampleCount GetIdealBlockSize();
 
@@ -220,13 +229,14 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    //
 
    bool Lock();
+   bool CloseLock(); //similar to Lock but should be called when the project closes.
    bool Unlock();
 
    // Utility functions to convert between times in seconds
    // and sample positions
 
-   longSampleCount TimeToLongSamples(double t0);
-   double LongSamplesToTime(longSampleCount pos);
+   sampleCount TimeToLongSamples(double t0);
+   double LongSamplesToTime(sampleCount pos);
 
    // Get access to the clips in the tracks. This is used by
    // track artists and also by TrackPanel when sliding...it would
@@ -301,7 +311,10 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    virtual void Merge(const Track &orig);
    
    // Resample track (i.e. all clips in the track)
-   bool Resample(int rate, bool progress = false);
+   bool Resample(int rate, ProgressDialog *progress = NULL);
+
+   void SetStickyTrack(LabelTrack *lt) { mStickyLabelTrack = lt; }
+   LabelTrack* GetStickyTrack() { return mStickyLabelTrack; }
 
    //
    // The following code will eventually become part of a GUIWaveTrack
@@ -312,9 +325,7 @@ class AUDACITY_DLL_API WaveTrack: public Track {
       WaveformDisplay,
       WaveformDBDisplay,
       SpectrumDisplay,
-#ifdef LOGARITHMIC_SPECTRUM
 		SpectrumLogDisplay,
-#endif
       PitchDisplay
    } WaveTrackDisplay;
 
@@ -323,9 +334,9 @@ class AUDACITY_DLL_API WaveTrack: public Track {
 
    void GetDisplayBounds(float *min, float *max);
    void SetDisplayBounds(float min, float max);
+   
 
  protected:
-
    //
    // Protected variables
    //
@@ -363,6 +374,7 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    wxCriticalSection mFlushCriticalSection;
    wxCriticalSection mAppendCriticalSection;
    double mLegacyProjectFileOffset;
+   LabelTrack *mStickyLabelTrack;
 
 };
 

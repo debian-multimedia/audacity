@@ -5,6 +5,7 @@
   ImportLOF.h
 
   David I. Murray
+  Leland Lucius
 
 *//****************************************************************//**
 
@@ -75,7 +76,9 @@
 #include <wx/tokenzr.h>
 
 #include "ImportLOF.h"
+#ifdef USE_MIDI
 #include "ImportMIDI.h"
+#endif // USE_MIDI
 #include "../WaveTrack.h"
 #include "ImportPlugin.h"
 #include "Import.h"
@@ -99,8 +102,8 @@ static const wxChar *exts[] =
 class LOFImportPlugin : public ImportPlugin
 {
 public:
-   LOFImportPlugin():
-      ImportPlugin(wxArrayString(WXSIZEOF(exts), exts))
+   LOFImportPlugin()
+   :  ImportPlugin(wxArrayString(WXSIZEOF(exts), exts))
    {
    }
 
@@ -114,15 +117,19 @@ public:
 class LOFImportFileHandle : public ImportFileHandle
 {
 public:
-   LOFImportFileHandle(wxTextFile *file);
+   LOFImportFileHandle(const wxString & name, wxTextFile *file);
    ~LOFImportFileHandle();
 
-   void SetProgressCallback(progress_callback_t function,
-                            void *userData);
    wxString GetFileDescription();
    int GetFileUncompressedBytes();
-   bool Import(TrackFactory *trackFactory, Track ***outTracks,
-               int *outNumTracks, Tags *tags);
+   int Import(TrackFactory *trackFactory, Track ***outTracks,
+              int *outNumTracks, Tags *tags);
+
+   wxInt32 GetStreamCount(){ return 1; }
+
+   wxArrayString *GetStreamInfo(){ return NULL; }
+
+   void SetStreamUsage(wxInt32 StreamID, bool Use){}
 
 private:
    // Takes a line of text in lof file and interprets it and opens files
@@ -130,11 +137,8 @@ private:
    void doDuration();
    void doScrollOffset();
 
-   wxString             mName;
-   wxTextFile           *mTextFile;
-   void                 *mUserData;
-   progress_callback_t  mProgressCallback;
-   AudacityProject     *mProject;
+   wxTextFile *mTextFile;
+   AudacityProject *mProject;
 
    // In order to know whether or not to create a new window
    bool              windowCalledOnce;
@@ -148,10 +152,9 @@ private:
    double            scrollOffset;
 };
 
-LOFImportFileHandle::LOFImportFileHandle(wxTextFile *file):
-   mTextFile(file),
-   mUserData(NULL),
-   mProgressCallback(NULL)
+LOFImportFileHandle::LOFImportFileHandle(const wxString & name, wxTextFile *file)
+:  ImportFileHandle(name),
+   mTextFile(file)
 {
    mProject = GetActiveProject();
    windowCalledOnce = false;
@@ -207,14 +210,7 @@ ImportFileHandle *LOFImportPlugin::Open(wxString filename)
       return NULL;
    }
 
-   return new LOFImportFileHandle(file);
-}
-
-void LOFImportFileHandle::SetProgressCallback(progress_callback_t progressCallback,
-                                      void *userData)
-{
-   mProgressCallback = progressCallback;
-   mUserData = userData;
+   return new LOFImportFileHandle(filename, file);
 }
 
 wxString LOFImportFileHandle::GetFileDescription()
@@ -227,15 +223,15 @@ int LOFImportFileHandle::GetFileUncompressedBytes()
    return 0;
 }
 
-bool LOFImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
-                                 int *outNumTracks, Tags *tags)
+int LOFImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
+                                int *outNumTracks, Tags *tags)
 {
    wxASSERT(mTextFile->IsOpened());
 
    if(mTextFile->Eof())
    {
       mTextFile->Close();
-      return false;
+      return eImportFailed;
    }
 
    wxString line = mTextFile->GetFirstLine();
@@ -255,9 +251,9 @@ bool LOFImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
 
    // exited ok
    if(mTextFile->Close())
-      return true;
+      return eImportSuccess;
 
-   return false;
+   return eImportFailed;
 }
 
 static int CountNumTracks(AudacityProject *proj)
@@ -356,7 +352,8 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
       // To identify filename and open it
       tokenholder = temptok1.GetNextToken();
       targetfile = temptok1.GetNextToken();
-      
+     
+      #ifdef USE_MIDI
       // If file is a midi
       if (targetfile.AfterLast(wxT('.')).IsSameAs(wxT("mid"), false)
           ||  targetfile.AfterLast(wxT('.')).IsSameAs(wxT("midi"), false))
@@ -372,6 +369,11 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
       // If not a midi, open audio file
       else
       {
+      #else // !USE_MIDI
+         /* if we don't have midi support, go straight on to opening as an
+          * audio file. TODO: Some sort of message here? */
+      {
+      #endif // USE_MIDI
          mProject->OpenFile(targetfile);
       }
 
@@ -408,6 +410,7 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
                for (int i = 1; i < CountNumTracks(mProject) - 1; i++)
                   t = iter.Next();
 
+#ifdef USE_MIDI
                if (targetfile.AfterLast(wxT('.')).IsSameAs(wxT("mid"), false) ||
                    targetfile.AfterLast(wxT('.')).IsSameAs(wxT("midi"), false))
                {
@@ -415,6 +418,7 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
                                _("LOF Error"), wxOK | wxCENTRE, gParentWindow);
                }
                else
+#endif
                {
                   if (CountNumTracks(mProject) == 1)
                      t->SetOffset(offset);

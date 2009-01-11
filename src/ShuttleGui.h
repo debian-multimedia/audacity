@@ -14,6 +14,7 @@
 #ifndef SHUTTLE_GUI
 #define SHUTTLE_GUI
 
+#include "Audacity.h"
 #include "WrappedType.h" 
 
 const int nMaxNestedSizers = 20;
@@ -56,12 +57,14 @@ class wxSizer;
 class wxStaticBox;
 class wxMenuBar;
 class wxMenu;
+class wxSpinCtrl;
+class wxListBox;
 class Shuttle;
 
 class WrappedType;
 
 
-class ShuttleGuiBase
+class AUDACITY_DLL_API ShuttleGuiBase
 {
 public:
    ShuttleGuiBase(wxWindow * pParent,teShuttleMode ShuttleMode);
@@ -75,6 +78,7 @@ public:
    wxWindow * AddWindow(wxWindow * pWindow, int Flags = wxALIGN_CENTRE | wxALL );
    wxSlider * AddSlider(const wxString &Prompt, int pos, int Max, int Min = 0);
    wxSlider * AddVSlider(const wxString &Prompt, int pos, int Max);
+   wxSpinCtrl * AddSpinCtrl(const wxString &Prompt, int Value, int Max, int Min);
 	wxTreeCtrl * AddTree();
 	wxRadioButton * AddRadioButton( const wxString & Prompt );
 	wxRadioButton * AddRadioButtonToGroup( const wxString & Prompt);
@@ -83,6 +87,7 @@ public:
    wxStaticText * AddVariableText(const wxString &Str, bool bCenter = false, int PositionFlags = 0);
    wxTextCtrl * AddTextBox(const wxString &Caption, const wxString &Value, const int nChars);
    wxTextCtrl * AddTextWindow(const wxString &Value);
+   wxListBox * AddListBox(const wxArrayString * pChoices, long style = 0);
    wxListCtrl * AddListControl();
    wxListCtrl * AddListControlReportMode();
    wxCheckBox * AddCheckBox( const wxString &Prompt, const wxString &Selected);
@@ -165,6 +170,10 @@ public:
    wxRadioButton * TieRadioButton( const wxString &Prompt, const int iValue);
    wxRadioButton * TieRadioButton( const wxString &Prompt, const wxString &Value);
 
+   wxSpinCtrl * TieSpinCtrl( const wxString &Prompt, WrappedType & WrappedRef, const int max, const int min = 0 );
+   wxSpinCtrl * TieSpinCtrl( const wxString &Prompt, int &Value, const int max, const int min = 0 );
+
+
 //-- Variants of the standard Tie functions which do two step exchange in one go
 // Note that unlike the other Tie functions, ALL the arguments are const.
 // That's because the data is being exchanged between the dialog and mpShuttle
@@ -198,6 +207,12 @@ public:
       const int iDefault,
       const int max,
       const int min = 0);
+   wxSpinCtrl * TieSpinCtrl(
+      const wxString &Prompt, 
+      const wxString &SettingName, 
+      const int Value,
+      const int max,
+      const int min);
 //-- End of variants.
    void EnableCtrl( bool bEnable );
    void SetSizeHints( int minX, int minY );
@@ -302,7 +317,7 @@ wxSizer *CreateStdButtonSizer( wxWindow *parent,
                                wxButton *extra = NULL );
 
 // ShuttleGui extends ShuttleGuiBase with Audacity specific extensions.
-class ShuttleGui : public ShuttleGuiBase
+class AUDACITY_DLL_API ShuttleGui : public ShuttleGuiBase
 {
 public:
    ShuttleGui(wxWindow * pParent,teShuttleMode ShuttleMode);

@@ -15,6 +15,8 @@
 #include <wx/string.h>
 #include <wx/list.h>
 #include <wx/listimpl.cpp>
+#include <wx/dialog.h>
+#include <wx/listbox.h>
 
 class Tags;
 class TrackFactory;
@@ -55,9 +57,7 @@ public:
               TrackFactory *trackFactory,
               Track *** tracks,
               Tags *tags,
-              wxString &errorMessage,
-              progress_callback_t progressCallback,
-              void *userData);
+              wxString &errorMessage);
 
    // get a possibly more detailed description of the kind of file
    // that is being opened.  ONLY callable from INSIDE THE CALLBACK.
@@ -67,6 +67,34 @@ private:
    ImportPluginList *mImportPluginList;
    UnusableImportPluginList *mUnusableImportPluginList;
    ImportFileHandle *mInFile;
+};
+
+//----------------------------------------------------------------------------
+// ImportStreamDialog
+//----------------------------------------------------------------------------
+
+class ImportStreamDialog: public wxDialog
+{
+public:
+   // constructors and destructors
+   ImportStreamDialog( ImportFileHandle *_mFile,
+      wxWindow *parent, wxWindowID id, const wxString &title,
+      const wxPoint& pos = wxDefaultPosition,
+      const wxSize& size = wxDefaultSize,
+      long style = wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER );
+   virtual ~ImportStreamDialog();
+
+private:
+   ImportFileHandle *mFile;
+   wxInt32 scount;
+   wxListBox *StreamList;
+
+private:
+   void OnOk( wxCommandEvent &event );
+   void OnCancel( wxCommandEvent &event );
+
+private:
+   DECLARE_EVENT_TABLE()
 };
 
 #endif

@@ -15,6 +15,7 @@
 
 #include "Audacity.h"
 
+#include <wx/button.h>
 #include <wx/defs.h>
 #include <wx/choice.h>
 #include <wx/dc.h>
@@ -25,6 +26,7 @@
 #include <wx/msgdlg.h>
 #include <wx/settings.h>
 #include <wx/sizer.h>
+#include <wx/stattext.h>
 #include <wx/textdlg.h>
 
 #include "Internat.h"
@@ -191,7 +193,7 @@ LabelDialog::LabelDialog(wxWindow *parent,
    // Layout the works
    Layout();
 
-   // Resize width base on width of columns and the vertical scrollbar
+   // Resize width based on width of columns and the vertical scrollbar
    wxRect r = mGrid->GetGridColLabelWindow()->GetRect();
    wxScrollBar sb(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSB_VERTICAL);
    r.width += sb.GetSize().GetWidth() + 6;
@@ -516,7 +518,7 @@ void LabelDialog::OnImport(wxCommandEvent &event)
                     wxT(""),       // Name
                     wxT(".txt"),   // Extension
                     _("Text files (*.txt)|*.txt|All files (*.*)|*.*"),
-                    0,        // Flags
+                    wxRESIZE_BORDER, // Flags
                     this);    // Parent
 
    // They gave us one...
@@ -565,7 +567,9 @@ void LabelDialog::OnExport(wxCommandEvent &event)
                         NULL,
                         _("labels.txt"),
                         wxT("txt"),
-                        wxT("*.txt"), wxSAVE | wxOVERWRITE_PROMPT, this);
+                        wxT("*.txt"),
+                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
+                        this);
 
    if (fName == wxT(""))
       return;

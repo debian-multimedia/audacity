@@ -8,6 +8,10 @@
 
 **********************************************************************/
 
+#ifdef _WIN32
+   #include <windows.h>
+#endif
+
 #include <wx/utils.h>
 #include <wx/wxchar.h>
 #include <wx/log.h>
@@ -18,12 +22,23 @@
 #include "../FileFormats.h"
 #include "../Internat.h"
 
+#include "../ondemand/ODManager.h"
+
 PCMAliasBlockFile::PCMAliasBlockFile(wxFileName fileName,
                      wxFileName aliasedFile, sampleCount aliasStart,
                      sampleCount aliasLen, int aliasChannel):
    AliasBlockFile(fileName, aliasedFile, aliasStart, aliasLen, aliasChannel)
 {
    AliasBlockFile::WriteSummary();
+}
+
+PCMAliasBlockFile::PCMAliasBlockFile(wxFileName fileName,
+                     wxFileName aliasedFile, sampleCount aliasStart,
+                     sampleCount aliasLen, int aliasChannel,bool writeSummary):
+   AliasBlockFile(fileName, aliasedFile, aliasStart, aliasLen, aliasChannel)
+{
+   if(writeSummary)
+      AliasBlockFile::WriteSummary();
 }
 
 PCMAliasBlockFile::PCMAliasBlockFile(wxFileName existingFileName,
@@ -61,8 +76,11 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
 
    memset(&info, 0, sizeof(info));
 
+   ODManager::LockLibSndFileMutex();
    SNDFILE *sf=sf_open(OSFILENAME(mAliasedFileName.GetFullPath()),
                         SFM_READ, &info);
+   ODManager::UnlockLibSndFileMutex();
+   
    if (!sf){
       
       memset(data,0,SAMPLE_SIZE(format)*len);
@@ -76,7 +94,9 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
    if(silence) delete silence;
    mSilentAliasLog=FALSE;
 
+   ODManager::LockLibSndFileMutex();
    sf_seek(sf, mAliasStart + start, SEEK_SET);
+   ODManager::UnlockLibSndFileMutex();
    samplePtr buffer = NewSamples(len * info.channels, floatSample);
 
    int framesRead = 0;
@@ -87,7 +107,9 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
       // and the calling method wants 16-bit data, go ahead and
       // read 16-bit data directly.  This is a pretty common
       // case, as most audio files are 16-bit.
+      ODManager::LockLibSndFileMutex();
       framesRead = sf_readf_short(sf, (short *)buffer, len);
+      ODManager::UnlockLibSndFileMutex();
       for (int i = 0; i < framesRead; i++)
          ((short *)data)[i] =
             ((short *)buffer)[(info.channels * i) + mAliasChannel];
@@ -96,7 +118,9 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
       // Otherwise, let libsndfile handle the conversion and
       // scaling, and pass us normalized data as floats.  We can
       // then convert to whatever format we want.
+      ODManager::LockLibSndFileMutex();
       framesRead = sf_readf_float(sf, (float *)buffer, len);
+      ODManager::UnlockLibSndFileMutex();
       float *bufferPtr = &((float *)buffer)[mAliasChannel];
       CopySamples((samplePtr)bufferPtr, floatSample,
                   (samplePtr)data, format,
@@ -104,9 +128,9 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
    }
 
    DeleteSamples(buffer);
-
+   ODManager::LockLibSndFileMutex();
    sf_close(sf);
-
+   ODManager::UnlockLibSndFileMutex();
    return framesRead;
 }
 

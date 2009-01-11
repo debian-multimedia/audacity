@@ -15,6 +15,11 @@ It handles initialization and termination by subclassing wxApp.
 
 *//*******************************************************************/
 
+#if 0
+// This may be used to debug memory leaks.
+// See: Visual Leak Dectector @ http://dmoulding.googlepages.com/vld
+#include <vld.h>
+#endif
 
 #include "Audacity.h" // This should always be included first
 
@@ -67,22 +72,24 @@ It handles initialization and termination by subclassing wxApp.
 #include "Internat.h"
 #include "prefs/PrefsDialog.h"
 #include "Theme.h"
-#include "Experimental.h"
 #include "PlatformCompatibility.h"
 #include "FileNames.h"
 #include "AutoRecovery.h"
 #include "SplashDialog.h"
 #include "FFT.h"
 #include "BlockFile.h"
+#include "ondemand/ODManager.h"
+//temporarilly commented out till it is added to all projects
+//#include "Profiler.h"
 
-#ifdef EXPERIMENTAL_MODULES
 #include "LoadModules.h"
-#endif
 
 #include "import/Import.h"
 #ifdef USE_QUICKTIME
 #include "import/ImportQT.h"
 #endif
+
+#include "FFmpeg.h"
 
 #ifdef _DEBUG
     #ifdef _MSC_VER
@@ -104,68 +111,81 @@ It handles initialization and termination by subclassing wxApp.
 
 // These lines allows conditional inclusion of the various libraries
 // that Audacity can use.
-#  if wxUSE_UNICODE
-#     define U "u"
-#  else
-#     define U ""
-#  endif
-
-#  if DEBUG
-#     define D "d"
-#  else
-#     define D ""
-#  endif
 
 #  if defined(USE_LIBFLAC)
-#     pragma comment(lib, "libFLAC++" U D)
-#     pragma comment(lib, "libFLAC" U D)
+#     pragma comment(lib, "libflac++")
+#     pragma comment(lib, "libflac")
 #  endif
 
 #  if defined(USE_LIBID3TAG)
-#     pragma comment(lib, "libid3tag" U D)
+#     pragma comment(lib, "libid3tag")
+#  endif
+
+#  if defined(USE_LIBLRDF)
+#     pragma comment(lib, "liblrdf")
+#     pragma comment(lib, "raptor")
 #  endif
 
 #  if defined(USE_LIBMAD)
-#     pragma comment(lib, "mad" U D)
+#     pragma comment(lib, "libmad")
 #  endif
 
 #  if defined(USE_LIBRESAMPLE)
-#     pragma comment(lib, "libresample" U D)
+#     pragma comment(lib, "libresample")
 #  endif
 
 #  if defined(USE_LIBSAMPLERATE)
-#     pragma comment(lib, "libsamplerate" U D)
-#  endif
-
-#  if defined(USE_LIBVORBIS)
-#     pragma comment(lib, "ogg_static" U D)
-#     pragma comment(lib, "vorbis_static" U D)
-#     pragma comment(lib, "vorbisfile_static" U D)
-#  endif
-
-#  if defined(USE_NYQUIST)
-#     pragma comment(lib, "libnyquist" U D)
-#  endif
-
-#  if defined(USE_SOUNDTOUCH)
-#     pragma comment(lib, "soundtouch" U D)
+#     pragma comment(lib, "libsamplerate")
 #  endif
 
 #  if defined(USE_LIBTWOLAME)
-#     pragma comment(lib, "twolame_static" U D)
+#     pragma comment(lib, "twolame")
 #  endif
 
-#  undef U
-#  undef D
+#  if defined(USE_LIBVORBIS)
+#     pragma comment(lib, "libogg")
+#     pragma comment(lib, "libvorbis")
+#  endif
+
+#  if defined(USE_MIDI)
+#     pragma comment(lib, "portsmf")
+#  endif
+
+#  if defined(USE_NYQUIST)
+#     pragma comment(lib, "libnyquist")
+#  endif
+
+#  if defined(USE_PORTMIXER)
+#     pragma comment(lib, "portmixer")
+#  endif
+
+#  if defined(EXPERIMENTAL_SCOREALIGN)
+#     pragma comment(lib, "libscorealign")
+#  endif
+
+#  if defined(USE_SLV2)
+#     pragma comment(lib, "slv2")
+#     pragma comment(lib, "librdf")
+#     pragma comment(lib, "raptor")
+#     pragma comment(lib, "rasqal")
+#  endif
+
+#  if defined(USE_SOUNDTOUCH)
+#     pragma comment(lib, "soundtouch")
+#  endif
+
+#  if defined(USE_VAMP)
+#     pragma comment(lib, "libvamp")
+#  endif
 
 #endif //(__WXMSW__)
-
+#if 0
 #if wxUSE_ACCESSIBILITY
 #if wxCHECK_VERSION(2, 8, 0)
-const wxChar overrideTextCtrlNameStr[] = wxT("");
-const wxChar overrideChoiceNameStr[] = wxT("");
-const wxChar overrideComboBoxNameStr[] = wxT("");
-const wxChar overrideSliderNameStr[] = wxT("");
+WXEXPORT const wxChar overrideTextCtrlNameStr[] = wxT("");
+WXEXPORT const wxChar overrideChoiceNameStr[] = wxT("");
+WXEXPORT const wxChar overrideComboBoxNameStr[] = wxT("");
+WXEXPORT const wxChar overrideSliderNameStr[] = wxT("");
 #else
 const wxChar *overrideTextCtrlNameStr = wxT("");
 const wxChar *overrideChoiceNameStr = wxT("");
@@ -173,7 +193,7 @@ const wxChar *overrideComboBoxNameStr = wxT("");
 const wxChar *overrideSliderNameStr = wxT("");
 #endif
 #endif
-
+#endif
 ////////////////////////////////////////////////////////////
 /// Custom events
 ////////////////////////////////////////////////////////////
@@ -230,6 +250,15 @@ void QuitAudacity(bool bForce)
 
    gIsQuitting = true;
 
+   wxLogWindow *lw = wxGetApp().mLogger;
+   if (lw)
+   {
+      lw->EnableLogging(false);
+      lw->SetActiveTarget(NULL);
+      delete lw;
+      wxGetApp().mLogger = NULL;
+   }
+
    // Try to close each open window.  If the user hits Cancel
    // in a Save Changes dialog, don't continue.
    // BG: unless force is true
@@ -264,9 +293,19 @@ void QuitAudacity(bool bForce)
    gParentFrame = NULL;
 
    CloseScreenshotTools();
+   
+   //release ODManager Threads
+   ODManager::Quit();
 
+   //print out profile if we have one by deleting it
+   //temporarilly commented out till it is added to all projects
+   //delete Profiler::Instance();
+   
       //Delete the clipboard
    AudacityProject::DeleteClipboard();
+   
+   //delete the static lock for audacity projects
+   AudacityProject::DeleteAllProjectsDeleteLock();
 
    if (bForce)
    {
@@ -548,7 +587,28 @@ void AudacityApp::InitLang( const wxString & lang )
 
    if (lang != wxT("en")) {
       wxLogNull nolog;
+
+// LL: I do not know why loading translations fail on the Mac if LANG is not
+//     set, but for some reason it does.  So wrap the creation of wxLocale
+//     with the default translation.
+#if defined(__WXMAC__)
+      wxString oldval;
+      bool existed;
+      
+      existed = wxGetEnv(wxT("LANG"), &oldval);
+      wxSetEnv(wxT("LANG"), wxT("en_US"));
+#endif
+
       mLocale = new wxLocale(wxT(""), lang, wxT(""), true, true);
+
+#if defined(__WXMAC__)
+      if (existed) {
+         wxSetEnv(wxT("LANG"), oldval);
+      }
+      else {
+         wxUnsetEnv(wxT("LANG"));
+      }
+#endif
 
       for(unsigned int i=0; i<audacityPathList.GetCount(); i++)
          mLocale->AddCatalogLookupPathPrefix(audacityPathList[i]);
@@ -572,6 +632,8 @@ void AudacityApp::InitLang( const wxString & lang )
 // main frame
 bool AudacityApp::OnInit()
 {
+
+   mLogger = NULL;
    #if USE_QUICKTIME
    ::InitQuicktime();
    #endif
@@ -656,7 +718,8 @@ bool AudacityApp::OnInit()
    defaultTempDir.Printf(wxT("%s\\audacity_temp"), 
                          tmpDirLoc.c_str());
    #endif //__WXWSW__
-   #ifdef __MACOSX__
+
+   #ifdef __WXMAC__
    // On Mac OS X, the path to the Audacity program is in argv[0]
    wxString progPath = wxPathOnly(argv[0]);
 
@@ -670,28 +733,17 @@ bool AudacityApp::OnInit()
    defaultTempDir.Printf(wxT("%s/audacity-%s"), 
                          tmpDirLoc.c_str(),
                          wxGetUserId().c_str());
-   #endif //__MACOSX__
-   #ifdef __MACOS9__
-   // On Mac OS 9, the initial working directory is the one that
-   // contains the program.
-   wxString progPath = wxGetCwd();
-   AddUniquePathToPathList(progPath, audacityPathList);
-   AddUniquePathToPathList(progPath+wxT(":Languages"), audacityPathList);
-   defaultTempDir.Printf(wxT("%s/audacity_temp"), 
-                         tmpDirLoc.c_str());
-   #endif //__MACOS9__
+   #endif //__WXMAC__
 
    // BG: Create a temporary window to set as the top window
    wxFrame *temporarywindow = new wxFrame(NULL, -1, wxT("temporarytopwindow"));
    SetTopWindow(temporarywindow);
 
-#ifdef EXPERIMENTAL_MODULES
-#ifdef __WXMSW__
-#ifdef WXUSINGDLL
+   // Initialize the ModuleManager
+   ModuleManager::Initialize();
+
+   // load audacity plug-in modules
    LoadModules();
-#endif
-#endif
-#endif
 
    // Locale
    // wxWindows 2.3 has a much nicer wxLocale API.  We can make this code much
@@ -726,6 +778,8 @@ bool AudacityApp::OnInit()
       return false;
    }
 
+
+
    // More initialization
    InitCleanSpeech();
 
@@ -733,6 +787,10 @@ bool AudacityApp::OnInit()
    InitAudioIO();
 
    LoadEffects();
+#ifdef EXPERIMENTAL_ONDEMAND
+   //The On-Demand managerr initializes the first time its singleton is accessed
+//   ODManager::Instance();
+#endif
 
 #ifdef __WXMAC__
 
@@ -763,9 +821,11 @@ bool AudacityApp::OnInit()
    SetExitOnFrameDelete(true);
 
 
+
    AudacityProject *project = CreateNewAudacityProject(gParentWindow);
 
-#ifdef EXPERIMENTAL_MODULES
+
+
    project->Show( false );
    wxWindow * pWnd = MakeHijackPanel() ;
    if( pWnd )
@@ -774,28 +834,17 @@ bool AudacityApp::OnInit()
       pWnd->Show( true );
    }
    else
-#endif  //EXPERIMENTAL_MODULES 
    {
       SetTopWindow(project);
       project->Show( true );
    }
 
+
+
    delete temporarywindow;
    
    if( project->mShowSplashScreen )
       project->OnHelpWelcome();//ShowSplashScreen( project );
-
-   //
-   // Auto-recovery
-   //
-
-   bool didRecoverAnything = false;
-   if (!ShowAutoRecoveryDialogIfNeeded(&project, &didRecoverAnything))
-   {
-      // Important: Prevent deleting any temporary files!
-      DirManager::SetDontDeleteTempFiles();
-      QuitAudacity(true);
-   }
 
    // JKC 10-Sep-2007: Enable monitoring from the start.
    // (recommended by lprod.org).
@@ -805,6 +854,25 @@ bool AudacityApp::OnInit()
    project->MayStartMonitoring();
 
    mImporter = new Importer;
+
+   mLogger = new wxLogWindow(NULL,wxT("Debug Log"),false,false);
+   mLogger->SetActiveTarget(mLogger);
+   mLogger->EnableLogging(true);
+   mLogger->SetLogLevel(wxLOG_Max);
+
+   FFmpegStartup();
+
+   //
+   // Auto-recovery
+   //
+   bool didRecoverAnything = false;
+   if (!ShowAutoRecoveryDialogIfNeeded(&project, &didRecoverAnything))
+   {
+      // Important: Prevent deleting any temporary files!
+      DirManager::SetDontDeleteTempFiles();
+      QuitAudacity(true);
+   }
+
 
    //
    // Command-line parsing, but only if we didn't recover
@@ -951,6 +1019,8 @@ bool AudacityApp::OnInit()
 
    gInited = true;
    
+   ModuleManager::Dispatch(AppInitialized);
+
    return TRUE;
 }
 
@@ -1324,6 +1394,9 @@ int AudacityApp::OnExit()
 
    DeinitAudioIO();
    Internat::CleanUp();// JKC
+
+   if (mLogger)
+      delete mLogger;
 
    if (mLocale)
       delete mLocale;

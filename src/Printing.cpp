@@ -107,7 +107,6 @@ bool AudacityPrintout::OnPrintPage(int page)
             artist.DrawWaveform((WaveTrack *)n, *dc, r,
                                 &viewInfo, false, false, false, true, false);
             break;
-#ifdef LOGARITHMIC_SPECTRUM
          case WaveTrack::SpectrumDisplay:
             artist.DrawSpectrum((WaveTrack *)n, *dc, r, &viewInfo, false, false);
             break;
@@ -117,18 +116,13 @@ bool AudacityPrintout::OnPrintPage(int page)
          case WaveTrack::PitchDisplay:
             artist.DrawSpectrum((WaveTrack *)n, *dc, r, &viewInfo, true, false);
             break;
-#else
-         case WaveTrack::SpectrumDisplay:
-            artist.DrawSpectrum((WaveTrack *)n, *dc, r, &viewInfo, false);
-         case WaveTrack::PitchDisplay:
-            artist.DrawSpectrum((WaveTrack *)n, *dc, r, &viewInfo, true);
-            break;
-#endif
          }
          break;
+#ifdef USE_MIDI 
       case Track::Note:
          artist.DrawNoteTrack((NoteTrack *)n, *dc, r, &viewInfo);
          break;
+#endif // USE_MIDI
       case Track::Label:
          artist.DrawLabelTrack((LabelTrack *)n, *dc, r, &viewInfo);
          break;

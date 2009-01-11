@@ -26,6 +26,7 @@ drawing).  Cache's the Spectrogram frequency samples.
 *//*******************************************************************/
 
 #include <math.h>
+#include <vector>
 #include <wx/log.h>
 
 #include "Spectrum.h"
@@ -49,7 +50,9 @@ public:
       min = new float[len];
       max = new float[len];
       rms = new float[len];
+      bl = new int[len];
       where = new sampleCount[len+1];
+      numODPixels=0;
    }
 
    ~WaveCache()
@@ -57,17 +60,157 @@ public:
       delete[] min;
       delete[] max;
       delete[] rms;
+      delete[] bl;
       delete[] where;
+      
+      ClearInvalidRegions();
    }
 
    int          dirty;
    sampleCount  len;
    double       start;
    double       pps;
+   int          rate;
    sampleCount *where;
    float       *min;
    float       *max;
    float       *rms;
+   int         *bl;
+   int         numODPixels;
+   
+   class InvalidRegion
+   {
+   public:
+     InvalidRegion(int s, int e):start(s),end(e){}
+     //start and end pixel count.  (not samples)
+     int start;  
+     int end; 
+   };
+   
+   
+   //Thread safe call to add a new region to invalidate.  If it overlaps with other regions, it unions the them.
+   void AddInvalidRegion(sampleCount sampleStart, sampleCount sampleEnd)
+   {
+      //use pps to figure out where we are.  (pixels per second)
+      if(pps ==0)
+         return;
+      double samplesPerPixel = rate/pps;
+      //rate is SR, start is first time of the waveform (in second) on cache 
+      long invalStart = (sampleStart - start*rate)/samplesPerPixel ;
+      
+      long invalEnd = (sampleEnd - start*rate)/samplesPerPixel +1; //we should cover the end..
+      
+      //if they are both off the cache boundary in the same direction, the cache is missed,
+      //so we are safe, and don't need to track this one.
+      if((invalStart<0 && invalEnd <0) || (invalStart>=len && invalEnd >= len))
+         return;
+      
+      //in all other cases, we need to clip the boundries so they make sense with the cache.
+      //for some reason, the cache is set up to access up to array[len], not array[len-1]
+      if(invalStart <0)
+         invalStart =0;
+      else if(invalStart > len)
+         invalStart = len;
+      
+      if(invalEnd <0)
+         invalEnd =0;
+      else if(invalEnd > len)
+         invalEnd = len;
+      
+      
+      mRegionsMutex.Lock();
+      
+      //look thru the region array for a place to insert.  We could make this more spiffy than a linear search
+      //but right now it is not needed since there will usually only be one region (which grows) for OD loading.
+      bool added=false;
+      if(mRegions.size())
+      {
+         for(size_t i=0;i<mRegions.size();i++)
+         {
+            //if the regions intersect OR are pixel adjacent
+            if(mRegions[i]->start <= invalEnd+1 
+               && mRegions[i]->end >= invalStart-1) 
+            {
+               //take the union region
+               if(mRegions[i]->start > invalStart)
+                  mRegions[i]->start = invalStart;
+               if(mRegions[i]->end < invalEnd)
+                  mRegions[i]->end = invalEnd;
+               added=true;
+               break;
+            }
+            
+            //this bit doesn't make sense because it assumes we add in order - now we go backwards after the initial OD finishes
+//            //this array is sorted by start/end points and has no overlaps.   If we've passed all possible intersections, insert.  The array will remain sorted.
+//            if(mRegions[i]->end < invalStart)
+//            {
+//               InvalidRegion* newRegion = new InvalidRegion(invalStart,invalEnd);
+//               mRegions.insert(mRegions.begin()+i,newRegion);
+//               break;
+//            }
+         }
+      }
+      
+      if(!added)
+      {
+         InvalidRegion* newRegion = new InvalidRegion(invalStart,invalEnd);
+         mRegions.insert(mRegions.begin(),newRegion);
+      }
+      
+      
+      //now we must go and patch up all the regions that overlap.  Overlapping regions will be adjacent.
+      for(size_t i=1;i<mRegions.size();i++)
+      {
+         //if the regions intersect OR are pixel adjacent
+         if(mRegions[i]->start <= mRegions[i-1]->end+1 
+            && mRegions[i]->end >= mRegions[i-1]->start-1) 
+         {
+            //take the union region
+            if(mRegions[i]->start > mRegions[i-1]->start)
+               mRegions[i]->start = mRegions[i-1]->start;
+            if(mRegions[i]->end < mRegions[i-1]->end)
+               mRegions[i]->end = mRegions[i-1]->end;
+            
+            //now we must delete the previous region
+            delete mRegions[i-1];
+            mRegions.erase(mRegions.begin()+i-1);
+               //musn't forget to reset cursor
+               i--;
+         }
+         
+         //if we are past the end of the region we added, we are past the area of regions that might be oversecting.
+         if(mRegions[i]->start > invalEnd)
+         {
+            break;
+         }
+      }
+      
+      
+      mRegionsMutex.Unlock();
+   }
+   
+   //lock before calling these in a section.  unlock after finished.
+   int GetNumInvalidRegions(){return mRegions.size();}
+   int GetInvalidRegionStart(int i){return mRegions[i]->start;}
+   int GetInvalidRegionEnd(int i){return mRegions[i]->end;}
+   
+   void LockInvalidRegions(){mRegionsMutex.Lock();}
+   void UnlockInvalidRegions(){mRegionsMutex.Unlock();}
+   
+   void ClearInvalidRegions()
+   {
+      for(size_t i =0;i<mRegions.size();i++)
+      {
+         delete mRegions[i];
+      }
+      mRegions.clear();
+   }
+   
+   
+protected:
+   std::vector<InvalidRegion*> mRegions;
+      ODLock mRegionsMutex;
+   
 };
 
 class SpecCache {
@@ -141,7 +284,7 @@ WaveClip::WaveClip(WaveClip& orig, DirManager *projDirManager)
 
    for (WaveClipList::Node* it=orig.mCutLines.GetFirst(); it; it=it->GetNext())
       mCutLines.Append(new WaveClip(*it->GetData(), projDirManager));
-
+ 
    mAppendBuffer = NULL;
    mAppendBufferLen = 0;
    mDirty = 0;
@@ -169,13 +312,13 @@ void WaveClip::SetOffset(double offset)
 }
 
 bool WaveClip::GetSamples(samplePtr buffer, sampleFormat format,
-                   longSampleCount start, sampleCount len) const
+                   sampleCount start, sampleCount len) const
 {
    return mSequence->Get(buffer, format, start, len);
 }
 
 bool WaveClip::SetSamples(samplePtr buffer, sampleFormat format,
-                   longSampleCount start, sampleCount len)
+                   sampleCount start, sampleCount len)
 {
    bool bResult = mSequence->Set(buffer, format, start, len);
    MarkChanged();
@@ -190,7 +333,7 @@ double WaveClip::GetStartTime() const
 
 double WaveClip::GetEndTime() const
 {
-   longSampleCount numSamples = mSequence->GetNumSamples();
+   sampleCount numSamples = mSequence->GetNumSamples();
    
    double maxLen = mOffset + double(numSamples+mAppendBufferLen)/mRate;
    // JS: calculated value is not the length;
@@ -199,14 +342,33 @@ double WaveClip::GetEndTime() const
    return maxLen;
 }
 
-longSampleCount WaveClip::GetStartSample() const
+sampleCount WaveClip::GetStartSample() const
 {
-   return (longSampleCount)floor(mOffset * mRate + 0.5);
+   return (sampleCount)floor(mOffset * mRate + 0.5);
 }
 
-longSampleCount WaveClip::GetEndSample() const
+sampleCount WaveClip::GetEndSample() const
 {
    return GetStartSample() + mSequence->GetNumSamples();
+}
+
+///Delete the wave cache - force redraw.  Thread-safe
+void WaveClip::DeleteWaveCache()
+{
+   mWaveCacheMutex.Lock();
+   if(mWaveCache!=NULL)
+      delete mWaveCache;
+   mWaveCache = new WaveCache(1);
+   mWaveCacheMutex.Unlock();
+}
+
+///Adds an invalid region to the wavecache so it redraws that portion only.
+void WaveClip::AddInvalidRegion(long startSample, long endSample)
+{
+   mWaveCacheMutex.Lock();
+   if(mWaveCache!=NULL)
+      mWaveCache->AddInvalidRegion(startSample,endSample);
+   mWaveCacheMutex.Unlock();  
 }
 
 //
@@ -214,21 +376,65 @@ longSampleCount WaveClip::GetEndSample() const
 // clipping calculations
 //
 
-bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
+bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,int* bl,
                                sampleCount *where,
                                int numPixels, double t0,
-                               double pixelsPerSecond)
+                               double pixelsPerSecond, bool &isLoadingOD)
 {
+   mWaveCacheMutex.Lock();
+   
+   
    if (mWaveCache &&
        mWaveCache->dirty == mDirty &&
        mWaveCache->start == t0 &&
        mWaveCache->len >= numPixels &&
        mWaveCache->pps == pixelsPerSecond) {
+       
+      //check for invalid regions, and make the bottom if an else if.
+      //invalid regions are kept in a sorted array. 
+      for(int i=0;i<mWaveCache->GetNumInvalidRegions();i++)
+      {  
+         int invStart;
+         invStart = mWaveCache->GetInvalidRegionStart(i);
+         int invEnd;
+         invEnd = mWaveCache->GetInvalidRegionEnd(i);
+         
+         int regionODPixels;
+         regionODPixels =0;
+         int regionODPixelsAfter;
+         regionODPixelsAfter =0;
+         //before check number of ODPixels 
+         for(int j=invStart;j<invEnd;j++)
+         {
+            if(mWaveCache->bl[j]<0)
+               regionODPixels++;
+         }
+         mSequence->GetWaveDisplay(&mWaveCache->min[invStart],
+                                        &mWaveCache->max[invStart],
+                                        &mWaveCache->rms[invStart],
+                                        &mWaveCache->bl[invStart],
+                                        invEnd-invStart,
+                                        &mWaveCache->where[invStart],
+                                        mRate / pixelsPerSecond);
+         //after check number of ODPixels 
+         for(int j=invStart;j<invEnd;j++)
+         {
+            if(mWaveCache->bl[j]<0)
+               regionODPixelsAfter++;
+         }
+         //decrement the number of od pixels.
+         mWaveCache->numODPixels -= (regionODPixels - regionODPixelsAfter);
+      }
+      mWaveCache->ClearInvalidRegions();
+       
 
       memcpy(min, mWaveCache->min, numPixels*sizeof(float));
       memcpy(max, mWaveCache->max, numPixels*sizeof(float));
       memcpy(rms, mWaveCache->rms, numPixels*sizeof(float));
+      memcpy(bl, mWaveCache->bl, numPixels*sizeof(int));
       memcpy(where, mWaveCache->where, (numPixels+1)*sizeof(sampleCount));
+      isLoadingOD = mWaveCache->numODPixels>0;
+      mWaveCacheMutex.Unlock();
       return true;
    }
 
@@ -236,6 +442,7 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
 
    mWaveCache = new WaveCache(numPixels);
    mWaveCache->pps = pixelsPerSecond;
+   mWaveCache->rate = mRate;
    mWaveCache->start = t0;
    double tstep = 1.0 / pixelsPerSecond;
 
@@ -247,6 +454,7 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
                              ((double) x) * mRate * tstep + 0.5);
    }
 
+   //mchinen: I think s0 - s1 represents the range of samples that we will need to look up.  likewise p0-p1 the number of pixels.
    sampleCount s0 = mWaveCache->where[0];
    sampleCount s1 = mWaveCache->where[mWaveCache->len];
    int p0 = 0;
@@ -260,15 +468,43 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
        oldCache->where[0] < mWaveCache->where[mWaveCache->len] &&
        oldCache->where[oldCache->len] > mWaveCache->where[0]) {
 
-      s0 = mWaveCache->where[mWaveCache->len];
-      s1 = mWaveCache->where[0];
+      //now we are assuming the entire range is covered by the old cache and reducing s1/s0 as we find out otherwise.
+      s0 = mWaveCache->where[mWaveCache->len];  //mchinen:s0 is the min sample covered up to by the wave cache.  will shrink if old doen't overlap
+      s1 = mWaveCache->where[0];  //mchinen - same, but the maximum sample covered.  
       p0 = mWaveCache->len;
       p1 = 0;
 
+      //check for invalid regions, and make the bottom if an else if.
+      //invalid regions are keep in a sorted array. 
+      //TODO:integrate into below for loop so that we only load inval regions if 
+      //necessary.  (usually is the case, so no rush.)   
+      //also, we should be updating the NEW cache, but here we are patching the old one up.
+      for(int i=0;i<oldCache->GetNumInvalidRegions();i++)
+      {  
+         int invStart;
+         invStart = oldCache->GetInvalidRegionStart(i);
+         int invEnd;
+         invEnd = oldCache->GetInvalidRegionEnd(i);
+         mSequence->GetWaveDisplay(&oldCache->min[invStart],
+                                        &oldCache->max[invStart],
+                                        &oldCache->rms[invStart],
+                                        &oldCache->bl[invStart],
+                                        invEnd-invStart,
+                                        &oldCache->where[invStart],
+                                        mRate / pixelsPerSecond);
+      }
+      oldCache->ClearInvalidRegions();
+      
       for (x = 0; x < mWaveCache->len; x++)
-
+      {
+          
+         
+         
+         //below is regular cache access.  
          if (mWaveCache->where[x] >= oldCache->where[0] &&
              mWaveCache->where[x] <= oldCache->where[oldCache->len - 1]) {
+             
+             //if we hit an invalid region, load it up.
 
             int ox =
                 int ((double (oldCache->len) *
@@ -279,6 +515,7 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
             mWaveCache->min[x] = oldCache->min[ox];
             mWaveCache->max[x] = oldCache->max[ox];
             mWaveCache->rms[x] = oldCache->rms[ox];
+            mWaveCache->bl[x] = oldCache->bl[ox];
          } else {
             if (mWaveCache->where[x] < s0) {
                s0 = mWaveCache->where[x];
@@ -289,6 +526,7 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
                p1 = x + 1;
             }
          }
+      }
    }
 
    if (p1 > p0) {
@@ -302,14 +540,17 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
          if (mWaveCache->where[a+1] > numSamples)
             break;
 
+      //compute the values that are outside the overlap from scratch.  
       if (a < p1) {
          int i;
 
          sampleFormat seqFormat = mSequence->GetSampleFormat();
-
+		 bool didUpdate = false;
          for(i=a; i<p1; i++) {
-            sampleCount left = mWaveCache->where[i] - numSamples;
-            sampleCount right = mWaveCache->where[i+1] - numSamples;
+            sampleCount left;
+			left = mWaveCache->where[i] - numSamples;
+            sampleCount right;
+			right = mWaveCache->where[i+1] - numSamples;
 
             //wxCriticalSectionLocker locker(mAppendCriticalSection);
 
@@ -347,25 +588,35 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
                mWaveCache->min[i] = min;
                mWaveCache->max[i] = max;
                mWaveCache->rms[i] = (float)sqrt(sumsq / len);
+               mWaveCache->bl[i] = 1; //for now just fake it.  
 
                if (seqFormat != floatSample)
                   delete[] b;
+				
+			  didUpdate=true;
             }
          }         
 
          // So that the sequence doesn't try to write any
          // of these values
-         p1 = a;
+         //mchinen: but only do this if we've updated pixels in the cache.
+         if(didUpdate)
+			p1 = a;
       }
 
       if (p1 > p0) {
          if (!mSequence->GetWaveDisplay(&mWaveCache->min[p0],
                                         &mWaveCache->max[p0],
                                         &mWaveCache->rms[p0],
+                                        &mWaveCache->bl[p0],
                                         p1-p0,
                                         &mWaveCache->where[p0],
                                         mRate / pixelsPerSecond))
+         {
+            isLoadingOD=false;
+            mWaveCacheMutex.Unlock();
             return false;
+         }
       }
    }
 
@@ -375,8 +626,17 @@ bool WaveClip::GetWaveDisplay(float *min, float *max, float *rms,
    memcpy(min, mWaveCache->min, numPixels*sizeof(float));
    memcpy(max, mWaveCache->max, numPixels*sizeof(float));
    memcpy(rms, mWaveCache->rms, numPixels*sizeof(float));
+   memcpy(bl, mWaveCache->bl, numPixels*sizeof(int));
    memcpy(where, mWaveCache->where, (numPixels+1)*sizeof(sampleCount));
+   
+   //find the number of OD pixels - the only way to do this is by recounting since we've lost some old cache.
+   mWaveCache->numODPixels = 0;
+   for(int j=0;j<mWaveCache->len;j++)
+      if(mWaveCache->bl[j]<0)
+         mWaveCache->numODPixels++;
 
+   isLoadingOD = mWaveCache->numODPixels>0;
+   mWaveCacheMutex.Unlock();
    return true;
 }
 
@@ -550,7 +810,7 @@ bool WaveClip::GetMinMax(float *min, float *max,
    if (t0 == t1)
       return true;
 
-   longSampleCount s0, s1;
+   sampleCount s0, s1;
 
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
@@ -571,14 +831,14 @@ void WaveClip::UpdateEnvelopeTrackLen()
    mEnvelope->SetTrackLen(((double)mSequence->GetNumSamples()) / mRate);
 }
 
-void WaveClip::TimeToSamplesClip(double t0, longSampleCount *s0) const
+void WaveClip::TimeToSamplesClip(double t0, sampleCount *s0) const
 {
    if (t0 < mOffset)
       *s0 = 0;
    else if (t0 > mOffset + double(mSequence->GetNumSamples())/mRate)
       *s0 = mSequence->GetNumSamples();
    else
-      *s0 = (longSampleCount)floor(((t0 - mOffset) * mRate) + 0.5);
+      *s0 = (sampleCount)floor(((t0 - mOffset) * mRate) + 0.5);
 }
 
 void WaveClip::ClearDisplayRect()
@@ -650,9 +910,9 @@ bool WaveClip::Append(samplePtr buffer, sampleFormat format,
 }
 
 bool WaveClip::AppendAlias(wxString fName, sampleCount start,
-                            sampleCount len, int channel)
+                            sampleCount len, int channel,bool useOD)
 {
-   bool result = mSequence->AppendAlias(fName, start, len, channel);
+   bool result = mSequence->AppendAlias(fName, start, len, channel,useOD);
    if (result)
    {
       UpdateEnvelopeTrackLen();
@@ -752,7 +1012,7 @@ void WaveClip::WriteXML(XMLWriter &xmlFile)
 
 bool WaveClip::CreateFromCopy(double t0, double t1, WaveClip* other)
 {
-   longSampleCount s0, s1;
+   sampleCount s0, s1;
 
    other->TimeToSamplesClip(t0, &s0);
    other->TimeToSamplesClip(t1, &s1);
@@ -796,7 +1056,7 @@ bool WaveClip::Paste(double t0, WaveClip* other)
       resampledClip = other;
    }
 
-   longSampleCount s0;
+   sampleCount s0;
    TimeToSamplesClip(t0, &s0);
    
    bool result = false;
@@ -832,7 +1092,7 @@ bool WaveClip::Paste(double t0, WaveClip* other)
 
 bool WaveClip::InsertSilence(double t, double len)
 {
-   longSampleCount s0;
+   sampleCount s0;
    TimeToSamplesClip(t, &s0);
    sampleCount slen = (sampleCount)floor(len * mRate + 0.5);
    
@@ -850,7 +1110,7 @@ bool WaveClip::InsertSilence(double t, double len)
 
 bool WaveClip::Clear(double t0, double t1)
 {
-   longSampleCount s0, s1;
+   sampleCount s0, s1;
 
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
@@ -947,7 +1207,7 @@ bool WaveClip::ClearAndAddCutLine(double t0, double t1)
    }
    
    // Clear actual audio data
-   longSampleCount s0, s1;
+   sampleCount s0, s1;
 
    TimeToSamplesClip(t0, &s0);
    TimeToSamplesClip(t1, &s1);
@@ -1050,6 +1310,13 @@ void WaveClip::Lock()
       it->GetData()->Lock();
 }
 
+void WaveClip::CloseLock()
+{
+   GetSequence()->CloseLock();
+   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+      it->GetData()->Lock();
+}
+
 void WaveClip::Unlock()
 {
    GetSequence()->Unlock();
@@ -1057,7 +1324,7 @@ void WaveClip::Unlock()
       it->GetData()->Unlock();
 }
 
-bool WaveClip::Resample(int rate, bool progress)
+bool WaveClip::Resample(int rate, ProgressDialog *progress)
 {
    if (rate == mRate)
       return true; // Nothing to do
@@ -1068,7 +1335,7 @@ bool WaveClip::Resample(int rate, bool progress)
    int bufsize = 65536;
    float* inBuffer = new float[bufsize];
    float* outBuffer = new float[bufsize];
-   int pos = 0;
+   sampleCount pos = 0;
    bool error = false;
    sampleCount numSamples = mSequence->GetNumSamples();
 
@@ -1110,7 +1377,7 @@ bool WaveClip::Resample(int rate, bool progress)
 
       if (progress)
       {
-         error = !GetActiveProject()->ProgressUpdate((int) (1000 * ((float)pos / numSamples)));
+         error = !progress->Update(pos, numSamples);
          if (error)
          {
             break;

@@ -605,7 +605,7 @@ public:
                                    mLibPath.GetName(),
                                    wxT(""),
                                    mType,
-                                   wxOPEN,
+                                   wxFD_OPEN | wxRESIZE_BORDER,
                                    this);
       if (!path.IsEmpty()) {
          mLibPath = path;
@@ -615,7 +615,7 @@ public:
 
    void OnDownload(wxCommandEvent & event)
    {
-      wxString page = wxT("http://audacity.sourceforge.net/lame");
+      wxString page = wxT("http://audacity.sourceforge.net/help/faq?s=install&i=lame-mp3");
       ::OpenInDefaultBrowser(page);
    }
 
@@ -1620,7 +1620,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL);
+   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -1628,7 +1628,8 @@ public:
                double t0,
                double t1,
                MixerSpec *mixerSpec = NULL,
-               Tags *metadata = NULL);
+               Tags *metadata = NULL,
+               int subformat = 0);
 
 private:
 
@@ -1643,11 +1644,12 @@ ExportMP3::ExportMP3()
 :  ExportPlugin()
 {
    InitMP3_Statics();
-   SetFormat(wxT("MP3"));
-   SetExtension(wxT("mp3"));
-   SetMaxChannels(2);
-   SetCanMetaData(true);
-   SetDescription(_("MP3 Files"));
+   AddFormat();
+   SetFormat(wxT("MP3"),0);
+   AddExtension(wxT("mp3"),0);
+   SetMaxChannels(2,0);
+   SetCanMetaData(true,0);
+   SetDescription(_("MP3 Files"),0);
 }
 
 void ExportMP3::Destroy()
@@ -1662,7 +1664,8 @@ bool ExportMP3::Export(AudacityProject *project,
                        double t0,
                        double t1,
                        MixerSpec *mixerSpec,
-                       Tags *metadata)
+                       Tags *metadata,
+                       int subformat)
 {
    int rate = lrint(project->GetRate());
    wxWindow *parent = project;
@@ -1812,7 +1815,8 @@ bool ExportMP3::Export(AudacityProject *project,
                    _("Exporting entire file at %d Kbps"),
                    brate);
    }
-   GetActiveProject()->ProgressShow(wxFileName(fName).GetName(), title);
+
+   ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(), title);
 
    while (!cancelling) {
       sampleCount blockLen = mixer->Process(inSamples);
@@ -1849,12 +1853,10 @@ bool ExportMP3::Export(AudacityProject *project,
 
       outFile.Write(buffer, bytes);
 
-      int progressvalue = int (1000 * ((mixer->MixGetCurrentTime()-t0) /
-                                          (t1-t0)));
-      cancelling = !GetActiveProject()->ProgressUpdate(progressvalue);
+      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    delete mixer;
 
@@ -1882,7 +1884,7 @@ bool ExportMP3::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportMP3::DisplayOptions(AudacityProject *project)
+bool ExportMP3::DisplayOptions(AudacityProject *project, int format)
 {
    ExportMP3Options od(project);
 
@@ -1991,7 +1993,7 @@ int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
 
    wxString n, v;
    for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {
-      char *name = "TXXX";
+      const char *name = "TXXX";
 
       if (n.CmpNoCase(TAG_TITLE) == 0) {
          name = ID3_FRAME_TITLE;

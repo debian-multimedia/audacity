@@ -28,9 +28,7 @@ class AUDACITY_DLL_API Ruler {
    enum RulerFormat {
       IntFormat,
       RealFormat,
-#ifdef LOGARITHMIC_SPECTRUM
       RealLogFormat,
-#endif
       TimeFormat,
       LinearDBFormat,
    };
@@ -259,6 +257,7 @@ private:
    void OnPaint(wxPaintEvent &evt);
    void OnSize(wxSizeEvent &evt);
    void OnMouseEvents(wxMouseEvent &evt);
+   void OnCaptureLost(wxMouseCaptureLostEvent &evt);
 
    void DoDrawBorder(wxDC * dc);
    void DoDrawMarks(wxDC * dc, bool /*text */ );
@@ -301,6 +300,7 @@ private:
    
    MouseEventState mMouseEventState;
    int mButtonDownMousePos;
+   int mLastMouseX;
 
    DECLARE_EVENT_TABLE()
 };

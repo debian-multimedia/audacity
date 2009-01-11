@@ -22,6 +22,11 @@
 #include <wx/stattext.h>
 #include <wx/slider.h>
 #include <wx/sizer.h>
+#include <wx/string.h>
+#include <wx/bitmap.h>
+#include <wx/choice.h>
+#include <wx/radiobut.h>
+#include <wx/checkbox.h>
 
 #if wxUSE_ACCESSIBILITY
 #if defined(__WXMSW__)
@@ -30,20 +35,12 @@
 #include <wx/access.h>
 #endif
 
-// Declare window functions
-
-class wxString;
-class wxBoxSizer;
-class wxChoice;
-class wxRadioButton;
-class wxCheckBox;
-
 #include "Effect.h"
+#include "../Envelope.h"
+#include "../WaveTrack.h"
 #include "../xml/XMLTagHandler.h"
 #include "../widgets/Ruler.h"
 
-class Envelope;
-class WaveTrack;
 class EqualizationDialog;
 
 //
@@ -87,6 +84,12 @@ public:
       return wxString(_("Equalization..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#EQPlugin"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("Equalization"));
    }
@@ -95,6 +98,7 @@ public:
       return wxString(_("Performing Equalization"));
    }
 
+   virtual bool Init();
    virtual void End();
    virtual bool PromptUser();
    virtual bool DontPromptUser();
@@ -158,6 +162,7 @@ public:
    ~EqualizationPanel();
 
    void OnMouseEvent(wxMouseEvent & event);
+   void OnCaptureLost(wxMouseCaptureLostEvent & event);
    void OnPaint(wxPaintEvent & event);
    void OnSize (wxSizeEvent & event);
 

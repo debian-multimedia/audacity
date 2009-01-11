@@ -174,7 +174,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL);
+   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -182,7 +182,8 @@ public:
                double t0,
                double t1,
                MixerSpec *mixerSpec = NULL,
-               Tags *metadata = NULL);
+               Tags *metadata = NULL,
+               int subformat = 0);
 
 private:
 
@@ -193,11 +194,12 @@ private:
 ExportMP2::ExportMP2()
 :  ExportPlugin()
 {
-   SetFormat(wxT("MP2"));
-   SetExtension(wxT("mp2"));
-   SetMaxChannels(2);
-   SetCanMetaData(true);
-   SetDescription(_("MP2 Files"));
+   AddFormat();
+   SetFormat(wxT("MP2"),0);
+   AddExtension(wxT("mp2"),0);
+   SetMaxChannels(2,0);
+   SetCanMetaData(true,0);
+   SetDescription(_("MP2 Files"),0);
 }
 
 void ExportMP2::Destroy()
@@ -207,7 +209,8 @@ void ExportMP2::Destroy()
 
 bool ExportMP2::Export(AudacityProject *project,
                int channels, wxString fName,
-               bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata)
+               bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata,
+               int subformat)
 {
    bool stereo = (channels == 2);
    long bitrate = gPrefs->Read(wxT("/FileFormats/MP2Bitrate"), 160);
@@ -266,8 +269,8 @@ bool ExportMP2::Export(AudacityProject *project,
                             stereo? 2: 1, pcmBufferSize, true,
                             rate, int16Sample, true, mixerSpec);
 
-   GetActiveProject()->ProgressShow(wxFileName(fName).GetName(),
-       selectionOnly ?
+   ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
+      selectionOnly ?
       wxString::Format(_("Exporting selected audio at %d kbps"), bitrate) :
       wxString::Format(_("Exporting entire file at %d kbps"), bitrate));
 
@@ -289,12 +292,10 @@ bool ExportMP2::Export(AudacityProject *project,
 
       outFile.Write(mp2Buffer, mp2BufferNumBytes);
 
-      int progressvalue = int (1000 * ((mixer->MixGetCurrentTime()-t0) /
-                                          (t1-t0)));
-      cancelling = !GetActiveProject()->ProgressUpdate(progressvalue);
+      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    delete mixer;
 
@@ -326,7 +327,7 @@ bool ExportMP2::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportMP2::DisplayOptions(AudacityProject *project)
+bool ExportMP2::DisplayOptions(AudacityProject *project, int format)
 {
    ExportMP2Options od(project);
 
@@ -345,7 +346,7 @@ int ExportMP2::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
 
    wxString n, v;
    for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {
-      char *name = "TXXX";
+      const char *name = "TXXX";
 
       if (n.CmpNoCase(TAG_TITLE) == 0) {
          name = ID3_FRAME_TITLE;

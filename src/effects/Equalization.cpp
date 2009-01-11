@@ -347,6 +347,11 @@ void EffectEqualization::End()
    mPrompting = false;
 }
 
+bool EffectEqualization::Init()
+{
+   return(mPrompting = true);
+}
+
 bool EffectEqualization::PromptUser()
 {
    TrackListIterator iter(mWaveTracks);
@@ -407,12 +412,8 @@ bool EffectEqualization::DontPromptUser()
    else
       hiFreq = ((float)(GetActiveProject()->GetRate())/2.);
 
-   // Preserve the *real* dialog that's created in PromptUser, 
-   // so Preview doesn't try to set focus to this temporary one.
-   wxDialog *pDialog = mDialog;
    EqualizationDialog dlog(this, ((double)loFreqI), hiFreq, mFilterFuncR, mFilterFuncI,
                            windowSize, mCurveName, mParent, -1, _("Equalization"));
-   mDialog = pDialog;
 
    dlog.M = mM;
    dlog.curveName = mCurveName;
@@ -440,10 +441,10 @@ bool EffectEqualization::Process()
    if (!mPrompting) {
       DontPromptUser();
    }
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -453,8 +454,8 @@ bool EffectEqualization::Process()
       double t1 = mT1 > trackEnd? trackEnd: mT1;
 
       if (t1 > t0) {
-         longSampleCount start = track->TimeToLongSamples(t0);
-         longSampleCount end = track->TimeToLongSamples(t1);
+         sampleCount start = track->TimeToLongSamples(t0);
+         sampleCount end = track->TimeToLongSamples(t1);
          sampleCount len = (sampleCount)(end - start);
 
          if (!ProcessOne(count, track, start, len))
@@ -617,6 +618,7 @@ void EffectEqualization::Filter(sampleCount len,
 BEGIN_EVENT_TABLE(EqualizationPanel, wxPanel)
     EVT_PAINT(EqualizationPanel::OnPaint)
     EVT_MOUSE_EVENTS(EqualizationPanel::OnMouseEvent)
+    EVT_MOUSE_CAPTURE_LOST(EqualizationPanel::OnCaptureLost)
     EVT_SIZE(EqualizationPanel::OnSize)
 END_EVENT_TABLE()
 
@@ -855,6 +857,15 @@ void EqualizationPanel::OnMouseEvent(wxMouseEvent & event)
    }
 }
 
+void EqualizationPanel::OnCaptureLost(wxMouseCaptureLostEvent & event)
+{
+   if (HasCapture())
+   {
+      ReleaseMouse();
+   }
+}
+
+
 // WDR: class implementations
 
 //----------------------------------------------------------------------------
@@ -948,8 +959,6 @@ EqualizationDialog::EqualizationDialog(EffectEqualization * effect,
    whens[NUM_PTS-1] = 1.;
    whenSliders[NUMBER_OF_BANDS] = 1.;
    m_EQVals[NUMBER_OF_BANDS] = 0.;
-
-   effect->SetDialog(this);
 }
 
 //
@@ -1621,8 +1630,8 @@ void EqualizationDialog::setCurve(int currentCurve)
             else
             {  //get the first point as close as we can to the last point requested
                changed = true;
-               double f = mCurves[currentCurve].points[i].Freq;
-               double v = mCurves[currentCurve].points[i].dB;
+               //double f = mCurves[currentCurve].points[i].Freq;
+               //double v = mCurves[currentCurve].points[i].dB;
                mLogEnvelope->Insert(0., mCurves[currentCurve].points[i].dB);
             }
          }
@@ -1670,7 +1679,7 @@ void EqualizationDialog::Select( int curve )
    curveName = mCurves[ curve ].Name;
 
    // If the "custom" curve became active
-   if( curve == mCurve->GetCount() - 1 )
+   if( (unsigned int)curve + 1U == mCurve->GetCount() )
    {
       // Prevent focus from being lost
       if( mDelete->FindFocus() == mDelete )

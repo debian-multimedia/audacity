@@ -53,6 +53,12 @@ with changes in the SelectionBar.
 
 IMPLEMENT_CLASS(SelectionBar, ToolBar);
 
+const static wxChar *numbers[] =
+{
+   wxT("0"), wxT("1"), wxT("2"), wxT("3"), wxT("4"),
+   wxT("5"), wxT("6"), wxT("7"), wxT("8"), wxT("9")
+};
+
 enum {
    SelectionBarFirstID = 2700,
    OnRateID,
@@ -77,9 +83,9 @@ BEGIN_EVENT_TABLE(SelectionBar, ToolBar)
 END_EVENT_TABLE()
 
 SelectionBar::SelectionBar()
-: ToolBar(SelectionBarID, _("Selection"), wxT("Selection")), mRate(0),
-  mStart(0.0), mEnd(0.0), mAudio(0.0),
-  mLeftTime(NULL), mRightTime(NULL), mAudioTime(NULL), mListener(NULL)
+: ToolBar(SelectionBarID, _("Selection"), wxT("Selection")),
+  mListener(NULL), mRate(0.0), mStart(0.0), mEnd(0.0), mAudio(0.0),
+  mLeftTime(NULL), mRightTime(NULL), mAudioTime(NULL)
 {
 }
 
@@ -104,19 +110,20 @@ void SelectionBar::Populate()
 
    wxString formatName = gPrefs->Read(wxT("/SelectionFormat"), wxT(""));
    int formatIndex = 1;
+
    /* we don't actually need a control yet, but we want to use it's methods
     * to do some look-ups, so we'll have to create one. We can't make the 
     * look-ups static because they depend on translations which are done at
     * runtime */
    /* for now we don't give this a format, we'll set that later once we've
     * done some other format-related housekeeping */
-   mLeftTime = new TimeTextCtrl(this, OnLeftTimeID, wxT(""), 0.0, mRate);
-
-   for(i=0; i<mLeftTime->GetNumBuiltins(); i++)
-      if (mLeftTime->GetBuiltinName(i) == formatName)
+   TimeTextCtrl *ttc = new TimeTextCtrl(this, wxID_ANY, wxT(""), 0.0, mRate);
+   for(i=0; i<ttc->GetNumBuiltins(); i++)
+      if (ttc->GetBuiltinName(i) == formatName)
          formatIndex = i;
-   formatName = mLeftTime->GetBuiltinName(formatIndex);
-   wxString format = mLeftTime->GetBuiltinFormat(formatIndex);
+   formatName = ttc->GetBuiltinName(formatIndex);
+   wxString format = ttc->GetBuiltinFormat(formatIndex);
+   delete ttc;
 
    mainSizer = new wxFlexGridSizer(7, 1, 1);
    Add(mainSizer, 0, wxALIGN_CENTER_VERTICAL);
@@ -149,10 +156,12 @@ void SelectionBar::Populate()
    mRightEndButton = new wxRadioButton(this, OnEndRadioID, _("End"),
                                        wxDefaultPosition, wxDefaultSize,
                                        wxRB_GROUP);
+   mRightEndButton->SetName(_("End"));
    mRightEndButton->SetValue(!showSelectionLength);
    hSizer->Add(mRightEndButton,
                0, wxRIGHT | wxALIGN_CENTER_VERTICAL, 5);
    mRightLengthButton = new wxRadioButton(this, OnLengthRadioID, _("Length"));
+   mRightLengthButton->SetName(_("Length"));
    mRightLengthButton->SetValue(showSelectionLength);
    hSizer->Add(mRightLengthButton,
                0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
@@ -183,7 +192,9 @@ void SelectionBar::Populate()
                              wxT(""),
                              wxDefaultPosition, wxSize(80, -1));
    mRateBox->SetName(_("Project Rate (Hz):"));
-   mRateBox->SetValidator(wxTextValidator(wxFILTER_NUMERIC));
+   wxTextValidator vld(wxFILTER_INCLUDE_CHAR_LIST);
+   vld.SetIncludes(wxArrayString(12, numbers));
+   mRateBox->SetValidator(vld);
    mRateBox->SetValue(wxString::Format(wxT("%d"), (int)mRate));
    UpdateRates(); // Must be done _after_ setting value on mRateBox!
 
@@ -239,10 +250,7 @@ void SelectionBar::Populate()
                     NULL,
                     this);
    
-   /* we would normally be creating a new TimeTextControl here, except that we
-    * did it near the start of the function to have an object to do look-ups on
-    * so the only thing left to do here is to set it's format to what we now
-    * know is correct */
+   mLeftTime = new TimeTextCtrl(this, OnLeftTimeID, wxT(""), 0.0, mRate);
    mLeftTime->SetFormatString(format);
    mLeftTime->SetName(_("Selection Start:"));
    mLeftTime->EnableMenu();
@@ -447,16 +455,9 @@ void SelectionBar::SetRate(double rate)
    }
 }
 
-void SelectionBar::OnRate(wxCommandEvent & WXUNUSED(event))
+void SelectionBar::OnRate(wxCommandEvent &evt)
 {
-   int nSel = mRateBox->GetSelection();
-   wxString sValue;
-   if (nSel != -1) // one of the existing choices
-      sValue = mRateBox->GetString(nSel);
-   else
-      sValue = mRateBox->GetValue();
-
-   if (sValue.ToDouble(&mRate) && // is a numeric value
+   if (evt.GetString().ToDouble(&mRate) && // is a numeric value
          (mRate != 0.0))
    {
       if (mLeftTime) mLeftTime->SetSampleRate(mRate);
@@ -494,28 +495,38 @@ void SelectionBar::OnFocus(wxFocusEvent &event)
 void SelectionBar::OnCaptureKey(wxCommandEvent &event)
 {
    wxKeyEvent *kevent = (wxKeyEvent *)event.GetEventObject();
+   wxWindow *w = FindFocus();
    int keyCode = kevent->GetKeyCode();
 
    // Pass the SPACE through for SnapTo
-   if (FindFocus() == mSnapTo && keyCode == WXK_SPACE) {
+   if (w == mSnapTo && keyCode == WXK_SPACE) {
       return;
    }
 
    // Convert numeric keypad entries.
-   if ((keyCode >= WXK_NUMPAD0) && (keyCode <= WXK_NUMPAD9))
+   if ((keyCode >= WXK_NUMPAD0) && (keyCode <= WXK_NUMPAD9)) {
       keyCode -= WXK_NUMPAD0 - '0';
+   }
 
-   if (keyCode >= '0' && keyCode <= '9')
-      return;
-
-   // UP/DOWN/LEFT/RIGHT for mRateBox
-   if (FindFocus() == mRateBox && (keyCode == WXK_LEFT || keyCode == WXK_RIGHT
-                                 || keyCode == WXK_UP || keyCode == WXK_DOWN)) {
+   if (keyCode >= '0' && keyCode <= '9') {
       return;
    }
+
+   // UP/DOWN/LEFT/RIGHT for mRateBox
+   if (w == mRateBox) {
+      switch (keyCode)
+      {
+         case WXK_LEFT:
+         case WXK_RIGHT:
+         case WXK_UP:
+         case WXK_DOWN:
+         case WXK_DELETE:
+         case WXK_BACK:
+            return;
+      }
+   }
    
-   // Swallow any others, so SelectionBar "handled" it. 
-   //    event.Skip();
+   event.Skip();
 
    return;
 }

@@ -139,7 +139,7 @@ class ToolFrame:public wxFrame
       if( bar->IsResizable() )
       {
          // Calc the minimum size of the frame
-         mMinSize = bar->GetBestFittingSize() + ( GetSize() - bar->GetSize() );
+         mMinSize = bar->GetBestSize() + ( GetSize() - bar->GetSize() );
       }
    }
 
@@ -173,7 +173,6 @@ class ToolFrame:public wxFrame
       wxSize sz = GetSize();
       wxRect r;
 
-      dc.BeginDrawing();
       dc.SetPen( wxColour( 90, 90, 90 ) );
 
 #if !defined(__WXMAC__)
@@ -196,7 +195,6 @@ class ToolFrame:public wxFrame
          dc.DrawLine( r.GetLeft() + 9, r.GetBottom(), r.GetRight(), r.GetTop() + 9 );
       }
 
-      dc.EndDrawing();
    }
 
    void OnMotion( wxMouseEvent & event )
@@ -244,7 +242,7 @@ class ToolFrame:public wxFrame
          r.height = sizerW + 2;
 
          // Is left click within resize grabber?
-         if( r.Inside( pos ) && !event.Leaving() )
+         if( r.Contains( pos ) && !event.Leaving() )
          {
             SetCursor( wxCURSOR_SIZENWSE );
             if( event.LeftDown() )
@@ -256,6 +254,14 @@ class ToolFrame:public wxFrame
          {
             SetCursor( wxCURSOR_ARROW );
          }
+      }
+   }
+
+   void OnCaptureLost( wxMouseCaptureLostEvent & event )
+   {
+      if( HasCapture() )
+      {
+         ReleaseMouse();
       }
    }
 
@@ -287,6 +293,7 @@ BEGIN_EVENT_TABLE( ToolFrame, wxFrame )
    EVT_GRABBER( wxID_ANY, ToolFrame::OnGrabber )
    EVT_PAINT( ToolFrame::OnPaint )
    EVT_MOUSE_EVENTS( ToolFrame::OnMotion )
+   EVT_MOUSE_CAPTURE_LOST( ToolFrame::OnCaptureLost )
    EVT_CLOSE( ToolFrame::OnClose )
    EVT_COMMAND( wxID_ANY, EVT_TOOLBAR_UPDATED, ToolFrame::OnToolBarUpdate )
 END_EVENT_TABLE()
@@ -382,6 +389,10 @@ ToolManager::ToolManager( AudacityProject *parent )
                      wxMouseEventHandler( ToolManager::OnMouse ),
                      NULL,
                      this );
+   mParent->Connect( wxEVT_MOUSE_CAPTURE_LOST,
+                     wxMouseCaptureLostEventHandler( ToolManager::OnCaptureLost ),
+                     NULL,
+                     this );
 
    // Create the top and bottom docks
    mTopDock = new ToolDock( this, mParent, TopDockID );
@@ -419,6 +430,10 @@ ToolManager::~ToolManager()
                         this );
    mParent->Disconnect( wxEVT_MOTION,
                         wxMouseEventHandler( ToolManager::OnMouse ),
+                        NULL,
+                        this );
+   mParent->Disconnect( wxEVT_MOUSE_CAPTURE_LOST,
+                        wxMouseCaptureLostEventHandler( ToolManager::OnCaptureLost ),
                         NULL,
                         this );
 
@@ -913,11 +928,11 @@ void ToolManager::OnMouse( wxMouseEvent & event )
 
       // Is mouse pointer within either dock?
       ToolDock *dock = NULL;
-      if( tr.Inside( pos ) )
+      if( tr.Contains( pos ) )
       {
          dock = mTopDock;
       }
-      else if( br.Inside( pos ) )
+      else if( br.Contains( pos ) )
       {
          dock = mBotDock;
       }
@@ -994,6 +1009,26 @@ void ToolManager::OnMouse( wxMouseEvent & event )
 }
 
 //
+// Deal with new capture lost event
+//
+void ToolManager::OnCaptureLost( wxMouseCaptureLostEvent & event )
+{
+   // Can't do anything if we're not dragging.  This also prevents
+   // us from intercepting events that don't belong to us from the
+   // parent since we're Connect()ed to a couple.
+   if( !mDragWindow )
+   {
+      event.Skip();
+      return;
+   }
+
+   // Simulate button up
+   wxMouseEvent e(wxEVT_LEFT_UP);
+   e.SetEventObject(mParent);
+   OnMouse(e);
+}
+
+//
 // Watch for shift key changes
 //
 void ToolManager::OnTimer( wxTimerEvent & event )
@@ -1040,10 +1075,8 @@ void ToolManager::OnIndicatorPaint( wxPaintEvent & event )
 {
    wxWindow *w = (wxWindow *)event.GetEventObject();
    wxPaintDC dc( w );
-   dc.BeginDrawing();
    dc.SetBackground( *wxBLUE_BRUSH );
    dc.Clear();
-   dc.EndDrawing();
 }
 
 //

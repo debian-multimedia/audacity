@@ -337,6 +337,70 @@
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
+		<Configuration
+			Name="Modular_Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="msgfmt"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -361,6 +425,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\locale\cb.po"
+				>
+			</File>
+			<File
 				RelativePath="..\locale\cs.po"
 				>
 			</File>
@@ -382,6 +450,10 @@
 			</File>
 			<File
 				RelativePath="..\locale\eu.po"
+				>
+			</File>
+			<File
+				RelativePath="..\locale\fa.po"
 				>
 			</File>
 			<File
@@ -433,10 +505,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\locale\pt.po"
-				>
-			</File>
-			<File
 				RelativePath="..\locale\ru.po"
 				>
 			</File>
@@ -446,6 +514,10 @@
 			</File>
 			<File
 				RelativePath="..\locale\sv.po"
+				>
+			</File>
+			<File
+				RelativePath="..\locale\tg.po"
 				>
 			</File>
 			<File

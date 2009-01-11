@@ -4,6 +4,9 @@
    so it can find the files it needs at runtime */
 #undef AUDACITY_NAME
 
+/* Define we are compiling Audacity itself, not an Audacity plug-in */
+#undef BUILDING_AUDACITY
+
 /* Define to 1 if you have the <alloca.h> header file. */
 #undef HAVE_ALLOCA_H
 
@@ -46,6 +49,10 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 or 0, depending whether the compiler supports simple visibility
+   declarations. */
+#undef HAVE_VISIBILITY
+
 /* define as prefix where Audacity is installed */
 #undef INSTALL_PREFIX
 
@@ -70,6 +77,10 @@
 /* Define if Audio Unit plug-ins are enabled (Mac OS X only) */
 #undef USE_AUDIO_UNITS
 
+/* Define if ffmpeg (multi-format import and export) support should be enabled
+   */
+#undef USE_FFMPEG
+
 /* Define if LADSPA plug-ins are enabled */
 #undef USE_LADSPA
 
@@ -78,6 +89,10 @@
 
 /* Define if libid3tag is present */
 #undef USE_LIBID3TAG
+
+/* Define if liblrdf (metadata for LADSPA plugins) support should be enabled
+   */
+#undef USE_LIBLRDF
 
 /* Define if mp3 support is implemented with the libmad library */
 #undef USE_LIBMAD
@@ -94,6 +109,9 @@
 /* Define if the ogg vorbis decoding library is present */
 #undef USE_LIBVORBIS
 
+/* Define if midi support should be enabled */
+#undef USE_MIDI
+
 /* Define if Nyquist support should be enabled */
 #undef USE_NYQUIST
 
@@ -105,6 +123,9 @@
 
 /* Define if QuickTime importing is enabled (Mac OS X only) */
 #undef USE_QUICKTIME
+
+/* Define if SLV2 (library for loading LV2 plugins) should be enabled */
+#undef USE_SLV2
 
 /* Define if SoundTouch support should be enabled */
 #undef USE_SOUNDTOUCH

@@ -37,11 +37,14 @@ class VampEffect : public Effect {
    VampEffect(Vamp::HostExt::PluginLoader::PluginKey key,
               int output,
               bool hasParameters,
-              wxString name);
+              wxString name,
+              wxString category = wxString());
    virtual ~VampEffect();
 
    virtual wxString GetEffectName();
    
+   virtual std::set<wxString> GetEffectCategories();
+
    virtual wxString GetEffectIdentifier();
 
    virtual wxString GetEffectAction();
@@ -66,11 +69,12 @@ class VampEffect : public Effect {
    bool mHasParameters;
    wxString mName;
    double mRate;
-
+   wxString mCategory;
+   
    Vamp::Plugin *mPlugin;
 
    void GetSamples(WaveTrack *track,
-                   longSampleCount *start,
+                   sampleCount *start,
                    sampleCount *len);
 
    void AddFeatures(LabelTrack *track,

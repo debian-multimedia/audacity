@@ -45,6 +45,7 @@
 
 #include "../Internat.h"
 #include "../FileFormats.h"
+#include "../FileNames.h"
 #include "../LabelTrack.h"
 #include "../Project.h"
 #include "../Prefs.h"
@@ -98,6 +99,8 @@ ExportMultiple::ExportMultiple(AudacityProject *project)
    mTracks = project->GetTracks();
    mPlugins = mExporter.GetPlugins();
 
+   this->CountTracksAndLabels();
+
    // create array of characters not allowed in file names
    wxString forbid = wxFileName::GetForbiddenChars();
    for(unsigned int i=0; i < forbid.Length(); i++)
@@ -124,43 +127,42 @@ ExportMultiple::~ExportMultiple()
 {
 }
 
-int ExportMultiple::ShowModal()
+void ExportMultiple::CountTracksAndLabels()
 {
-   Track *tr;
-
    mLabels = NULL;
    mNumLabels = 0;
-   mNumTracks = 0;
+   mNumWaveTracks = 0;
 
-   // Examine the track list looking for Wave and Label tracks
-   for (tr = mIterator.First(mTracks); tr != NULL; tr = mIterator.Next()) {
-      switch (tr->GetKind())
+   Track* pTrack;
+   for (pTrack = mIterator.First(mTracks); pTrack != NULL; pTrack = mIterator.Next())
+   {
+      switch (pTrack->GetKind())
       {
-         // Only count WaveTracks, and for linked pairs, only count the
-         // second one of the pair
+         // Count WaveTracks, and for linked pairs, count only the second of the pair.
          case Track::Wave:
          {
-            if (tr->GetLinked() == false) {
-               mNumTracks++;
-            }
-
+            if (pTrack->GetLinked() == false)
+               mNumWaveTracks++;
             break;
          }
 
          // Only support one label track???
          case Track::Label:
          {
+            // Supports only one LabelTrack. 
             if (mLabels == NULL) {
-               mLabels = (LabelTrack *)tr;
+               mLabels = (LabelTrack*)pTrack;
                mNumLabels = mLabels->GetNumLabels();
             }
-
             break;
          }
       }
    }
+}
 
-   if (mNumTracks < 2 && mNumLabels < 1) {
+int ExportMultiple::ShowModal()
+{
+   if (mNumWaveTracks < 2 && mNumLabels < 1) {
       ::wxMessageBox(_("If you have more than one Audio Track, you can export each track as a separate file,\nor if you have a Label Track, you can export a new file for each label.\n\nThis project does not have multiple tracks or a Label Track, so you cannot export multiple files."),
                      _("Can't export multiple files"),
                      wxOK | wxCENTRE, this);
@@ -173,7 +175,7 @@ int ExportMultiple::ShowModal()
       mLabel->SetValue(false);
    }
 
-   if (mNumTracks < 2) {
+   if (mNumWaveTracks < 2) {
       mTrack->Enable(false);
       mLabel->SetValue(true);
       mTrack->SetValue(false);
@@ -186,7 +188,33 @@ int ExportMultiple::ShowModal()
 
 void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
 {
+
    wxString name = mProject->GetName();
+
+   mFormatIndex = -1;
+
+   wxString defaultFormat = gPrefs->Read(wxT("/Export/Format"),
+      wxT("WAV"));
+
+   mFilterIndex = 0;
+
+   for (size_t i = 0; i < mPlugins.GetCount(); i++) {
+      for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
+      {
+         if (mPlugins[i]->GetFormat(j) == defaultFormat) {
+            mFormatIndex = i;
+            mSubFormatIndex = j;
+         }
+         if (mFormatIndex == -1) mFilterIndex++;
+      }
+   }
+   if (mFormatIndex == -1)
+   {
+      mFormatIndex = 0;
+      mFilterIndex = 0;
+      mSubFormatIndex = 0;
+   }
+
 
    S.SetBorder(5);
    S.StartMultiColumn(4, true);
@@ -194,22 +222,23 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
       wxArrayString formats;
       
       for (size_t i = 0; i < mPlugins.GetCount(); i++) {
-         formats.Add(mPlugins[i]->GetDescription());
+         for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
+         {
+            formats.Add(mPlugins[i]->GetDescription(j));
+         }
       }
 
-      S.AddPrompt(_("Export format:"));
       mFormat = S.Id(FormatID)
-         .TieChoice(wxT(""),
+         .TieChoice(_("Export format:"),
                     wxT("/Export/MultipleFormat"),
-                    gPrefs->Read(wxT("/Export/Format"), wxT("WAV")),
+                    mPlugins[mFormatIndex]->GetFormat(mSubFormatIndex),
                     formats,
                     formats);
       S.Id(OptionsID).AddButton(_("Options..."));
       S.AddVariableText(wxT(""), false);
 
-      S.AddPrompt(_("Export location:"));
       mDir = S.Id(DirID)
-         .TieTextBox(wxT(""),
+         .TieTextBox(_("Export location:"),
                      wxT("/Export/MultiplePath"),
                      gPrefs->Read(wxT("/Export/Path"), ::wxGetCwd()),
                      64);
@@ -230,6 +259,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
             S.SetBorder(1);
             mLabel = S.Id(LabelID)
                .AddRadioButton(wxT(""));
+            mLabel->SetName(_("Labels"));
             S.SetBorder(3);
             mLabelLabel = S.AddVariableText(_("Labels"), false);
 
@@ -247,6 +277,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
                   .TieTextBox(wxT(""),
                               name,
                               30);
+               mFirstFileName->SetName(_("First file name"));
             }
             S.EndHorizontalLay();
 
@@ -254,6 +285,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
             S.SetBorder(1);
             mTrack = S.Id(TrackID)
                .AddRadioButtonToGroup(wxT(""));
+            mTrack->SetName(_("Tracks"));
             S.SetBorder(3);
             mTrackLabel = S.AddVariableText(_("Tracks"), false);
          }
@@ -271,6 +303,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
             S.SetBorder(1);
             mByName = S.Id(ByNameID)
                .AddRadioButton(wxT(""));
+            mByName->SetName(_("Using Label/Track Name"));
             S.SetBorder(3);
             mByNameLabel = S.AddVariableText(_("Using Label/Track Name"), false);
 
@@ -278,6 +311,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
             S.SetBorder(1);
             mByNumber = S.Id(ByNumberID)
                .AddRadioButtonToGroup(wxT(""));
+            mByNumber->SetName(_("Numbering consecutively"));
             S.SetBorder(3);
             mByNumberLabel = S.AddVariableText(_("Numbering consecutively"), false);
 
@@ -290,6 +324,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
                   .TieTextBox(wxT(""),
                               name,
                               30);
+               mPrefix->SetName(_("File name prefix"));
             }
             S.EndHorizontalLay();
          }
@@ -309,7 +344,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
 
    S.AddStandardButtons();
    mExport = (wxButton *)wxWindow::FindWindowById(wxID_OK, this);
-   mExport->SetLabel(_("E&xport"));
+   mExport->SetLabel(_("Export"));
 
 }
 
@@ -353,7 +388,24 @@ void ExportMultiple::OnFormat(wxCommandEvent& event)
 
 void ExportMultiple::OnOptions(wxCommandEvent& event)
 {
-   mPlugins[mFormat->GetSelection()]->DisplayOptions(mProject);
+   const int sel = mFormat->GetSelection();
+   if (sel != wxNOT_FOUND)
+   {
+     size_t c = 0;
+     for (size_t i = 0; i < mPlugins.GetCount(); i++)
+     {
+       for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
+       {
+         if ((size_t)sel == c)
+         {
+            mFormatIndex = i;
+            mSubFormatIndex = j;
+         }
+         c++;
+       }
+     }
+   }
+   mPlugins[mFormatIndex]->DisplayOptions(mProject,mSubFormatIndex);
 }
 
 void ExportMultiple::OnCreate(wxCommandEvent& event)
@@ -435,7 +487,24 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
       return;
    }
 
-   mFormatIndex = mFormat->GetSelection();
+   mFilterIndex = mFormat->GetSelection();
+   if (mFilterIndex != wxNOT_FOUND)
+   {
+     size_t c = 0;
+     for (size_t i = 0; i < mPlugins.GetCount(); i++)
+     {
+       for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
+       {
+         if ((size_t)mFilterIndex == c)
+         {
+            mFormatIndex = i;
+            mSubFormatIndex = j;
+         }
+         c++;
+       }
+     }
+   }
+
    bool overwrite = mOverwrite->GetValue();
    bool ok;
 
@@ -482,8 +551,8 @@ bool ExportMultiple::DirOk()
 
 bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
 {
-   AudacityProject *project = GetActiveProject();
-   bool tagsPrompt = project->GetShowId3Dialog();
+   wxASSERT(mProject);
+   bool tagsPrompt = mProject->GetShowId3Dialog();
    int numFiles = mNumLabels;
    int l = 0;        // counter for files done
    ExportKitArray exportSettings; // dynamic array we will use to store the
@@ -503,7 +572,7 @@ bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
                               // don't duplicate them
    ExportKit setting;   // the current batch of settings
    setting.destfile.SetPath(mDir->GetValue());
-   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension());
+   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension(mSubFormatIndex));
 
    wxString name;    // used to hold file name whilst we mess with it
    wxString title;   // un-messed-with title of file for tagging with
@@ -556,7 +625,7 @@ bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
       wxASSERT(setting.destfile.IsOk());     // scream if file name is broke
 
       // Make sure the (final) file name is unique within the set of exports
-      MakeNameUnique(otherNames, setting.destfile);
+      FileNames::MakeNameUnique(otherNames, setting.destfile);
 
       /* do the metadata for this file */
       // copy project metadata to start with
@@ -604,8 +673,8 @@ bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
 bool ExportMultiple::ExportMultipleByTrack(bool byName,
                                            wxString prefix)
 {
-   AudacityProject *project = GetActiveProject();
-   bool tagsPrompt = project->GetShowId3Dialog();
+   wxASSERT(mProject);
+   bool tagsPrompt = mProject->GetShowId3Dialog();
    Track *tr, *tr2;
    int channels = 0;  // how many channels export?
    int l = 0;     // track counter
@@ -618,7 +687,7 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
    exportSettings.Alloc(mNumLabels);   // allocated some guessed space to use
    ExportKit setting;   // the current batch of settings
    setting.destfile.SetPath(mDir->GetValue());
-   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension());
+   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension(mSubFormatIndex));
 
    wxString name;    // used to hold file name whilst we mess with it
    wxString title;   // un-messed-with title of file for tagging with
@@ -691,7 +760,7 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
       wxASSERT(setting.destfile.IsOk());     // scream if file name is broke
 
       // Make sure the (final) file name is unique within the set of exports
-      MakeNameUnique(otherNames, setting.destfile);
+      FileNames::MakeNameUnique(otherNames, setting.destfile);
 
       /* do the metadata for this file */
       // copy project metadata to start with
@@ -766,19 +835,6 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
                   wxOK | wxCENTRE, this);
    
    return ok;
-}
-
-void ExportMultiple::MakeNameUnique(wxArrayString &otherNames, wxFileName &newName)
-{
-   if (otherNames.Index(newName.GetFullName(), false) >= 0) {
-      int i=2;
-      wxString orig = newName.GetName();
-      do {
-         newName.SetName(wxString::Format(wxT("%s-%d"), orig.c_str(), i));
-         i++;
-      } while (otherNames.Index(newName.GetFullName(), false) >= 0);
-   }
-   otherNames.Add(newName.GetFullName());
 }
 
 bool ExportMultiple::DoExport(int channels,

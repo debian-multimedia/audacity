@@ -22,14 +22,21 @@ class wxTextCtrl;
 
 class WaveTrack;
 
-class EffectRepeat:public Effect {
+class EffectRepeat:public Effect
+{
+ friend class RepeatDialog;
 
  public:
-
    EffectRepeat();
 
    virtual wxString GetEffectName() {
       return wxString(_("Repeat..."));
+   }
+
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://audacityteam.org/namespace#TimelineChanger"));
+      return result;
    }
 
    virtual wxString GetEffectIdentifier() {
@@ -52,26 +59,28 @@ class EffectRepeat:public Effect {
    int repeatCount;
 };
 
-class RepeatDialog:public wxDialog {
+class RepeatDialog:public EffectDialog {
  public:
    // constructors and destructors
-   RepeatDialog(wxWindow * parent, wxWindowID id, const wxString & title);
+   RepeatDialog(EffectRepeat *effect, wxWindow * parent);
 
-   virtual bool Validate();
-   virtual bool TransferDataToWindow();
-   virtual bool TransferDataFromWindow();
-
-   wxTextCtrl   *mRepeatCount;
-   wxStaticText *mTotalTime;
+   // method declarations
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataToWindow();
+   bool TransferDataFromWindow();
 
  private:
-   void OnOk(wxCommandEvent & event);
-   void OnCancel(wxCommandEvent & event);
+	// handlers
    void OnRepeatTextChange(wxCommandEvent & event);
+   void OnPreview( wxCommandEvent &event );
 
    void DisplayNewTime();
 
  private:
+   EffectRepeat *mEffect;
+   wxTextCtrl   *mRepeatCount;
+   wxStaticText *mTotalTime;
+
    DECLARE_EVENT_TABLE()
 
  public:

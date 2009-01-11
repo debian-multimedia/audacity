@@ -166,6 +166,13 @@ class LabelTrack:public Track {
    //get current cursor position
    bool CalcCursorX(wxWindow * parent, int * x);
    int getCurrentCursorPosition() const { return mCurrentCursorPos; };
+   
+   void ShiftLabelsOnClear(double b, double e);
+   void ShiftLabelsOnInsert(double length, double pt);
+   void ShiftLabelsOnChangeSpeed(double b, double e, double change);
+   double AdjustTimeStampForSpeedChange(double t, double b, double e, double change);
+   WaveTrack* GetStickyTrack() { return mStickyTrack; }
+   void SetStickyTrack(WaveTrack *track) { mStickyTrack = track; }
 
  public:
 	 void SortLabels();
@@ -181,6 +188,7 @@ class LabelTrack:public Track {
    int mMouseOverLabelRight;   /// Keeps track of which right label the mouse is currently over.
    int mxMouseDisplacement;    /// Displacement of mouse cursor from the centre being dragged.
    LabelArray mLabels;
+   WaveTrack *mStickyTrack;
 
    static int mIconHeight;
    static int mIconWidth;

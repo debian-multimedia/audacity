@@ -91,8 +91,8 @@ struct CallbackData
 class QTImportPlugin : public ImportPlugin
 {
 public:
-   QTImportPlugin():
-      ImportPlugin(wxArrayString(WXSIZEOF(exts), exts))
+   QTImportPlugin()
+   :  ImportPlugin(wxArrayString(WXSIZEOF(exts), exts))
    {
    }
 
@@ -105,11 +105,10 @@ public:
 class QTImportFileHandle : public ImportFileHandle
 {
 public:
-   QTImportFileHandle(Movie movie, Media media):
+   QTImportFileHandle(const wxString & name, Movie movie, Media media)
+   :  ImportFileHandle(name),
       mMovie(movie),
-      mMedia(media),
-      mProgressCallback(NULL),
-      mUserData(NULL)
+      mMedia(media)
    {
    }
    ~QTImportFileHandle() { }
@@ -117,18 +116,19 @@ public:
    wxString GetFileDescription();
    int GetFileUncompressedBytes();
 
-   void SetProgressCallback(progress_callback_t function,
-                            void *userData);
+   wxInt32 GetStreamCount(){ return 1; }
 
-   bool Import(TrackFactory *trackFactory, Track ***outTracks,
-               int *outNumTracks, Tags *tags);
+   wxArrayString *GetStreamInfo(){ return NULL; }
+
+   void SetStreamUsage(wxInt32 StreamID, bool Use){}
+
+   int Import(TrackFactory *trackFactory, Track ***outTracks,
+              int *outNumTracks, Tags *tags);
 private:
    void AddMetadata(Tags *tags);
 
    Movie mMovie;
    Media mMedia;
-   progress_callback_t mProgressCallback;
-   void *mUserData;
 };
 
 
@@ -150,25 +150,24 @@ ImportFileHandle *QTImportPlugin::Open(wxString Filename)
    FInfo fileInfo;
    Movie theMovie = 0;
    Media theMedia;
+   OSErr err;
 
    // Make sure QuickTime is initialized
    //::EnterMovies();
 
 #ifdef WIN32
    char* specFilename = strdup(Filename.GetData());
-   if (FSMakeFSSpec(0,0,c2pstr(specFilename), &inFile) != noErr)
-   {
-       free(specFilename);
-       return false;
-   }
+   err = FSMakeFSSpec(0,0,c2pstr(specFilename), &inFile);
    free(specFilename);
+   if (err != noErr)
+      return NULL;
+
 #else
    wxMacFilename2FSSpec(Filename, &inFile);
 #endif
 
-   OSErr err = FSpGetFInfo(&inFile, &fileInfo);
-
-   if(err != noErr)
+   err = FSpGetFInfo(&inFile, &fileInfo);
+   if (err != noErr)
       return NULL;
 
    if (kQTFileTypeSystemSevenSound == fileInfo.fdType)
@@ -184,23 +183,26 @@ ImportFileHandle *QTImportPlugin::Open(wxString Filename)
 
       // open the movie file
       err = OpenMovieFile(&inFile, &theRefNum, fsRdPerm);
-      if(err != noErr)
+      if (err != noErr)
          return NULL;
 
       // instantiate the movie
       err = NewMovieFromFile(&theMovie, theRefNum, &theResID, NULL, newMovieActive, &wasChanged);
       CloseMovieFile(theRefNum);
-      if(err != noErr)
+      if (err != noErr)
          return NULL;
    }
 
 
    // get and return the sound track media
    theMedia = GetMediaFromMovie(theMovie);
-   if(theMedia == NULL)
+   if (theMedia == NULL)
+   {
+      DisposeMovie(theMovie);
       return NULL;
+   }
 
-   return new QTImportFileHandle(theMovie, theMedia);
+   return new QTImportFileHandle(Filename, theMovie, theMedia);
 }
 
 
@@ -214,17 +216,12 @@ int QTImportFileHandle::GetFileUncompressedBytes()
    return 0;
 }
 
-void QTImportFileHandle::SetProgressCallback(progress_callback_t function,
-                            void *userData)
-{
-   mProgressCallback = function;
-   mUserData = userData;
-}
-
-bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
-                                  int *outNumTracks, Tags *tags)
+int QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
+                               int *outNumTracks, Tags *tags)
 {
    OSErr err = noErr;
+
+   CreateProgress();
 
    //
    // Determine the file format.
@@ -247,7 +244,7 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    AudioFormatAtomPtr decompressionParamsAtom = NULL;
    err = GetSoundDescriptionExtension(soundDescription, &decompressionParamsHandle,
                                       siDecompressionParams);
-   if(err == noErr)
+   if (err == noErr)
    {
       // this stream has decompression parameters.  copy from the handle to the atom.
       int paramsSize = GetHandleSize(decompressionParamsHandle);
@@ -258,7 +255,7 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       HUnlock(decompressionParamsHandle);
    }
 
-   if(decompressionParamsHandle)
+   if (decompressionParamsHandle)
       DisposeHandle(decompressionParamsHandle);
 
    //
@@ -281,6 +278,11 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    outputFormat.format = kSoundNotCompressed;
 
    err = SoundConverterOpen(&inputFormat, &outputFormat, &soundConverter);
+   if (err != noErr)
+   {
+      // Need to do cleanup here...
+      return false;
+   }
 
    //
    // Create the Audacity WaveTracks to house the new data
@@ -438,10 +440,8 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       samplesSinceLastCallback += outputFrames;
       if( samplesSinceLastCallback > SAMPLES_PER_CALLBACK )
       {
-         if( mProgressCallback )
-            cancelled = mProgressCallback(mUserData,
-                                          (float)cbData.getMediaAtThisTime /
-                                          cbData.sourceDuration);
+         cancelled = !mProgress->Update((wxULongLong_t)cbData.getMediaAtThisTime,
+                                        (wxULongLong_t)cbData.sourceDuration);
          samplesSinceLastCallback -= SAMPLES_PER_CALLBACK;
       }
    }
@@ -482,7 +482,7 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
          delete channels[c];
       delete[] channels;
 
-      return false;
+      return (cancelled ? eImportCancelled : eImportFailed);
    }
 
    *outNumTracks = outputFormat.numChannels;
@@ -491,8 +491,8 @@ bool QTImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
          (*outTracks)[c] = channels[c];
       delete[] channels;
 
-      return true;
-   }
+   return eImportSuccess;
+}
 
 static const struct
 {

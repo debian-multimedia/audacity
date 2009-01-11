@@ -76,6 +76,7 @@ void AudioIOPrefs::GetNamesAndLabels()
    int nDevices = Pa_CountDevices();
 #endif
 
+   int numChannels = 0; // find max no. of record channels available
    for(j=0; j<nDevices; j++) {
       const PaDeviceInfo* info = Pa_GetDeviceInfo(j);
       Name = DeviceName(info);
@@ -87,11 +88,12 @@ void AudioIOPrefs::GetNamesAndLabels()
       if (info->maxInputChannels > 0) {
          mmRecordNames.Add( Name );
          mmRecordLabels.Add( Label );
+         if (info->maxInputChannels > numChannels)
+            numChannels = info->maxInputChannels;
       }
    }
 
    // Channel counts, mono, stereo etc...
-   const int numChannels = 16;
    for(int c=0; c<numChannels; c++)
    {
       mmChannelNames.Add(  wxString::Format(wxT("%d"), c+1));
@@ -144,16 +146,20 @@ void AudioIOPrefs::PopulateOrExchange( ShuttleGui & S )
    S.EndHorizontalLay();
    S.StartStatic( _("Playthrough") );
    {
-      S.TieCheckBox( _("&Play other tracks while recording new one"),
+      S.TieCheckBox( _("Overdub: &Play other tracks while recording new one"),
          wxT("Duplex"),true);
-#ifdef __MACOSX__
+#ifdef __WXMAC__
       S.TieCheckBox( _("&Hardware Playthrough: Play new track while recording it"),
          wxT("Playthrough"),false);
       S.TieCheckBox( _("&Software Playthrough: Play new track while recording it"),
          wxT("SWPlaythrough"),false);
 #else
-      S.TieCheckBox( _("&Software Playthrough: Play new track while recording it (uncheck when recording \"stereo mix\")"),
+      S.TieCheckBox( _("&Software Playthrough: Play new track while recording or monitoring"),
          wxT("SWPlaythrough"),false);
+      wxString Temp = wxT("     ");
+      Temp += _("(uncheck when recording \"stereo mix\")");
+      // AddUnits abused here to get left aligned text.
+      S.AddUnits(Temp);
 #endif
 
    }

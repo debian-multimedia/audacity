@@ -12,15 +12,17 @@
 #define __AUDACITY_NOTETRACK__
 
 #include <wx/string.h>
-
+#include "Audacity.h"
+#include "Experimental.h"
 #include "Track.h"
+
+#if defined(USE_MIDI)
 
 class wxDC;
 class wxRect;
 
 class DirManager;
-class Seq;   // from "allegro.h"
-
+class Alg_seq;   // from "allegro.h"
 
 class NoteTrack:public Track {
  public:
@@ -38,7 +40,27 @@ class NoteTrack:public Track {
    void DrawLabelControls(wxDC & dc, wxRect & r);
    bool LabelClick(wxRect & r, int x, int y, bool right);
 
-   void SetSequence(Seq *seq);
+   void SetSequence(Alg_seq *seq);
+   Alg_seq* GetSequence();
+   void PrintSequence();
+
+   int GetVisibleChannels();
+
+   bool ExportMIDI(wxString f);
+   bool ExportAllegro(wxString f);
+
+/* REQUIRES PORTMIDI */
+//   int GetLastMidiPosition() const { return mLastMidiPosition; }
+//   void SetLastMidiPosition( int position )
+//   {
+//      mLastMidiPosition = position;
+//   }
+
+   // High-level editing
+   virtual bool Cut  (double t0, double t1, Track **dest);
+   virtual bool Copy (double t0, double t1, Track **dest);
+   virtual bool Clear(double t0, double t1);
+   virtual bool Paste(double t, Track *src);
 
    int GetBottomNote() const { return mBottomNote; }
    void SetBottomNote(int note) 
@@ -56,7 +78,20 @@ class NoteTrack:public Track {
    virtual void WriteXML(XMLWriter &xmlFile);
 
  private:
-   Seq *mSeq;
+   Alg_seq *mSeq; // NULL means no sequence
+   // when Duplicate() is called, assume that it is to put a copy
+   // of the track into the undo stack or to redo/copy from the
+   // stack to the project object. We want copies to the stack
+   // to be serialized (therefore compact) representations, so
+   // copy will set mSeq to NULL and serialize to the following
+   // variables. If this design is correct, the track will be
+   // duplicated again (in the event of redo) back to the project
+   // at which point we will unserialize the data back to the
+   // mSeq variable. (TrackArtist should check to make sure this
+   // flip-flop from mSeq to mSerializationBuffer happened an
+   // even number of times, otherwise mSeq will be NULL).
+   void *mSerializationBuffer; // NULL means no buffer
+   long mSerializationLength;
    double mLen;
 
    DirManager *mDirManager;
@@ -64,9 +99,10 @@ class NoteTrack:public Track {
    int mBottomNote;
 
    int mVisibleChannels;
-
-   void CalcLen();
+   int mLastMidiPosition;
 };
+
+#endif // USE_MIDI
 
 #endif
 

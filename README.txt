@@ -1,15 +1,28 @@
 
-Audacity: A Free, Cross-Platform Digital Audio Editor
-WWW:   http://audacity.sourceforge.net/
+Audacity(R): A Free, Cross-Platform Digital Audio Editor
+  WWW: http://audacity.sourceforge.net/
+
+We welcome feedback on Audacity, suggestions for new or
+improved features, bug reports and patches at:
+  feedback@audacityteam.org
+
+Personal support with Audacity is not provided by e-mail,
+but on our Forum:
+  http://audacityteam.org/forum/
+
+Audacity is copyright (c) 1999-2008 by Audacity Team.
+This copyright notice applies to all documents in the
+Audacity source code archive, except as otherwise noted
+(mostly in the lib-src subdirectories).
 
 "Audacity" is a registered trademark of Dominic Mazzoni.
 
-Version 1.3.5 (beta)
+Version 1.3.6 Beta
 
 Contents of this README:
 
 1.  Licensing
-2.  Changes in version 1.3.5
+2.  Changes in version 1.3.6 Beta
 3.  Known Issues
 4.  Source Code, Libraries and Additional Copyright Information
 5.  Compilation Instructions
@@ -19,7 +32,7 @@ Contents of this README:
 
 1. Licensing
 
-This program is free software. ; you can redistribute it and/or modify it
+This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
 Free Software Foundation; either version 2 of the License, or (at your
 option) any later version. The program source code is also freely
@@ -41,46 +54,34 @@ to http://www.gnu.org/copyleft/gpl.html or write to
 
 --------------------------------------------------------------------------------
 
-2.  Changes in version 1.3.5
-
-Recording  / Playback:
-	* Several bugs fixed so that latency correction should be better, and more
-	   devices work correctly. Problems with invalid sample rates under Linux
-	   should be much rarer.
-	* Newer version of Portaudio library.
-	* New feature to record onto the end of an existing track
-	   (hold Shift while clicking Record).
-
-Import / Export:
-	* Updated versions of Libogg, Libvorbis, Libflac, Libsndfile and Twolame
-	   libraries.
-	* Handling of unsupported file formats more informative.
-	* Handling of file names with slashes on OS X improved. New dialog
-	   allows replacement of illegal file name characters on all platforms.
+2.  Changes in 1.3.6 Beta (since Alpha 1.3.6a6):
 
 Interface:
-	* Improved scaling and layout for rulers and VU meters.
-	* Envelope fixes/improvements including full control of undo/redo.
-	* New keyboard shortcuts and improved menu navigation.
-	* Preferences: More intuitive tab arrangement. New options for
-	   mute/solo and Metadata Editor behavior. Language can now be
-	   changed without restart.
-	* Expanded Build Information tab.
+        * "Save Compressed Copy of Project" saves in much smaller .OGG
+           format to facilitate online transmission of projects
+        * Improved MIDI import and export routines, and clearer color
+           for selection region
+        * Default temporary directory on Mac now accessible in Finder
 
-Effects:
-	* New Vocal Remover plug-in, improvements for Generate effects.
+Import / Export:
+	* Stability improvements in on-demand loading
+        * FFmpeg: support for latest version of library, improved
+           version checks and error messages, stability improvements
+           in custom exporter
+
+Bug Fixes:
+        * Crash in "Get Noise Profile" step of Noise Removal at project
+           rates below 20480 Hz.
+        * Underestimation of peak level in tracks with a small number
+           of different peaks
+        * Truncate Silence could result in repeated or lost audio if
+           applied to the whole of a track
+        * Other interface, generating, exporting and platform-specific
+           fixes
 
 Compilation:
-	* Fixes when building Audacity with libraries disabled.
-	* Improvements to make Mac and Solaris builds easier.
-
-Security:
-	* Full fix for issue CVE-2007-6061 on systems where temporary directories
-	   can be changed by other users (thanks to Michael Schwendt).
-
-Miscellaneous:
-	* Updated translations for many locales.
-	* Several stability improvements.
+        * Added autoconf macro archive to CVS, enabling *.nix users
+           without this archive to build --with -MIDI
 
 
 --------------------------------------------------------------------------------
@@ -93,101 +94,199 @@ Please also check:
 for details of any issues that have been identified after release of
 this version.
 
- * If Audacity is built from CVS with wxWidgets 2.6.4 or later, the Escape
-    key does not cancel most dialogs. This is due to a wxWidgets bug.
 
-    In builds provided by the Audacity project, wx 2.6.4 has been patched.
-    This means that all dialogs can be cancelled by Escape when first
-    opened, but in Preferences and Effect dialogs, keyboard users must
-    now tab twice to reach the first field of the dialog. Additionally, for
-    Preferences, GVerb, Hard Limiter, SC4 and user-added LADSPA/VST
-    effects, once the user interacts with the dialog, it cannot then be
-    cancelled by Escape without first tabbing to the OK or Cancel buttons.
+ * Creating a Label Track (with or without a label), then pasting in
+    error into any selected track before clipboard has any content
+    causes a crash.
 
- * Export Multiple fails with no export or warning if an empty label is
-    encountered.
+ * Muting/soloing specific stereo tracks when exporting may produce
+    incorrect channel results in the exported file. A file exported
+    from a single stereo track may have left channel only after use
+    of solo/mute buttons.
 
- * The preference "Hold recorded data in memory until recording is stopped" is
-    misnamed. It caches most audio data for the duration of the session, including
-    project data and imported files. Enabling it may cause a crash when making
+ * Muting specific time-shifted mono tracks when exporting produces
+    audio at wrong point on timeline in exported file if muted tracks
+    are to left of unmuted.
+
+ * Entering a negative three-digit value in "Change Speed", then
+    previewing, raises an "Unhandled Exception" dialogue on which any
+    of the "Abort, Retry, Ignore" choices cause a crash. Also possible
+    freeze or crash on exit if a negative three-digit percent change is
+    previewed in "Change Tempo" or "Change Pitch".
+
+ * Nyquist plug-ins do not display moving bars in progress dialogue and
+    over-estimate "Remaining Time"; if effect is cancelled, the
+    unprocessed audio is deleted from the track, or Audacity crashes
+
+ * Change Speed and Change Tempo fail to modify the original selection
+    length after applying the effect. Repeat fails to include the
+    original selection region after applyihg the effect.
+
+ * In projects containing many tracks, clips dragged at the bottom of
+    the project may jump upwards into tracks towards the top when they
+    pass the snap-to point with other clips.
+
+ * Starting monitoring in Meter Toolbar after recording in another
+    project window then closing it causes a crash
+
+ * LADSPA Multiband EQ may not be visible in the Effect menu, and
+    may crash in use.
+
+ * On-demand:
+    * does not work if using the optional FFmpeg importer (that is, if
+       "FFmpeg-compatible files" set in the import window)
+    * when importing a mixture of uncompressed and compressed files,
+       on-demand loading does not start until normal import of the
+       compressed files completes, if the names of the compressed files
+       come earlier in the alphabet
+
+ * Linked audio and label tracks:
+    * Labels do not move with Effect > Repeat, Reverse, and Truncate
+       Silence, or when time-shifting clips
+    * When a Time Track is present, audio is not pasted into all
+       tracks, leading to desynchronisation
+
+ * Exports:
+    * WAVEX (Microsoft) headers: GSM 6.10 files cannot be exported, and
+       U-Law/A-Law files may not be playable
+    * M4A: exports at rates below 44100 Hz have incorrect sample rates,
+       and 38000 Hz exports may not play properly (FFmpeg bugs); M4A
+       renamed to MOV will not play in Windows iTunes or QuickTime
+    * MP3: Bit Rate Mode and Quality choices in MP3 Options dialogue
+       are non-functional, almost always producing a 128 kbps CBR file.
+       Reported length is often incorrect (the actual length is correct)
+
+ * Export Multiple:
+    * fails with no export or warning if an empty label is encountered.
+    * "Other uncompressed files" choice always produces 16-bit PCM
+       audio irrespective of header and encoding chosen in Options.
+
+ * Some multi-channel recording devices that previously recorded more
+    than two channels may no longer do so. Please send reports to:
+      feedback@audacityteam.org
+
+ * When in Spectrum, Spectrum log or Pitch view, pasting in audio then
+    zooming in causes the pasted content beyond the horizontal scroll
+    to disappear.
+
+ * Preferences window: OK button does not work when a tab is selected
+    in the left-hand panel.
+
+ * When more than one track is selected, and the region selected in the
+    clips includes white space, "Split New" and "Noise Removal" cause
+    the clip(s) to perform unwanted alignments instead of remaining at
+    their original time position. The problem occurs whether or not the
+    entire audio of the tracks is selected.
+
+ * Split New: If selecting part of a clip from the left edge of the
+    clip, the newly split clip wrongly aligns with the left edge of the
+    residual clip in the original track.
+
+ * "Audio Cache" on the Directories tab of Preferences caches most
+    audio data for the duration of the session, including project data
+    and imported files. Enabling it could cause a crash when making
     long recordings or opening large files or projects.
 
  * A few interface elements do not change language without restart.
 
- * Calculation of "disk space remains for recording (time)" is incorrect when
-    recording in 24 bit quality. You may record for 50% longer than the indicated
-    time.
+ * Calculation of "disk space remains for recording (time)" incorrect
+    when recording in 24 bit quality. You may record for 50% longer
+    than the indicated time.
 
- * Pressing Play (but not spacebar) in a second project when another is already
-    playing stops playback of the first project.
+ * Pressing Play (but not spacebar) in a second project when another is
+    already playing stops playback of the first project.
 
  * Projects created by Audacity 1.1.x may open incorrectly.
 
- * Metadata such as ID3 tags is not fully imported and exported for all supported
-    file formats. MP3 tags *are* correctly imported and exported to the current ID3
-    specification, but some players don't fully support this specification, so may not
-    see all the tags.
+ * Metadata such as ID3 tags is not fully imported and exported for
+    all supported file formats. MP3 tags *are* correctly imported and
+    exported to the current ID3 specification, but some players don't
+    fully support this specification, so may not see all the tags.
 
- * No warning is given if File > Save or File > Save Project As... is carried out with
-    no tracks open.
+ * ID3 Genre tags of imported MP3s are misread (and will therefore
+    also be exported incorrectly) if the genre list in Metadata Editor
+    is opened and saved.
 
- * Not all menu items are correctly enabled when the preference: "Select all audio in
-    project, if none selected" is checked.
+ * No warning given if File > Save or File > Save Project As... is
+    carried out with no tracks open.
+
+ * Not all menu items correctly enabled when the preference: "Select
+    all audio in project, if none selected" is checked.
 
  * Beep on completing long process may not be audible on many systems.
 
- * Audacity can import and display MIDI files, but they cannot be played
-    or edited.
+ * Audacity can import, display and cut/copy/paste MIDI files, then
+    export them, but they cannot be played. Undoing an edit with a MIDI
+    track open causes the MIDI data to be lost in Windows builds
 
- * Windows only: Welcome Message: On some systems/browsers, links are not
-    brought to top, and some screen readers that otherwise work well with Audacity
-    cannot read its text.
+ * Windows only: LV2 support: LADSPA plug-ins not yet categorisable;
+    the slv2 library needed for full LV2 support does not build.
 
- * Windows (reported on): There have been reports of clicks during recording on
-    some Windows XP systems using Audacity 1.3.4, where 1.2.6 had no problem.
-    It is not clear if 1.3.5 will have this issue or if it will occur on other operating
-    systems. Users can help us by sending any reports of this problem to:
-      audacity-devel@lists.sourceforge.net
+ * Windows only: Welcome Message: On some systems/browsers, links are
+    not brought to top, and some screen readers that otherwise work
+    well with Audacity cannot read its text.
 
- * Windows only: Audacity is incompatible with some professional sound cards
-    and may crash if one of these cards is the default when you open Audacity.
-    As a workaround, make a different sound card your default when using
-    Audacity, but please let us know if this affects you so that we can track down
-    and solve the problem.
+ * Windows (reported on): There have been reports of clicks during
+    recording on some Windows XP systems using Audacity 1.3.4 and
+    later, where 1.2.6 had no problem. It is unclear if current
+    releases will have this issue or if it will occur on other
+    operating systems. Users can help us by sending any reports of this
+    problem to:
+      feedback@audacityteam.org
 
- * Mac OS X only: Some users find that after running Audacity other media
-    players don't produce any sound or crash. Audacity tries to select the best
-    quality settings your system is capable of, to give the best recordings
-    possible. Some sound drivers also retain these settings as defaults for
-    other applications, which can cause these symptoms
+ * Windows only: Audacity is incompatible with some professional sound
+    cards and may crash if one of these cards is the default when you
+    open Audacity. As a workaround, make a different sound card your
+    default when using Audacity, but please let us know if this affects
+    you so we can track down and solve the problem.
 
-   To get round this, enable the option "Do not modify audio device settings"
-   on the Audio I/O tab of the preferences, and make sure that your sound
-   device is set up (in the Apple Sound and Midi Setup utility) to work in
-   stereo, 16bits, with a sample rate of 44100Hz or 48000Hz.  More help at:
-      http://audacityteam.org/wiki/index.php?title=Mac_Bugs#Loss_of_sound_after_running_Audacity
+ * Mac OS X only: Very occasionally, users may find that recording
+    causes "error opening sound device", or that after running
+    Audacity, other media players don't produce any sound, or crash.
+    To resolve this, set up your sound device in Apple Audio MIDI Setup
+    to work in stereo, 16 bits, with a sample rate of 44100 Hz or
+    48000 Hz, and set the sample format and rate identically in
+    Audacity. More help at:
+      http://audacityteam.org/forum/viewtopic.php?f=17&t=5064
+
+ * Mac OS X only: If using Audacity when the "Hear" audio plug-in is
+    running (or has been since boot), there will be excessive memory
+    usage which could cause a crash. This appears to be due to buggy
+    memory allocation in "Hear".
 
  * Mac OS X only: Portable settings aren't picked up, and the default
-    settings (in the default location) are always used. See this page for
-    a workround:
+    settings (in the default location) are always used. See this page
+    for a workaround:
       http://audacityteam.org/wiki/index.php?title=Portable_Audacity
 
- * Linux only: Audacity now supports interfacing with Jack, however this has
-    not been tested, and is known to have a number of issues with both
-    reliability and useability. Patches to improve both will be welcomed.
+ * Mac OS X and Linux only: Labels do not accept certain legal
+    characters.
 
- * Linux (reported on): The first file imported into a project no longer
-    changes the project rate to the file's rate, if that rate is absent from the
-    project rate list.
+ * Linux only: When importing larger WAV files with Import/Export
+    Preferences set to "read directly", exporting to the same file by
+    overwriting may result in a visually/audibly corrupted file.
 
- * Linux (Debian-derived) only: Audacity configure script does not detect
-    libsoundtouch on the system and so Change Pitch and Change Tempo
-    effects are disabled. This is a debian bug (#476699), which can be
-    worked around by symlinking /usr/lib/pkgconfig/soundtouch-1.0.pc
-    to /usr/lib/pkgconfig/libSoundTouch.pc.
+ * Linux only: Audacity does not build if EXPERIMENTAL_SCOREALIGN is
+    defined
 
-Also note that the Windows installer will not replace 1.2.x installations, but will
-install alongside them.
+ * Linux only: Audacity now supports interfacing with Jack, however
+    this has not been tested, and has a number of known reliability and
+    useability issues. Patches to improve both will be welcomed.
+
+ * Linux (reported on): The first file imported into a project no
+    longer changes the project rate to the file's rate, if that rate is
+    absent from the project rate list.
+
+ * Linux (Debian-derived) only: Audacity configure script does not
+    detect libsoundtouch on the system and so Change Pitch and Change
+    Tempo effects are disabled. This is a debian bug (#476699), which
+    can be worked around by symlinking
+    /usr/lib/pkgconfig/soundtouch-1.0.pc
+    to
+    /usr/lib/pkgconfig/libSoundTouch.pc
+
+Also note the Windows installer will not replace 1.2.x installations,
+but will install alongside them.
 
 
 --------------------------------------------------------------------------------
@@ -319,7 +418,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 5. Compilation instructions
 
-First you must download wxWidgets 2.6.x from:
+First you must download wxWidgets. Audacity 1.3.6 and later requires
+wxWidgets 2.8.9 from:
 
   http://www.wxWidgets.org/
 
@@ -343,19 +443,217 @@ and header dependencies:
   make dep
 
 To compile on Windows using MSVC++, please follow the instructions found in
-compile.txt in the "win" subdirectory. CodeWarrior for Mac is also supported.
+compile.txt in the "win" subdirectory.
+To compile using Xcode on Mac OS X, see the instructions in mac/compile.txt.
 
 For more information on compilation, please visit:
 
   http://audacityteam.org/wiki/index.php?title=Developer_Guide#Platform_Specific_Guides
 
-or email us at:
+or e-mail us at:
 
   audacity-devel@lists.sourceforge.net
 
 --------------------------------------------------------------------------------
 
 6.  Previous Changes going back to version 1.1.0
+
+Changes in 1.3.6a6:
+
+Interface:
+        * Note Track now supports export as a MIDI file
+        * Linked audio and label tracks: improved support when source
+           and target number of tracks differ and when cross-pasting
+           different track types
+
+Import / Export:
+        * On-demand now supports project saving during summarising;
+           reverts to stripey background; fixed some crashes due to
+           threading issues
+        * Exports: Single AAC filter (M4A LC profile) with quality
+           settings slider; removed FFmpeg formats already supported
+           by Audacity; added explicit GSM 6.10 (WAV) filter; current
+           project rate now used for all exports, with check for
+           format-invalid rates; improvements to metadata support
+
+Effects:
+        * LV2 plug-ins: added support (OS X and Linux only) for using
+           synths as tone generators, scale point labels, grouped
+           controls and i18n translations
+
+
+Changes in 1.3.6a5:
+
+Interface:
+        * Note Track now builds on Windows
+        * Fixes/improvements for linked audio and label tracks (one
+           desynchronisation bug remains when pasting audio into a
+           greater number of tracks than were copied); now supports
+           label shifting when changing pitch and tempo
+        * Added full label pasting support: now possible to paste
+           multiple labels, region labels and labels with audio, and
+           correct label text is now pasted
+
+Import / Export:
+        * Added full "on-demand" support (now with minimum file
+           length of 30 seconds): clicking moves summary calculation
+           point; supports split and merge of stereo tracks;
+           incompletely summarised tracks resume summary calculation
+           automatically; text-based Status Bar progress indication and
+           animated dummy waveform instead of embedded progress bar
+
+
+Effects:
+        * Fixed a bug where previewing Equalization curves more
+           than once previewed the unmodified audio
+        * Improvements to DTMF generator
+
+Miscellaneous:
+        * Improved support for working with audio in excess of 2^31
+           samples (about 13.5 hours at 44100 Hz); some accessibility
+           improvements
+
+
+Changes in 1.3.6a4:
+
+Interface:
+        * New Preference: Default View Mode, to choose type of
+           waveform, spectrum or pitch view for new tracks
+        * Note Track: experimental support is now enabled by defining
+           USE_MIDI in config*, but does not build out-of-the-box
+           on Windows
+        * Bug fixes for linked audio and label tracks; now supports
+           label shifting when changing speed and generating tones
+
+Import / Export:
+        * Improvements/fixes for AAC exports including new M4A
+           filter for compatibility with iTunes; RealAudio export
+           support removed - FFmpeg does not support this properly
+        * Improved refresh of on-demand loading; fixed a phantom
+           on-demand progress bar when time-shifting clips
+
+Effects:
+        * Experimental support for LV2 plug-in architecture on Linux
+           and Mac, but operation may be buggy; no LV2 support yet on
+           Windows, because the required slv2 library currently does
+           not build
+
+
+Changes in 1.3.6a3:
+
+Import / Export:
+        * Experimental support for exporting a much wider range
+           of proprietary audio formats via FFmpeg
+        * "On-demand" immediate loading of imported PCM WAV or
+           AIFF files now has experimental "progress bar" embedded in
+           the waveform until fully loaded
+
+Interface:
+        * Note Track: experimental support for cut, copy and paste
+           using Edit Toolbar; currently not available for Linux, where
+           EXPERIMENTAL_NOTE_TRACK must be undefined in order
+           to build
+        * New Transport menu for alternative access to play and record
+           commands and some recording preferences
+        * Audio tracks are now linked to label tracks by being positioned
+           above a label track, if linkage is enabled in the Tracks menu
+
+
+Changes in 1.3.6a2:
+
+Import / Export:
+        * Experimental support for importing a much wider range
+           of audio formats via FFmpeg: support has to be enabled
+           in *config when building and requires FFmpeg libraries
+        * Experimental support for "on-demand" immediate loading
+           of imported PCM WAV or AIFF files (full waveform continues
+           to load while you play or edit).
+
+Effects:
+        * Built-in plug-ins now grouped into related hierarchical
+           categories
+
+Interface:
+        * New Debug Log window available in all builds
+        * Experimental support for linking a label track with any
+           number of audio tracks so that labels shift with cuts and
+           inserts in the audio track
+        * Default theme now reverted to that of 1.3.5
+        * Recording channels preference now defaults to stereo
+
+Miscellaneous:
+        * Bug fixes for shortcut availability/tab order in Selection Bar,
+           and for window focus issues when previewing effects
+        * Improvements in escaping and navigating fields in dialogs,
+           and in stabilty when screen readers are used
+
+
+Changes in 1.3.6a1:
+
+Interface:
+	* Further improvements to menu navigation and wordings.
+	* All file dialogs are now resizable, and support "Places"
+	   sidebar on Windows 2000 or later.
+	* Preferences:
+	        * New "Theme" preference for modifying interface
+	           colours and images, with experimental new default
+	           colour scheme.
+	        * New "Smart Recording" preference automatically pauses
+	           recordings that fall below a pre-defined input level.
+
+Compilation:
+        * Simplified modular builds for Windows, removing
+           static-linked configurations.
+        * New shared configurations on Mac to support modular
+           builds, and all builds are now Unicode.
+
+Miscellaneous:
+        * Default auto save interval reduced to 2 minutes.
+        * Bug fixes to correct project rate initialisation on Linux, and
+           file importing issues on PPC Macs.
+
+
+Changes in 1.3.5:
+
+Recording  / Playback:
+	* Several bugs fixed so that latency correction should be better, and more
+	   devices work correctly. Problems with invalid sample rates under Linux
+	   should be much rarer.
+	* Newer version of Portaudio library.
+	* New feature to record onto the end of an existing track
+	   (hold Shift while clicking Record).
+
+Import / Export:
+	* Updated versions of Libogg, Libvorbis, Libflac, Libsndfile and Twolame
+	   libraries.
+	* Handling of unsupported file formats more informative.
+	* Handling of file names with slashes on OS X improved. New dialog
+	   allows replacement of illegal file name characters on all platforms.
+
+Interface:
+	* Improved scaling and layout for rulers and VU meters.
+	* Envelope fixes/improvements including full control of undo/redo.
+	* New keyboard shortcuts and improved menu navigation.
+	* Preferences: More intuitive tab arrangement. New options for
+	   mute/solo and Metadata Editor behavior. Language can now be
+	   changed without restart.
+	* Expanded Build Information tab.
+
+Effects:
+	* New Vocal Remover plug-in, improvements for Generate effects.
+
+Compilation:
+	* Fixes when building Audacity with libraries disabled.
+	* Improvements to make Mac and Solaris builds easier.
+
+Security:
+	* Full fix for issue CVE-2007-6061 on systems where temporary directories
+	   can be changed by other users (thanks to Michael Schwendt).
+
+Miscellaneous:
+	* Updated translations for many locales.
+	* Several stability improvements.
+
 
 Changes in 1.3.4:
 

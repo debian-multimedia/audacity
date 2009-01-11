@@ -42,6 +42,12 @@ public:
       return wxString(_("Click Removal..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+     std::set<wxString> result;
+     result.insert(wxT("http://audacityteam.org/namespace#NoiseRemoval"));
+     return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("ClickRemoval"));
    }
@@ -61,7 +67,7 @@ public:
 
 private:
    bool ProcessOne(int count, WaveTrack * track,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
 
    void RemoveClicks(sampleCount len,
                     float *buffer);

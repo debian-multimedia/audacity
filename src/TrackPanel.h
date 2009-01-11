@@ -21,6 +21,7 @@
 #include "Sequence.h"  
 #include "WaveClip.h"
 #include "WaveTrack.h"
+#include "LabelTrack.h"
 
 class wxMenu;
 class wxRect;
@@ -151,6 +152,7 @@ class TrackPanel:public wxPanel {
    void OnErase(wxEraseEvent & event);
    void OnPaint(wxPaintEvent & event);
    void OnMouseEvent(wxMouseEvent & event);
+   void OnCaptureLost(wxMouseCaptureLostEvent & event);
    void OnCaptureKey(wxCommandEvent & event);
    void OnKeyDown(wxKeyEvent & event);
    void OnChar(wxKeyEvent & event);
@@ -212,6 +214,8 @@ class TrackPanel:public wxPanel {
 
    Track *GetFocusedTrack();
    void SetFocusedTrack(Track *t);
+   
+   void OnTrackSticky(wxCommandEvent & event);
 
    void HandleCursorForLastMouseEvent();
 #ifdef EXPERIMENTAL_RULER_AUTOSIZE
@@ -567,6 +571,7 @@ private:
    wxMenu *mLabelTrackMenu;
    wxMenu *mRateMenu;
    wxMenu *mFormatMenu;
+   wxMenu *mStickyLabelMenu;
    wxMenu *mLabelTrackInfoMenu;
 
    Track *mPopupMenuTarget;

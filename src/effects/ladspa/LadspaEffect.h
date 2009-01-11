@@ -24,11 +24,14 @@ class LadspaEffect:public Effect {
 
  public:
 
-   LadspaEffect(const LADSPA_Descriptor *data);
+   LadspaEffect(const LADSPA_Descriptor *data, 
+                const std::set<wxString>& categories = std::set<wxString>());
    virtual ~LadspaEffect();
 
    virtual wxString GetEffectName();
    
+   virtual std::set<wxString> GetEffectCategories();
+
    virtual wxString GetEffectIdentifier();
    
    virtual wxString GetEffectAction();
@@ -47,11 +50,11 @@ class LadspaEffect:public Effect {
 
  private:
    bool ProcessStereo(int count, WaveTrack * left, WaveTrack *right,
-                      longSampleCount lstart, longSampleCount rstart,
+                      sampleCount lstart, sampleCount rstart,
                       sampleCount len);
 
    void GetSamples(WaveTrack *track,
-                   longSampleCount *start,
+                   sampleCount *start,
                    sampleCount *len);
  
    wxString pluginName;
@@ -70,6 +73,8 @@ class LadspaEffect:public Effect {
    float *outputControls;
    int mainRate;
    double mLength;
+
+   std::set<wxString> mCategories;
 };
 
 class LadspaEffectDialog:public wxDialog {

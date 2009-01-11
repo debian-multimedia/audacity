@@ -35,6 +35,12 @@ public:
       return wxString(_("Noise Removal..."));
    }
    
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://audacityteam.org/namespace#NoiseRemoval"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("NoiseRemoval"));
    }
@@ -78,7 +84,7 @@ private:
    double     mAttackDecayTime;        // in secs
 
    bool ProcessOne(int count, WaveTrack * track,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
 
    void Initialize();
    void StartNewTrack();
@@ -93,8 +99,8 @@ private:
 
    // Variables that only exist during processing
    WaveTrack            *mOutputTrack;
-   longSampleCount       mInSampleCount;
-   longSampleCount       mOutSampleCount;
+   sampleCount       mInSampleCount;
+   sampleCount       mOutSampleCount;
    int                   mInputPos;
 
    int       mFreqSmoothingBins;

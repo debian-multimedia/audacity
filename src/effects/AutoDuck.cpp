@@ -202,9 +202,9 @@ bool EffectAutoDuck::Process()
 
    bool cancel = false;
 
-   longSampleCount start =
+   sampleCount start =
       mControlTrack->TimeToLongSamples(mT0 + mOuterFadeDownLen);
-   longSampleCount end =
+   sampleCount end =
       mControlTrack->TimeToLongSamples(mT1 - mOuterFadeUpLen);
    
    if (end <= start)
@@ -218,7 +218,7 @@ bool EffectAutoDuck::Process()
    if (maxPause < mOuterFadeDownLen + mOuterFadeUpLen)
       maxPause = mOuterFadeDownLen + mOuterFadeUpLen;
       
-   longSampleCount minSamplesPause =
+   sampleCount minSamplesPause =
       mControlTrack->TimeToLongSamples(maxPause);
 
    double threshold = pow(10.0, mThresholdDb/20);
@@ -243,11 +243,11 @@ bool EffectAutoDuck::Process()
    // to make the progress bar appear more natural, we first look for all
    // duck regions and apply them all at once afterwards
    AutoDuckRegionArray regions;
-   longSampleCount pos = start;
+   sampleCount pos = start;
    
    while (pos < end)
    {
-      longSampleCount len = end - pos;
+      sampleCount len = end - pos;
       if (len > BUF_SIZE)
          len = BUF_SIZE;
       
@@ -324,8 +324,8 @@ bool EffectAutoDuck::Process()
 
    if (!cancel)
    {
-      this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
-      TrackListIterator iter(m_pOutputWaveTracks);
+      this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+      TrackListIterator iter(mOutputWaveTracks);
       Track *iterTrack = iter.First();
       
       int trackNumber = 0;
@@ -385,7 +385,7 @@ bool EffectAutoDuck::ApplyDuckFade(int trackNumber, WaveTrack* t,
 
    while (pos < end)
    {
-      longSampleCount len = end - pos;
+      sampleCount len = end - pos;
       if (len > BUF_SIZE)
          len = BUF_SIZE;
 
@@ -628,6 +628,7 @@ static int GetDistance(const wxPoint& first, const wxPoint& second)
 BEGIN_EVENT_TABLE(EffectAutoDuckPanel, wxPanel)
    EVT_PAINT(EffectAutoDuckPanel::OnPaint)
    EVT_MOUSE_CAPTURE_CHANGED(EffectAutoDuckPanel::OnMouseCaptureChanged)
+   EVT_MOUSE_CAPTURE_LOST(EffectAutoDuckPanel::OnMouseCaptureLost)
    EVT_LEFT_DOWN(EffectAutoDuckPanel::OnLeftDown)
    EVT_LEFT_UP(EffectAutoDuckPanel::OnLeftUp)
    EVT_MOTION(EffectAutoDuckPanel::OnMotion)
@@ -826,6 +827,17 @@ void EffectAutoDuckPanel::OnMouseCaptureChanged(
 {
    SetCursor(wxNullCursor);
    mCurrentControlPoint = none;
+}
+
+void EffectAutoDuckPanel::OnMouseCaptureLost(
+   wxMouseCaptureLostEvent &evt)
+{
+   mCurrentControlPoint = none;
+
+   if (HasCapture())
+   {
+      ReleaseMouse();
+   }
 }
 
 EffectAutoDuckPanel::EControlPoint

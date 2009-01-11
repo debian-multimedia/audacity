@@ -5,6 +5,7 @@
   ErrorDialog.cpp
 
   Jimmy Johnson
+  Leland Lucius
 
 *******************************************************************//**
 
@@ -74,12 +75,7 @@ ErrorDialog::ErrorDialog(
       S.SetBorder( 20 );
       S.AddFixedText( message );
       S.SetBorder( 2 );
-      S.StartHorizontalLay( );
-      S.Id( wxID_HELP ).AddButton( _("Help") );
-      wxButton * pBtn = S.Id( wxID_OK ).AddButton( _("OK"));
-      pBtn->SetDefault();
-      pBtn->SetFocus();
-      S.EndHorizontalLay();
+      S.AddStandardButtons(eHelpButton | eOkButton);
    }
    S.EndVerticalLay();
 
@@ -126,13 +122,17 @@ void ErrorDialog::OnOk(wxCommandEvent &event)
 
 void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &HtmlText, bool bIsFile = false )
 {
-   BrowserFrame * pWnd = new BrowserFrame();
-   pWnd->Create(pParent, -1, Title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);// & ~wxSYSTEM_MENU);
-   ShuttleGui S( pWnd, eIsCreating );
    LinkingHtmlWindow *html;
-   S.StartVerticalLay();
+
+   BrowserFrame * pWnd = new BrowserFrame();
+   pWnd->Create(pParent, wxID_ANY, Title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);// & ~wxSYSTEM_MENU);
+
+   ShuttleGui S( pWnd, eIsCreating );
+
+   S.SetStyle( wxNO_BORDER | wxTAB_TRAVERSAL );
+   wxPanel *pPan = S.Prop(true).StartPanel();
    {
-      S.StartHorizontalLay( wxEXPAND, 0);
+      S.StartHorizontalLay( wxEXPAND, false );
       {
          wxButton * pWndBackwards = S.Id( wxID_BACKWARD ).AddButton( _("<") );
          wxButton * pWndForwards  = S.Id( wxID_FORWARD  ).AddButton( _(">") );
@@ -144,10 +144,11 @@ void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &Ht
          #endif
       }
       S.EndHorizontalLay();
-      html = new LinkingHtmlWindow(pWnd, -1,
-                                         wxDefaultPosition,
-                                         bIsFile ? wxSize(500, 400) : wxSize(480, 240),
-                                         wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
+
+      html = new LinkingHtmlWindow(pPan, wxID_ANY,
+                                   wxDefaultPosition,
+                                   bIsFile ? wxSize(500, 400) : wxSize(480, 240),
+                                   wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
 
       html->SetRelatedFrame( pWnd, wxT("Help: %s") );
       if( bIsFile )
@@ -156,9 +157,10 @@ void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &Ht
          html->SetPage( HtmlText);
 
       S.Prop(1).AddWindow( html, wxEXPAND );
-      S.Id( wxID_CLOSE ).AddButton( _("Close") );
+
+      S.Id( wxID_CANCEL ).AddButton( _("Close") )->SetDefault();
    }
-   S.EndVerticalLay();
+   S.EndPanel();
 
    // -- START of ICON stuff -----
    // If this section (providing an icon) causes compilation errors on linux, comment it out for now.
@@ -176,12 +178,15 @@ void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &Ht
    pWnd->mpHtml = html;
    pWnd->SetBackgroundColour( wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
    pWnd->CreateStatusBar();
-   html->SetRelatedStatusBar( 0 );
-   pWnd->Fit();
    pWnd->Centre();
+   pWnd->Layout();
+   pWnd->Fit();
+   pWnd->SetSizeHints(pWnd->GetSize());
    pWnd->Show( true );
-   pWnd->SetFocus();
-   //Dlg.Show();
+
+   html->SetRelatedStatusBar( 0 );
+   html->SetFocus();
+
    return;
 }
 

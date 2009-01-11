@@ -56,10 +56,10 @@ bool EffectRepair::Process()
 {
    //v This may be too much copying for EffectRepair. To support Cancel, may be able to copy much less.
    //  But for now, Cancel isn't supported without this.
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks. //v This may be too much copying for EffectRepair.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks. //v This may be too much copying for EffectRepair.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -86,10 +86,10 @@ bool EffectRepair::Process()
       repair_t0 = (repair_t0 < t0? t0: repair_t0);
       repair_t1 = (repair_t1 > t1? t1: repair_t1);
 
-      longSampleCount s0 = track->TimeToLongSamples(t0);
-      longSampleCount repair0 = track->TimeToLongSamples(repair_t0);
-      longSampleCount repair1 = track->TimeToLongSamples(repair_t1);
-      longSampleCount s1 = track->TimeToLongSamples(t1);
+      sampleCount s0 = track->TimeToLongSamples(t0);
+      sampleCount repair0 = track->TimeToLongSamples(repair_t0);
+      sampleCount repair1 = track->TimeToLongSamples(repair_t1);
+      sampleCount s1 = track->TimeToLongSamples(t1);
 
       sampleCount repairStart = (sampleCount)(repair0 - s0);
       sampleCount repairLen = (sampleCount)(repair1 - repair0);
@@ -97,6 +97,13 @@ bool EffectRepair::Process()
 
       if (repairLen > 128) {
          ::wxMessageBox(_("The Repair effect is intended to be used on very short sections of damaged audio (up to 128 samples).\n\nZoom in and select a tiny fraction of a second to repair."));
+            bGoodResult = false;
+            break;
+      }
+      
+      if (s0 == repair0 && s1 == repair1) {
+         ::wxMessageBox(_("Repair works by using audio data outside the selection region.\n\nPlease select a region that has audio touching at least one side of it.\n\nThe more surrounding audio, the better it performs."));
+///            The Repair effect needs some data to go on.\n\nPlease select an area to repair with some audio on at least one side (the more the better)."));
             bGoodResult = false;
             break;
       }
@@ -116,7 +123,7 @@ bool EffectRepair::Process()
 }
 
 bool EffectRepair::ProcessOne(int count, WaveTrack * track,
-                              longSampleCount start,
+                              sampleCount start,
                               sampleCount len,
                               sampleCount repairStart, sampleCount repairLen)
 {

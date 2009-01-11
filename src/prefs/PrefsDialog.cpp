@@ -14,6 +14,7 @@
 
 *//*******************************************************************/
 
+#include "../Experimental.h"
 #include "../Audacity.h"
 
 #include <wx/defs.h>
@@ -47,6 +48,10 @@
 
 #include "AudioIOPrefs.h"
 #include "SmartRecordPrefs.h"
+
+/* REQUIRES PORTMIDI */
+//#include "MidiIOPrefs.h"
+
 #include "DirectoriesPrefs.h"
 #include "FileFormatPrefs.h"
 #include "GUIPrefs.h"
@@ -87,17 +92,9 @@ static const char * TrialImage[] = {
 
 PrefsDialog::PrefsDialog(wxWindow * parent):
    wxDialog(parent, -1, _("Audacity Preferences"), wxDefaultPosition,
-         wxDefaultSize, wxDIALOG_MODAL | wxCAPTION | wxTHICK_FRAME)
+         wxDefaultSize, wxCAPTION)
+//         wxDefaultSize, wxDIALOG_MODAL | wxCAPTION | wxTHICK_FRAME)
 {
-#ifdef __WXMAC__
-   mMacHiddenFrame = new wxFrame(NULL, -1, wxT(""), wxPoint(5000, 5000),
-                        wxSize(100, 100));
-   wxMenuBar *blankMenuBar = new wxMenuBar();
-   mMacHiddenFrame->SetMenuBar(blankMenuBar);
-   blankMenuBar->MacInstallMenuBar();
-   mMacHiddenFrame->Show();
-#endif
-
    gPrefsDialogVisible = true;
 
    wxRect rect = GetRect();
@@ -138,16 +135,14 @@ PrefsDialog::PrefsDialog(wxWindow * parent):
 
    // Parameters are: AppPage( page, name, IsSelected, imageId)
    w = new AudioIOPrefs(mCategories);     mCategories->AddPage(w, w->GetName(),false,0);
+/* REQUIRES PORTMIDI */
+//   w = new MidiIOPrefs(mCategories);     mCategories->AddPage(w, w->GetName(),false,0);
    w = new QualityPrefs(mCategories);     mCategories->AddPage(w, w->GetName(),false,0);
    w = new FileFormatPrefs(mCategories);  mCategories->AddPage(w, w->GetName(),false,0);
    w = new GUIPrefs(mCategories);         mCategories->AddPage(w, w->GetName(),false,0);
    w = new SpectrumPrefs(mCategories);    mCategories->AddPage(w, w->GetName(),false,0);
-
    w = new DirectoriesPrefs(mCategories); mCategories->AddPage(w, w->GetName(),false,0);
-
-#ifdef EXPERIMENTAL_SMART_RECORD
    w = new SmartRecordPrefs(mCategories); mCategories->AddPage(w, w->GetName(),false,0);
-#endif
 
 #ifdef EXPERIMENTAL_THEME_PREFS
    w = new ThemePrefs(mCategories);       mCategories->AddPage(w, w->GetName(),false,0);
@@ -182,25 +177,21 @@ PrefsDialog::PrefsDialog(wxWindow * parent):
    outSizer->Add(topSizer, 1, wxGROW|wxTOP, TOP_LEVEL_BORDER);
 
    SetAutoLayout(true);
-   SetSizer(outSizer);
-   outSizer->Fit(this);
+   SetSizerAndFit(outSizer);
+   outSizer->FitInside(this);
    outSizer->SetSizeHints(this);
 
-   #ifdef __MACOS9__
-   // Until sizing works properly on the Mac
-   SetSize(525, 350);
-   #endif
-
-   #ifdef __MACOSX__
+   #ifdef __WXMAC__
    // Until sizing works properly on the Mac
    SetSize(620, 350);
    #endif
 
    #ifdef __WXMSW__
    // Because it looks nice (tm)   (you can see all the tabs at once)
-   SetSize(525, 363);
+   //SetSize(525, 363);
    #endif
 
+   
    // Center after all that resizing, but make sure it doesn't end up
    // off-screen
    CentreOnParent();
@@ -254,9 +245,6 @@ void PrefsDialog::OnOK(wxCommandEvent & event)
 
 PrefsDialog::~PrefsDialog()
 {
-#ifdef __WXMAC__
-   mMacHiddenFrame->Destroy();
-#endif
    gPrefsDialogVisible = false;
 }
 

@@ -37,6 +37,13 @@ class EffectFindClipping:public Effect
       return wxString(_("Find Clipping..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories()
+   {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#AnalyserPlugin"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier()
    {
       return wxString(wxT("FindClipping"));
@@ -60,10 +67,10 @@ class EffectFindClipping:public Effect
 
  private:
    bool ProcessOne(LabelTrack *l, int count, WaveTrack * t,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
  
-   sampleCount mStart;
-   sampleCount mStop;
+   int mStart;   ///< Using int rather than sampleCount because values are only ever small numbers
+   int mStop;    ///< Using int rather than sampleCount because values are only ever small numbers
 };
 
 //----------------------------------------------------------------------------

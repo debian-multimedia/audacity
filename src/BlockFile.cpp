@@ -120,6 +120,13 @@ wxFileName BlockFile::GetFileName()
    return mFileName;
 }
 
+///sets the file name the summary info will be saved in.  threadsafe.
+void BlockFile::SetFileName(wxFileName &name)
+{
+   mFileName=name;
+}
+
+
 /// Marks this BlockFile as "locked."  A locked BlockFile may not
 /// be moved or deleted, only copied.  Locking a BlockFile prevents
 /// it from disappearing if the project is saved in a different location.
@@ -280,7 +287,7 @@ void *BlockFile::CalcSummary(samplePtr buffer, sampleCount len,
    for (i = 1; i < sumLen; i++) {
       if (summary64K[3*i] < min)
          min = summary64K[3*i];
-      else if (summary64K[3*i+1] > max)
+      if (summary64K[3*i+1] > max)
          max = summary64K[3*i+1];
       float r1 = (float)summary64K[3*i+2];
       sumsq += (r1*r1);

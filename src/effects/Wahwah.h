@@ -16,6 +16,13 @@
 #ifndef __AUDACITY_EFFECT_WAHWAH__
 #define __AUDACITY_EFFECT_WAHWAH__
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+#include <wx/window.h>
+#endif
+
 #include <wx/dialog.h>
 #include <wx/slider.h>
 
@@ -34,6 +41,12 @@ class EffectWahwah:public EffectSimpleMono {
       return wxString(_("Wahwah..."));
    }
    
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#ModulatorPlugin"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("Wahwah"));
    }
@@ -96,14 +109,14 @@ friend class WahwahDialog;
 // WahwahDialog
 //----------------------------------------------------------------------------
 
-class WahwahDialog:public wxDialog {
+class WahwahDialog:public EffectDialog {
  public:
    // constructors and destructors
-   WahwahDialog(EffectWahwah * effect, 
-						wxWindow * parent, wxWindowID id, const wxString & title,
-						const wxPoint & pos = wxDefaultPosition,
-						const wxSize & size = wxDefaultSize,
-						long style = wxDEFAULT_DIALOG_STYLE);
+   WahwahDialog(EffectWahwah * effect, wxWindow * parent);
+
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataToWindow();
+   bool TransferDataFromWindow();
 
    // WDR: method declarations for WahwahDialog
    wxSlider *GetResonanceSlider() {
@@ -135,9 +148,6 @@ class WahwahDialog:public wxDialog {
    wxTextCtrl *GetFreqOffText() {
       return (wxTextCtrl *) FindWindow(ID_FREQOFFTEXT);
    }
-   virtual bool Validate();
-   virtual bool TransferDataToWindow();
-   virtual bool TransferDataFromWindow();
 
  private:
    // WDR: member variable declarations for WahwahDialog
@@ -155,11 +165,9 @@ class WahwahDialog:public wxDialog {
    void OnFreqText(wxCommandEvent & event);
    void OnFreqOffText(wxCommandEvent & event);
    void OnPreview(wxCommandEvent &event);
-   void OnOk(wxCommandEvent & event);
-   void OnCancel(wxCommandEvent & event);
 
  private:
-	EffectWahwah * m_pEffect;
+	EffectWahwah * mEffect;
 
  public:
    float freq;

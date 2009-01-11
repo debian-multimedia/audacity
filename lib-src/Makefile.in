@@ -1,10 +1,8 @@
-all: @LOCAL_LIBS@ @BUILDLIBS@
+all: @LOCAL_LIBS@ @LIBSRC_BUILD@
 
-# Allegro
-allegro-recursive:
-	$(MAKE) -C allegro
-allegro.a: allegro-recursive
-	ln -sf allegro/allegro.a allegro.a
+# portSMF
+portSMF:
+	$(MAKE) -C portsmf
 
 # dlcompat
 dl-recursive:
@@ -23,6 +21,10 @@ FileDialog-recursive:
 	$(MAKE) -C FileDialog
 FileDialog.a: FileDialog-recursive
 	ln -sf FileDialog/FileDialog.a FileDialog.a
+
+# libwidgetextra
+widgetextra:
+	$(MAKE) -C lib-widget-extra
 
 # libogg
 libogg-recursive:
@@ -57,6 +59,28 @@ libvamp-recursive:
 	$(MAKE) -C libvamp
 libvamp-hostsdk.a: libvamp-recursive
 	ln -sf libvamp/vamp-sdk/libvamp-hostsdk.a libvamp-hostsdk.a
+
+# redland
+redland-recursive:
+	$(MAKE) -C redland
+librdf.a: redland-recursive
+	ln -sf redland/librdf/.libs/librdf.a librdf.a
+libraptor.a: redland-recursive
+	ln -sf redland/raptor/src/.libs/libraptor.a libraptor.a
+librasqal.a: redland-recursive
+	ln -sf redland/rasqal/src/.libs/librasqal.a librasqal.a
+
+# liblrdf
+liblrdf-recursive:
+	$(MAKE) -C liblrdf
+liblrdf.a: liblrdf-recursive
+	ln -sf liblrdf/src/.libs/liblrdf.a liblrdf.a
+
+# slv2
+slv2-recursive:
+	$(MAKE) -C slv2
+libslv2.a: slv2-recursive
+	ln -sf slv2/src/.libs/libslv2.a libslv2.a
 
 # libtwolame
 libtwolame-recursive:
@@ -134,18 +158,21 @@ portmixer/px_mac_core/portmixer.a:
 
 # Utility rules
 clean:
-	-$(MAKE) -C allegro clean
+	-$(MAKE) -C portsmf clean
 	-$(MAKE) -C dlcompat clean	
 	-$(MAKE) -C expat clean
 	-$(MAKE) -C FileDialog clean
 	-$(MAKE) -C libid3tag clean
 	-$(MAKE) -C libmad clean
 	-$(MAKE) -C libnyquist clean
+	-$(MAKE) -C liblrdf clean
 	-$(MAKE) -C libogg clean
 	-$(MAKE) -C libsamplerate clean
 	-$(MAKE) -C libresample clean
 	-$(MAKE) -C libsndfile clean
+	-$(MAKE) -C libvamp clean
 	-$(MAKE) -C libvorbis clean
+	-$(MAKE) -C lib-widget-extra clean
 	-$(MAKE) -C libflac clean
 	-$(MAKE) -C portaudio-v19 clean
 	-$(MAKE) -C portaudio/pa_unix_oss clean
@@ -158,18 +185,21 @@ clean:
 	-rm -rf @LOCAL_LIBS@
 
 distclean:
-	-$(MAKE) -C allegro distclean
+	-$(MAKE) -C portsmf distclean
 	-$(MAKE) -C dlcompat distclean
 	-$(MAKE) -C expat distclean
 	-$(MAKE) -C FileDialog distclean
 	-$(MAKE) -C libid3tag distclean
 	-$(MAKE) -C libmad distclean
 	-$(MAKE) -C libnyquist distclean
+	-$(MAKE) -C liblrdf distclean
 	-$(MAKE) -C libogg distclean
 	-$(MAKE) -C libsamplerate distclean
 	-$(MAKE) -C libresample distclean
 	-$(MAKE) -C libsndfile distclean
+	-$(MAKE) -C libvamp distclean
 	-$(MAKE) -C libvorbis distclean
+	-$(MAKE) -C lib-widget-extra distclean
 	-$(MAKE) -C libflac distclean
 	-$(MAKE) -C portaudio-v19 distclean
 	-$(MAKE) -C portaudio/pa_unix_oss distclean
@@ -181,9 +211,12 @@ distclean:
 	-$(MAKE) -C twolame distclean
 	-rm -f @LOCAL_LIBS@
 
-.PHONY: allegro-recursive expat-recursive FileDialog-recursive libogg-recursive \
+# list here all the targets that aren't actually files to be made
+.PHONY: portsmf eexpat-recursive FileDialog-recursive \
+		widgetextra libogg-recursive \
 	libvorbis-recursive libnyquist-recursive libmad-recursive \
 	libid3tag-recursive soundtouch-recursive libsndfile-recursive \
-	libresample-recursive libsamplerate-recursive \
-	portaudio-v19-recursive portmixer-recursive libtwolame-recursive
+	libresample-recursive libsamplerate-recursive libvamp-recursive \
+	portaudio-v19-recursive portmixer-recursive libtwolame-recursive \
+	liblrdf-recursive redland-recursive slv2-recursive
 

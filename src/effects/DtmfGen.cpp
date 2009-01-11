@@ -13,6 +13,14 @@
 
 *//*******************************************************************/
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+// Include your minimal set of headers here, or wx.h
+#include <wx/wx.h>
+#endif
+
 #include "DtmfGen.h"
 #include "../Audacity.h"
 #include "../Project.h"
@@ -45,7 +53,7 @@
 
 bool EffectDtmf::PromptUser()
 {
-   DtmfDialog dlog(mParent, _("DTMF Tone Generator"));
+   DtmfDialog dlog(this, mParent, _("DTMF Tone Generator"));
 
 
    // dialog will be passed values from effect
@@ -104,7 +112,7 @@ bool EffectDtmf::TransferParameters( Shuttle & shuttle )
 }
 
 
-bool EffectDtmf::MakeDtmfTone(float *buffer, sampleCount len, float fs, wxChar tone, sampleCount last, longSampleCount total, float amplitude)
+bool EffectDtmf::MakeDtmfTone(float *buffer, sampleCount len, float fs, wxChar tone, sampleCount last, sampleCount total, float amplitude)
 {
 
 /*
@@ -142,7 +150,7 @@ bool EffectDtmf::MakeDtmfTone(float *buffer, sampleCount len, float fs, wxChar t
 */
 
    float f1, f2=0.0;
-   float A,B;
+   double A,B;
 
    // select low tone: left column
    switch (tone) {
@@ -220,7 +228,7 @@ bool EffectDtmf::MakeDtmfTone(float *buffer, sampleCount len, float fs, wxChar t
       // we are at the last buffer of 'len' size, so, offset is to
       // backup 'A' samples, from 'len'
       A=(fs/FADEINOUT);
-      sampleCount offset=len-(longSampleCount)(fs/FADEINOUT);
+      sampleCount offset=len-(sampleCount)(fs/FADEINOUT);
       // protect against negative offset, which can occur if too a 
       // small selection is made
       if (offset>=0) {
@@ -236,12 +244,16 @@ bool EffectDtmf::Process()
 {
    if (dtmfDuration <= 0.0)
       return false;
+      
+#ifdef EXPERIMENTAL_FULL_LINKING
+   HandleLinkedTracksOnGenerate(dtmfDuration, mT0);
+#endif
 
    //Iterate over each track
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
    int ntrack = 0;
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *)iter.First();
    while (track) {
       // new tmp track, to fill with dtmf sequence
@@ -249,9 +261,9 @@ bool EffectDtmf::Process()
       WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(), track->GetRate());
 
       // all dtmf sequence durations in samples from seconds
-      numSamplesSequence = (longSampleCount)(dtmfDuration * track->GetRate() + 0.5);
-      numSamplesTone = (longSampleCount)(dtmfTone * track->GetRate() + 0.5);
-      numSamplesSilence = (longSampleCount)(dtmfSilence * track->GetRate() + 0.5);
+      numSamplesSequence = (sampleCount)(dtmfDuration * track->GetRate() + 0.5);
+      numSamplesTone = (sampleCount)(dtmfTone * track->GetRate() + 0.5);
+      numSamplesSilence = (sampleCount)(dtmfSilence * track->GetRate() + 0.5);
 
       // recalculate the sum, and spread the difference - due to approximations.
       // Since diff should be in the order of "some" samples, a division (resulting in zero)
@@ -272,8 +284,8 @@ bool EffectDtmf::Process()
       // this var will be used as extra samples distributor
       int extra=0;
 
-      longSampleCount i = 0;
-      longSampleCount j = 0;
+      sampleCount i = 0;
+      sampleCount j = 0;
       int n=0; // pointer to string in dtmfString
       sampleCount block;
       bool isTone = true;
@@ -303,7 +315,7 @@ bool EffectDtmf::Process()
             // the statement takes care of extracting one sample from the diff bin and
             // adding it into the tone block until depletion
             extra=(diff-- > 0?1:0);
-            for(j=0; j < numSamplesTone+extra; j+=block) {
+            for(j=0; j < numSamplesTone+extra && bGoodResult; j+=block) {
                block = tmp->GetBestBlockSize(j);
                if (block > (numSamplesTone+extra - j))
                    block = numSamplesTone+extra - j;
@@ -311,6 +323,9 @@ bool EffectDtmf::Process()
                // generate the tone and append
                MakeDtmfTone(data, block, track->GetRate(), dtmfString[n], j, numSamplesTone, dtmfAmplitude);
                tmp->Append((samplePtr)data, floatSample, block);
+               //Update the Progress meter
+               if (TrackProgress(ntrack, (double)(i+j) / numSamplesSequence))
+                  bGoodResult = false;
             }
             i += numSamplesTone;
             n++;
@@ -322,7 +337,7 @@ bool EffectDtmf::Process()
             // the statement takes care of extracting one sample from the diff bin and
             // adding it into the silence block until depletion
             extra=(diff-- > 0?1:0);
-            for(j=0; j < numSamplesSilence+extra; j+=block) {
+            for(j=0; j < numSamplesSilence+extra && bGoodResult; j+=block) {
                block = tmp->GetBestBlockSize(j);
                if (block > (numSamplesSilence+extra - j))
                    block = numSamplesSilence+extra - j;
@@ -330,22 +345,22 @@ bool EffectDtmf::Process()
                // generate silence and append
                memset(data, 0, sizeof(float)*block);
                tmp->Append((samplePtr)data, floatSample, block);
+               //Update the Progress meter
+               if (TrackProgress(ntrack, (double)(i+j) / numSamplesSequence))
+                  bGoodResult = false;
             }
             i += numSamplesSilence;
          }
          // flip flag
          isTone=!isTone;
 
-         //Update the Progress meter
-         if (TrackProgress(ntrack, (double)i / numSamplesSequence))
-            bGoodResult = false;
       } // finished the whole dtmf sequence
 
       delete[] data;
 
       tmp->Flush();
-      track->Clear(mT0, mT1);
-      track->Paste(mT0, tmp);
+      track->HandleClear(mT0, mT1, false, false);
+      track->HandlePaste(mT0, tmp);
       delete tmp;
 
       if (!bGoodResult)
@@ -415,7 +430,9 @@ BEGIN_EVENT_TABLE(DtmfDialog, EffectDialog)
 END_EVENT_TABLE()
 
 
-DtmfDialog::DtmfDialog(wxWindow * parent, const wxString & title): EffectDialog(parent, title, INSERT_EFFECT)
+DtmfDialog::DtmfDialog(EffectDtmf * effect, wxWindow * parent, const wxString & title)
+:  EffectDialog(parent, title, INSERT_EFFECT),
+   mEffect(effect)
 {
    /*
    wxString dString;       // dtmf tone string
@@ -453,7 +470,7 @@ void DtmfDialog::PopulateOrExchange( ShuttleGui & S )
                          ID_DTMF_DURATION_TEXT,
                          wxT(""),
                          dDuration,
-                         44100,
+                         mEffect->mProjectRate,
                          wxDefaultPosition,
                          wxDefaultSize,
                          true);

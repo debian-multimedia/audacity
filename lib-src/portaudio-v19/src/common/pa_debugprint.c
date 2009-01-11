@@ -1,5 +1,5 @@
 /*
- * $Id: pa_debugprint.c,v 1.6 2008/03/18 12:36:31 richardash1981 Exp $
+ * $Id: pa_debugprint.c,v 1.8 2008/05/28 22:58:14 martynshaw Exp $
  * Portable Audio I/O Library Multi-Host API front end
  * Validate function parameters and manage multiple host APIs.
  *
@@ -93,7 +93,7 @@ void PaUtil_DebugPrint( const char *format, ... )
         va_start( ap, format );
         VSNPRINTF( strdump, SIZEDUMP, format, ap );
         userCB(strdump);
-        va_end( ap ); 
+        va_end( ap );
     }
     else
     {

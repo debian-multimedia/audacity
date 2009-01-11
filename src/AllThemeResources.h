@@ -137,6 +137,8 @@ from there.  Audacity will look for a file called "Pause.png".
    DEFINE_IMAGE( bmpUndoDisabled, wxImage( 26, 24 ), wxT("UndoDisabled"));
    DEFINE_IMAGE( bmpRedo, wxImage( 26, 24 ), wxT("Redo"));
    DEFINE_IMAGE( bmpRedoDisabled, wxImage( 26, 24 ), wxT("RedoDisabled"));
+   DEFINE_IMAGE( bmpLinkTracks, wxImage( 27, 27 ), wxT("LinkTracks"));
+   DEFINE_IMAGE( bmpLinkTracksDisabled, wxImage( 27, 27 ), wxT("LinkTracksDisabled"));
 
    SET_THEME_FLAGS(  resFlagPaired | resFlagNewLine  );
    DEFINE_IMAGE( bmpTnStartOn, wxImage( 27, 27 ), wxT("TnStartOn"));
@@ -232,10 +234,10 @@ from there.  Audacity will look for a file called "Pause.png".
    DEFINE_COLOUR( clrSelSample,  wxColour( 50,  50, 200), wxT("SelSample"));
    DEFINE_COLOUR( clrDragSample, wxColour(  0, 100,   0), wxT("DragSample"));
                                                                 
-   DEFINE_COLOUR( clrMuteSample, wxColour(136, 136, 144), wxT("MuteSample"));
-   DEFINE_COLOUR( clrRms,        wxColour(107, 154, 247), wxT("Rms"));
-   DEFINE_COLOUR( clrMuteRms,    wxColour(136, 136, 144), wxT("MuteRms"));
-   DEFINE_COLOUR( clrShadow,     wxColour(148, 148, 148), wxT("Shadow"));
+   DEFINE_COLOUR( clrMuteSample,       wxColour(136, 136, 144),      wxT("MuteSample"));
+   DEFINE_COLOUR( clrRms,              wxColour(107, 154, 247),      wxT("Rms"));
+   DEFINE_COLOUR( clrMuteRms,          wxColour(136, 136, 144),      wxT("MuteRms"));
+   DEFINE_COLOUR( clrShadow,           wxColour(148, 148, 148),      wxT("Shadow"));
 
 
 
@@ -322,6 +324,9 @@ from there.  Audacity will look for a file called "Pause.png".
 
    DEFINE_COLOUR( clrClipped,    wxColour(255,   0,   0), wxT("Clipped"));
    DEFINE_COLOUR( clrMuteClipped,wxColour(136, 136, 144), wxT("MuteClipped"));
+
+   DEFINE_COLOUR( clrProgressDone,     wxColour(60, 240, 60, 128),   wxT("ProgressDone"));
+   DEFINE_COLOUR( clrProgressNotYet,   wxColour(255, 255, 255,220), wxT("ProgressNotYet"));
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

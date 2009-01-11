@@ -30,6 +30,12 @@ class EffectReverse:public Effect {
       return wxString(_("Reverse"));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://audacityteam.org/namespace#TimelineChanger"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("Reverse"));
    }
@@ -42,7 +48,7 @@ class EffectReverse:public Effect {
 
  private:
    bool ProcessOne(int count, WaveTrack * track,
-                   longSampleCount start, sampleCount len);
+                   sampleCount start, sampleCount len);
 
  };
 
