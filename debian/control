@@ -1,7 +1,7 @@
 Source: audacity
 Section: sound
 Priority: optional
-Maintainer: Debian Multimedia Team <debian-multimedia@lists.debian.org>
+Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
 Uploaders: Matt Brubeck <mbrubeck@debian.org>, Free Ekanayaka <freee@debian.org>
 Standards-Version: 3.7.2
 Build-Depends: cdbs (>=0.4.4), debhelper (>= 5.0.0), libwxgtk2.8-dev, libvorbis-dev (>=1.0.0-3), libogg-dev (>=1.0.0-1), libmad0-dev, libid3tag0-dev, libsndfile1-dev, gettext, zip, libflac++-dev, libexpat1-dev, libjack-dev, libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64 !hurd-i386], libsamplerate0-dev, libsoundtouch1-dev, libgtk2.0-dev
