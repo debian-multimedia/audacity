@@ -75,10 +75,10 @@ bool EffectEcho::TransferParameters( Shuttle & shuttle )
 
 bool EffectEcho::Process()
 {
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -88,8 +88,8 @@ bool EffectEcho::Process()
       double t1 = mT1 > trackEnd? trackEnd: mT1;
 
       if (t1 > t0) {
-         longSampleCount start = track->TimeToLongSamples(t0);
-         longSampleCount end = track->TimeToLongSamples(t1);
+         sampleCount start = track->TimeToLongSamples(t0);
+         sampleCount end = track->TimeToLongSamples(t1);
          sampleCount len = (sampleCount)(end - start);
 
          if (!ProcessOne(count, track, start, len))
@@ -108,7 +108,7 @@ bool EffectEcho::Process()
 }
 
 bool EffectEcho::ProcessOne(int count, WaveTrack * track,
-                            longSampleCount start, sampleCount len)
+                            sampleCount start, sampleCount len)
 {
    sampleCount s = 0;
    sampleCount blockSize = (sampleCount) (track->GetRate() * delay);
@@ -184,8 +184,6 @@ EchoDialog::EchoDialog(EffectEcho * effect, wxWindow * parent)
    
    // Initialize dialog
    Init();
-
-   effect->SetDialog(this);
 }
 
 void EchoDialog::PopulateOrExchange(ShuttleGui & S)

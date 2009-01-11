@@ -10,12 +10,29 @@
 #ifndef __AUDACITY_MENUS__
 #define __AUDACITY_MENUS__
 
+#include "Experimental.h"
+
+
 // These are all member functions of class AudacityProject.
 
 void CommandManagerCallback(void *fptr);
 void CommandManagerListCallback(void *fptr, int index);
 
 void CreateMenusAndCommands();
+
+#ifdef EFFECT_CATEGORIES
+
+/** Generate submenus for the categories that contain more than one effect
+    and return the effects from the categories that do not contain more than
+    submenuThreshold effects so the caller can add them to the current menu. */
+EffectSet CreateEffectSubmenus(CommandManager* c, 
+                               const CategorySet& categories, int flags,
+                               unsigned submenuThreshold = 1);
+
+/** Add the set of effects to the current menu. */
+void AddEffectsToMenu(CommandManager* c, const EffectSet& effects);
+
+#endif
 
 void CreateRecentFilesMenu(CommandManager *c);
 void ModifyUndoMenus();
@@ -133,6 +150,9 @@ void OnOpen();
 void OnClose();
 void OnSave();
 void OnSaveAs();
+#ifdef USE_LIBVORBIS
+   void OnSaveCompressed();
+#endif
 
 void OnCheckDependencies();
 
@@ -140,6 +160,7 @@ void OnExport();
 void OnExportSelection();
 void OnExportMultiple();
 void OnExportLabels();
+void OnExportMIDI();
 
 void OnUpload();
 
@@ -223,8 +244,14 @@ void OnShowTranscriptionToolBar();
 void OnResetToolBars();
 void OnSimplifiedView();
 
+        // Transport Menu
 
-        // Project Menu
+void OnSoundActivated();
+void OnToggleSoundActivated();
+void OnTogglePlayRecording();
+void OnToggleSWPlaythrough();
+
+        // Tracks Menu
 
 void OnImport();
 void OnImportLabels();
@@ -249,12 +276,17 @@ void OnAlign(int index);
 void OnAlignMoveSel(int index);
 void HandleAlign(int index, bool moveSel);
 
+#ifdef EXPERIMENTAL_SCOREALIGN
+void OnScoreAlign();
+#endif // EXPERIMENTAL_SCOREALIGN
+
 void OnNewWaveTrack();
 void OnNewStereoTrack();
 void OnNewLabelTrack();
 void OnNewTimeTrack();
-void OnSmartRecord();
+void OnTimerRecord();
 void OnRemoveTracks();
+void OnStickyLabel();
 void OnAddLabel();
 void OnAddLabelPlaying();
 void OnEditLabels();
@@ -266,6 +298,7 @@ void OnEffect(int type, int index);
 void OnGenerateEffect(int index);
 void OnGeneratePlugin(int index);
 void OnRepeatLastEffect(int index);
+void OnProcessAny(int index);
 void OnProcessEffect(int index);
 void OnProcessPlugin(int index);
 void OnAnalyzeEffect(int index);
@@ -288,6 +321,7 @@ int  mStereoToMonoIndex;
 
 void OnAbout();
 void OnHelp();
+void OnLog();
 void OnHelpWelcome();
 void OnBenchmark();
 void OnScreenshot();

@@ -179,7 +179,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL);
+   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -187,7 +187,8 @@ public:
                double t0,
                double t1,
                MixerSpec *mixerSpec = NULL,
-               Tags *metadata = NULL);
+               Tags *metadata = NULL,
+               int subformat = 0);
 
 private:
 
@@ -201,11 +202,12 @@ private:
 ExportFLAC::ExportFLAC()
 :  ExportPlugin()
 {
-   SetFormat(wxT("FLAC"));
-   SetExtension(wxT("flac"));
-   SetMaxChannels(FLAC__MAX_CHANNELS);
-   SetCanMetaData(true);
-   SetDescription(_("FLAC Files"));
+   AddFormat();
+   SetFormat(wxT("FLAC"),0);
+   AddExtension(wxT("flac"),0);
+   SetMaxChannels(FLAC__MAX_CHANNELS,0);
+   SetCanMetaData(true,0);
+   SetDescription(_("FLAC Files"),0);
 }
 
 void ExportFLAC::Destroy()
@@ -220,7 +222,8 @@ bool ExportFLAC::Export(AudacityProject *project,
                         double t0,
                         double t1,
                         MixerSpec *mixerSpec,
-                        Tags *metadata)
+                        Tags *metadata,
+                        int subformat)
 {
    double    rate    = project->GetRate();
    TrackList *tracks = project->GetTracks();
@@ -305,7 +308,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    	tmpsmplbuf[i] = (FLAC__int32 *) calloc(SAMPLES_PER_RUN, sizeof(FLAC__int32));
    }
 
-   GetActiveProject()->ProgressShow(wxFileName(fName).GetName(),
+   ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
          selectionOnly ?
          _("Exporting the selected audio as FLAC") :
          _("Exporting the entire project as FLAC"));
@@ -331,13 +334,11 @@ bool ExportFLAC::Export(AudacityProject *project,
          }
          encoder.process(tmpsmplbuf, samplesThisRun);
       }
-      int progressvalue = int(1000 * ((mixer->MixGetCurrentTime()-t0) /
-                                      (t1-t0)));
-      cancelling = !GetActiveProject()->ProgressUpdate(progressvalue);
+      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
    encoder.finish();
 
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    for (i = 0; i < numChannels; i++) {
    	free(tmpsmplbuf[i]);
@@ -349,7 +350,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportFLAC::DisplayOptions(AudacityProject *project)
+bool ExportFLAC::DisplayOptions(AudacityProject *project, int format)
 {
    ExportFLACOptions od(project);
 

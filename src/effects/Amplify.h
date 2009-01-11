@@ -15,35 +15,32 @@
 #ifndef __AUDACITY_EFFECT_AMPLIFY__
 #define __AUDACITY_EFFECT_AMPLIFY__
 
+#include <wx/button.h>
+#include <wx/checkbox.h>
 #include <wx/dialog.h>
 #include <wx/intl.h>
 #include <wx/slider.h>
-
-class wxCheckBox;
-class wxButton;
-class wxStaticText;
-class wxTextCtrl;
-
-// Declare window functions
-
-#define ID_AMP_TEXT 10001
-#define ID_PEAK_TEXT 10002
-#define ID_AMP_SLIDER 10003
-#define ID_CLIP_CHECKBOX 10004
-
-class wxString;
+#include <wx/textctrl.h>
 
 #include "SimpleMono.h"
 
 class WaveTrack;
 
-class EffectAmplify:public EffectSimpleMono {
+class EffectAmplify:public EffectSimpleMono
+{
+ friend class AmplifyDialog;
 
  public:
    EffectAmplify();
 
    virtual wxString GetEffectName() {
       return wxString(_("Amplify..."));
+   }
+
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#AmplifierPlugin"));
+      return result;
    }
 
    virtual wxString GetEffectIdentifier() {
@@ -68,44 +65,23 @@ class EffectAmplify:public EffectSimpleMono {
  private:
    float ratio;
    float peak;
-
-
-friend class AmplifyDialog;
 };
 
 //----------------------------------------------------------------------------
 // AmplifyDialog
 //----------------------------------------------------------------------------
 
-class AmplifyDialog:public wxDialog {
+class AmplifyDialog:public EffectDialog
+{
  public:
    // constructors and destructors
-   AmplifyDialog(EffectAmplify * effect, 
-						wxWindow * parent, wxWindowID id,
-						const wxString & title, 
-						const wxPoint & pos = wxDefaultPosition, 
-						const wxSize & size = wxDefaultSize, 
-						long style = wxDEFAULT_DIALOG_STYLE);
+   AmplifyDialog(EffectAmplify *effect, wxWindow * parent);
 
-   // control accessors
-   wxSlider *GetAmpSlider() {
-      return (wxSlider *) FindWindow(ID_AMP_SLIDER);
-   }
-   wxTextCtrl *GetAmpText() {
-      return (wxTextCtrl *) FindWindow(ID_AMP_TEXT);
-   }
-   wxTextCtrl *GetPeakText() {
-      return (wxTextCtrl *) FindWindow(ID_PEAK_TEXT);
-   }
-   wxCheckBox *GetClipCheckBox() {
-      return (wxCheckBox *) FindWindow(ID_CLIP_CHECKBOX);
-   }
-   wxButton *GetOK() {
-      return (wxButton *) FindWindow(wxID_OK);
-   }
-   virtual bool Validate();
-   virtual bool TransferDataToWindow();
-   virtual bool TransferDataFromWindow();
+   // method declarations
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataToWindow();
+   bool TransferDataFromWindow();
+   bool Validate();
 
  private:
 	// handlers
@@ -114,17 +90,20 @@ class AmplifyDialog:public wxDialog {
    void OnAmpSlider(wxCommandEvent & event);
    void OnClipCheckBox(wxCommandEvent & event);
    void OnPreview( wxCommandEvent &event );
-   void OnOk(wxCommandEvent & event);
-   void OnCancel(wxCommandEvent & event);
 
    void CheckClip();
 
  private:
-   bool mLoopDetect;
-	EffectAmplify * m_pEffect;
-   DECLARE_EVENT_TABLE()
+   wxSlider *mAmpS;
+   wxTextCtrl *mAmpT;
+   wxTextCtrl *mPeakT;
+   wxCheckBox *mClip;
+
+   DECLARE_EVENT_TABLE();
 
  public:
+   EffectAmplify *mEffect;
+
    float ratio;
    float peak;
    bool noclip;

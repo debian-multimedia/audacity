@@ -17,8 +17,10 @@
 #include "SampleFormat.h"
 #include "xml/XMLTagHandler.h"
 #include "xml/XMLWriter.h"
+#include "ondemand/ODTaskThread.h"
 
-typedef int sampleCount;
+typedef wxLongLong_t sampleCount; /** < A native 64-bit integer type, because
+                                    32-bit integers may not be enough */
 
 class BlockFile;
 class DirManager;
@@ -27,6 +29,7 @@ class DirManager;
 class SeqBlock {
  public:
    BlockFile * f;
+   ///the sample in the global wavetrack that this block starts at.
    sampleCount start;
 };
 WX_DEFINE_ARRAY(SeqBlock *, BlockArray);
@@ -71,7 +74,7 @@ class Sequence: public XMLTagHandler {
    bool Set(samplePtr buffer, sampleFormat format,
             sampleCount start, sampleCount len);
 
-   bool GetWaveDisplay(float *min, float *max, float *rms,
+   bool GetWaveDisplay(float *min, float *max, float *rms,int* bl,
                        int len, sampleCount *where,
                        double samplesPerPixel);
 
@@ -84,7 +87,7 @@ class Sequence: public XMLTagHandler {
    bool Delete(sampleCount start, sampleCount len);
    bool AppendAlias(wxString fullPath,
                     sampleCount start,
-                    sampleCount len, int channel);
+                    sampleCount len, int channel,bool useOD);
                     
    // Append a blockfile. The blockfile pointer is then "owned" by the
    // sequence. This function is used by the recording log crash recovery
@@ -118,6 +121,7 @@ class Sequence: public XMLTagHandler {
    // 
 
    bool Lock();
+   bool CloseLock();//similar to Lock but should be called upon project close.
    bool Unlock();
 
    //
@@ -151,6 +155,10 @@ class Sequence: public XMLTagHandler {
    //
 
    BlockArray *GetBlockArray() {return mBlock;}
+   
+   ///
+   void LockDeleteUpdateMutex(){mDeleteUpdateMutex.Lock();}
+   void UnlockDeleteUpdateMutex(){mDeleteUpdateMutex.Unlock();}
 
  private:
 
@@ -174,6 +182,9 @@ class Sequence: public XMLTagHandler {
    sampleCount   mMaxSamples;
 
    bool          mErrorOpening;
+   
+   ///To block the Delete() method against the ODCalcSummaryTask::Update() method
+   ODLock   mDeleteUpdateMutex;
 
    //
    // Private methods

@@ -39,15 +39,6 @@
 #define finite(x) _finite(x)
 #endif
 
-#ifdef __MACOSX__
-#include <math.h>
-#endif
-
-#ifdef __MACOS9__
-#include <fp.h>
-#define finite(x) isfinite(x)
-#endif
-
 #include <wx/msgdlg.h>
 #include <wx/textdlg.h>
 #include <wx/brush.h>
@@ -133,10 +124,10 @@ bool EffectClickRemoval::TransferParameters( Shuttle & shuttle )
 
 bool EffectClickRemoval::Process()
 {
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -146,8 +137,8 @@ bool EffectClickRemoval::Process()
       double t1 = mT1 > trackEnd? trackEnd: mT1;
 
       if (t1 > t0) {
-         longSampleCount start = track->TimeToLongSamples(t0);
-         longSampleCount end = track->TimeToLongSamples(t1);
+         sampleCount start = track->TimeToLongSamples(t0);
+         sampleCount end = track->TimeToLongSamples(t1);
          sampleCount len = (sampleCount)(end - start);
 
          if (!ProcessOne(count, track, start, len))
@@ -165,7 +156,7 @@ bool EffectClickRemoval::Process()
 }
 
 bool EffectClickRemoval::ProcessOne(int count, WaveTrack * track,
-                                    longSampleCount start, sampleCount len)
+                                    sampleCount start, sampleCount len)
 {
    bool rc = true;
    sampleCount s = 0;
@@ -320,11 +311,10 @@ END_EVENT_TABLE()
 
 ClickRemovalDialog::ClickRemovalDialog(EffectClickRemoval *effect,
                                        wxWindow *parent)
-:  EffectDialog(parent, _("ClickRemoval"), PROCESS_EFFECT),
+:  EffectDialog(parent, _("Click Removal"), PROCESS_EFFECT),
    mEffect(effect)
 {
    Init();
-   effect->SetDialog(this);
 }
 
 void ClickRemovalDialog::PopulateOrExchange(ShuttleGui & S)

@@ -100,6 +100,7 @@ for registering for changes.
 #include <wx/listctrl.h>
 #include <wx/notebook.h>
 #include <wx/treectrl.h>
+#include <wx/spinctrl.h>
 #include "Internat.h"
 #include "Experimental.h"
 #include "ShuttleGui.h"
@@ -267,6 +268,7 @@ wxCheckBox * ShuttleGuiBase::AddCheckBox( const wxString &Prompt, const wxString
    mpWind = pCheckBox = new wxCheckBox(mpParent, miId, Prompt, wxDefaultPosition, wxDefaultSize,
       Style( 0 ));
    pCheckBox->SetValue(Selected == wxT("true"));
+   pCheckBox->SetName(Prompt);
    UpdateSizers();
    return pCheckBox;
 }
@@ -285,6 +287,7 @@ wxCheckBox * ShuttleGuiBase::AddCheckBoxOnRight( const wxString &Prompt, const w
    mpWind = pCheckBox = new wxCheckBox(mpParent, miId, wxT(""), wxDefaultPosition, wxDefaultSize,
       Style( 0 ));
    pCheckBox->SetValue(Selected==wxT("true"));
+   pCheckBox->SetName(Prompt);
    UpdateSizers();
    return pCheckBox;
 }
@@ -297,6 +300,7 @@ wxButton * ShuttleGuiBase::AddButton(const wxString &Text, int PositionFlags)
    wxButton * pBtn;
    mpWind = pBtn = new wxButton( mpParent, miId, Text, wxDefaultPosition, wxDefaultSize,
       Style( 0 ) );
+   mpWind->SetName(Text);
    miProp=0;
    UpdateSizersCore(false, PositionFlags | wxALL);
    return pBtn;
@@ -336,6 +340,7 @@ wxChoice * ShuttleGuiBase::AddChoice( const wxString &Prompt, const wxString &Se
       Style( 0 ) );
 
    pChoice->SetSizeHints( 180,-1);// Use -1 for 'default size' - Platform specific.
+   pChoice->SetName( Prompt );
    pChoice->SetStringSelection( Selected );
 
    UpdateSizers();
@@ -404,6 +409,7 @@ wxComboBox * ShuttleGuiBase::AddCombo( const wxString &Prompt, const wxString &S
 
    mpWind = pCombo = new wxComboBox(mpParent, miId, Selected, wxDefaultPosition, wxDefaultSize, 
       n, Choices, Style( 0 ));
+   mpWind->SetName(Prompt);
 
    UpdateSizers();
    return pCombo;
@@ -420,6 +426,7 @@ wxRadioButton * ShuttleGuiBase::AddRadioButton(const wxString &Prompt)
    wxRadioButton * pRad;
    mpWind = pRad = new wxRadioButton( mpParent, miId, Prompt,
       wxDefaultPosition, wxDefaultSize, Style( wxRB_GROUP ) );
+   mpWind->SetName(Prompt);
    pRad->SetValue(true );
    UpdateSizers();
    return pRad;
@@ -433,6 +440,7 @@ wxRadioButton * ShuttleGuiBase::AddRadioButtonToGroup(const wxString &Prompt)
    wxRadioButton * pRad;
    mpWind = pRad = new wxRadioButton( mpParent, miId, Prompt,
       wxDefaultPosition, wxDefaultSize, Style( 0 ) );
+   mpWind->SetName(Prompt);
    UpdateSizers();
    return pRad;
 }
@@ -449,10 +457,31 @@ wxSlider * ShuttleGuiBase::AddSlider(const wxString &Prompt, int pos, int Max, i
       wxDefaultPosition, wxDefaultSize,
       Style( wxSL_HORIZONTAL | wxSL_LABELS | wxSL_AUTOTICKS )
       );
+   mpWind->SetName(Prompt);
    miProp=1;
    UpdateSizers();
    return pSlider;
 }
+
+wxSpinCtrl * ShuttleGuiBase::AddSpinCtrl(const wxString &Prompt, int Value, int Max, int Min)
+{
+   UseUpId();
+   if( mShuttleMode != eIsCreating )
+      return wxDynamicCast(wxWindow::FindWindowById( miId, mpDlg), wxSpinCtrl);
+   AddPrompt( Prompt );
+   wxSpinCtrl * pSpinCtrl;
+   mpWind = pSpinCtrl = new wxSpinCtrl( mpParent, miId, 
+      wxEmptyString,  
+      wxDefaultPosition, wxDefaultSize,
+      Style( wxSP_VERTICAL | wxSP_ARROW_KEYS ),
+      Min, Max, Value
+      );
+   mpWind->SetName(Prompt);
+   miProp=1;
+   UpdateSizers();
+   return pSpinCtrl;
+}
+
 
 wxTextCtrl * ShuttleGuiBase::AddTextBox(const wxString &Caption, const wxString &Value, const int nChars)
 {
@@ -476,6 +505,7 @@ wxTextCtrl * ShuttleGuiBase::AddTextBox(const wxString &Caption, const wxString 
 
    mpWind = pTextCtrl = new wxTextCtrl(mpParent, miId, Value,
       wxDefaultPosition, Size, Style( flags ));
+   mpWind->SetName( Caption );
    UpdateSizers();
    return pTextCtrl;
 }
@@ -509,6 +539,21 @@ void ShuttleGuiBase::AddConstTextBox(const wxString &Prompt, const wxString &Val
       Style( 0 ));
    UpdateSizers();
 }
+
+wxListBox * ShuttleGuiBase::AddListBox(const wxArrayString * pChoices, long style)
+{
+   UseUpId();
+   if( mShuttleMode != eIsCreating )
+      return wxDynamicCast(wxWindow::FindWindowById( miId, mpDlg), wxListBox);
+   wxListBox * pListBox;
+   SetProportions( 1 );
+   mpWind = pListBox = new wxListBox(mpParent, miId,
+      wxDefaultPosition, wxDefaultSize,*pChoices, style);
+   pListBox->SetMinSize( wxSize( 120,150 ));
+   UpdateSizers();
+   return pListBox;
+}
+
 
 wxListCtrl * ShuttleGuiBase::AddListControl()
 {
@@ -606,6 +651,8 @@ wxStaticBox * ShuttleGuiBase::StartStatic(const wxString &Str, int iProp)
       return NULL;
    wxStaticBox * pBox = new wxStaticBox(mpParent, miId, 
       Str );
+   pBox->SetLabel( Str );
+   pBox->SetName( Str );
    mpSubSizer = new wxStaticBoxSizer( 
       pBox,
       wxVERTICAL );
@@ -691,12 +738,15 @@ wxPanel * ShuttleGuiBase::StartPanel(int iStyle)
    mpWind = pPanel = new wxPanel( mpParent, miId, wxDefaultPosition, wxDefaultSize,
       Style( wxNO_BORDER ));
 
-   mpWind->SetBackgroundColour( 
-      iStyle==0 
-      ? wxColour( 190,200,230) :
-      wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW) 
-      );
-   miProp=0;
+   if( iStyle != 0 )
+   {
+      mpWind->SetBackgroundColour( 
+         iStyle==1 
+         ? wxColour( 190,200,230) :
+         wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW) 
+         );
+   }
+   SetProportions(0);
    miBorder=2;
    UpdateSizers();  // adds window in to current sizer.
 
@@ -743,7 +793,9 @@ wxNotebookPage * ShuttleGuiBase::StartNotebookPage( const wxString Name )
       return NULL;
 //      return wxDynamicCast(wxWindow::FindWindowById( miId, mpDlg), wx);
    wxNotebook * pNotebook = (wxNotebook*)mpParent;
-   wxNotebookPage * pPage = new wxPanel(mpParent ); 
+   wxNotebookPage * pPage = new wxPanel(mpParent );
+   pPage->SetName(Name);
+
    pNotebook->AddPage( 
       pPage, 
       Name);
@@ -766,6 +818,7 @@ void ShuttleGuiBase::StartNotebookPage( const wxString Name, wxNotebookPage * pP
    wxNotebook * pNotebook = (wxNotebook*)mpParent;
 //   wxNotebookPage * pPage = new wxPanel(mpParent ); 
    pPage->Create( mpParent, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTAB_TRAVERSAL, wxT("panel"));
+   pPage->SetName(Name);
 
    pNotebook->AddPage( 
       pPage, 
@@ -957,6 +1010,45 @@ wxCheckBox * ShuttleGuiBase::TieCheckBox(const wxString &Prompt, WrappedType & W
    }
    return pCheckBox;
 }
+wxSpinCtrl * ShuttleGuiBase::TieSpinCtrl( const wxString &Prompt, WrappedType & WrappedRef, const int max, const int min )
+{
+   // The Add function does a UseUpId(), so don't do it here in that case.
+   if( mShuttleMode == eIsCreating )
+      return AddSpinCtrl( Prompt, WrappedRef.ReadAsInt(), max, min );
+
+   UseUpId();
+   wxSpinCtrl * pSpinCtrl=NULL;
+
+   wxWindow * pWnd  = wxWindow::FindWindowById( miId, mpDlg);
+   pSpinCtrl = wxDynamicCast(pWnd, wxSpinCtrl);
+
+   switch( mShuttleMode )
+   {
+      // IF setting internal storage from the controls.
+   case eIsGettingFromDialog:
+      {
+         wxASSERT( pSpinCtrl );
+         WrappedRef.WriteToAsInt( pSpinCtrl->GetValue() );
+      }
+      break;
+   case eIsSettingToDialog:
+      {
+         wxASSERT( pSpinCtrl );
+         pSpinCtrl->SetValue( WrappedRef.ReadAsInt() );
+      }
+      break;
+      // IF Saving settings to external storage...
+      // or IF Getting settings from external storage.
+   case eIsGettingViaShuttle:
+   case eIsSavingViaShuttle:
+      DoDataShuttle( Prompt, WrappedRef );
+      break;
+   default:
+      wxASSERT( false );
+      break;
+   }
+   return pSpinCtrl;
+}
 
 wxTextCtrl * ShuttleGuiBase::TieTextBox( const wxString &Prompt, WrappedType & WrappedRef, const int nChars)
 {
@@ -1119,6 +1211,7 @@ wxRadioButton * ShuttleGuiBase::TieRadioButton(const wxString &Prompt, WrappedTy
             wxDefaultPosition, wxDefaultSize, 
             (mRadioCount==1)?wxRB_GROUP:0);
          pRadioButton->SetValue(WrappedRef.ValuesMatch( mRadioValue ));
+         pRadioButton->SetName(Prompt);
          UpdateSizers();
       }
       break;
@@ -1181,6 +1274,12 @@ wxCheckBox * ShuttleGuiBase::TieCheckBoxOnRight(const wxString &Prompt, bool &Va
    if( mShuttleMode == eIsCreating )
       return AddCheckBoxOnRight( Prompt, WrappedRef.ReadAsString() );
    return TieCheckBox( Prompt, WrappedRef );
+}
+
+wxSpinCtrl * ShuttleGuiBase::TieSpinCtrl( const wxString &Prompt, int &Value, const int max, const int min )
+{
+   WrappedType WrappedRef(Value);
+   return TieSpinCtrl( Prompt, WrappedRef, max, min );
 }
 
 wxTextCtrl * ShuttleGuiBase::TieTextBox( const wxString &Prompt, wxString &Selected, const int nChars)
@@ -1401,6 +1500,26 @@ wxSlider * ShuttleGuiBase::TieSlider(
    return pSlider;
 }
 
+/// Variant of the standard TieSpinCtrl which does the two step exchange 
+/// between gui and stack variable and stack variable and shuttle.
+wxSpinCtrl * ShuttleGuiBase::TieSpinCtrl(
+                                     const wxString &Prompt, 
+                                     const wxString &SettingName, 
+                                     const int Value,
+                                     const int max,
+                                     const int min)
+{
+   wxSpinCtrl * pSpinCtrl=NULL;
+
+   int iValue = Value;
+   WrappedType WrappedRef( iValue );
+   if( DoStep(1) ) DoDataShuttle( SettingName, WrappedRef );
+   if( DoStep(2) ) pSpinCtrl = TieSpinCtrl( Prompt, WrappedRef, max, min );
+   if( DoStep(3) ) DoDataShuttle( SettingName, WrappedRef );
+
+   return pSpinCtrl;
+}
+
 /// Variant of the standard TieTextBox which does the two step exchange 
 /// between gui and stack variable and stack variable and shuttle.
 wxTextCtrl * ShuttleGuiBase::TieTextBox(
@@ -1525,9 +1644,10 @@ void ShuttleGuiBase::StartRadioButtonGroup( const wxString & SettingName, const 
 /// This function must be within a StartRadioButtonGroup - EndRadioButtonGroup pair.
 wxRadioButton * ShuttleGuiBase::TieRadioButton( 
    const wxString &Prompt, 
-   int iValue)
+   const int iValue)
 {
-   WrappedType WrappedRef( iValue );
+   int iTemp = iValue;
+   WrappedType WrappedRef( iTemp );
    return TieRadioButton( Prompt, WrappedRef );
 }
 
@@ -1822,7 +1942,6 @@ wxSizer *CreateStdButtonSizer(wxWindow *parent, long buttons, wxButton *extra)
    {
       b = new wxButton( parent, wxID_OK );
       b->SetDefault();
-      b->SetFocus();
       bs->AddButton( b );
    }
 
@@ -1835,7 +1954,6 @@ wxSizer *CreateStdButtonSizer(wxWindow *parent, long buttons, wxButton *extra)
    {
       b = new wxButton( parent, wxID_YES );
       b->SetDefault();
-      b->SetFocus();
       bs->AddButton( b );
    }
 

@@ -549,7 +549,6 @@ void Ruler::FindLinearTickSizes(double UPP)
       mMajor = d * 2.0;
       break;
 
-#ifdef LOGARITHMIC_SPECTRUM
    case RealLogFormat:
       d = 0.000001;
       // mDigits is number of digits after the decimal point.
@@ -576,9 +575,7 @@ void Ruler::FindLinearTickSizes(double UPP)
       mMinor = d;
       mMajor = d * 2.0;
       break;
-#endif
    }
-
 }
 
 wxString Ruler::LabelString(double d, bool major)
@@ -612,7 +609,6 @@ wxString Ruler::LabelString(double d, bool major)
          s.Printf(wxString::Format(wxT("%%.%df"), mDigits), d);
       }
       break;
-#ifdef LOGARITHMIC_SPECTRUM
    case RealLogFormat:
       if (mMinor >= 1.0)
          s.Printf(wxT("%d"), (int)floor(d+0.5));
@@ -620,7 +616,6 @@ wxString Ruler::LabelString(double d, bool major)
          s.Printf(wxString::Format(wxT("%%.%df"), mDigits), d);
       }
       break;
-#endif
    case TimeFormat:
       if (major) {
          if (d < 0) {
@@ -692,11 +687,7 @@ wxString Ruler::LabelString(double d, bool major)
    }
    
    if (mUnits != wxT(""))
-#ifdef LOGARITHMIC_SPECTRUM
       s = (s + mUnits);
-#else
-      s = (s + wxT(" ") + mUnits);
-#endif
 
    return s;
 }
@@ -859,7 +850,13 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
      if (mOrientation == wxHORIZONTAL)
        desiredPixelHeight = mBottom-mTop-5; // height less ticks and 1px gap
      else
+     {
+#ifdef EXPERIMENTAL_RULER_AUTOSIZE
+         desiredPixelHeight = 12;   // why 12?  10 -> 12 seems to be max/min
+#else
        desiredPixelHeight = (mRight-mLeft)/2;
+#endif //EXPERIMENTAL_RULER_AUTOSIZE
+     }
 
 #ifdef EXPERIMENTAL_RULER_AUTOSIZE
      if (desiredPixelHeight < 10)//8)
@@ -964,7 +961,7 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
       if (mLabelEdges) {
 #ifdef EXPERIMENTAL_RULER_AUTOSIZE
          Tick(0, mMin, true, false);
-         Tick(0, mMin, true, false);
+         Tick(mLength, mMax, true, false);
 #else //!EXPERIMENTAL_RULER_AUTOSIZE
          Tick(0, mMin, true);
          Tick(mLength, mMax, true);
@@ -1059,9 +1056,7 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
    }
    else {
       // log case
-#ifdef LOGARITHMIC_SPECTRUM
       mDigits=2;	//TODO: implement dynamic digit computation
-#endif
       double loLog = log10(mMin);
       double hiLog = log10(mMax);
       double scale = mLength/(hiLog - loLog);
@@ -1073,7 +1068,6 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
       double startDecade = pow(10., (double)loDecade);
       
       // Major ticks are the decades
-#ifdef LOGARITHMIC_SPECTRUM
       double decade = startDecade;
       double delta=hiLog-loLog, steps=fabs(delta);
       double step = delta>=0 ? 10 : 0.1;
@@ -1092,26 +1086,8 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
          }
          decade *= step;
       }
-#else
-      double decade = startDecade;
-      for(i=loDecade; i<hiDecade; i++) {
-         if(i!=loDecade) {
-            val = decade;
-            if(val > mMin && val < mMax) {
-               pos = (int)(((log10(val) - loLog)*scale)+0.5);
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
-               Tick(pos, val, true, false);
-#else //!EXPERIMENTAL_RULER_AUTOSIZE
-               Tick(pos, val, true);
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
-            }
-         }
-         decade *= 10.;
-      }
-#endif
 
       // Minor ticks are multiples of decades
-#ifdef LOGARITHMIC_SPECTRUM
       decade = startDecade;
       float start, end, mstep;
       if (delta > 0)
@@ -1159,23 +1135,6 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
          }
          decade *= step;
       }
-#else
-      decade = startDecade;
-      for(i=loDecade; i<hiDecade; i++) {
-         for(j=2; j<=9; j++) {
-            val = decade * j;
-            if(val >= mMin && val < mMax) {
-               pos = (int)(((log10(val) - loLog)*scale)+0.5);
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
-               Tick(pos, val, false, true);
-#else //!EXPERIMENTAL_RULER_AUTOSIZE
-               Tick(pos, val, false);
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
-            }
-         }
-         decade *= 10.;
-      }
-#endif
    }
 
 #ifdef EXPERIMENTAL_RULER_AUTOSIZE
@@ -1193,6 +1152,13 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
          mRect.Offset(d,0);
          mRect.Inflate(5,0);
          displacementx=d;
+         displacementy=0;
+      }
+   }
+   else {
+      if (mOrientation==wxHORIZONTAL) {
+         mRect.Inflate(0,5);
+         displacementx=0; 
          displacementy=0;
       }
    }
@@ -1466,6 +1432,7 @@ BEGIN_EVENT_TABLE(AdornedRulerPanel, wxPanel)
    EVT_PAINT(AdornedRulerPanel::OnPaint)
    EVT_SIZE(AdornedRulerPanel::OnSize)
    EVT_MOUSE_EVENTS(AdornedRulerPanel::OnMouseEvents)
+   EVT_MOUSE_CAPTURE_LOST(AdornedRulerPanel::OnCaptureLost)
 END_EVENT_TABLE()
 
 AdornedRulerPanel::AdornedRulerPanel(wxWindow* parent,
@@ -1596,7 +1563,9 @@ void AdornedRulerPanel::OnMouseEvents(wxMouseEvent &evt)
 {
    bool isWithinStart = IsWithinMarker(evt.GetX(), mPlayRegionStart);
    bool isWithinEnd = IsWithinMarker(evt.GetX(), mPlayRegionEnd);
-   
+
+   mLastMouseX = evt.GetX();
+
    if (isWithinStart || isWithinEnd)
       SetCursor(wxCursor(wxCURSOR_SIZEWE));
    else
@@ -1696,6 +1665,13 @@ void AdornedRulerPanel::OnMouseEvents(wxMouseEvent &evt)
          ctb->PlayDefault();
       }
    }
+}
+
+void AdornedRulerPanel::OnCaptureLost(wxMouseCaptureLostEvent &evt)
+{
+   wxMouseEvent e(wxEVT_LEFT_UP);
+   e.m_x = mLastMouseX;
+   OnMouseEvents(e);
 }
 
 void AdornedRulerPanel::DoDrawPlayRegion(wxDC * dc)

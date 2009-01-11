@@ -26,7 +26,7 @@
 #include "TrackPanel.h"
 #include "AudioIO.h"
 #include "commands/CommandManager.h"
-#include "effects/Effect.h"
+#include "effects/EffectManager.h"
 #include "xml/XMLTagHandler.h"
 #include "toolbars/SelectionBar.h"
 
@@ -48,7 +48,6 @@ class wxDialog;
 class wxBoxSizer;
 class wxScrollEvent;
 class wxScrollBar;
-class wxProgressDialog;
 class wxPanel;
 
 class ToolManager;
@@ -70,6 +69,7 @@ class AdornedRulerPanel;
 
 class AudacityProject;
 class RecordingRecoveryHandler;
+class ODLock;
 
 AudacityProject *CreateNewAudacityProject(wxWindow * parentFrame);
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
@@ -91,6 +91,19 @@ enum PlayMode {
    normalPlay,
    oneSecondPlay,
    loopedPlay
+};
+
+// XML handler for <import> tag
+class ImportXMLTagHandler : public XMLTagHandler 
+{
+ public:
+   ImportXMLTagHandler(AudacityProject* pProject) { mProject = pProject; };
+
+   virtual bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
+   virtual XMLTagHandler *HandleXMLChild(const wxChar *tag) { return NULL; };
+   virtual void WriteXML(XMLWriter &xmlFile) { wxASSERT(false); } //vvv todo
+ private: 
+   AudacityProject* mProject;
 };
 
 class AUDACITY_DLL_API AudacityProject:  public wxFrame,
@@ -146,8 +159,11 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void Import(wxString fileName);
    void AddImportedTracks(wxString fileName,
                           Track **newTracks, int numTracks);
-   bool Save(bool overwrite = true, bool fromSaveAs = false);
-   bool SaveAs();
+   bool Save(bool overwrite = true, bool fromSaveAs = false, bool bWantSaveCompressed = false);
+   bool SaveAs(bool bWantSaveCompressed = false);
+   #ifdef USE_LIBVORBIS
+      bool SaveCompressedWaveTracks(const wxString strProjectPathName); // full path for aup except extension
+   #endif
    void Clear();
 
    wxString GetFileName() { return mFileName; }
@@ -196,6 +212,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void OnOpenAudioFile(wxCommandEvent & event);
    void OnCaptureKeyboard(wxCommandEvent & event);
    void OnReleaseKeyboard(wxCommandEvent & event);
+   void OnODTaskUpdate(wxCommandEvent & event);
+   void OnODTaskComplete(wxCommandEvent & event);
    bool HandleKeyDown(wxKeyEvent & event);
    bool HandleChar(wxKeyEvent & event);
    bool HandleKeyUp(wxKeyEvent & event);
@@ -206,6 +224,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Other commands
 
    static void DeleteClipboard();
+   static void DeleteAllProjectsDeleteLock();
 
    void UpdateMenus();
    void UpdatePrefs();
@@ -220,6 +239,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void SetStop(bool bStopped);
    void EditByLabel( WaveTrack::EditFunction action ); 
    void EditClipboardByLabel( WaveTrack::EditDestFunction action );
+   bool IsSticky();
+   bool GetStickyFlag() { return mStickyFlag; }
 
    // Snap To
 
@@ -298,17 +319,13 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    virtual void OnAudioIOStopRecording();
    virtual void OnAudioIONewBlockFiles(const wxString& blockFileLog);
 
-   // Progress dialog methods
-   void SetEnabledWindow( wxWindow * pWindow);
-   void ProgressShow(const wxString &title, const wxString &message = wxT(""));
-   void ProgressHide(wxWindow* pWindow = NULL);
-   bool ProgressUpdate(int value, const wxString &message = wxT(""));
-   bool ProgressIsShown();
-
    // Command Handling
    bool TryToMakeActionAllowed( wxUint32 & flags, wxUint32 flagsRqd, wxUint32 mask );
 
-
+   ///Prevents delete from external thread - for e.g. use of GetActiveProject 
+   static void AllProjectsDeleteLock();
+   static void AllProjectsDeleteUnlock();
+   
  private:
 
 
@@ -328,11 +345,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void DeleteCurrentAutoSaveFile();
    
    static bool GetCacheBlockFiles();
-
-   // Callbacks for backend operations
-
-   bool mUserCanceledProgress;
-   static bool ImportProgressCallback(void *self, float percent);
 
    // The project's name and file info
 
@@ -360,6 +372,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static AudacityProject *msClipProject;
    static double msClipLen;
 
+   //shared by all projects
+   static ODLock *msAllProjectDeleteMutex;
    // History/Undo manager
 
    UndoManager mUndoManager;
@@ -389,14 +403,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    wxScrollBar *mVsbar;
    bool mAutoScrolling;
    bool mActive;
-   bool mImportingRaw;
    bool mIconized;
    HistoryWindow *mHistoryWindow;
-
-   wxProgressDialog *mProgressDialog[3];
-   int mProgressCurrent;
-   wxString mProgressTitle;
-   wxString mProgressMessage;
 
  public:
    ToolManager *mToolManager;
@@ -413,6 +421,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mShowId3Dialog; //lda
    bool mEmptyCanBeDirty;
    bool mSelectAllOnNone;
+   
+   bool mStickyFlag;
 
    bool mLockPlayRegion;
 
@@ -421,6 +431,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Recent File and Project History
    wxFileHistory *mRecentFiles;
    
+   ImportXMLTagHandler* mImportXMLTagHandler;
+
    // Last auto-save file name and path (empty if none)
    wxString mAutoSaveFileName;
    
@@ -429,7 +441,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    
    // Are we currently auto-saving or not?
    bool mAutoSaving;
-   
+
    // Has this project been recovered from an auto-saved version
    bool mIsRecovered;
    
@@ -441,6 +453,11 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // Dependencies have been imported and a warning should be shown on save
    bool mImportedDependencies;
+
+
+   bool mWantSaveCompressed;
+   wxArrayString mStrOtherNamesArray; // used to make sure compressed file names are unique
+   
 
  private:
 

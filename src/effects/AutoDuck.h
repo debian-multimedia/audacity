@@ -67,6 +67,7 @@ private:
 
    void OnPaint(wxPaintEvent& evt);
    void OnMouseCaptureChanged(wxMouseCaptureChangedEvent &evt);
+   void OnMouseCaptureLost(wxMouseCaptureLostEvent &evt);
    void OnLeftDown(wxMouseEvent &evt);
    void OnLeftUp(wxMouseEvent &evt);
    void OnMotion(wxMouseEvent &evt);
@@ -97,6 +98,13 @@ public:
       return wxString(_("Auto Duck..."));
    }
    
+   virtual std::set<wxString> GetEffectCategories()
+   {
+     std::set<wxString> result;
+     result.insert(wxT("http://lv2plug.in/ns/lv2core#DynamicsPlugin"));
+     return result;
+   }
+
    virtual wxString GetEffectIdentifier()
    {
       return wxString(wxT("AutoDuck"));

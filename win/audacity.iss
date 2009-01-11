@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-1.3.5
+OutputBaseFilename=audacity-win-1.3.6
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -13,7 +13,7 @@ SolidCompression=yes
 
 ; installer-related directives
 AppName=Audacity 1.3 Beta
-AppVerName=Audacity 1.3.5
+AppVerName=Audacity 1.3.6
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
@@ -60,9 +60,27 @@ Name: associate_aup; Description: "&Associate Audacity project files"; GroupDesc
 Source: "..\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\win\Release\audacity.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\win\Release\Languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
-Source: "..\win\Release\Nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion
-Source: "..\win\Release\Plug-Ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny, fadein.ny, fadeout.ny, undcbias.ny"; Flags: ignoreversion
+
+; wxWidgets DLLs. Be specific (not *.dll) so we don't accidentally distribute avformat.dll, for example.
+Source: "..\win\Release\wxbase28_net_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\Release\wxbase28_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\Release\wxmsw28_adv_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\Release\wxmsw28_core_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\Release\wxmsw28_html_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; MSVC runtime DLLs. Some users can't put these in the system dir, so just put them in the EXE dir.
+; It's legal, per http://www.fsf.org/licensing/licenses/gpl-faq.html#WindowsRuntimeAndGPL .
+; This is not an ideal solution, but should need the least tech support.
+; We'll know we have the right version, don't step on anybody else's older version, and
+; it's easy to make the zip (and they match better).
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcp80.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcr80.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+Source: "..\win\Release\languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
+Source: "..\win\Release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
+Source: "..\win\Release\nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion
+Source: "..\win\Release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny, fadein.ny, fadeout.ny, undcbias.ny"; Flags: ignoreversion
 
 
 [Icons]

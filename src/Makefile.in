@@ -40,8 +40,9 @@ override CXXFLAGS += @CXXFLAGS@
 # CPPFLAGS are for both C and C++.
 override CPPFLAGS += -fno-strict-aliasing -I$(srcdir)/include -I. -DLIBDIR=\"$(libdir)\" @CPPFLAGS@ 
 
-# LDFLAGS are for linking
-override LDFLAGS += @LDFLAGS@
+# LDFLAGS are for linking. BUILD_LDFLAGS are not valid during configure because
+# they reference libs that haven't been built yet
+override LDFLAGS += @LDFLAGS@ @BUILD_LDFLAGS@
 
 ########################################
 # ALL OBJECT FILES
@@ -58,6 +59,7 @@ OBJS = \
 	Benchmark.o \
 	Dependencies.o \
 	Envelope.o \
+	FFmpeg.o \
 	FFT.o \
 	FileIO.o \
 	FileNames.o \
@@ -71,13 +73,14 @@ OBJS = \
 	Languages.o \
 	LangChoice.o \
 	Legacy.o \
+	LoadModules.o \
 	Matrix.o \
 	Menus.o \
 	Mix.o \
-	NoteTrack.o \
 	PitchName.o \
 	PlatformCompatibility.o \
 	Printing.o \
+	Profiler.o \
 	Project.o \
 	Resample.o \
 	RingBuffer.o \
@@ -85,14 +88,15 @@ OBJS = \
 	Shuttle.o \
 	ShuttleGui.o \
 	ShuttlePrefs.o \
-	SmartRecordDialog.o \
 	Snap.o \
 	Spectrum.o \
 	SplashDialog.o \
+	SoundActivatedRecord.o \
 	Tags.o \
 	Theme.o \
 	TimeDialog.o \
 	TimeTrack.o \
+	TimerRecordDialog.o \
 	Track.o \
 	TrackArtist.o \
 	TrackPanel.o \
@@ -106,6 +110,8 @@ OBJS = \
 	commands/CommandManager.o \
 	commands/Keyboard.o \
 	effects/Effect.o \
+	effects/EffectCategory.o \
+	effects/EffectManager.o \
 	effects/SimpleMono.o \
 	effects/SimplePairedTwoTrack.o \
 	effects/SoundTouchEffect.o \
@@ -150,12 +156,18 @@ OBJS = \
 	import/Import.o \
 	import/ImportFLAC.o \
 	import/ImportLOF.o \
-	import/ImportMIDI.o \
 	import/ImportMP3.o \
 	import/ImportOGG.o \
 	import/ImportPCM.o \
 	import/ImportRaw.o \
 	import/RawAudioGuess.o \
+	ondemand/ODComputeSummaryTask.o \
+	ondemand/ODDecodeFlacTask.o \
+	ondemand/ODDecodeTask.o \
+	ondemand/ODManager.o \
+	ondemand/ODTask.o \
+	ondemand/ODTaskThread.o \
+	ondemand/ODWaveTrackTaskQueue.o \
 	prefs/AudioIOPrefs.o \
 	prefs/BatchPrefs.o \
 	prefs/DirectoriesPrefs.o \
@@ -187,10 +199,12 @@ OBJS = \
 	widgets/ExpandingToolBar.o \
 	widgets/Grabber.o \
 	widgets/Grid.o \
+	widgets/HtmlWindow.o \
 	widgets/ImageRoll.o \
 	widgets/LinkingHtmlWindow.o \
 	widgets/Meter.o \
 	widgets/MultiDialog.o \
+	widgets/ProgressDialog.o \
 	widgets/Ruler.o \
 	widgets/TimeTextCtrl.o \
 	widgets/Warning.o \
@@ -217,6 +231,8 @@ LIBAUDACITY_OBJS = \
 	blockfile/SilentBlockFile.o \
 	blockfile/SimpleBlockFile.o \
 	blockfile/PCMAliasBlockFile.o \
+	blockfile/ODPCMAliasBlockFile.o \
+	blockfile/ODDecodeBlockFile.o \
 	xml/XMLTagHandler.o \
 
 

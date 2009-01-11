@@ -85,6 +85,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Chris Cannam"), roleContributor);
    AddCredit(wxT("Brian Gunlogson"), roleContributor);
    AddCredit(wxT("Arun Kishore"), roleContributor);
+   AddCredit(wxT("Paul Livesey"), roleContributor);
    AddCredit(wxT("Harvey Lubin"), roleContributor);
    AddCredit(wxT("Greg Mekkes"), roleContributor);
    AddCredit(wxT("Abe Milde"), roleContributor);
@@ -155,7 +156,6 @@ AboutDialog::AboutDialog(wxWindow * parent)
    
    wxButton *ok = new wxButton(S.GetParent(), wxID_OK, _("OK... Audacious!"));
    ok->SetDefault();
-   ok->SetFocus();
    S.Prop(0).AddWindow( ok );
 
    Fit();
@@ -172,14 +172,14 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    
 
    wxString par1Str = _(
-     "Audacity is a free program written by a team of volunteer developers around the world. Coordination happens thanks to SourceForge.net, an online service that provides free tools to open-source software projects. Audacity is available for Windows 98 and newer, Mac OS X, Linux, and other Unix-like operating systems. Older versions of Audacity are available for Mac OS 9.");
+     "Audacity is a free program written by a team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a> around the world. We are grateful to <a href=\"http://sourceforge.net\">SourceForge.net</a> for our project hosting. Audacity is available for Windows 98 and later, Mac OS X, Linux and other Unix-like operating systems. Older versions of Audacity are available for Mac OS 9.");
 
    #if 1 // Is this beta or not?
    wxString par2Str = _(
-     "This is a beta version of the program.  It may contain bugs and unfinished features.  We depend on your feedback, so please visit our website and give us your bug reports and feature requests." );
+	 "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
    #else
    wxString par2Str = _(
-     "This is a stable, completed release of Audacity. However, if you find a bug or have a suggestion, please contact us. We depend on feedback from users in order to continue to improve Audacity. For more information, visit our website.");
+     "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
    #endif
 
    wxString translatorCredits;
@@ -204,10 +204,10 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
          wxT("\"></head>") + 
       wxT("<body bgcolor=\"#ffffff\"><center>") + 
       wxT("<h3>Audacity &reg; ") + versionStr + wxT(" " ) + csetStr + wxT("</h3>")+ 
-      _("A Free Digital Audio Editor") + 
+      _("A Free Digital Audio Editor<br>") + 
+	  wxT("<a href=\"http://audacity.sourceforge.net/\">http://audacity.sourceforge.net/</a>") +
       wxT("</center><p>") + par1Str +
       wxT("<p>") + par2Str +
-      wxT("<p><center><a href=\"http://audacity.sourceforge.net/\">http://audacity.sourceforge.net/</a></center>") + 
       wxT("<p><center><b>") + _("Credits") + wxT("</b></center>")
       + translatorCredits +
       wxT("<p><center><b>") +
@@ -245,7 +245,11 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
       _("Special thanks:") +
       wxT("</b><p><br>") +
       GetCreditsByRole(roleThanks) +
-      wxT("</center></font></body></html>");
+      wxT("<p><br></center>") +
+	  
+	  _("<b>Audacity&reg;</b> software is copyright &copy; 1999-2008 Audacity Team. <br>The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
+	  wxT("</font></body></html>");
+
    
    this->SetBackgroundColour(theTheme.Colour( clrAboutBoxBackground ));
 
@@ -263,7 +267,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    const float fScale=0.5f;// smaller size.
    wxImage RescaledImage( logo->ConvertToImage() );
    // wxIMAGE_QUALITY_HIGH not supported by wxWidgets 2.6.1, or we would use it here.
-   RescaledImage.Rescale( LOGOWITHNAME_WIDTH * fScale, LOGOWITHNAME_HEIGHT *fScale );
+   RescaledImage.Rescale( int(LOGOWITHNAME_WIDTH * fScale), int(LOGOWITHNAME_HEIGHT *fScale) );
    wxBitmap RescaledBitmap( RescaledImage );
 
    icon =
@@ -272,14 +276,15 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
                           //vvv theTheme.Bitmap(bmpAudacityLogo), wxPoint(93, 10), wxSize(215, 190));
                           //vvv theTheme.Bitmap(bmpAudacityLogoWithName), 
                           RescaledBitmap,
-                          wxDefaultPosition, wxSize(LOGOWITHNAME_WIDTH*fScale, LOGOWITHNAME_HEIGHT*fScale));
+                          wxDefaultPosition, wxSize(int(LOGOWITHNAME_WIDTH*fScale), int(LOGOWITHNAME_HEIGHT*fScale)));
    delete logo;
    S.Prop(0).AddWindow( icon );
 
-   wxHtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1,
+   HtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
                                          wxSize(LOGOWITHNAME_WIDTH, 359), // wxSize(480, 240),
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
+   html->SetFocus();
    html->SetPage(creditStr);
 
    /* locate the html renderer where it fits in the dialogue */
@@ -298,7 +303,7 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    wxString informationStr;   // string to build up list of information in
    S.StartNotebookPage( _("Build Information") );  // start the tab
    S.StartVerticalLay(2);  // create the window
-   wxHtmlWindow *html = new wxHtmlWindow(S.GetParent(), -1, wxDefaultPosition,
+   HtmlWindow *html = new HtmlWindow(S.GetParent(), -1, wxDefaultPosition,
                            wxSize(LOGOWITHNAME_WIDTH, 264), 
                            wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    // create a html pane in it to put the content in.
@@ -500,7 +505,7 @@ void AboutDialog::PopulateLicensePage( ShuttleGui & S )
 {
    S.StartNotebookPage( _("GPL License") );
    S.StartVerticalLay(1);
-   wxHtmlWindow *html = new wxHtmlWindow(S.GetParent(), -1,
+   HtmlWindow *html = new HtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
                                          wxSize(LOGOWITHNAME_WIDTH, 264), // wxSize(480, 240),
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);

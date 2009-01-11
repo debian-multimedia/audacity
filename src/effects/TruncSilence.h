@@ -28,6 +28,12 @@ public:
       return wxString(_("Truncate Silence..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+     std::set<wxString> result;
+     result.insert(wxT("http://audacityteam.org/namespace#TimelineChanger"));
+     return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("TruncateSilence"));
    }

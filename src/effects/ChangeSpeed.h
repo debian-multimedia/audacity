@@ -32,6 +32,12 @@ class EffectChangeSpeed : public Effect {
       return wxString(_("Change Speed..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://audacityteam.org/namespace#PitchAndTempo"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("ChangeSpeed"));
    }
@@ -50,7 +56,7 @@ class EffectChangeSpeed : public Effect {
 
  private:
    bool ProcessOne(WaveTrack * t,
-                   longSampleCount start, longSampleCount end);
+                   sampleCount start, sampleCount end);
 
  private:
 	// track related
@@ -74,18 +80,14 @@ friend class ChangeSpeedDialog;
 // ChangeSpeedDialog
 //----------------------------------------------------------------------------
 
-class ChangeSpeedDialog:public wxDialog {
+class ChangeSpeedDialog:public EffectDialog {
  public:
    ChangeSpeedDialog(EffectChangeSpeed * effect,
-							wxWindow * parent, wxWindowID id, 
-							const wxString & title, 
-							const wxPoint & pos = wxDefaultPosition, 
-							const wxSize & size = wxDefaultSize, 
-							long style = wxDEFAULT_DIALOG_STYLE);
+							wxWindow * parent);
 
-   virtual bool Validate();
-   virtual bool TransferDataToWindow();
-   virtual bool TransferDataFromWindow();
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataToWindow();
+   bool TransferDataFromWindow();
 
  private:
 	// handlers
@@ -95,8 +97,6 @@ class ChangeSpeedDialog:public wxDialog {
    void OnChoice_ToVinyl(wxCommandEvent & event); 
 
    void OnPreview(wxCommandEvent &event);
-   void OnOk(wxCommandEvent & event);
-   void OnCancel(wxCommandEvent & event);
 
 	// helper fns
 	void Update_Text_PercentChange(); // Update control per current m_PercentChange.
@@ -105,8 +105,8 @@ class ChangeSpeedDialog:public wxDialog {
 	void Update_PercentChange(); // Update percent change controls for new Vinyl values.
 
  private:
+	EffectChangeSpeed * mEffect;
 	bool m_bLoopDetect;
-	EffectChangeSpeed * m_pEffect;
 
    // controls
    wxTextCtrl *	m_pTextCtrl_PercentChange;

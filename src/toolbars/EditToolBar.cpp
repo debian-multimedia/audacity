@@ -100,7 +100,7 @@ AButton *EditToolBar::AddButton(
    teBmps eFore, teBmps eDisabled,
    int id,
    const wxChar *label,
-   const wxChar *tip)
+   const wxChar *tip, bool toggle)
 {
    AButton *&r = mButtons[id];
 
@@ -109,7 +109,7 @@ AButton *EditToolBar::AddButton(
       eFore, eDisabled,
       wxWindowID(id),
       wxDefaultPosition, 
-      false,
+      toggle,
       theTheme.ImageSize( bmpRecoloredUpSmall ));
 
    r->SetLabel(label);
@@ -146,6 +146,11 @@ void EditToolBar::Populate()
       _NoAcc("&Redo"), _NoAcc("&Redo"));
    AddSeparator();
 
+   AddButton(bmpLinkTracks, bmpLinkTracksDisabled, ETBLinkID,
+      _("Link Tracks"), _("Link Tracks"), true);
+   
+   AddSeparator();
+   
    AddButton(bmpZoomIn, bmpZoomInDisabled, ETBZoomInID,
       _("Zoom In"),_("Zoom In"));
    AddButton(bmpZoomOut, bmpZoomOutDisabled, ETBZoomOutID,
@@ -171,6 +176,8 @@ void EditToolBar::Populate()
    mButtons[ETBZoomSelID]->SetEnabled(false);
    mButtons[ETBZoomFitID]->SetEnabled(false);
    mButtons[ETBPasteID]->SetEnabled(false);
+   
+   mButtons[ETBLinkID]->PushDown();
 }
 
 void EditToolBar::OnButton(wxCommandEvent &event)
@@ -203,6 +210,16 @@ void EditToolBar::OnButton(wxCommandEvent &event)
       case ETBRedoID:
          if (!busy) p->OnRedo();
          break;
+      case ETBLinkID:
+         if (!busy){
+            p->OnStickyLabel();
+            if (p->GetStickyFlag())
+               mButtons[ETBLinkID]->PushDown();
+            else
+               mButtons[ETBLinkID]->PopUp();
+            p->ModifyToolbarMenus();
+         }
+         return;//avoiding the call to SetButton()
       case ETBZoomInID:
          p->OnZoomIn();
          break;
@@ -263,6 +280,11 @@ void EditToolBar::EnableDisableButtons()
    mButtons[ETBZoomFitID]->SetEnabled(tracks);
 
    mButtons[ETBPasteID]->SetEnabled(p->Clipboard());
+   
+   if (p->GetStickyFlag())
+      mButtons[ETBLinkID]->PushDown();
+   else
+      mButtons[ETBLinkID]->PopUp();
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

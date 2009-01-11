@@ -17,13 +17,14 @@ It is also a place to document colour usage policy in Audacity
 
 *//********************************************************************/
 
+#include <wx/colour.h>
 #include <wx/dc.h>
 #include <wx/settings.h>
 #include <wx/utils.h>
 
 #include "AColor.h"
 #include "Theme.h"
-#include "../Experimental.h"
+#include "Experimental.h"
 #include "AllThemeResources.h"
 
 bool AColor::inited = false;
@@ -124,7 +125,7 @@ void AColor::Bevel(wxDC & dc, bool up, wxRect & r)
    dc.DrawLine(r.x, r.y + r.height, r.x + r.width + 1, r.y + r.height);
 }
 
-wxColour Blend( const wxColour & c1, wxColour & c2 )
+wxColour AColor::Blend( const wxColour & c1, const wxColour & c2 )
 {
    wxColour c3(
       (c1.Red() + c2.Red())/2,

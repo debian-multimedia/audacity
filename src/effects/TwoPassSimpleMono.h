@@ -23,14 +23,14 @@ class EffectTwoPassSimpleMono:public Effect {
 
  private:
    bool ProcessOne(WaveTrack * t,
-                   longSampleCount start, longSampleCount end);
+                   sampleCount start, sampleCount end);
    bool ProcessPass();
 
  protected:  
 
    // Override these methods if you need to initialize something
    // before each pass. Return None if processing should stop.
-   // These should not depend on m_pOutputWaveTracks having been set up via CopyInputWaveTracks().
+   // These should not depend on mOutputWaveTracks having been set up via CopyInputWaveTracks().
    virtual bool InitPass1();
    virtual bool InitPass2();
    

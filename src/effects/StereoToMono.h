@@ -23,6 +23,12 @@ public:
       return wxString(_NoAcc("&Stereo to Mono"));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+     std::set<wxString> result;
+     result.insert(wxT("http://lv2plug.in/ns/lv2core#MixerPlugin"));
+     return result;
+   }
+
    // Used internally, users will not see this.  Do not translate.
    virtual wxString GetEffectIdentifier() {
       return wxT("StereoToMono");
@@ -40,8 +46,8 @@ public:
 private:
    bool ProcessOne(int);
 
-   longSampleCount mLeftTrackLen;
-   longSampleCount mRightTrackLen;
+   sampleCount mLeftTrackLen;
+   sampleCount mRightTrackLen;
    WaveTrack *mLeftTrack;
    WaveTrack *mRightTrack;
 

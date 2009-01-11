@@ -14,22 +14,30 @@
 
 #include "Effect.h"
 
-#include <wx/dialog.h>
+#include <wx/checkbox.h>
+#include <wx/stattext.h>
 #include <wx/textctrl.h>
 
 class wxString;
-class wxCheckBox;
 
 class WaveTrack;
 
-class EffectNormalize: public Effect {
-   
-public:
-   
+class EffectNormalize: public Effect
+{
+ friend class NormalizeDialog;
+
+ public:
    EffectNormalize();
    
    virtual wxString GetEffectName() {
       return wxString(_("Normalize..."));
+   }
+
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#UtilityPlugin"));
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#AmplifierPlugin"));
+      return result;
    }
 
    // This is just used internally, users should not see it.  Do not translate.
@@ -53,7 +61,7 @@ public:
    
  private:
    bool ProcessOne(WaveTrack * t,
-                   longSampleCount start, longSampleCount end);
+                   sampleCount start, sampleCount end);
 
    virtual void StartAnalysis();
    virtual void AnalyzeData(float *buffer, sampleCount len);
@@ -70,50 +78,50 @@ public:
    double mCurT0;
    double mCurT1;
    int    mCurChannel;
-   float mMult;
-   float mOffset;
-   float mMin;
-   float mMax;
+   float  mMult;
+   float  mOffset;
+   float  mMin;
+   float  mMax;
    double mSum;
-   int mCount;
-
-friend class NormalizeDialog;
+   int    mCount;
 };
 
 //----------------------------------------------------------------------------
 // NormalizeDialog
 //----------------------------------------------------------------------------
 
-class NormalizeDialog: public wxDialog
+class NormalizeDialog: public EffectDialog
 {
-public:
+ public:
    // constructors and destructors
-   NormalizeDialog( EffectNormalize *effect,
-                    wxWindow *parent, wxWindowID id, const wxString &title,
-                    const wxPoint& pos = wxDefaultPosition,
-                    const wxSize& size = wxDefaultSize,
-                    long style = wxDEFAULT_DIALOG_STYLE );
-   
-   bool mGain;
-   bool mDC;
-   double mLevel;
-   
-   virtual bool TransferDataToWindow();
-   virtual bool TransferDataFromWindow();
-   
-   void OnPreview(wxCommandEvent &event);
-   void OnOk(wxCommandEvent &event);
-   void OnCancel(wxCommandEvent &event);
+   NormalizeDialog(EffectNormalize *effect, wxWindow * parent);
+
+   // method declarations
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataToWindow();
+   bool TransferDataFromWindow();
+
+ private:
+	// handlers
    void OnUpdateUI(wxCommandEvent& evt);
+   void OnPreview(wxCommandEvent &event);
+
+   void UpdateUI();
+
+ private:
    EffectNormalize *mEffect;
    wxCheckBox *mGainCheckBox;
    wxCheckBox *mDCCheckBox;
+   wxStaticText *mLevelMinux;
    wxTextCtrl *mLevelTextCtrl;
+   wxStaticText *mLeveldB;
 
-private:
-   void UpdateUI();
-   
    DECLARE_EVENT_TABLE()
+
+ public:   
+   bool mGain;
+   bool mDC;
+   double mLevel;
 };
 
 #endif

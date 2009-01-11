@@ -41,6 +41,12 @@ class EffectNoise:public Effect {
       return wxString(_("Noise..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("Noise"));
    }
@@ -62,7 +68,7 @@ class EffectNoise:public Effect {
    virtual bool TransferParameters( Shuttle & shuttle );
 
  private:
-   longSampleCount numSamples;
+   sampleCount numSamples;
    double noiseDuration;
    int noiseType;
    double noiseAmplitude;
@@ -84,7 +90,7 @@ class EffectNoise:public Effect {
 class NoiseDialog:public EffectDialog {
  public:
    // constructors and destructors
-   NoiseDialog(wxWindow * parent, const wxString & title);
+   NoiseDialog(EffectNoise * effect, wxWindow * parent, const wxString & title);
 
    // method declarations
    void PopulateOrExchange(ShuttleGui & S);
@@ -105,6 +111,7 @@ class NoiseDialog:public EffectDialog {
    bool nIsSelection;
 
  private:
+   EffectNoise  *mEffect;
    TimeTextCtrl *mNoiseDurationT;
 };
 

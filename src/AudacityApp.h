@@ -14,10 +14,14 @@
 #ifndef __AUDACITY_APP__
 #define __AUDACITY_APP__
 
-#include <wx/app.h>
+#include "Audacity.h"
 
-class wxLocale;
-class wxSingleInstanceChecker;
+#include <wx/app.h>
+#include <wx/event.h>
+#include <wx/intl.h>
+#include <wx/snglinst.h>
+#include <wx/log.h>
+
 class IPCServ;
 class Importer;
 
@@ -31,12 +35,12 @@ extern wxFrame *gParentFrame;
 extern bool gIsQuitting;
 
 // Asynchronous open
-DECLARE_EVENT_TYPE(EVT_OPEN_AUDIO_FILE, -1);
+DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_OPEN_AUDIO_FILE, -1);
 
 // Keyboard capture support
-DECLARE_EVENT_TYPE(EVT_CAPTURE_KEYBOARD, -1);
-DECLARE_EVENT_TYPE(EVT_RELEASE_KEYBOARD, -1);
-DECLARE_EVENT_TYPE(EVT_CAPTURE_KEY, -1);
+DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_CAPTURE_KEYBOARD, -1);
+DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_RELEASE_KEYBOARD, -1);
+DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_CAPTURE_KEY, -1);
 
 // Flags used in command handling.
 
@@ -66,7 +70,9 @@ enum {
    PlayRegionLockedFlag   = 0x00080000,  //msmeyer
    PlayRegionNotLockedFlag= 0x00100000,  //msmeyer
    CutCopyAvailableFlag   = 0x00200000,
-   WaveTracksExistFlag    = 0x00400000
+   WaveTracksExistFlag    = 0x00400000,
+   NoteTracksExistFlag    = 0x00800000,  //gsw
+   NoteTracksSelectedFlag = 0x01000000   //gsw
 };
 
 class AudacityApp:public wxApp {
@@ -140,6 +146,8 @@ class AudacityApp:public wxApp {
                                    wxArrayString &results);
 
    Importer *mImporter;
+
+   wxLogWindow *mLogger;
  private:
 
    wxLocale *mLocale;
@@ -179,6 +187,7 @@ extern AudacityApp & wxGetApp();
 #endif
 
 #define MAX_AUDIO (1. - 1./(1<<15))
+#define JUST_BELOW_MAX_AUDIO (1. - 1./(1<<14))
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

@@ -30,7 +30,7 @@ void MixBuffers(int numChannels, int *channelFlags, float *gains,
                 samplePtr src,
                 samplePtr *dests, int len, bool interleaved);
 
-class MixerSpec
+class AUDACITY_DLL_API MixerSpec
 {
    int mNumTracks, mNumChannels, mMaxNumChannels;
   
@@ -53,7 +53,7 @@ class MixerSpec
    MixerSpec& operator=( const MixerSpec &mixerSpec );
 };
 
-class Mixer {
+class AUDACITY_DLL_API Mixer {
  public:
    // 
    // Constructor / Destructor
@@ -105,10 +105,10 @@ class Mixer {
 
    void Clear();
    sampleCount MixSameRate(int *channelFlags, WaveTrack *src,
-                           longSampleCount *pos);
+                           sampleCount *pos);
 
    sampleCount MixVariableRates(int *channelFlags, WaveTrack *track,
-                                longSampleCount *pos, float *queue,
+                                sampleCount *pos, float *queue,
                                 int *queueStart, int *queueLen,
                                 Resample *SRC);
 
@@ -117,7 +117,7 @@ class Mixer {
    int              mNumInputTracks;
    WaveTrack      **mInputTrack;
    TimeTrack       *mTimeTrack;
-   longSampleCount *mSamplePos;
+   sampleCount     *mSamplePos;
    bool             mApplyTrackGains;
    float           *mGains;
    double          *mEnvValues;

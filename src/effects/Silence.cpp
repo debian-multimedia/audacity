@@ -31,6 +31,8 @@ bool EffectSilence::PromptUser()
 {
    TimeDialog dlog(mParent, wxID_ANY, _("Silence Generator"));
 
+   dlog.SetSampleRate(mProjectRate);
+
    if (mT1 > mT0) {
       // there is a selection: let's fit in there...
       length = mT1 - mT0;
@@ -54,6 +56,10 @@ bool EffectSilence::Process()
 {
    if (length <= 0.0)
       length = sDefaultGenerateLen;
+      
+#ifdef EXPERIMENTAL_FULL_LINKING
+   HandleLinkedTracksOnGenerate(length, mT0);
+#endif
 
    TrackListIterator iter(mWaveTracks);
    WaveTrack *track = (WaveTrack *)iter.First();
@@ -61,8 +67,8 @@ bool EffectSilence::Process()
       WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(), track->GetRate());
       tmp->InsertSilence(0.0, length);
       tmp->Flush();
-      track->Clear(mT0, mT1);
-      track->Paste(mT0, tmp);
+      track->HandleClear(mT0, mT1, false, false);
+      track->HandlePaste(mT0, tmp);
       delete tmp;
       
       //Iterate to the next track

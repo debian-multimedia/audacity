@@ -82,6 +82,7 @@ CommandManager.  It holds the callback for one command.
 #include <wx/intl.h>
 #include <wx/msgdlg.h>
 #include <wx/log.h>
+#include <wx/tokenzr.h>
 
 #include "../AudacityApp.h"
 #include "../Prefs.h"
@@ -90,7 +91,7 @@ CommandManager.  It holds the callback for one command.
 #include "CommandManager.h"
 
 #include "Keyboard.h"
-#include "../effects/Effect.h"
+#include "../effects/EffectManager.h"
 
 // On wxGTK, there may be many many many plugins, but the menus don't automatically
 // allow for scrolling, so we build sub-menus.  If the menu gets longer than
@@ -352,6 +353,112 @@ bool CommandManager::ItemShouldBeHidden( wxString &Label )
 ///
 /// Add a menu item to the current menu.  When the user selects it, the
 /// given functor will be called
+void CommandManager::InsertItem(wxString name, wxString label_in,
+                                CommandFunctor *callback, wxString after,
+                                int checkmark)
+{
+   wxString label = label_in;
+   if (ItemShouldBeHidden(label))
+      return;
+
+   wxMenuBar *bar = GetActiveProject()->GetMenuBar();
+   wxArrayString names = ::wxStringTokenize(after, wxT(":"));
+   size_t cnt = names.GetCount();
+
+   if (cnt < 2) {
+      return;
+   }
+
+   int pos = bar->FindMenu(names[0]);
+   if (pos == wxNOT_FOUND) {
+      return;
+   }
+
+   wxMenu *menu = bar->GetMenu(pos);
+   wxMenuItem *item = NULL;
+   pos = 0;
+
+   for (size_t ndx = 1; ndx < cnt; ndx++) {
+      wxMenuItemList list = menu->GetMenuItems();
+      size_t lcnt = list.GetCount();
+      wxString label = wxMenuItem::GetLabelText(names[ndx]);
+
+      for (size_t lndx = 0; lndx < lcnt; lndx++) {
+         item = list.Item(lndx)->GetData();
+         if (item->GetLabel() == label) {
+            break;
+         }
+         pos++;
+         item = NULL;
+      }
+
+      if (item == NULL) {
+         return;
+      }
+
+      if (item->IsSubMenu()) {
+         menu = item->GetSubMenu();
+         item = NULL;
+         continue;
+      }
+
+      if (ndx + 1 != cnt) {
+         return;
+      }
+   }
+
+   int ID = NewIdentifier(name, label, menu, callback, false, 0, 0);
+
+   // Replace the accel key with the one from the preferences
+   label = label.BeforeFirst(wxT('\t'));
+
+   // This is a very weird hack.  Under GTK, menu labels are totally
+   // linked to accelerators the first time you create a menu item
+   // with that label and can't be changed.  This causes all sorts of
+   // problems.  As a workaround, we create each menu item with a
+   // made-up name (just an ID number string) but with the accelerator
+   // we want, then immediately change the label to the correct string.
+   // -DMM
+   mHiddenID++;
+   wxString dummy, newLabel;
+   dummy.Printf(wxT("%s%08d"), label.c_str(), mHiddenID);
+   newLabel = label;
+
+   bool shortcut = false;
+
+   if (mCommandIDHash[ID]->key.Length() > 0)
+      shortcut = true;
+   
+   // Mac OS X fixes
+  #ifdef __WXMAC__
+   if (newLabel.Length() > 0 && newLabel[0] == wxT('&'))
+      newLabel = newLabel.Right(newLabel.Length()-1);
+
+   if (shortcut == true &&
+       (mCommandIDHash[ID]->key.Length() < 5 ||
+        mCommandIDHash[ID]->key.Left(5) != wxT("Ctrl+")))
+      shortcut = false;
+  #endif
+   
+   if (shortcut) {
+      dummy = dummy + wxT("\t") + mCommandIDHash[ID]->key;
+   }
+
+   if (checkmark >= 0) {
+      menu->InsertCheckItem(pos, ID, dummy);
+      menu->Check(ID, checkmark != 0);
+   }
+   else {
+      menu->Insert(pos, ID, dummy);
+   }
+   menu->SetLabel(ID, newLabel);
+
+   mbSeparatorAllowed = true;
+}
+
+///
+/// Add a menu item to the current menu.  When the user selects it, the
+/// given functor will be called
 void CommandManager::AddItem(wxString name, wxString label_in,
                              CommandFunctor *callback, int checkmark)
 {
@@ -584,17 +691,21 @@ wxString CommandManager::GetKey(wxString label)
 ///of them at once
 void CommandManager::Enable(CommandListEntry *entry, bool enabled)
 {
-   // Don't do anything if the command's enabled state
-   // is already the same
-   if (entry->enabled == enabled)
+   if (!entry->menu) {
+      entry->enabled = enabled;
       return;
+   }
 
-   entry->enabled = enabled;
+   // LL:  Refresh from real state as we can get out of sync on the
+   //      Mac due to its reluctance to enable menus when in a modal
+   //      state.
+   entry->enabled = entry->menu->IsEnabled(entry->id);
 
-   if (!entry->menu)
-      return;
-      
-   entry->menu->Enable(entry->id, enabled);
+   // Only enabled if needed
+   if (entry->enabled != enabled) {
+      entry->menu->Enable(entry->id, enabled);
+   }
+
    if (entry->multi) {
       int i;
       int ID = entry->id;
@@ -876,7 +987,7 @@ bool CommandManager::HandleTextualCommand(wxString & Str, wxUint32 flags, wxUint
       return false;
 
    int effectFlags = ALL_EFFECTS | CONFIGURED_EFFECT;
-   effects = Effect::GetEffects(effectFlags);
+   effects = EffectManager::Get().GetEffects(effectFlags);
    for(i=0; i<effects->GetCount(); i++) {
       wxString effectName = (*effects)[i]->GetEffectName();
       if( Str.IsSameAs( effectName ))

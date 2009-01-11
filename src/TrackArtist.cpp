@@ -36,14 +36,17 @@
 #include <wx/image.h>
 #include <wx/pen.h>
 #include <wx/log.h>
+#include <wx/datetime.h>
 
+#ifdef USE_MIDI
 #include "allegro.h"
+#include "NoteTrack.h"
+#endif // USE_MIDI
 
 #include "AColor.h"
 #include "BlockFile.h"
 #include "Envelope.h"
 #include "Track.h"
-#include "NoteTrack.h"
 #include "WaveTrack.h"
 #include "LabelTrack.h"
 #include "TimeTrack.h"
@@ -70,12 +73,13 @@ int gWaveformTimeCount = 0;
 #define BUFFERED_DRAWING 1
 #endif
 
+#ifdef USE_MIDI
 const int octaveHeight = 62;
 const int blackPos[5] = { 6, 16, 32, 42, 52 };
 const int whitePos[7] = { 0, 9, 17, 26, 35, 44, 53 };
-const int notePos[12] = { 1, 6, 11, 16, 21,
-   27, 32, 37, 42, 47, 52, 57
-};
+const int notePos[12] = { 1, 6, 11, 16, 21, 27,
+                        32, 37, 42, 47, 52, 57 };
+#endif // USE_MIDI
 
 TrackArtist::TrackArtist()
 {
@@ -120,6 +124,8 @@ void TrackArtist::SetColours()
    theTheme.SetPenColour(   samplePen,       clrSample);
    theTheme.SetPenColour(   selsamplePen,    clrSelSample);
    theTheme.SetPenColour(   muteSamplePen,   clrMuteSample);
+   theTheme.SetPenColour(   odProgressDonePen,   clrProgressDone);
+   theTheme.SetPenColour(   odProgressNotYetPen,   clrProgressNotYet);
    theTheme.SetPenColour(   rmsPen,          clrRms);
    theTheme.SetPenColour(   muteRmsPen,      clrMuteRms);
    theTheme.SetPenColour(   shadowPen,       clrShadow);
@@ -250,29 +256,21 @@ void TrackArtist::DrawTracks(TrackList * tracks,
                             drawEnvelope,  drawSamples, drawSliders, true, muted);
                break;
             case WaveTrack::SpectrumDisplay:
-#ifdef LOGARITHMIC_SPECTRUM
                DrawSpectrum((WaveTrack *)t, dc, rr, viewInfo, false, false);
-#else
-               DrawSpectrum((WaveTrack *)t, dc, rr, viewInfo, false);
-#endif
                break;
-#ifdef LOGARITHMIC_SPECTRUM
             case WaveTrack::SpectrumLogDisplay:
                DrawSpectrum((WaveTrack *)t, dc, rr, viewInfo, false, true);
                break;
-#endif
             case WaveTrack::PitchDisplay:
-#ifdef LOGARITHMIC_SPECTRUM
                DrawSpectrum((WaveTrack *)t, dc, rr, viewInfo, true, false);
-#else
-               DrawSpectrum((WaveTrack *)t, dc, rr, viewInfo, true);
-#endif
                break;
             }
             break;              // case Wave
+         #ifdef USE_MIDI
          case Track::Note:
             DrawNoteTrack((NoteTrack *)t, dc, rr, viewInfo);
             break;
+         #endif // USE_MIDI
          case Track::Label:
             DrawLabelTrack((LabelTrack *)t, dc, rr, viewInfo);
             break;
@@ -311,9 +309,7 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
       vruler->SetFormat(Ruler::RealFormat);
       vruler->SetUnits(wxT(""));
       vruler->SetLabelEdges(false);
-#ifdef LOGARITHMIC_SPECTRUM
       vruler->SetLog(false);
-#endif
       vruler->Draw(*dc);
    }
 
@@ -354,9 +350,7 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
             vruler->SetRange(topval, botval);
             vruler->SetFormat(Ruler::LinearDBFormat);
             vruler->SetLabelEdges(true);
-#ifdef LOGARITHMIC_SPECTRUM
             vruler->SetLog(false);
-#endif
             vruler->Draw(*dc);
          }
       }
@@ -368,9 +362,7 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
       if (r.height < 60)
          return;
 
-#ifdef LOGARITHMIC_SPECTRUM
       bool logF = ((WaveTrack *) t)->GetDisplay() == WaveTrack::SpectrumLogDisplay;
-#endif
       double rate = ((WaveTrack *) t)->GetRate();
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
       int fftSkipPoints = gPrefs->Read(wxT("/Spectrum/FFTSkipPoints"), 0L);
@@ -409,13 +401,10 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
          vruler->SetRange(int(maxFreq), int(minFreq));
          vruler->SetUnits(wxT(""));
       }
-#ifdef LOGARITHMIC_SPECTRUM
       vruler->SetLog(false);
-#endif
       vruler->Draw(*dc);
    }
 
-#ifdef LOGARITHMIC_SPECTRUM
    if (t->GetKind() == Track::Wave
    && ((WaveTrack *) t)->GetDisplay() == WaveTrack::SpectrumLogDisplay)
    {  // SpectrumLog
@@ -454,15 +443,19 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
       vruler->SetLog(true);
       vruler->Draw(*dc);
    }
-#endif
 
    if (t->GetKind() == Track::Wave
        && ((WaveTrack *) t)->GetDisplay() == WaveTrack::PitchDisplay) {
       // Pitch
    }
 
+   #ifdef USE_MIDI
    // The note track isn't drawing a ruler at all!
+   // But it needs to!
    if (t->GetKind() == Track::Note) {
+      vruler->SetBounds(r.x, r.y+1, r.x + 1, r.y + r.height-1);
+      vruler->SetOrientation(wxVERTICAL);
+      vruler->Draw(*dc);
 
       dc->SetPen(*wxTRANSPARENT_PEN);
       dc->SetBrush(*wxWHITE_BRUSH);
@@ -539,6 +532,8 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
          }
       }
    }
+   #endif // USE_MIDI
+
 #ifdef EXPERIMENTAL_RULER_AUTOSIZE
    t->vrulerSize = vruler->mRect.GetSize();
 #endif //EXPERIMENTAL_RULER_AUTOSIZE
@@ -594,11 +589,12 @@ int GetWaveYPosNew(float value, float min, float max,
         value *= sign;
      }
    }else
-      if(!outer) 
+      if(!outer) {
          if( value >= 0.0)
             value -= 0.5;
          else
             value += 0.5;
+      }
 
    if (clip) {
       if (value < min)
@@ -608,26 +604,6 @@ int GetWaveYPosNew(float value, float min, float max,
    }
    value = (max - value) / (max - min);
    return (int) (value * (height - 1.0) + 0.5);
-}
-
-// This function isn't used anymore.  Use GetWaveYPosNew instead.
-// (and pass in clip=false)
-int TrackArtist::GetWaveYPosUnclipped(float value, int height, bool dB, 
-                  float dBr)
-{
-   float sign = (value >= 0 ? 1 : -1);
-
-   if (dB) {
-      if (value == 0 || height == 0)
-         return height/2;
-      float db = 20 * log10(fabs(value));
-      float val = (db + dBr) / dBr;
-      if (val < 0.0)
-         val = float(0.0);
-      return (int) (sign * (height * val + 0.5));
-   } else {
-      return (int) (value * height + sign * 0.5);
-   }
 }
 
 void TrackArtist::DrawNegativeOffsetTrackArrows(wxDC &dc, wxRect &r)
@@ -659,7 +635,7 @@ void GetColour(wxPen &pen, uchar *r, uchar *g, uchar *b)
 
 void TrackArtist::DrawWaveformBackground(wxDC &dc, wxRect r,
                                          uchar *imageBuffer,
-                                         int *where, int ssel0, int ssel1,
+                                         sampleCount *where, sampleCount ssel0, sampleCount ssel1,
                                          double *env,
                                          float zoomMin, float zoomMax,
                                          bool dB, bool drawEnvelope)
@@ -703,10 +679,10 @@ void TrackArtist::DrawWaveformBackground(wxDC &dc, wxRect r,
 
    if (imageBuffer) {
       uchar r0, g0, b0, r1, g1, b1, r2, g2, b2;
-      int *sel;
+      bool *sel;
       int y;
 
-      sel = new int[r.width];
+      sel = new bool[r.width];
       for(x=0; x<r.width; x++)
          sel[x] = (ssel0 <= where[x] && where[x + 1] < ssel1);
 
@@ -912,8 +888,8 @@ void TrackArtist::DrawIndividualClipSamples(wxDC &dc, wxRect r,
 void TrackArtist::DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
                                 float zoomMin, float zoomMax,
                                 double *envValues,
-                                float *min, float *max, float *rms,
-                                bool dB, bool muted)
+                                float *min, float *max, float *rms,int* bl,
+                                bool dB, bool muted, bool showProgress)
 {
    // Display a line representing the
    // min and max of the samples in this region
@@ -924,6 +900,7 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
    int *clipped;
    int clipcnt = 0;
    int x;
+   //int pBarHeight = 10;
 
    if (mShowClipping) {
        clipped =  new int[r.width];
@@ -973,7 +950,12 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
       if (r2[x]>r1[x])
          r2[x] = r1[x];
    }
-
+   long pixAnimOffset;
+   
+   pixAnimOffset = (long)fabs( (double)(wxDateTime::Now().GetTicks()*-10)  )+ wxDateTime::Now().GetMillisecond()/100; //10 pixels a second
+   
+   bool drawStripes = true;
+   bool drawWaveform = true;
    if (imageBuffer) {
       uchar *clipBuffer = imageBuffer;
       uchar rs, gs, bs, rr, gr, br;
@@ -981,22 +963,103 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
 
       GetColour(muted ? muteSamplePen : samplePen, &rs, &gs, &bs);
       GetColour(muted ? muteRmsPen : rmsPen, &rr, &gr, &br);
+      
+      
 
       for(y=0; y<r.height; y++) {
          for(x=0; x<r.width; x++) {
-            if (y >= r2[x] && y < r1[x]) {
-               *imageBuffer++ = rr;
-               *imageBuffer++ = gr;
-               *imageBuffer++ = br;
+            //Check to see if the block data is available for this pixel.
+            //wxLogDebug(wxT("bl[x] value for x %i, val %i\n"),x,bl[x]);
+            if(bl[x]<=-1)
+            {
+               //check to see if we should draw the progress bar. 
+               //x%pBar Height to ensure we have a square separated every 15 pixels.
+               //if(showProgress && y<pBarHeight && x%pBarHeight) 
+               //               {
+               //                  //white square,  TODO: use a max(255,x+100) scheme so that we keep the waveform there, just faded. 
+               //                  *imageBuffer++=255;
+               //                  *imageBuffer++=255;
+               //                  *imageBuffer++=255;
+               //               }
+               //               else
+               //               {
+               
+               //draw the waveform
+               
+               
+               if(drawStripes)
+               {
+                  //draw one stripe every 25 pixels
+                  if( (y+x/*+pixAnimOffset*/)%25 == 0)
+                  {
+                     *imageBuffer = (bl[x]%2?rs:rr) + *imageBuffer;
+                     imageBuffer += 3; //Move pen to next pixel
+                  } 
+                  else {
+                     //have a gradient away from the stripe, alter light and dark every block
+                     float lineProximity;
+                     //we want half of the range to be zero, and the other half scaled from 0.0 to 1 as you approach the line
+                     lineProximity =  fabs( ( ((y+x/*+pixAnimOffset*/)%25) - 12)/12.0) - 0.5;
+                     if(lineProximity<0.0) 
+                        lineProximity = 0.0;
+                     lineProximity*=2;//scale back to 0.0-1.0
+                        *imageBuffer =  (bl[x]%2?rs:rr)*lineProximity+ (1.0-lineProximity)* (*imageBuffer+(bl[x]%2?0:-30));
+                        ++imageBuffer;
+
+                        *imageBuffer = (bl[x]%2?gs:gr)*lineProximity+ (1.0-lineProximity)* (*imageBuffer+(bl[x]%2?0:-30));
+                        ++imageBuffer;
+
+                        *imageBuffer = (bl[x]%2?bs:br)*lineProximity+ (1.0-lineProximity)* (*imageBuffer+(bl[x]%2?0:-30));
+                        ++imageBuffer;
+                  }
+               }
+               if(drawWaveform)
+               {
+                  
+                  //draw a dummy waveform - some kind of sinusoid.  We want to animate it so the user knows it's a dummy.  Use the second's unit of a get time function.
+                  //Lets use a triangle wave for now since it's easier - I don't want to use sin() or make a wavetable just for this.
+                  int triX;
+                  triX= fabs((double)((x+pixAnimOffset)%(2*r.height))-r.height)+r.height;
+                  if((y+triX)%r.height == 0)
+                  {
+                     if(drawStripes)
+                        imageBuffer-=3;  //move the pen back to the beginning of the pixel
+                     *imageBuffer++ = rr; //(bl[x]%2?rs:rr) + *imageBuffer;
+                     *imageBuffer++ = gr;
+                     *imageBuffer++ = br;
+                  }
+                  else
+                  {
+                     if(!drawStripes)
+                     {  *imageBuffer++;
+                        *imageBuffer++;
+                        *imageBuffer++;
+                     }
+                  }
+                  
+               }
             }
-            else if (y >= h2[x] && y < h1[x]+1) {
-               *imageBuffer++ = rs;
-               *imageBuffer++ = gs;
-               *imageBuffer++ = bs;
-            }
-            else {
-               imageBuffer += 3;
-            }
+            else
+            {
+                  //we have valid summary or sample data, so commence regular waveform drawing
+                  if (y >= r2[x] && y < r1[x]) {
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight) ?rr/2+30: */ rr;
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight) ?gr/2+120: */gr;
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight) ?br/2+30: */br;
+                  }
+                  else if (y >= h2[x] && y < h1[x]+1) {
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?rs/2+30: */rs;
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?gs/2+120: */gs;
+                     *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?bs/2+30: */bs;
+                  }
+                  else {
+                     // *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?60: */*imageBuffer;
+                     // *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?240: */*imageBuffer;
+                     // *imageBuffer++ = /*(showProgress && y<pBarHeight && x%pBarHeight)?60: */*imageBuffer;
+                     imageBuffer += 3;
+                  }
+             
+           }
          }
       }
 
@@ -1018,28 +1081,87 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
          }
       }
    }
-   else {
+   else {   
       // Draw the waveform min/max lines
       dc.SetPen(muted ? muteSamplePen : samplePen);
       for (x = 0; x < r.width; x++) {
-         if (r1[x] != r2[x]) {
-            dc.DrawLine(r.x + x, r.y + h2[x], r.x + x, r.y + r2[x] );
-            dc.DrawLine(r.x + x, r.y + r1[x], r.x + x, r.y + h1[x]+1 );
-         } else {
-            // MM: DrawLine will not draw anything if startpoint == endpoint,
-            //     so in this case explicitely draw single point.
-            if (h1[x]+1 == h2[x])
-                dc.DrawPoint(r.x + x, r.y + h2[x]);
-            else
-               dc.DrawLine(r.x + x, r.y + h2[x], r.x + x, r.y + h1[x]+1 );
+         if(bl[x]<=-1)
+         {
+
+            if(drawStripes)
+            {
+               
+               //TODO:unify with buffer drawing.
+               dc.SetPen(bl[x]%2 ? muteSamplePen : samplePen);
+               for(int y=0;y<(r.height)/25 +1;y++)
+               {
+                  //we are drawing over the buffer, but I think DrawLine takes care of this.
+                  dc.DrawLine(r.x + x, r.y+ 25*y + (x/*+pixAnimOffset*/)%25, r.x+x, 
+                              r.y+25*y+(x/*+pixAnimOffset*/)%25 + 6 ); //take the min so we don't draw past the edge
+               }
+               
+               
+               //draw a not yet progress bar
+               /*
+                if(showProgress && x%pBarHeight)
+                {
+                   dc.SetPen(odProgressNotYetPen);
+                   dc.DrawLine(r.x + x, r.y, r.x + x, r.y + pBarHeight );
+                }*/
+            }
+            
+                        //draw a dummy waveform - some kind of sinusoid.  We want to animate it so the user knows it's a dummy.  Use the second's unit of a get time function.
+            //Lets use a triangle wave for now since it's easier - I don't want to use sin() or make a wavetable just for this.
+            if(drawWaveform)
+            {
+               int triX;
+               dc.SetPen(samplePen);
+               triX= fabs((double)((x+pixAnimOffset)%(2*r.height))-r.height)+r.height;
+               for(int y=0;y<r.height;y++)
+               {
+                  if((y+triX)%r.height == 0)
+                     dc.DrawPoint(r.x + x, r.y+y);
+               }
+            }
+            
+         }
+         else
+         {
+            dc.SetPen(muted ? muteSamplePen : samplePen);
+            if (r1[x] != r2[x]) {
+               dc.DrawLine(r.x + x, r.y + h2[x], r.x + x, r.y + r2[x] );
+               dc.DrawLine(r.x + x, r.y + r1[x], r.x + x, r.y + h1[x]+1 );
+            } else {
+               // MM: DrawLine will not draw anything if startpoint == endpoint,
+               //     so in this case explicitely draw single point.
+               if (h1[x]+1 == h2[x])
+                  dc.DrawPoint(r.x + x, r.y + h2[x]);
+               else
+                  dc.DrawLine(r.x + x, r.y + h2[x], r.x + x, r.y + h1[x]+1 );
+            }
+            
+            /*
+            //draw a transparent Green progress bar
+            if(showProgress && x%pBarHeight)
+            {
+               dc.SetPen(odProgressDonePen);
+               dc.DrawLine(r.x + x, r.y, r.x + x, r.y + pBarHeight );
+            }*/
          }
       }
       
       // Draw the waveform rms lines
       dc.SetPen(muted ? muteRmsPen : rmsPen);
       for (x = 0; x < r.width; x++) {
-         if (r1[x] != r2[x])
-            dc.DrawLine(r.x + x, r.y + r2[x], r.x + x, r.y + r1[x]);
+         if(bl[x]<=-1)
+         {
+            //TODO: should we draw more stuff here?
+         }
+         else
+         {
+            if (r1[x] != r2[x])
+               dc.DrawLine(r.x + x, r.y + r2[x], r.x + x, r.y + r1[x]);
+         }
       }
 
       // Draw the clipping lines
@@ -1135,7 +1257,6 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
    struct timeval tv0, tv1;
    gettimeofday(&tv0, NULL);
 #endif
-
    double h = viewInfo->h;          //The horizontal position in seconds
    double pps = viewInfo->zoom;     //points-per-second--the zoom level
    double sel0 = viewInfo->sel0;    //left selection bound
@@ -1183,12 +1304,12 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
    // +.99 better centers the selection drag area at single-sample
    // granularity.  Not 1.0 as that would cause 'select whole
    // track' to lose the first sample
-   int ssel0 = wxMax(0, int((sel0 - tOffset) * rate + .99)); 
-   int ssel1 = wxMax(0, int((sel1 - tOffset) * rate + .99));
+   sampleCount ssel0 = wxMax(0, sampleCount((sel0 - tOffset) * rate + .99)); 
+   sampleCount ssel1 = wxMax(0, sampleCount((sel1 - tOffset) * rate + .99));
 
    //trim selection so that it only contains the actual samples
-   if (ssel0 != ssel1 && ssel1 > (int)(0.5+trackLen*rate))
-      ssel1 = (int)(0.5+trackLen*rate);
+   if (ssel0 != ssel1 && ssel1 > (sampleCount)(0.5+trackLen*rate))
+      ssel1 = (sampleCount)(0.5+trackLen*rate);
 
    // The variable "mid" will be the rectangle containing the
    // actual waveform, as opposed to any blank area before
@@ -1248,17 +1369,19 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
    float *min = new float[mid.width];
    float *max = new float[mid.width];
    float *rms = new float[mid.width];
+   int *bl = new int[mid.width];
    sampleCount *where = new sampleCount[mid.width+1];
-   
+   bool isLoadingOD=false;//true if loading on demand block in sequence.
    // The WaveClip class handles the details of computing the shape
    // of the waveform.  The only way GetWaveDisplay will fail is if
    // there's a serious error, like some of the waveform data can't
    // be loaded.  So if the function returns false, we can just exit.
-   if (!clip->GetWaveDisplay(min, max, rms, where,
-                              mid.width, t0, pps)) {
+   if (!clip->GetWaveDisplay(min, max, rms, bl,where,
+                              mid.width, t0, pps,isLoadingOD)) {
       delete[] min;
       delete[] max;
       delete[] rms;
+      delete[] bl;
       delete[] where;
       return;
    }
@@ -1306,7 +1429,7 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
 
    if (!showIndividualSamples)
       DrawMinMaxRMS(dc, drawRect, imageBuffer, zoomMin, zoomMax,
-                    envValues, min, max, rms, dB, muted);
+                    envValues, min, max, rms, bl, dB, muted, isLoadingOD);
 
    // Transfer any buffered drawing to the DC.  Everything
    // from now on is drawn using ordinary wxWindows drawing code.
@@ -1352,6 +1475,8 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
       }
    }
 
+
+
    // Draw arrows on the left side if the track extends to the left of the
    // beginning of time.  :)
    if (h == 0.0 && tOffset < 0.0) {
@@ -1363,7 +1488,8 @@ void TrackArtist::DrawClipWaveform(WaveTrack* track, WaveClip* clip,
       clip->GetEnvelope()->Draw(dc, envRect, h, pps, dB,
                                  zoomMin, zoomMax);
    }
-
+   
+   delete[] bl;
    delete[] envValues;
    delete[] min;
    delete[] max;
@@ -1451,11 +1577,7 @@ void TrackArtist::DrawTimeSlider(WaveTrack *track,
 
 void TrackArtist::DrawSpectrum(WaveTrack *track,
                                wxDC & dc, wxRect & r,
-#ifdef LOGARITHMIC_SPECTRUM
                                ViewInfo * viewInfo, bool autocorrelation, bool logF)
-#else
-                               ViewInfo * viewInfo, bool autocorrelation)
-#endif
 {
    // MM: Draw background. We should optimize that a bit more.
    dc.SetPen(*wxTRANSPARENT_PEN);
@@ -1476,11 +1598,7 @@ void TrackArtist::DrawSpectrum(WaveTrack *track,
    }
 
    for (WaveClipList::Node* it=track->GetClipIterator(); it; it=it->GetNext())
-#ifdef LOGARITHMIC_SPECTRUM
       DrawClipSpectrum(track, it->GetData(), dc, r, viewInfo, autocorrelation, logF);
-#else
-      DrawClipSpectrum(track, it->GetData(), dc, r, viewInfo, autocorrelation);
-#endif
 }
 
 float sumFreqValues(float *freq, int x0, float bin0, float bin1)
@@ -1505,11 +1623,7 @@ float sumFreqValues(float *freq, int x0, float bin0, float bin1)
 
 void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
                                wxDC & dc, wxRect & r,
-#ifdef LOGARITHMIC_SPECTRUM
                                ViewInfo * viewInfo, bool autocorrelation, bool logF)
-#else
-                               ViewInfo * viewInfo, bool autocorrelation)
-#endif
 {
    double h = viewInfo->h;
    double pps = viewInfo->zoom;
@@ -1547,12 +1661,12 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
    if (t0 > t1)
       t0 = t1;
 
-   sampleCount ssel0 = wxMax(0, int((sel0 - tOffset) * rate + .99));
-   sampleCount ssel1 = wxMax(0, int((sel1 - tOffset) * rate + .99));
+   sampleCount ssel0 = wxMax(0, sampleCount((sel0 - tOffset) * rate + .99));
+   sampleCount ssel1 = wxMax(0, sampleCount((sel1 - tOffset) * rate + .99));
 
    //trim selection so that it only contains the actual samples
-   if (ssel0 != ssel1 && ssel1 > (int)(0.5+trackLen*rate))
-      ssel1 = (int)(0.5+trackLen*rate);
+   if (ssel0 != ssel1 && ssel1 > (sampleCount)(0.5+trackLen*rate))
+      ssel1 = (sampleCount)(0.5+trackLen*rate);
 
    // The variable "mid" will be the rectangle containing the
    // actual waveform, as opposed to any blank area before
@@ -1631,7 +1745,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
    bool isGrayscale = false;
    gPrefs->Read(wxT("/Spectrum/Grayscale"), &isGrayscale, false);
    int ifreq = lrint(rate/2);
-#ifdef LOGARITHMIC_SPECTRUM
    int maxFreq;
    if (!logF)
       maxFreq = gPrefs->Read(wxT("/Spectrum/MaxFreq"), ifreq);
@@ -1654,16 +1767,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
          gPrefs->Write(wxT("/SpectrumLog/MinFreq"), ifreq/1000.0);
       }
    }
-#else
-   int maxFreq = gPrefs->Read(wxT("/Spectrum/MaxFreq"), ifreq);
-   if(maxFreq > ifreq)
-      maxFreq = ifreq;
-   int minFreq = gPrefs->Read(wxT("/Spectrum/MinFreq"), 0L);
-   if(minFreq < 0) {
-      minFreq = 0;
-      gPrefs->Write(wxT("/Spectrum/MinFreq"), 0L);
-   }
-#endif
 #ifdef EXPERIMENTAL_FIND_NOTES
    bool fftFindNotes = (gPrefs->Read(wxT("/Spectrum/FFTFindNotes"), 0L) != 0);
    int findNotesMinA = gPrefs->Read(wxT("/Spectrum/FindNotesMinA"), -30.0);
@@ -1705,9 +1808,8 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
    int x = 0;
    sampleCount w1 = (sampleCount) ((t0*rate + x *rate *tstep) + .5);
  
-#ifdef LOGARITHMIC_SPECTRUM
    const float 
-      e=exp(1.0f), 
+//      e=exp(1.0f), 
       log2=log(2.0f),
       f=rate/2.0f/half, 
       lmin=log(float(minFreq)),
@@ -1721,8 +1823,8 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
       scale=lmax-lmin, 
       scale2=(lmax-lmin)/log2, 
-      lmin2=lmin/log2,
-      expo=exp(scale);
+      lmin2=lmin/log2 /*,
+      expo=exp(scale)*/ ;
 
 #ifdef EXPERIMENTAL_FFT_Y_GRID
    bool *yGrid;
@@ -1740,7 +1842,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
          yGrid[y]=false;
    }
 #endif //EXPERIMENTAL_FFT_Y_GRID
-#endif //LOGARITHMIC_SPECTRUM
 
 #ifdef EXPERIMENTAL_FIND_NOTES
    int maxima[128];
@@ -1764,8 +1865,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
    {
       sampleCount w0 = w1;
       w1 = (sampleCount) ((t0*rate + (x+1) *rate *tstep) + .5);
-
-#ifdef LOGARITHMIC_SPECTRUM
       if (!logF)
       {
          for (int yy = 0; yy < mid.height; yy++) {
@@ -1962,55 +2061,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
             data[px] = bv;
          }
       }
-#else //!LOGARITHMIC_SPECTRUM
-      for (int yy = 0; yy < mid.height; yy++) {
-         bool selflag = (ssel0 <= w0 && w1 < ssel1);
-         unsigned char rv, gv, bv;
-         float value;
-
-         if(!usePxCache) {
-            float bin0 = float (yy) * binPerPx + minSamples;
-            float bin1 = float (yy + 1) * binPerPx + minSamples;
-
-
-            if (int (bin1) == int (bin0))
-               value = freq[half * x + int (bin0)];
-            else {
-               float binwidth= bin1 - bin0;
-               value = freq[half * x + int (bin0)] * (1.f - bin0 + (int)bin0);
-
-               bin0 = 1 + int (bin0);
-               while (bin0 < int (bin1)) {
-                  value += freq[half * x + int (bin0)];
-                  bin0 += 1.0;
-               }
-               value += freq[half * x + int (bin1)] * (bin1 - int (bin1));
-
-               value /= binwidth;
-            }
-
-            if (!autocorrelation) {
-               // Last step converts dB to a 0.0-1.0 range
-               value = (value + 80.0) / 80.0;
-            }
-
-            if (value > 1.0)
-               value = float(1.0);
-            if (value < 0.0)
-               value = float(0.0);
-            clip->mSpecPxCache->values[x * mid.height + yy] = value;
-         }
-         else
-            value = clip->mSpecPxCache->values[x * mid.height + yy];
-
-         GetColorGradient(value, selflag, isGrayscale, &rv, &gv, &bv);
-
-         int px = ((mid.height - 1 - yy) * mid.width + x) * 3;
-         data[px++] = rv;
-         data[px++] = gv;
-         data[px] = bv;
-      }
-#endif //LOGARITHMIC_SPECTRUM
       x++;
    }
 
@@ -2037,6 +2087,7 @@ void TrackArtist::DrawClipSpectrum(WaveTrack* track, WaveClip *clip,
 #endif //EXPERIMENTAL_FIND_NOTES
 }
 
+#ifdef USE_MIDI
 /*
 Note: recall that Allegro attributes end in a type identifying letter.
 
@@ -2086,25 +2137,24 @@ and optional attributes as follows:
         d: the coordinate is at the baseline of the string (default)
       Thus, -justifys:"lt" places the left top of the string at the point
         given by (pitch, time). The default value is "ld".
-
- */
+*/
 
 /* Declare Static functions */
-static char *IsShape(Allegro_note_ptr note);
-static double LookupRealAttribute(Allegro_note_ptr note, Attribute attr, double def);
-static long LookupIntAttribute(Allegro_note_ptr note, Attribute attr, long def);
-static bool LookupLogicalAttribute(Allegro_note_ptr note, Attribute attr, bool def);
-static const char *LookupStringAttribute(Allegro_note_ptr note, Attribute attr, const char *def);
-static char *LookupAtomAttribute(Allegro_note_ptr note, Attribute attr, char *def);
+static char *IsShape(Alg_note_ptr note);
+static double LookupRealAttribute(Alg_note_ptr note, Alg_attribute attr, double def);
+static long LookupIntAttribute(Alg_note_ptr note, Alg_attribute attr, long def);
+static bool LookupLogicalAttribute(Alg_note_ptr note, Alg_attribute attr, bool def);
+static const char *LookupStringAttribute(Alg_note_ptr note, Alg_attribute attr, const char *def);
+static char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def);
 static int PITCH_TO_Y(double p, int bottom);
-static char *LookupAtomAttribute(Allegro_note_ptr note, Attribute attr, char *def);
+static char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def);
 static int PITCH_TO_Y(double p, int bottom);
 
 // returns NULL if note is not a shape,
 // returns atom (string) value of note if note is a shape
-char *IsShape(Allegro_note_ptr note)
+char *IsShape(Alg_note_ptr note)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (strcmp(parameters->parm.attr_name(), "shapea") == 0) {
       return parameters->parm.a;
@@ -2115,9 +2165,9 @@ char *IsShape(Allegro_note_ptr note)
 }
 
 // returns value of attr, or default if not found
-double LookupRealAttribute(Allegro_note_ptr note, Attribute attr, double def)
+double LookupRealAttribute(Alg_note_ptr note, Alg_attribute attr, double def)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (parameters->parm.attr_name() == attr + 1 &&
         parameters->parm.attr_type() == 'r') {
@@ -2129,9 +2179,9 @@ double LookupRealAttribute(Allegro_note_ptr note, Attribute attr, double def)
 }
 
 // returns value of attr, or default if not found
-long LookupIntAttribute(Allegro_note_ptr note, Attribute attr, long def)
+long LookupIntAttribute(Alg_note_ptr note, Alg_attribute attr, long def)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (parameters->parm.attr_name() == attr + 1 &&
         parameters->parm.attr_type() == 'i') {
@@ -2143,9 +2193,9 @@ long LookupIntAttribute(Allegro_note_ptr note, Attribute attr, long def)
 }
 
 // returns value of attr, or default if not found
-bool LookupLogicalAttribute(Allegro_note_ptr note, Attribute attr, bool def)
+bool LookupLogicalAttribute(Alg_note_ptr note, Alg_attribute attr, bool def)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (parameters->parm.attr_name() == attr + 1 &&
         parameters->parm.attr_type() == 'l') {
@@ -2157,9 +2207,9 @@ bool LookupLogicalAttribute(Allegro_note_ptr note, Attribute attr, bool def)
 }
 
 // returns value of attr, or default if not found
-const char *LookupStringAttribute(Allegro_note_ptr note, Attribute attr, const char *def)
+const char *LookupStringAttribute(Alg_note_ptr note, Alg_attribute attr, const char *def)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (parameters->parm.attr_name() == attr + 1 &&
         parameters->parm.attr_type() == 's') {
@@ -2171,9 +2221,9 @@ const char *LookupStringAttribute(Allegro_note_ptr note, Attribute attr, const c
 }
 
 // returns value of attr, or default if not found
-char *LookupAtomAttribute(Allegro_note_ptr note, Attribute attr, char *def)
+char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def)
 {
-  Parameters_ptr parameters = note->parameters;
+  Alg_parameters_ptr parameters = note->parameters;
   while (parameters) {
     if (parameters->parm.attr_name() == attr + 1 &&
         parameters->parm.attr_type() == 'a') {
@@ -2183,6 +2233,7 @@ char *LookupAtomAttribute(Allegro_note_ptr note, Attribute attr, char *def)
   }
   return def;
 }
+#endif // USE_MIDI
 
 #define TIME_TO_X(t) (r.x + (int) (((t) - h) * pps))
 #define X_TO_TIME(xx) (((xx) - r.x) / pps + h)
@@ -2204,6 +2255,7 @@ char *LookupAtomAttribute(Allegro_note_ptr note, Attribute attr, char *def)
 
 //#define PITCH_TO_Y(p) (r.y + r.height - int(pitchht * ((p) + 0.5 - pitch0) + 0.5))
 
+#ifdef USE_MIDI
 int PITCH_TO_Y(double p, int bottom)
 {
    int octave = (((int) (p + 0.5)) / 12);
@@ -2216,38 +2268,49 @@ void TrackArtist::DrawNoteTrack(NoteTrack *track,
                                 wxDC &dc, wxRect &r,
                                 ViewInfo *viewInfo)
 {
-  double h = viewInfo->h;
-  double pps = viewInfo->zoom;
-  double sel0 = viewInfo->sel0;
-  double sel1 = viewInfo->sel1;
+   double h = viewInfo->h;
+   double pps = viewInfo->zoom;
+   double sel0 = viewInfo->sel0;
+   double sel1 = viewInfo->sel1;
 
-  double h1 = X_TO_TIME(r.x + r.width);
+   double h1 = X_TO_TIME(r.x + r.width);
 
-  Seq_ptr seq = track->mSeq;
-  int visibleChannels = track->mVisibleChannels;
+   Alg_seq_ptr seq = track->mSeq;
+   if (!seq) {
+      assert(track->mSerializationBuffer);
+      Alg_track_ptr alg_track = seq->unserialize(track->mSerializationBuffer,
+            track->mSerializationLength);
+      assert(alg_track->get_type() == 's');
+      track->mSeq = seq = (Alg_seq_ptr) alg_track;
+      free(track->mSerializationBuffer);
+      track->mSerializationBuffer = NULL;
+   }
+   assert(seq);
+   int visibleChannels = track->mVisibleChannels;
 
-  if (!track->GetSelected())
-   sel0 = sel1 = 0.0;
+   if (!track->GetSelected())
+      sel0 = sel1 = 0.0;
 
-  int ctrpitch = 60;
-  int pitch0;
-  int pitchht = 4;
+   int ctrpitch = 60;
+   int pitch0;
+   int pitchht = 4;
 
-  int numPitches = r.height / pitchht;
-  pitch0 = (ctrpitch - numPitches/2);
+   int numPitches = r.height / pitchht;
+   pitch0 = (ctrpitch - numPitches/2);
 
-  int bottomNote = track->GetBottomNote();
-  int bottom = r.height +
-     ((bottomNote / 12) * octaveHeight + notePos[bottomNote % 12]);
+   int bottomNote = track->GetBottomNote();
+   int bottom = r.height +
+   ((bottomNote / 12) * octaveHeight + notePos[bottomNote % 12]);
 
-  dc.SetBrush(blankBrush);
+   //214, 214, 214
+   dc.SetBrush(blankBrush);
    dc.SetPen(blankPen);
    dc.DrawRectangle(r);
 
-  wxPen blackStripePen;
-  blackStripePen.SetColour(190, 190, 190);
+   wxPen blackStripePen;
+   blackStripePen.SetColour(192, 192, 192);
    wxBrush blackStripeBrush;
-   blackStripeBrush.SetColour(190, 190, 190);
+   blackStripeBrush.SetColour(192, 192, 192);
 
    dc.SetBrush(blackStripeBrush);
 
@@ -2274,265 +2337,322 @@ void TrackArtist::DrawNoteTrack(NoteTrack *track,
       }
    }
 
-  dc.SetClippingRegion(r);
-  int numEvents = seq->notes.len;
-  int index;
+   dc.SetClippingRegion(r);
 
-  // NOTE: it would be better to put this in some global initialization
-  // function rather than do lookups every time.
-  char *line = symbol_table.insert_string("line");
-  char *rectangle = symbol_table.insert_string("rectangle");
-  char *triangle = symbol_table.insert_string("triangle");
-  char *polygon = symbol_table.insert_string("polygon");
-  char *oval = symbol_table.insert_string("oval");
-  char *text = symbol_table.insert_string("text");
-  char *texts = symbol_table.insert_string("texts");
-  char *x1r = symbol_table.insert_string("x1r");
-  char *x2r = symbol_table.insert_string("x2r");
-  char *y1r = symbol_table.insert_string("y1r");
-  char *y2r = symbol_table.insert_string("y2r");
-  char *linecolori = symbol_table.insert_string("linecolori");
-  char *fillcolori = symbol_table.insert_string("fillcolori");
-  char *linethicki = symbol_table.insert_string("linethicki");
-  char *filll = symbol_table.insert_string("filll");
-  char *fonta = symbol_table.insert_string("fonta");
-  char *roman = symbol_table.insert_string("roman");
-  char *swiss = symbol_table.insert_string("swiss");
-  char *modern = symbol_table.insert_string("modern");
-  char *weighta = symbol_table.insert_string("weighta");
-  char *bold = symbol_table.insert_string("bold");
-  char *sizei = symbol_table.insert_string("sizei");
-  char *justifys = symbol_table.insert_string("justifys");
+   // Draw the selection background
+   // First, the white keys, as a single rectangle
+   wxRect selBG;
+   selBG.y = r.y;
+   selBG.height = r.height;
+   selBG.x = TIME_TO_X(sel0);
+   selBG.width = TIME_TO_X(sel1) - TIME_TO_X(sel0);
 
-  for(index=0; index<numEvents; index++) {
+   wxPen selectedWhiteKeyPen;
+   selectedWhiteKeyPen.SetColour(165, 165, 190);
+   dc.SetPen(selectedWhiteKeyPen);
+   
+   wxBrush selectedWhiteKeyBrush;
+   selectedWhiteKeyBrush.SetColour(165, 165, 190);
+   dc.SetBrush(selectedWhiteKeyBrush);
 
-    if (seq->notes[index]->type == 'n') {
-    
-      Allegro_note_ptr note = (Allegro_note_ptr)(seq->notes[index]);
-      
-      if (visibleChannels & (1 << (seq->notes[index]->chan & 15))) {
-        double x = note->time;
-        double x1 = note->time + note->dur;
-        if (x < h1 && x1 > h) { // omit if outside box
-          char *shape = NULL;
-          if (note->loud > 0.0 || !(shape = IsShape(note))) {
+   dc.DrawRectangle(selBG);
 
-             int octave = (((int) (note->pitch + 0.5)) / 12);
-             int n = ((int) (note->pitch + 0.5)) % 12;
-             
-             wxRect nr;
-             nr.y = bottom - octave * octaveHeight - notePos[n]
-                - 4;
-             nr.height = 5;
-             
-             if (nr.y + nr.height >= 0 && nr.y < r.height) {
-                
-                if (nr.y + nr.height > r.height)
-                   nr.height = r.height - nr.y;
-                if (nr.y < 0) {
-                   nr.height += nr.y;
-                   nr.y = 0;
-                }
-                nr.y += r.y;
-                
-                nr.x = r.x + (int) ((note->time - h) * pps);
-                nr.width = (int) (note->dur * pps) + 1;
-                
-                if (nr.x + nr.width >= r.x && nr.x < r.x + r.width) {
-                   if (nr.x < r.x) {
-                      nr.width -= (r.x - nr.x);
-                      nr.x = r.x;
-                   }
-                   if (nr.x + nr.width > r.x + r.width)
-                      nr.width = r.x + r.width - nr.x;
-                   
-                   AColor::MIDIChannel(&dc, note->chan + 1);
-                   
-                   if (note->time + note->dur >= sel0 && note->time <= sel1) {
-                      dc.SetBrush(*wxWHITE_BRUSH);
-                      dc.DrawRectangle(nr);
-                   }
-                   else {
-                      dc.DrawRectangle(nr);
-                      AColor::LightMIDIChannel(&dc, note->chan + 1);
-                      dc.DrawLine(nr.x, nr.y, nr.x + nr.width-2, nr.y);
-                      dc.DrawLine(nr.x, nr.y, nr.x, nr.y + nr.height-2);
-                      AColor::DarkMIDIChannel(&dc, note->chan + 1);
-                      dc.DrawLine(nr.x+nr.width-1, nr.y,
-                                  nr.x+nr.width-1, nr.y+nr.height-1);
-                      dc.DrawLine(nr.x, nr.y+nr.height-1,
-                                  nr.x+nr.width-1, nr.y+nr.height-1);
-                   }
+   // Then, the black keys and octave stripes, as smaller rectangles
+   wxPen selectedBlackKeyPen;
+   selectedBlackKeyPen.SetColour(148, 148, 170);
+   wxBrush selectedBlackKeyBrush;
+   selectedBlackKeyBrush.SetColour(148, 148, 170);
 
-                }
-             }
-             
-          } else if (shape) {
-            // draw a shape according to attributes
-            // add 0.5 to pitch because pitches are plotted with height = pitchht,
-            // thus, the center is raised by pitchht * 0.5
-            int y = PITCH_TO_Y(note->pitch, bottom);
-            long linecolor = LookupIntAttribute(note, linecolori, -1);
-            long linethick = LookupIntAttribute(note, linethicki, 1);
-            long fillcolor = -1;
-            long fillflag = 0;
+   dc.SetBrush(selectedBlackKeyBrush);
 
-            // set default color to be that of channel
-            AColor::MIDIChannel(&dc, note->chan+1);
-            if (shape != text) {
-              if (linecolor != -1)
-                dc.SetPen(wxPen(wxColour(RED(linecolor), 
-                                         GREEN(linecolor),
-                                         BLUE(linecolor)),
-                                linethick, wxSOLID));
-            }
-            if (shape != line) {
-              fillcolor = LookupIntAttribute(note, fillcolori, -1);
-              fillflag = LookupLogicalAttribute(note, filll, false);
+   for (int octave = 0; octave < 50; octave++) {
+      int obottom = selBG.y + bottom - octave * octaveHeight;
 
-              if (fillcolor != -1) 
-                dc.SetBrush(wxBrush(wxColour(RED(fillcolor),
-                                             GREEN(fillcolor),
-                                             BLUE(fillcolor)),
-                                    wxSOLID));
-              if (!fillflag) dc.SetBrush(*wxTRANSPARENT_BRUSH);
-            }
-            int y1 = PITCH_TO_Y(LookupRealAttribute(note, y1r, note->pitch), bottom);
-            if (shape == line) {
-              // extreme zooms caues problems under windows, so we have to do some
-              // clipping before calling display routine
-              if (x < h) { // clip line on left
-                y = int((y + (y1 - y) * (h - x) / (x1 - x)) + 0.5);
-                x = h;
-              }
-              if (x1 > h1) { // clip line on right
-                y1 = int((y + (y1 - y) * (h1 - x) / (x1 - x)) + 0.5);
-                x1 = h1;
-              }
-              dc.DrawLine(TIME_TO_X(x), y, TIME_TO_X(x1), y1);
-            } else if (shape == rectangle) {
-              if (x < h) { // clip on left, leave 10 pixels to spare
-                x = h - (linethick + 10) / pps;
-              }
-              if (x1 > h1) { // clip on right, leave 10 pixels to spare
-                x1 = h1 + (linethick + 10) / pps;
-              }
-              dc.DrawRectangle(TIME_TO_X(x), y, int((x1 - x) * pps + 0.5), y1 - y + 1);
-            } else if (shape == triangle) {
-              wxPoint points[3];
-              points[0].x = TIME_TO_X(x);
-              CLIP(points[0].x);
-              points[0].y = y;
-              points[1].x = TIME_TO_X(LookupRealAttribute(note, x1r, note->pitch));
-              CLIP(points[1].x);
-              points[1].y = y1;
-              points[2].x = TIME_TO_X(LookupRealAttribute(note, x2r, note->time));
-              CLIP(points[2].x);
-              points[2].y = PITCH_TO_Y(LookupRealAttribute(note, y2r, note->pitch), bottom);
-              dc.DrawPolygon(3, points);
-            } else if (shape == polygon) {
-              wxPoint points[20]; // upper bound of 20 sides
-              points[0].x = TIME_TO_X(x);
-              CLIP(points[0].x);
-              points[0].y = y;
-              points[1].x = TIME_TO_X(LookupRealAttribute(note, x1r, note->time));
-              CLIP(points[1].x);
-              points[1].y = y1;
-              points[2].x = TIME_TO_X(LookupRealAttribute(note, x2r, note->time));
-              CLIP(points[2].x);
-              points[2].y = PITCH_TO_Y(LookupRealAttribute(note, y2r, note->pitch), bottom);
-              int n = 3;
-              while (n < 20) {
-                char name[8];
-                sprintf(name, "x%dr", n);
-                char *attr = symbol_table.insert_string(name);
-                double xn = LookupRealAttribute(note, attr, -1000000.0);
-                if (xn == -1000000.0) break;
-                points[n].x = TIME_TO_X(xn);
-                CLIP(points[n].x);
-                sprintf(name, "y%dr", n - 1);
-                attr = symbol_table.insert_string(name);
-                double yn = LookupRealAttribute(note, attr, -1000000.0);
-                if (yn == -1000000.0) break;
-                points[n].y = PITCH_TO_Y(yn, bottom);
-                n++;
-              }
-              dc.DrawPolygon(n, points);
-            } else if (shape == oval) {
-              int ix = TIME_TO_X(x);
-              CLIP(ix);
-              int ix1 = int((x1 - x) * pps + 0.5);
-              if (ix1 > CLIP_MAX * 2) ix1 = CLIP_MAX * 2; // CLIP a width
-              dc.DrawEllipse(ix, y, ix1, y1 - y + 1);
-            } else if (shape == text) {
-              if (linecolor != -1)
-                dc.SetTextForeground(wxColour(RED(linecolor), 
-                                              GREEN(linecolor),
-                                              BLUE(linecolor)));
-              // if no color specified, copy color from brush
-              else dc.SetTextForeground(dc.GetBrush().GetColour());
-
-              // This seems to have no effect, so I commented it out. -RBD
-              //if (fillcolor != -1)
-              //  dc.SetTextBackground(wxColour(RED(fillcolor), 
-              //                                GREEN(fillcolor),
-              //                                BLUE(fillcolor)));
-              //// if no color specified, copy color from brush
-              //else dc.SetTextBackground(dc.GetPen().GetColour());
-
-              char *font = LookupAtomAttribute(note, fonta, NULL);
-              char *weight = LookupAtomAttribute(note, weighta, NULL);
-              int size = LookupIntAttribute(note, sizei, 8);
-              const char *justify = LookupStringAttribute(note, justifys, "ld");
-              wxFont wxfont;
-              wxfont.SetFamily(font == roman ? wxROMAN : 
-                                (font == swiss ? wxSWISS :
-                                  (font == modern ? wxMODERN : wxDEFAULT)));
-              wxfont.SetStyle(wxNORMAL);
-              wxfont.SetWeight(weight == bold ? wxBOLD : wxNORMAL);
-              wxfont.SetPointSize(size);
-              dc.SetFont(wxfont);
-
-              // now do justification
-              const char *s = LookupStringAttribute(note, texts, "");
-              #ifdef __WXMAC__
-            long textWidth, textHeight;
-              #else
-            int textWidth, textHeight;
-              #endif
-            dc.GetTextExtent(LAT1CTOWX(s), &textWidth, &textHeight);
-              long hoffset = 0;
-              long voffset = -textHeight; // default should be baseline of text
-
-              if (strlen(justify) != 2) justify = "ld";
-
-              if (justify[0] == 'c') hoffset = -(textWidth/2);
-              else if (justify[0] == 'r') hoffset = -textWidth;
-
-              if (justify[1] == 't') voffset = 0;
-              else if (justify[1] == 'c') voffset = -(textHeight/2);
-              else if (justify[1] == 'b') voffset = -textHeight;
-              if (fillflag) {
-                // It should be possible to do this with background color,
-                // but maybe because of the transfer mode, no background is
-                // drawn. To fix this, just draw a rectangle:
-                dc.SetPen(wxPen(wxColour(RED(fillcolor), 
-                                         GREEN(fillcolor),
-                                         BLUE(fillcolor)),
-                                1, wxSOLID));
-                dc.DrawRectangle(TIME_TO_X(x) + hoffset, y + voffset,
-                                 textWidth, textHeight);
-              }
-              dc.DrawText(LAT1CTOWX(s), TIME_TO_X(x) + hoffset, y + voffset);
-            }
-          }
-        }
+      if (obottom > selBG.y && obottom < selBG.y + selBG.height) {
+         dc.SetPen(*wxBLACK_PEN);
+         dc.DrawLine(selBG.x, obottom, selBG.x + selBG.width, obottom);
       }
-    }
+      if (obottom - 26 > selBG.y && obottom - 26 < selBG.y + selBG.height) {
+         dc.SetPen(selectedBlackKeyPen);
+         dc.DrawLine(selBG.x, obottom - 26, selBG.x + selBG.width, obottom - 26);
+      }
 
-  }
-  dc.DestroyClippingRegion();
+      wxRect bselBG = selBG;
+      bselBG.height = 5;
+      for (int black = 0; black < 5; black++) {
+         bselBG.y = obottom - blackPos[black] - 4;
+         if (bselBG.y > selBG.y && bselBG.y + bselBG.height < selBG.y + selBG.height) {
+            dc.SetPen(selectedBlackKeyPen);
+            dc.DrawRectangle(bselBG);
+         }
+      }
+   }
+
+   // NOTE: it would be better to put this in some global initialization
+   // function rather than do lookups every time.
+   Alg_attribute line = symbol_table.insert_string("line");
+   Alg_attribute rectangle = symbol_table.insert_string("rectangle");
+   Alg_attribute triangle = symbol_table.insert_string("triangle");
+   Alg_attribute polygon = symbol_table.insert_string("polygon");
+   Alg_attribute oval = symbol_table.insert_string("oval");
+   Alg_attribute text = symbol_table.insert_string("text");
+   Alg_attribute texts = symbol_table.insert_string("texts");
+   Alg_attribute x1r = symbol_table.insert_string("x1r");
+   Alg_attribute x2r = symbol_table.insert_string("x2r");
+   Alg_attribute y1r = symbol_table.insert_string("y1r");
+   Alg_attribute y2r = symbol_table.insert_string("y2r");
+   Alg_attribute linecolori = symbol_table.insert_string("linecolori");
+   Alg_attribute fillcolori = symbol_table.insert_string("fillcolori");
+   Alg_attribute linethicki = symbol_table.insert_string("linethicki");
+   Alg_attribute filll = symbol_table.insert_string("filll");
+   Alg_attribute fonta = symbol_table.insert_string("fonta");
+   Alg_attribute roman = symbol_table.insert_string("roman");
+   Alg_attribute swiss = symbol_table.insert_string("swiss");
+   Alg_attribute modern = symbol_table.insert_string("modern");
+   Alg_attribute weighta = symbol_table.insert_string("weighta");
+   Alg_attribute bold = symbol_table.insert_string("bold");
+   Alg_attribute sizei = symbol_table.insert_string("sizei");
+   Alg_attribute justifys = symbol_table.insert_string("justifys");
+
+   // We want to draw in seconds, so we need to convert to seconds
+   seq->convert_to_seconds();
+
+   seq->iteration_begin();
+   //for every event
+   Alg_event_ptr evt;
+   printf ("go time\n");
+   while ((evt = seq->iteration_next())) {
+
+      //printf ("one note");
+
+      //if the event is a note
+      if (evt->get_type() == 'n') {
+
+         Alg_note_ptr note = (Alg_note_ptr) evt;
+
+         //if the notes channel is visible
+         if (visibleChannels & (1 << (evt->chan & 15))) {
+            double x = note->time;
+            double x1 = note->time + note->dur;
+            if (x < h1 && x1 > h) { // omit if outside box
+               char *shape = NULL;
+               if (note->loud > 0.0 || !(shape = IsShape(note))) {
+
+                  int octave = (((int) (note->pitch + 0.5)) / 12);
+                  int n = ((int) (note->pitch + 0.5)) % 12;
+
+                  wxRect nr;
+                  nr.y = bottom - octave * octaveHeight - notePos[n] - 4;
+                  nr.height = 5;
+
+                  if (nr.y + nr.height >= 0 && nr.y < r.height) {
+
+                     if (nr.y + nr.height > r.height)
+                        nr.height = r.height - nr.y;
+                     if (nr.y < 0) {
+                        nr.height += nr.y;
+                        nr.y = 0;
+                     }
+                     nr.y += r.y;
+
+                     nr.x = r.x + (int) ((note->time - h) * pps);
+                     nr.width = (int) (note->dur * pps) + 1;
+
+                     if (nr.x + nr.width >= r.x && nr.x < r.x + r.width) {
+                        if (nr.x < r.x) {
+                           nr.width -= (r.x - nr.x);
+                           nr.x = r.x;
+                        }
+                        if (nr.x + nr.width > r.x + r.width)
+                           nr.width = r.x + r.width - nr.x;
+
+                        AColor::MIDIChannel(&dc, note->chan + 1);
+
+//                      if (note->time + note->dur >= sel0 && note->time <= sel1) {
+//                         dc.SetBrush(*wxWHITE_BRUSH);
+//                         dc.DrawRectangle(nr);
+//                      } else {
+                        dc.DrawRectangle(nr);
+                        AColor::LightMIDIChannel(&dc, note->chan + 1);
+                        dc.DrawLine(nr.x, nr.y, nr.x + nr.width-2, nr.y);
+                        dc.DrawLine(nr.x, nr.y, nr.x, nr.y + nr.height-2);
+                        AColor::DarkMIDIChannel(&dc, note->chan + 1);
+                        dc.DrawLine(nr.x+nr.width-1, nr.y,
+                              nr.x+nr.width-1, nr.y+nr.height-1);
+                        dc.DrawLine(nr.x, nr.y+nr.height-1,
+                              nr.x+nr.width-1, nr.y+nr.height-1);
+//                      }
+                     }
+                  }
+
+               } else if (shape) {
+                  // draw a shape according to attributes
+                  // add 0.5 to pitch because pitches are plotted with height = pitchht,
+                  // thus, the center is raised by pitchht * 0.5
+                  int y = PITCH_TO_Y(note->pitch, bottom);
+                  long linecolor = LookupIntAttribute(note, linecolori, -1);
+                  long linethick = LookupIntAttribute(note, linethicki, 1);
+                  long fillcolor = -1;
+                  long fillflag = 0;
+
+                  // set default color to be that of channel
+                  AColor::MIDIChannel(&dc, note->chan+1);
+                  if (shape != text) {
+                     if (linecolor != -1)
+                        dc.SetPen(wxPen(wxColour(RED(linecolor), 
+                              GREEN(linecolor),
+                              BLUE(linecolor)),
+                              linethick, wxSOLID));
+                  }
+                  if (shape != line) {
+                     fillcolor = LookupIntAttribute(note, fillcolori, -1);
+                     fillflag = LookupLogicalAttribute(note, filll, false);
+
+                     if (fillcolor != -1) 
+                        dc.SetBrush(wxBrush(wxColour(RED(fillcolor),
+                              GREEN(fillcolor),
+                              BLUE(fillcolor)),
+                              wxSOLID));
+                     if (!fillflag) dc.SetBrush(*wxTRANSPARENT_BRUSH);
+                  }
+                  int y1 = PITCH_TO_Y(LookupRealAttribute(note, y1r, note->pitch), bottom);
+                  if (shape == line) {
+                     // extreme zooms caues problems under windows, so we have to do some
+                     // clipping before calling display routine
+                     if (x < h) { // clip line on left
+                        y = int((y + (y1 - y) * (h - x) / (x1 - x)) + 0.5);
+                        x = h;
+                     }
+                     if (x1 > h1) { // clip line on right
+                        y1 = int((y + (y1 - y) * (h1 - x) / (x1 - x)) + 0.5);
+                        x1 = h1;
+                     }
+                     dc.DrawLine(TIME_TO_X(x), y, TIME_TO_X(x1), y1);
+                  } else if (shape == rectangle) {
+                     if (x < h) { // clip on left, leave 10 pixels to spare
+                        x = h - (linethick + 10) / pps;
+                     }
+                     if (x1 > h1) { // clip on right, leave 10 pixels to spare
+                        x1 = h1 + (linethick + 10) / pps;
+                     }
+                     dc.DrawRectangle(TIME_TO_X(x), y, int((x1 - x) * pps + 0.5), y1 - y + 1);
+                  } else if (shape == triangle) {
+                     wxPoint points[3];
+                     points[0].x = TIME_TO_X(x);
+                     CLIP(points[0].x);
+                     points[0].y = y;
+                     points[1].x = TIME_TO_X(LookupRealAttribute(note, x1r, note->pitch));
+                     CLIP(points[1].x);
+                     points[1].y = y1;
+                     points[2].x = TIME_TO_X(LookupRealAttribute(note, x2r, note->time));
+                     CLIP(points[2].x);
+                     points[2].y = PITCH_TO_Y(LookupRealAttribute(note, y2r, note->pitch), bottom);
+                     dc.DrawPolygon(3, points);
+                  } else if (shape == polygon) {
+                     wxPoint points[20]; // upper bound of 20 sides
+                     points[0].x = TIME_TO_X(x);
+                     CLIP(points[0].x);
+                     points[0].y = y;
+                     points[1].x = TIME_TO_X(LookupRealAttribute(note, x1r, note->time));
+                     CLIP(points[1].x);
+                     points[1].y = y1;
+                     points[2].x = TIME_TO_X(LookupRealAttribute(note, x2r, note->time));
+                     CLIP(points[2].x);
+                     points[2].y = PITCH_TO_Y(LookupRealAttribute(note, y2r, note->pitch), bottom);
+                     int n = 3;
+                     while (n < 20) {
+                        char name[8];
+                        sprintf(name, "x%dr", n);
+                        Alg_attribute attr = symbol_table.insert_string(name);
+                        double xn = LookupRealAttribute(note, attr, -1000000.0);
+                        if (xn == -1000000.0) break;
+                        points[n].x = TIME_TO_X(xn);
+                        CLIP(points[n].x);
+                        sprintf(name, "y%dr", n - 1);
+                        attr = symbol_table.insert_string(name);
+                        double yn = LookupRealAttribute(note, attr, -1000000.0);
+                        if (yn == -1000000.0) break;
+                        points[n].y = PITCH_TO_Y(yn, bottom);
+                        n++;
+                     }
+                     dc.DrawPolygon(n, points);
+                  } else if (shape == oval) {
+                     int ix = TIME_TO_X(x);
+                     CLIP(ix);
+                     int ix1 = int((x1 - x) * pps + 0.5);
+                     if (ix1 > CLIP_MAX * 2) ix1 = CLIP_MAX * 2; // CLIP a width
+                     dc.DrawEllipse(ix, y, ix1, y1 - y + 1);
+                  } else if (shape == text) {
+                     if (linecolor != -1)
+                        dc.SetTextForeground(wxColour(RED(linecolor), 
+                              GREEN(linecolor),
+                              BLUE(linecolor)));
+                     // if no color specified, copy color from brush
+                     else dc.SetTextForeground(dc.GetBrush().GetColour());
+
+                     // This seems to have no effect, so I commented it out. -RBD
+                     //if (fillcolor != -1)
+                     //  dc.SetTextBackground(wxColour(RED(fillcolor), 
+                     //                                GREEN(fillcolor),
+                     //                                BLUE(fillcolor)));
+                     //// if no color specified, copy color from brush
+                     //else dc.SetTextBackground(dc.GetPen().GetColour());
+
+                     char *font = LookupAtomAttribute(note, fonta, NULL);
+                     char *weight = LookupAtomAttribute(note, weighta, NULL);
+                     int size = LookupIntAttribute(note, sizei, 8);
+                     const char *justify = LookupStringAttribute(note, justifys, "ld");
+                     wxFont wxfont;
+                     wxfont.SetFamily(font == roman ? wxROMAN : 
+                        (font == swiss ? wxSWISS :
+                           (font == modern ? wxMODERN : wxDEFAULT)));
+                     wxfont.SetStyle(wxNORMAL);
+                     wxfont.SetWeight(weight == bold ? wxBOLD : wxNORMAL);
+                     wxfont.SetPointSize(size);
+                     dc.SetFont(wxfont);
+
+                     // now do justification
+                     const char *s = LookupStringAttribute(note, texts, "");
+                     #ifdef __WXMAC__
+                     long textWidth, textHeight;
+                     #else
+                        int textWidth, textHeight;
+                     #endif
+                     dc.GetTextExtent(LAT1CTOWX(s), &textWidth, &textHeight);
+                     long hoffset = 0;
+                     long voffset = -textHeight; // default should be baseline of text
+
+                     if (strlen(justify) != 2) justify = "ld";
+
+                     if (justify[0] == 'c') hoffset = -(textWidth/2);
+                     else if (justify[0] == 'r') hoffset = -textWidth;
+
+                     if (justify[1] == 't') voffset = 0;
+                     else if (justify[1] == 'c') voffset = -(textHeight/2);
+                     else if (justify[1] == 'b') voffset = -textHeight;
+                     if (fillflag) {
+                        // It should be possible to do this with background color,
+                        // but maybe because of the transfer mode, no background is
+                        // drawn. To fix this, just draw a rectangle:
+                        dc.SetPen(wxPen(wxColour(RED(fillcolor), 
+                              GREEN(fillcolor),
+                              BLUE(fillcolor)),
+                              1, wxSOLID));
+                        dc.DrawRectangle(TIME_TO_X(x) + hoffset, y + voffset,
+                              textWidth, textHeight);
+                     }
+                     dc.DrawText(LAT1CTOWX(s), TIME_TO_X(x) + hoffset, y + voffset);
+                  }
+               }
+            }
+         }
+      }
+   }
+   seq->iteration_end();
+   dc.DestroyClippingRegion();
 }
+#endif // USE_MIDI
+
 
 void TrackArtist::DrawLabelTrack(LabelTrack *track,
                                  wxDC & dc, wxRect & r,

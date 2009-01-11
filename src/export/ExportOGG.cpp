@@ -42,7 +42,7 @@ class ExportOGGOptions : public wxDialog
 {
 public:
 
-   ExportOGGOptions(wxWindow *parent);
+   ExportOGGOptions(wxWindow *parent, int format);
    void PopulateOrExchange(ShuttleGui & S);
    void OnOK(wxCommandEvent& event);
 
@@ -59,7 +59,7 @@ END_EVENT_TABLE()
 
 /// 
 /// 
-ExportOGGOptions::ExportOGGOptions(wxWindow *parent)
+ExportOGGOptions::ExportOGGOptions(wxWindow *parent, int format)
 :  wxDialog(NULL, wxID_ANY,
             wxString(_("Specify Ogg Vorbis Options")),
             wxDefaultPosition, wxDefaultSize,
@@ -130,7 +130,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL);
+   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -138,7 +138,8 @@ public:
                double t0,
                double t1,
                MixerSpec *mixerSpec = NULL,
-               Tags *metadata = NULL);
+               Tags *metadata = NULL,
+               int subformat = 0);
 
 private:
 
@@ -148,11 +149,12 @@ private:
 ExportOGG::ExportOGG()
 :  ExportPlugin()
 {
-   SetFormat(wxT("OGG"));
-   SetExtension(wxT("ogg"));
-   SetMaxChannels(255);
-   SetCanMetaData(true);
-   SetDescription(_("Ogg Vorbis Files"));
+   AddFormat();
+   SetFormat(wxT("OGG"),0);
+   AddExtension(wxT("ogg"),0);
+   SetMaxChannels(255,0);
+   SetCanMetaData(true,0);
+   SetDescription(_("Ogg Vorbis Files"),0);
 }
 
 void ExportOGG::Destroy()
@@ -167,7 +169,8 @@ bool ExportOGG::Export(AudacityProject *project,
                        double t0,
                        double t1,
                        MixerSpec *mixerSpec,
-                       Tags *metadata)
+                       Tags *metadata,
+                       int subformat)
 {
    double    rate    = project->GetRate();
    TrackList *tracks = project->GetTracks();
@@ -249,10 +252,10 @@ bool ExportOGG::Export(AudacityProject *project,
                             numChannels, SAMPLES_PER_RUN, false,
                             rate, floatSample, true, mixerSpec);
 
-   GetActiveProject()->ProgressShow(wxFileName(fName).GetName(),
-                                    selectionOnly ?
-                                    _("Exporting the selected audio as Ogg Vorbis") :
-                                    _("Exporting the entire project as Ogg Vorbis"));
+   ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
+      selectionOnly ?
+      _("Exporting the selected audio as Ogg Vorbis") :
+      _("Exporting the entire project as Ogg Vorbis"));
 
    while (!cancelling && !eos) {
       float **vorbis_buffer = vorbis_analysis_buffer(&dsp, SAMPLES_PER_RUN);
@@ -310,11 +313,10 @@ bool ExportOGG::Export(AudacityProject *project,
          }
       }
 
-      int progressvalue = int (1000 * ((mixer->MixGetCurrentTime()-t0) /
-                                       (t1-t0)));
-      cancelling = !GetActiveProject()->ProgressUpdate(progressvalue);
+      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
-   GetActiveProject()->ProgressHide();
+
+   delete progress;;
 
    delete mixer;
 
@@ -330,9 +332,9 @@ bool ExportOGG::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportOGG::DisplayOptions(AudacityProject *project)
+bool ExportOGG::DisplayOptions(AudacityProject *project, int format)
 {
-   ExportOGGOptions od(project);
+   ExportOGGOptions od(project,format);
 
    od.ShowModal();
 

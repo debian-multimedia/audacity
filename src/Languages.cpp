@@ -102,6 +102,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("ar")] = wxT("Arabic");
    localLanguageName[wxT("bg")] = wxT("Balgarski");
    localLanguageName[wxT("ca")] = wxT("Catalan");
+   localLanguageName[wxT("cb")] = wxT("Khmer");
    localLanguageName[wxT("cs")] = wxT("Czech");
    localLanguageName[wxT("da")] = wxT("Dansk");
    localLanguageName[wxT("de")] = wxT("Deutsch");
@@ -182,12 +183,11 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
          tempNames.Add(name);
          tempHash[code] = name;
 
-         /* for debugging
-         printf(wxT("code=%s name=%s fullCode=%s name=%s -> %s\n"),
+         /* for debugging */
+         wxLogDebug(wxT("code=%s name=%s fullCode=%s name=%s -> %s\n"),
                 code.c_str(), localLanguageName[code].c_str(),
                 fullCode.c_str(), localLanguageName[fullCode].c_str(),
                 name.c_str());
-         */
       }
    }
 

@@ -14,22 +14,20 @@
 #ifndef __AUDACITY_EFFECT_DTMF__
 #define __AUDACITY_EFFECT_DTMF__
 
+#include <wx/choice.h>
 #include <wx/defs.h>
 #include <wx/intl.h>
+#include <wx/sizer.h>
+#include <wx/string.h>
+#include <wx/textctrl.h>
+
+#include "../ShuttleGui.h"
+#include "../WaveTrack.h"
 #include "../widgets/TimeTextCtrl.h"
 
 #include "Effect.h"
 
-class wxString;
-class wxChoice;
-class wxTextCtrl;
-class ShuttleGui;
-class wxSizer;
-
 #define __UNINITIALIZED__ (-1)
-
-class WaveTrack;
-
 
 class EffectDtmf:public Effect {
 
@@ -39,6 +37,12 @@ class EffectDtmf:public Effect {
 
    virtual wxString GetEffectName() {
       return wxString(_("DTMF Tones..."));
+   }
+
+   virtual std::set<wxString> GetEffectCategories() {
+     std::set<wxString> result;
+     result.insert(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
+     return result;
    }
 
    virtual wxString GetEffectIdentifier() {
@@ -62,7 +66,7 @@ class EffectDtmf:public Effect {
    virtual bool TransferParameters( Shuttle & shuttle );
 
  private:
-   longSampleCount numSamplesSequence, numSamplesTone, numSamplesSilence;
+   sampleCount numSamplesSequence, numSamplesTone, numSamplesSilence;
 
    wxString dtmfString;       // dtmf tone string
    int    dtmfNTones;         // total number of tones to generate
@@ -75,7 +79,7 @@ class EffectDtmf:public Effect {
  protected:
    virtual bool MakeDtmfTone(float *buffer, sampleCount len, float fs,
                              wxChar tone, sampleCount last,
-                             longSampleCount total, float amplitude);
+                             sampleCount total, float amplitude);
 
  // friendship ...
  friend class DtmfDialog;
@@ -91,7 +95,7 @@ class EffectDtmf:public Effect {
 class DtmfDialog:public EffectDialog {
  public:
    // constructors and destructors
-   DtmfDialog(wxWindow * parent, const wxString & title);
+   DtmfDialog(EffectDtmf * effect, wxWindow * parent, const wxString & title);
 
    // method declarations
    void PopulateOrExchange(ShuttleGui & S);
@@ -106,6 +110,7 @@ class DtmfDialog:public EffectDialog {
    void Recalculate(void);
 
  private:
+   EffectDtmf *mEffect;
    wxSlider   *mDtmfDutyS;
    wxTextCtrl *mDtmfStringT;
    TimeTextCtrl *mDtmfDurationT;

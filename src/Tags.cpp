@@ -38,6 +38,14 @@
 
 *//*******************************************************************/
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+// Include your minimal set of headers here, or wx.h
+#include <wx/window.h>
+#endif
+
 #include "Tags.h"
 
 #include "Audacity.h"
@@ -207,7 +215,10 @@ static const wxChar *DefaultGenres[] =
    wxT("Terror"),
    wxT("Indie"),
    wxT("BritPop"),
-   wxT("Negerpunk"),
+
+   // Standard name is offensive (see "http://www.audacityteam.org/forum/viewtopic.php?f=11&t=3924").
+   wxT("Offensive"), // wxT("Negerpunk"),
+
    wxT("Polsk Punk"),
    wxT("Beat"),
    wxT("Christian Gangsta Rap"),
@@ -1088,7 +1099,7 @@ void TagsEditor::OnLoad(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxOPEN,
+                     wxFD_OPEN | wxRESIZE_BORDER,
                      this);
 
    // User canceled...
@@ -1142,7 +1153,7 @@ void TagsEditor::OnSave(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxSAVE | wxOVERWRITE_PROMPT,
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
                      this);
 
    // User canceled...
@@ -1742,7 +1753,7 @@ void TagsEditor1::OnLoad(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxOPEN,
+                     wxFD_OPEN | wxRESIZE_BORDER,
                      this);
 
    // User canceled...
@@ -1778,7 +1789,7 @@ void TagsEditor1::OnSave(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxSAVE | wxOVERWRITE_PROMPT,
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
                      this);
 
    // User canceled...
@@ -2464,7 +2475,7 @@ void TagsEditor2::OnLoad(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxOPEN,
+                     wxFD_OPEN | wxRESIZE_BORDER,
                      this);
 
    // User canceled...
@@ -2500,7 +2511,7 @@ void TagsEditor2::OnSave(wxCommandEvent & event)
                      wxT("Tags.xml"),
                      wxT("xml"),
                      wxT("*.xml"),
-                     wxSAVE | wxOVERWRITE_PROMPT,
+                     wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
                      this);
 
    // User canceled...

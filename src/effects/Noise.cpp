@@ -38,7 +38,7 @@ bool EffectNoise::PromptUser()
    noiseTypeList.Add(_("Pink"));
    noiseTypeList.Add(_("Brown"));
 
-   NoiseDialog dlog(mParent, _("Noise Generator"));
+   NoiseDialog dlog(this, mParent, _("Noise Generator"));
 
    // dialog will be passed values from effect
    // Effect retrieves values from saved config
@@ -144,15 +144,19 @@ bool EffectNoise::Process()
 
    //Iterate over each track
    int ntrack = 0;
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
+   
+#ifdef EXPERIMENTAL_FULL_LINKING
+   HandleLinkedTracksOnGenerate(noiseDuration, mT0);
+#endif
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *)iter.First();
    while (track) {
       WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(), track->GetRate());
-      numSamples = (longSampleCount)(noiseDuration * track->GetRate() + 0.5);
-      longSampleCount i = 0;
+      numSamples = track->TimeToLongSamples(noiseDuration);
+      sampleCount i = 0;
       float *data = new float[tmp->GetMaxBlockSize()];
       sampleCount block;
 
@@ -173,8 +177,8 @@ bool EffectNoise::Process()
       delete[] data;
 
       tmp->Flush();
-      track->Clear(mT0, mT1);
-      track->Paste(mT0, tmp);
+      track->HandleClear(mT0, mT1, false, false);
+      track->HandlePaste(mT0, tmp);
       delete tmp;
 
       if (!bGoodResult)
@@ -218,7 +222,9 @@ BEGIN_EVENT_TABLE(NoiseDialog, EffectDialog)
     EVT_COMMAND(wxID_ANY, EVT_TIMETEXTCTRL_UPDATED, NoiseDialog::OnTimeCtrlUpdate)
 END_EVENT_TABLE()
 
-NoiseDialog::NoiseDialog(wxWindow * parent, const wxString & title): EffectDialog(parent, title, INSERT_EFFECT)
+NoiseDialog::NoiseDialog(EffectNoise * effect, wxWindow * parent, const wxString & title)
+:  EffectDialog(parent, title, INSERT_EFFECT), 
+   mEffect(effect)
 {
    mNoiseDurationT = NULL;
    /* // already initialized in EffectNoise::PromptUser
@@ -232,7 +238,9 @@ void NoiseDialog::PopulateOrExchange( ShuttleGui & S )
 {
    S.StartMultiColumn(2, wxCENTER);
    {
-      S.AddFixedText(_("Duration"), false);
+      S.TieChoice(_("Noise type"), nType, nTypeList);
+      S.TieTextBox(_("Amplitude (0-1)"),  nAmplitude, 10);
+      S.AddPrompt(_("Duration"));
       if (mNoiseDurationT == NULL)
       {
          mNoiseDurationT = new
@@ -240,7 +248,7 @@ void NoiseDialog::PopulateOrExchange( ShuttleGui & S )
                       wxID_ANY,
                       wxT(""),
                       nDuration,
-                      44100,
+                      mEffect->mProjectRate,
                       wxDefaultPosition,
                       wxDefaultSize,
                       true);
@@ -251,10 +259,7 @@ void NoiseDialog::PopulateOrExchange( ShuttleGui & S )
          mNoiseDurationT->SetFormatString(mNoiseDurationT->GetBuiltinFormat(nIsSelection==true?(wxT("hh:mm:ss + samples")):(wxT("seconds"))));
          mNoiseDurationT->EnableMenu();
       }
-      S.AddWindow(mNoiseDurationT);
-      S.TieTextBox(_("Amplitude (0-1)"),  nAmplitude, 10);
-      S.TieChoice(_("Noise type"), nType, nTypeList);
-      S.SetSizeHints(-1, -1);
+      S.AddWindow(mNoiseDurationT, wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxALL);
    }
    S.EndMultiColumn();
 }

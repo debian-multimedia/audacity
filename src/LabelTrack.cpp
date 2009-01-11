@@ -97,6 +97,7 @@ LabelTrack::LabelTrack(DirManager * projDirManager):
    mHeight = 73;     
    CreateCustomGlyphs();
    mSelIndex = -1;
+   mStickyTrack = NULL;
 
    // reset flags
    ResetFlags();
@@ -118,7 +119,8 @@ LabelTrack::LabelTrack(const LabelTrack &orig) :
       mLabels.Add(l);
    }
    mSelIndex = orig.mSelIndex;
-
+   mStickyTrack = NULL;
+   
    // reset flags
    ResetFlags();
 }
@@ -129,6 +131,9 @@ LabelTrack::~LabelTrack()
 
    for (int i = 0; i < len; i++)
       delete mLabels[i];
+#ifdef EXPERIMENTAL_STICKY_TRACKS      
+   if (mStickyTrack) mStickyTrack->SetStickyTrack(NULL);
+#endif
 }
 
 void LabelTrack::SetOffset(double dOffset)
@@ -138,6 +143,70 @@ void LabelTrack::SetOffset(double dOffset)
    {
       mLabels[i]->t += dOffset;
       mLabels[i]->t1 += dOffset;
+   }
+}
+
+void LabelTrack::ShiftLabelsOnClear(double b, double e)
+{
+   for (size_t i=0;i<mLabels.GetCount();i++){
+      if (mLabels[i]->t >= e){//label is after deletion region
+         mLabels[i]->t  = mLabels[i]->t  - (e-b);
+         mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
+      }else if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
+         wxASSERT((i < mLabels.GetCount()));
+         mLabels.RemoveAt(i);
+         i--;
+      }else if (mLabels[i]->t >= b && mLabels[i]->t1 > e){//deletion region covers start
+         mLabels[i]->t  = b;
+         mLabels[i]->t1 = mLabels[i]->t1 - (e - mLabels[i]->t);
+      }else if (mLabels[i]->t < b && mLabels[i]->t1 > b && mLabels[i]->t1 <= e){//deletion regions covers end
+         mLabels[i]->t1 = b;
+      }else if (mLabels[i]->t < b && mLabels[i]->t1 > e){//label encloses deletion region
+         mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
+      }else if (mLabels[i]->t1 <= b){
+         //nothing
+      }
+   }
+}
+
+void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
+{
+   for (unsigned int i=0;i<mLabels.GetCount();i++){
+      if (mLabels[i]->t > pt && mLabels[i]->t1 > pt) {
+         mLabels[i]->t = mLabels[i]->t + length;
+         mLabels[i]->t1 = mLabels[i]->t1 + length;
+      }else if (mLabels[i]->t1 < pt) {
+         //nothing
+      }else if (mLabels[i]->t < pt && mLabels[i]->t1 > pt){
+         mLabels[i]->t1 = mLabels[i]->t1 + length;
+      }
+   }
+}
+
+void LabelTrack::ShiftLabelsOnChangeSpeed(double b, double e, double change)
+{
+   for (unsigned int i=0;i<mLabels.GetCount();i++){
+      mLabels[i]->t = AdjustTimeStampForSpeedChange(mLabels[i]->t, b, e, change);
+      mLabels[i]->t1 = AdjustTimeStampForSpeedChange(mLabels[i]->t1, b, e, change);
+   }
+}
+
+double LabelTrack::AdjustTimeStampForSpeedChange(double t, double b, double e, double change)
+{
+//t is the time stamp we'll be changing
+//b and e are the selection start and end
+
+   double percentChange = (100 + change)/100;
+   //printf("t: %f\nb: %f\ne: %f\nchange: %f\n", t, b, e, change);
+   
+   if (t < b){
+      return t;
+   }else if (t > e){
+      double shift = (e-b) - ((e-b)/percentChange);  
+      return (t - shift);
+   }else{
+      double shift = (t-b) - ((t-b)/percentChange);
+      return (t - shift);
    }
 }
 
@@ -892,7 +961,8 @@ bool LabelTrack::CopySelectedText()
 bool LabelTrack::PasteSelectedText(double sel0, double sel1)
 {
    if (mSelIndex == -1) {
-      AddLabel(sel0, sel1, wxT(""));
+      //AddLabel(sel0, sel1, wxT(""));
+      return false;
    }
 
    wxString text;
@@ -1176,7 +1246,7 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
          // reset when right button is down outside text box
          if (evt.RightDown())
          {
-            if (!highlightedRect.Inside(evt.m_x, evt.m_y))
+            if (!highlightedRect.Contains(evt.m_x, evt.m_y))
             {
                mCurrentCursorPos=0;
                mInitialCursorPos=0;
@@ -1225,7 +1295,7 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
       {
          if (evt.RightDown())
          {
-            if (!highlightedRect.Inside(evt.m_x, evt.m_y))
+            if (!highlightedRect.Contains(evt.m_x, evt.m_y))
             {
                mDragXPos = -1;
             }
@@ -1947,17 +2017,49 @@ bool LabelTrack::Paste(double t, Track * src)
       len++;
    }
 
-   while (pos < len) {
-      mLabels[pos]->t += sl->mClipLen;
-      mLabels[pos]->t1 += sl->mClipLen;
-      pos++;
-   }
-
    return true;
 }
 
 bool LabelTrack::Clear(double t0, double t1)
 {
+#ifdef EXPERIMENTAL_FULL_LINKING
+   AudacityProject *p = GetActiveProject();   
+   if (p && p->IsSticky()){
+      bool onlyLabelTrackSel = true;
+      TrackListIterator iter(p->GetTracks());
+      Track *t = iter.First();
+      while (t){
+         if (t!=this && t->GetSelected()){
+            onlyLabelTrackSel = false;
+            break;
+         }
+         t=iter.Next();
+      }
+      if (onlyLabelTrackSel){
+         int editGroup = 0;
+         t=iter.First();
+         Track *n=t;
+         
+         while (t && t!= this){//find edit group number
+            n=iter.Next();
+            if (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
+               editGroup++;
+            t=n;
+         }
+
+         t=iter.First();
+         for (int i=0; i<editGroup; i++){//go to first in edit group
+            while (t && t->GetKind()==Track::Wave) t=iter.Next();
+            while (t && t->GetKind()==Track::Label) t=iter.Next();
+         }
+
+         if (t && t->GetKind()==Track::Wave)
+            ((WaveTrack*)t)->HandleGroupClear(t0, t1, false, false);
+      }
+   }else{
+      ShiftLabelsOnClear(t0, t1);
+   }
+#else
    int len = mLabels.Count();
 
    for (int i = 0; i < len; i++) {
@@ -1971,7 +2073,7 @@ bool LabelTrack::Clear(double t0, double t1)
          mLabels[i]->t1 -= (t1 - t0);
       }
    }
-
+#endif
    return true;
 }
 
@@ -2087,7 +2189,7 @@ wxBitmap & LabelTrack::GetGlyph( int i)
 // This one XPM spec is used to generate a number of
 // different wxIcons.
 /* XPM */
-static char *GlyphXpmRegionSpec[] = {
+static const char *const GlyphXpmRegionSpec[] = {
 /* columns rows colors chars-per-pixel */
 "15 23 7 1",
 /* Default colors, with first color transparent */
@@ -2146,7 +2248,7 @@ void LabelTrack::CreateCustomGlyphs()
    int index;
    const int nSpecRows = 
       sizeof( GlyphXpmRegionSpec )/sizeof( GlyphXpmRegionSpec[0]);
-   char *XmpBmp[nSpecRows];
+   const char *XmpBmp[nSpecRows];
 
    // The glyphs are declared static wxIcon; so we only need
    // to create them once, no matter how many LabelTracks.

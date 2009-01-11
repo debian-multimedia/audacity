@@ -5,6 +5,7 @@
   ImportMP3.cpp
 
   Joshua Haberman
+  Leland Lucius
 
 *//****************************************************************//**
 
@@ -25,6 +26,13 @@
 
 *//*******************************************************************/
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+#include <wx/window.h>
+#endif
+
 #include <wx/defs.h>
 #include <wx/intl.h>
 #include "../Audacity.h"
@@ -42,8 +50,6 @@ static const wxChar *exts[] =
 {
    wxT("mp3"),
    wxT("mp2"),
-   wxT("mpg"),
-   wxT("mpeg"),
    wxT("mpa")
 };
 
@@ -90,9 +96,8 @@ struct private_data {
    unsigned char *inputBuffer;
    TrackFactory *trackFactory;
    WaveTrack **channels;
+   ProgressDialog *progress;
    int numChannels;
-   progress_callback_t progressCallback;
-   void *userData;
    bool cancelled;
    bool id3checked;
 };
@@ -115,25 +120,27 @@ class MP3ImportFileHandle : public ImportFileHandle
 {
 public:
    MP3ImportFileHandle(wxFile *file, wxString filename):
-      mFilename(filename),
-      mFile(file),
-      mUserData(NULL)
+      ImportFileHandle(filename),
+      mFile(file)
    {
-      mPrivateData.progressCallback = NULL;
    }
 
    ~MP3ImportFileHandle();
 
-   void SetProgressCallback(progress_callback_t function,
-                            void *userData);
    wxString GetFileDescription();
    int GetFileUncompressedBytes();
-   bool Import(TrackFactory *trackFactory, Track ***outTracks,
-               int *outNumTracks, Tags *tags);
+   int Import(TrackFactory *trackFactory, Track ***outTracks,
+              int *outNumTracks, Tags *tags);
+
+   wxInt32 GetStreamCount(){ return 1; }
+
+   wxArrayString *GetStreamInfo(){ return NULL; }
+
+   void SetStreamUsage(wxInt32 StreamID, bool Use){}
+
 private:
    void ImportID3(Tags *tags);
 
-   wxString mFilename;
    wxFile *mFile;
    void *mUserData;
    struct private_data mPrivateData;
@@ -183,14 +190,6 @@ ImportFileHandle *MP3ImportPlugin::Open(wxString Filename)
    return new MP3ImportFileHandle(file, Filename);
 }
 
-
-void MP3ImportFileHandle::SetProgressCallback(progress_callback_t function,
-                                          void *userData)
-{
-   mPrivateData.progressCallback = function;
-   mPrivateData.userData = userData;
-}
-
 wxString MP3ImportFileHandle::GetFileDescription()
 {
    return DESC;
@@ -202,15 +201,18 @@ int MP3ImportFileHandle::GetFileUncompressedBytes()
    return 0;
 }
 
-bool MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
-                                 int *outNumTracks, Tags *tags)
+int MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
+                                int *outNumTracks, Tags *tags)
 {
    int chn;
+
+   CreateProgress();
 
    /* Prepare decoder data, initialize decoder */
 
    mPrivateData.file        = mFile;
    mPrivateData.inputBuffer = new unsigned char [INPUT_BUFFER_SIZE];
+   mPrivateData.progress    = mProgress;
    mPrivateData.channels    = NULL;
    mPrivateData.cancelled   = false;
    mPrivateData.id3checked  = false;
@@ -225,7 +227,7 @@ bool MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
               (mPrivateData.numChannels > 0) &&
               (!mPrivateData.cancelled);
 
-      mad_decoder_finish(&mDecoder);
+   mad_decoder_finish(&mDecoder);
 
    delete[] mPrivateData.inputBuffer;
 
@@ -239,7 +241,7 @@ bool MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       }
       delete[] mPrivateData.channels;
 
-      return false;
+      return (mPrivateData.cancelled ? eImportCancelled : eImportFailed);
    }
 
    /* success */
@@ -258,7 +260,7 @@ bool MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    /* Read in any metadata */
    ImportID3(tags);
 
-      return true;
+      return eImportSuccess;
    }
 
 MP3ImportFileHandle::~MP3ImportFileHandle()
@@ -386,13 +388,10 @@ enum mad_flow input_cb(void *_data, struct mad_stream *stream)
 {
    struct private_data *data = (struct private_data *)_data;
 
-   if(data->progressCallback) {
-      data->cancelled = data->progressCallback(data->userData,
-                                               (float)data->file->Tell() /
-                                               data->file->Length());
-      if(data->cancelled)
-         return MAD_FLOW_STOP;
-   }
+   data->cancelled = !data->progress->Update((wxULongLong_t)data->file->Tell(),
+                                             (wxULongLong_t)data->file->Length());
+   if(data->cancelled)
+      return MAD_FLOW_STOP;
 
    if(data->file->Eof()) {
       data->cancelled = false;

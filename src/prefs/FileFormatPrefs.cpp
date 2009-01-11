@@ -21,6 +21,7 @@ preferences.  Later we will rename this panel and source files.
  
 
 #include "../Audacity.h"
+#include "../FFmpeg.h"  // always needs to go before wx headers
 
 #include <wx/defs.h>
 #include <wx/intl.h>
@@ -36,10 +37,14 @@ preferences.  Later we will rename this panel and source files.
 
 #define ID_MP3_FIND_BUTTON          7001
 #define ID_MP3_DOWN_BUTTON          7002
+#define ID_FFMPEG_FIND_BUTTON       7003
+#define ID_FFMPEG_DOWN_BUTTON       7004
 
 BEGIN_EVENT_TABLE(FileFormatPrefs, wxPanel)
    EVT_BUTTON(ID_MP3_FIND_BUTTON, FileFormatPrefs::OnMP3FindButton)
    EVT_BUTTON(ID_MP3_DOWN_BUTTON, FileFormatPrefs::OnMP3DownButton)
+   EVT_BUTTON(ID_FFMPEG_FIND_BUTTON, FileFormatPrefs::OnFFmpegFindButton)
+   EVT_BUTTON(ID_FFMPEG_DOWN_BUTTON, FileFormatPrefs::OnFFmpegDownButton)
 END_EVENT_TABLE()
 
 FileFormatPrefs::FileFormatPrefs(wxWindow * parent):
@@ -64,6 +69,7 @@ void FileFormatPrefs::Populate( )
    // ----------------------- End of main section --------------
    // Set the MP3 Version string.
    SetMP3VersionText();
+   SetFFmpegVersionText();
 }
 
 /// This PopulateOrExchange function is a good example of mixing the fully 
@@ -74,7 +80,8 @@ void FileFormatPrefs::Populate( )
 void FileFormatPrefs::PopulateOrExchange( ShuttleGui & S )
 {
    S.SetBorder( 2 );
-   S.StartStatic( _("MP3 Export Library"));
+   S.StartHorizontalLay(wxEXPAND,0);
+   S.StartStatic( _("MP3 Export Library"),1);
    {
       S.StartTwoColumn();
          S.AddVariableText( _("MP3 Library Version:"),
@@ -93,10 +100,40 @@ void FileFormatPrefs::PopulateOrExchange( ShuttleGui & S )
             wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL );
          S.Id( ID_MP3_DOWN_BUTTON ).AddButton( _("&Download"), 
             wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
-      S.EndHorizontalLay();
+      S.EndTwoColumn();
    }
    S.EndStatic();
-   S.AddFixedText( _("Note: Export quality options can be chosen by clicking the Options button in the Export dialog."));
+   S.StartStatic( _("FFmpeg Import/Export Library"),1);
+   {
+      S.StartTwoColumn();
+      S.AddVariableText( _("FFmpeg Library Version:"),
+         true, wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL );
+#if defined(USE_FFMPEG)
+      mFFmpegVersion = S.AddVariableText( wxT("No compatible FFmpeg library was found"),
+         true, wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
+#else
+      mFFmpegVersion = S.AddVariableText( wxT("FFmpeg support is not compiled in"),
+         true, wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
+#endif
+      S.AddVariableText( _("FFmpeg Library:"),
+         true, wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL );
+      wxButton *bfnd = S.Id( ID_FFMPEG_FIND_BUTTON ).AddButton( _("&Find Library"), 
+         wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
+      S.AddVariableText( _("FFmpeg Library:"),
+         true,
+         wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL );
+      wxButton *bdwn = S.Id( ID_FFMPEG_DOWN_BUTTON ).AddButton( _("&Download"), 
+         wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
+      S.EndTwoColumn();
+#if !defined(USE_FFMPEG)
+      bdwn->Enable(FALSE);
+      bfnd->Enable(FALSE);
+#endif
+   }
+   S.EndStatic();
+   S.EndHorizontalLay();
+
+   S.AddFixedText( _("Note: Export quality options can be chosen by clicking the Options button in the Export dialog.\n"));
    S.StartStatic( _("When importing audio files"));
    {
       S.StartRadioButtonGroup(wxT("/FileFormats/CopyOrEditUncompressedData"),wxT("edit"));
@@ -147,11 +184,53 @@ void FileFormatPrefs::OnMP3FindButton(wxCommandEvent& evt)
 /// tell us where the MP3 library is.
 void FileFormatPrefs::OnMP3DownButton(wxCommandEvent& evt)
 {
-   wxString url = wxT("http://audacity.sourceforge.net/lame");
+   wxString url = wxT("http://audacity.sourceforge.net/help/faq?s=install&i=lame-mp3");
    ::OpenInDefaultBrowser(url);
 }
 
-/// Takes the settings from the dilaog and puts them into prefs.
+void FileFormatPrefs::SetFFmpegVersionText()
+{
+   mFFmpegVersion->SetLabel(GetFFmpegVersion(this));
+}
+
+
+void FileFormatPrefs::OnFFmpegFindButton(wxCommandEvent& evt)
+{
+#ifdef USE_FFMPEG
+   FFmpegLibs* FFmpegLibsInst = PickFFmpegLibs();
+
+   FFmpegLibsInst->FreeLibs();
+   // Load the libs ('true' means that all errors will be shown)
+   bool locate = !LoadFFmpeg(true);
+
+   // Libs are fine, don't show "locate" dialog unless user really wants it
+   if (!locate)
+   {
+      int response = wxMessageBox(wxT("Audacity has automatically detected valid FFmpeg libraries.\
+                       \nDo you still want to locate them manually?"),wxT("Success"),wxCENTRE | wxYES_NO | wxICON_QUESTION);
+      if (response == wxYES)
+        locate = true;
+   }
+   if (locate)
+   {
+      // Show "Locate FFmpeg" dialog
+      FFmpegLibsInst->FindLibs(this);
+      FFmpegLibsInst->FreeLibs();
+      LoadFFmpeg(true);
+   }
+   SetFFmpegVersionText();
+
+   DropFFmpegLibs();
+#endif
+}
+
+void FileFormatPrefs::OnFFmpegDownButton(wxCommandEvent& evt)
+{
+   wxString url = wxT("http://www.audacityteam.org/manual/index.php?title=FAQ:Installation_and_Plug-Ins%23installffmpeg");
+   ::OpenInDefaultBrowser(url);
+}
+
+/// Takes the settings from the dialog and puts them into prefs.
 /// Most of the preferences are set by the ShuttleGui, but for some
 /// specially handled ones we need to do this ourselves.
 bool FileFormatPrefs::Apply()

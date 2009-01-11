@@ -29,6 +29,12 @@ public:
       return wxString(_("Repair"));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://audacityteam.org/namespace#NoiseRemoval"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(wxT("Repair"));
    }
@@ -44,7 +50,7 @@ public:
    
 private:
    bool ProcessOne(int count, WaveTrack * track,
-                   longSampleCount start,
+                   sampleCount start,
                    sampleCount len,
                    sampleCount repairStart, sampleCount repairLen);
 };

@@ -27,14 +27,17 @@ i.e. an alternative to the usual interface, for Audacity.
 #include "AudacityApp.h"
 #include "Internat.h"
 #include "BatchCommands.h"
-#include "../lib-src/lib-widget-extra/NonGuiThread.h"
+#include <NonGuiThread.h>  // header from libwidgetextra
+
+#include "LoadModules.h"
 
 #define initFnName      "ExtensionModuleInit"
 #define scriptFnName    "RegScriptServerFunc"
 #define mainPanelFnName "MainPanelFunc"
 
-typedef _declspec( dllimport) int (*tModuleInit)(int);
-typedef _declspec( dllimport) wxWindow * (*tPanelFn)(int);
+typedef wxWindow * pwxWindow;
+typedef int AUDACITY_DLL_API (*tModuleInit)(int);
+typedef pwxWindow AUDACITY_DLL_API (*tPanelFn)(int);
 
 // This variable will hold the address of a subroutine in 
 // a DLL that can hijack the normal panel.
@@ -65,11 +68,11 @@ wxWindow * MakeHijackPanel()
 // It will do that through the ExecCommand function.
 extern "C" {
 
-typedef __declspec( dllexport) int (*tpExecScriptServerFunc)( wxString * pOut, wxString * pIn);
-typedef __declspec( dllimport) int (*tpRegScriptServerFunc)(tpExecScriptServerFunc pFn);
+typedef int AUDACITY_DLL_API (*tpExecScriptServerFunc)( wxString * pOut, wxString * pIn);
+typedef int AUDACITY_DLL_API (*tpRegScriptServerFunc)(tpExecScriptServerFunc pFn);
 
 // This is the function which actually obeys one command.
-__declspec( dllexport) int ExecCommand( wxString * pOut, wxString * pIn )
+AUDACITY_DLL_API int ExecCommand( wxString * pOut, wxString * pIn )
 {
    // Create a Batch that will have just one command in it...
    BatchCommands Batch;
@@ -114,7 +117,7 @@ void RegisterAndRun(  )
 
 void LoadModule(wxString fname)
 {
-   wxLogDebug(wxT("About to load %s"), fname );
+   wxLogDebug(wxT("About to load %s"), fname.c_str() );
    wxLogNull logNo;
    tModuleInit mainFn = NULL;
 
@@ -187,6 +190,142 @@ void LoadModules()
    }
 }
 
+Module::Module(const wxString & name)
+{
+   mName = name;
+   mLib = new wxDynamicLibrary();
+   mDispatch = NULL;
+}
+
+Module::~Module()
+{
+   delete mLib;
+}
+
+bool Module::Load()
+{
+   wxLogNull logNo;
+
+   if (mLib->IsLoaded()) {
+      if (mDispatch) {
+         return true;
+      }
+      return false;
+   }
+
+   if (!mLib->Load(mName, wxDL_LAZY)) {
+      return false;
+   }
+
+   mDispatch = (fnModuleDispatch) mLib->GetSymbol(wxT(ModuleDispatchName));
+
+   if (!mDispatch) {
+      return false;
+   }
+
+   bool res = ((mDispatch(ModuleInitialize))!=0);
+   if (res) {
+      return true;
+   }
+
+   mDispatch = NULL;
+
+   return false;
+}
+
+void Module::Unload()
+{
+   if (mLib->IsLoaded()) {
+      mDispatch(ModuleTerminate);
+   }
+
+   mLib->Unload();
+}
+
+int Module::Dispatch(ModuleDispatchTypes type)
+{
+   if (mLib->IsLoaded()) {
+      return mDispatch(type);
+   }
+
+   return 0;
+}
+
+//
+// Module Manager (using wxPluginManager would be MUCH better)
+//
+ModuleManager *ModuleManager::mInstance;
+
+bool ModuleManager::OnInit()
+{
+   mInstance = this;
+
+   return true;
+}
+
+void ModuleManager::OnExit()
+{
+   size_t cnt = mModules.GetCount();
+
+   for (size_t ndx = 0; ndx < cnt; ndx++) {
+      delete (Module *) mModules[ndx];
+   }
+   mModules.Clear();
+}
+
+void ModuleManager::Initialize()
+{
+   wxArrayString audacityPathList = wxGetApp().audacityPathList;
+   wxArrayString pathList;
+   wxArrayString files;
+   wxString pathVar;
+   size_t i;
+
+   // Code from LoadLadspa that might be useful in load modules.
+   pathVar = wxGetenv(wxT("AUDACITY_MODULES_PATH"));
+   if (pathVar != wxT("")) {
+      wxGetApp().AddMultiPathsToPathList(pathVar, pathList);
+   }
+
+   for (i = 0; i < audacityPathList.GetCount(); i++) {
+      wxString prefix = audacityPathList[i] + wxFILE_SEP_PATH;
+      wxGetApp().AddUniquePathToPathList(prefix + wxT("modules"),
+                                         pathList);
+   }
+
+   #if defined(__WXMSW__)
+   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, wxFILE, files);   
+//   #elif defined(__WXMAC__)
+//   wxGetApp().FindFilesInPathList(wxT("*.dylib"), pathList, wxFILE, files);
+   #else
+   wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, wxFILE, files);
+   #endif
+
+   for (i = 0; i < files.GetCount(); i++) {
+      Module *module = new Module(files[i]);
+
+      if (module->Load()) {
+         mInstance->mModules.Add(module);
+      }
+      else {
+         delete module;
+      }
+   }
+}
+
+int ModuleManager::Dispatch(ModuleDispatchTypes type)
+{
+   size_t cnt = mInstance->mModules.GetCount();
+
+   for (size_t ndx = 0; ndx < cnt; ndx++) {
+      Module *module = (Module *)mInstance->mModules[ndx];
+
+      module->Dispatch(type);
+   }
+   return 0;
+}
+
+IMPLEMENT_DYNAMIC_CLASS(ModuleManager, wxModule);
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.
 //

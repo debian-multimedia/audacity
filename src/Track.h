@@ -23,15 +23,23 @@
 #include <wx/gdicmn.h>
 #endif //EXPERIMENTAL_RULER_AUTOSIZE
 
-class wxTextFile;
-class DirManager;
-class UndoStack;
-class TimeTrack;
-class WaveTrack;
 #ifdef __WXMSW__
 #pragma warning(disable:4284)
 #endif
+
+class wxTextFile;
+class DirManager;
+class UndoStack;
+class LabelTrack;
+class TimeTrack;
+class WaveTrack;
+
 WX_DEFINE_ARRAY(WaveTrack*, WaveTrackArray);
+
+#if defined(USE_MIDI)
+class NoteTrack;
+WX_DEFINE_ARRAY(NoteTrack*, NoteTrackArray);
+#endif
 
 class AUDACITY_DLL_API Track: public XMLTagHandler {
 
@@ -82,7 +90,9 @@ class AUDACITY_DLL_API Track: public XMLTagHandler {
    enum {
       None,
       Wave,
+#if defined(USE_MIDI)
       Note,
+#endif
       Label,
       Time
    } TrackKindEnum;
@@ -195,23 +205,21 @@ class AUDACITY_DLL_API TrackList {
   friend class TrackListIterator;
   friend class ConstTrackListIterator;
   
-  // Add a this Track or all children of this TrackGroup
+  /// Add a this Track or all children of this TrackGroup
   void Add(Track * t);
   void AddToHead(Track * t);
   
-  // Remove this Track or all children of this TrackGroup
+  /// Remove this Track or all children of this TrackGroup
   void Remove(Track * t);
   
-  // Make the list empty
+  /// Make the list empty
   void Clear(bool deleteTracks = false);
   
-  // Select a track, and if it is linked to another track,
-  // select it, too.
+  /** Select a track, and if it is linked to another track, select it, too. */
   void Select(Track * t, bool selected = true);
   
-  // If this track is linked to another track (the track
-  // immediately before or after it), return its partner.
-  // Otherwise return null.
+  /** If this track is linked to another track (the track immediately before or
+   * after it), return its partner. Otherwise return null. */
   Track *GetLink(Track * t) const;
   
   Track *GetPrev(Track * t, bool linked = false) const;
@@ -236,10 +244,14 @@ class AUDACITY_DLL_API TrackList {
   int GetNumExportChannels(bool selectionOnly);
 
   WaveTrackArray GetWaveTrackArray(bool selectionOnly);
-  /* Consider this function depricated in favor of the above function */
+  /** Consider this function depricated in favor of GetWaveTrackArray */
   void GetWaveTracks(bool selectionOnly, int *num, WaveTrack ***tracks);
-  
-  // Test
+
+#if defined(USE_MIDI)
+  NoteTrackArray GetNoteTrackArray(bool selectionOnly);
+#endif
+
+  /// Mainly a test function. Uses a linear search, so could be slow.
   bool Contains(Track * t) const;
   
   bool IsEmpty() const;
@@ -287,15 +299,17 @@ class AUDACITY_DLL_API ConstTrackListIterator {
 
  private:
     const TrackList * l;
+    /** \brief pointer to the current node of the track list
+     *
+     * This is used to keep track of where we are in the list. It is a mutable 
+     * member of the class because although the list and the iterator are
+     * constant, the current position can change (and does change) without
+     * affecting them. Without this keyword we would get compiler errors about
+     * const methods altering member variables. See also
+     * http://www.highprogrammer.com/alan/rants/mutable.html */
     mutable TrackListNode *cur;
 };
 
-
-class WaveTrack;
-class NoteTrack;
-class LabelTrack;
-class TimeTrack;
-class DirManager;
 
 class AUDACITY_DLL_API TrackFactory
 {
@@ -315,9 +329,11 @@ class AUDACITY_DLL_API TrackFactory
    WaveTrack* DuplicateWaveTrack(WaveTrack &orig);
    WaveTrack *NewWaveTrack(sampleFormat format = (sampleFormat)0,
                            double rate = 0);
-   NoteTrack *NewNoteTrack();
    LabelTrack *NewLabelTrack();
    TimeTrack *NewTimeTrack();
+#if defined(USE_MIDI)
+   NoteTrack *NewNoteTrack();
+#endif
 };
 
 #endif

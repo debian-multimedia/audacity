@@ -28,7 +28,7 @@ bool EffectTwoPassSimpleMono::Process()
     mSecondPassDisabled = false;
     
     InitPass1();
-    this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+    this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
     bool bGoodResult = ProcessPass();
         
     if (bGoodResult && !mSecondPassDisabled)
@@ -45,7 +45,7 @@ bool EffectTwoPassSimpleMono::Process()
 bool EffectTwoPassSimpleMono::ProcessPass()
 {
    //Iterate over each track
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    mCurTrackNum = 0;
    while (track) {
@@ -62,8 +62,8 @@ bool EffectTwoPassSimpleMono::ProcessPass()
       if (mCurT1 > mCurT0) {
 
          //Transform the marker timepoints to samples
-         longSampleCount start = track->TimeToLongSamples(mCurT0);
-         longSampleCount end = track->TimeToLongSamples(mCurT1);
+         sampleCount start = track->TimeToLongSamples(mCurT0);
+         sampleCount end = track->TimeToLongSamples(mCurT1);
          
          //Get the track rate and samples
          mCurRate = track->GetRate();
@@ -95,10 +95,10 @@ bool EffectTwoPassSimpleMono::ProcessPass()
 //ProcessOne() takes a track, transforms it to bunch of buffer-blocks,
 //and executes ProcessSimpleMono on these blocks
 bool EffectTwoPassSimpleMono::ProcessOne(WaveTrack * track,
-                                  longSampleCount start, longSampleCount end)
+                                  sampleCount start, sampleCount end)
 {
    bool ret;
-   longSampleCount s;
+   sampleCount s;
    //Get the length of the buffer (as double). len is
    //used simple to calculate a progress meter, so it is easier
    //to make it a double now than it is to do it later 

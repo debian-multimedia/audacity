@@ -136,8 +136,8 @@ bool RemoveDependencies(AudacityProject *project,
 {
    DirManager *dirManager = project->GetDirManager();
 
-   GetActiveProject()->ProgressShow(_("Removing Dependencies"),
-                                    _("Copying audio data into project..."));
+   ProgressDialog *progress = new ProgressDialog(_("Removing Dependencies"),
+                                                 _("Copying audio data into project..."));
 
    AliasedFileHash aliasedFileHash;
    ReplacedBlockFileHash blockFileHash;   
@@ -179,9 +179,13 @@ bool RemoveDependencies(AudacityProject *project,
 
          // Update the progress bar
          completedBytes += SAMPLE_SIZE(format) * len;
-         int progressValue =
-            (completedBytes * 1000 / totalBytesToProcess).GetValue();
-         GetActiveProject()->ProgressUpdate(progressValue);
+         
+         //TODO: add a cancel checker to break if the user clicks cancel.
+         /*
+         cancelled = !mProgress->Update(i, fileTotalFrames);
+         if (cancelled)
+            break;*/
+         progress->Update(completedBytes, totalBytesToProcess);
       }
    }
 
@@ -200,7 +204,7 @@ bool RemoveDependencies(AudacityProject *project,
       dirManager->Deref(f);
    }
 
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    return true;
 }

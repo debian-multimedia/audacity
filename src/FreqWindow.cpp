@@ -146,10 +146,12 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
       _("Cepstrum")
    };
 
-   wxStaticText *algLabel = new wxStaticText(this, wxID_ANY, _("Algorithm:"));
+   wxStaticText *algLabel = new wxStaticText(this, wxID_ANY,
+                                             wxString(_("Algorithm")) + wxT(":"));
    mAlgChoice = new wxChoice(this, FreqAlgChoiceID,
                              wxDefaultPosition, wxDefaultSize,
                              5, algChoiceStrings);
+   mAlgChoice->SetName(_("Algorithm"));
 
    mAlgChoice->SetSelection(0);
 
@@ -168,6 +170,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    mSizeChoice = new wxChoice(this, FreqSizeChoiceID,
                               wxDefaultPosition, wxDefaultSize,
                               8, sizeChoiceStrings);
+   mSizeChoice->SetName(_("Size"));
 
    mSizeChoice->SetSelection(2);
 
@@ -180,10 +183,12 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
       funcChoiceStrings[i] = WindowFuncName(i) + wxString(_(" window"));
    }
 
-   wxStaticText *funcLabel = new wxStaticText(this, wxID_ANY, _("Function:"));
+   wxStaticText *funcLabel = new wxStaticText(this, wxID_ANY,
+                                              wxString(_("Function")) + wxT(":"));
    mFuncChoice = new wxChoice(this, FreqFuncChoiceID,
                               wxDefaultPosition, wxDefaultSize,
                               f, funcChoiceStrings);
+   mFuncChoice->SetName(_("Function"));
 
    mFuncChoice->SetSelection(3);
    delete[]funcChoiceStrings;
@@ -192,10 +197,12 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
       _("Log frequency")
    };
 
-   wxStaticText *axisLabel = new wxStaticText(this, wxID_ANY, _("Axis:"));
+   wxStaticText *axisLabel = new wxStaticText(this, wxID_ANY,
+                                              wxString(_("Axis")) + wxT(":"));
    mAxisChoice = new wxChoice(this, FreqAxisChoiceID,
                               wxDefaultPosition, wxDefaultSize,
                               2, axisChoiceStrings);
+   mAxisChoice->SetName(_("Axis"));
 
    mAxisChoice->SetSelection(0);
 
@@ -203,9 +210,11 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 
    mExportButton = new wxButton(this, FreqExportButtonID,
                                 _("&Export..."));
+   mExportButton->SetName(_("Export"));
 
    mCloseButton = new wxButton(this, wxID_CANCEL,
                                _("Close"));
+   mCloseButton->SetName(_("Close"));
 
 #ifndef TARGET_CARBON
    mCloseButton->SetDefault();
@@ -505,7 +514,7 @@ void FreqWindow::PlotMouseEvent(wxMouseEvent & event)
 
       wxRect r = mPlotRect;
 
-      if (r.Inside(mMouseX, mMouseY))
+      if (r.Contains(mMouseX, mMouseY))
          mFreqPlot->SetCursor(*mCrossCursor);
       else
          mFreqPlot->SetCursor(*mArrowCursor);
@@ -703,7 +712,7 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
    // Find the peak nearest the cursor and plot it
 
    float bestpeak = float(0.0);
-   if ( r.Inside(mMouseX, mMouseY) & (mMouseX!=0) & (mMouseX!=r.width-1) ) {
+   if ( r.Contains(mMouseX, mMouseY) & (mMouseX!=0) & (mMouseX!=r.width-1) ) {
       if (mLogAxis)
          xPos = xMin * pow(xStep, mMouseX - (r.x + 1));
       else
@@ -828,7 +837,7 @@ void FreqWindow::Plot(int len, float *data, double rate)
 void FreqWindow::Recalc()
 {
    if (mProcessed)
-      delete mProcessed;
+      delete[] mProcessed;
    mProcessed = NULL;
 
    if (!mData) {
@@ -1060,7 +1069,7 @@ void FreqWindow::OnExport(wxCommandEvent & WXUNUSED(event))
    wxString fName = _("spectrum.txt");
 
    fName = FileSelector(_("Export Spectral Data As:"),
-                        NULL, fName, wxT("txt"), wxT("*.txt"), wxSAVE, this);
+                        NULL, fName, wxT("txt"), wxT("*.txt"), wxFD_SAVE | wxRESIZE_BORDER, this);
 
    if (fName == wxT(""))
       return;

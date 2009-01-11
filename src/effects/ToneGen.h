@@ -40,6 +40,12 @@ class EffectToneGen:public Effect {
       return wxString(mbChirp? _("Chirp..."):_("Tone..."));
    }
 
+   virtual std::set<wxString> GetEffectCategories() {
+      std::set<wxString> result;
+      result.insert(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
+      return result;
+   }
+
    virtual wxString GetEffectIdentifier() {
       return wxString(mbChirp ? wxT("Chirp") : wxT("Tone"));
    }
@@ -65,7 +71,7 @@ class EffectToneGen:public Effect {
 
  private:
 
-   longSampleCount numSamples;
+   sampleCount numSamples;
    bool mbChirp;
    bool mbLogInterpolation;
 
@@ -79,13 +85,14 @@ class EffectToneGen:public Effect {
    double length;
    float logFrequency[2];
    double mCurRate;
-#ifdef LOGARITHMIC_TONE_CHIRP
    int interpolation;
-#endif
 
    // mSample is an external placeholder to remember the last "buffer"
    // position so we use it to reinitialize from where we left
    int mSample;
+ // friendship ...
+ friend class ToneGenDialog;
+
 };
 
 // WDR: class declarations
@@ -97,7 +104,7 @@ class EffectToneGen:public Effect {
 class ToneGenDialog:public EffectDialog {
  public:
    // constructors and destructors
-   ToneGenDialog(wxWindow * parent, const wxString & title);
+   ToneGenDialog(EffectToneGen * effect, wxWindow * parent, const wxString & title);
 
    // WDR: method declarations
    void PopulateOrExchange(ShuttleGui & S);
@@ -111,6 +118,7 @@ class ToneGenDialog:public EffectDialog {
    DECLARE_EVENT_TABLE()
 
  public:
+   EffectToneGen *mEffect;
    bool mbChirp;
    wxArrayString *waveforms;
    int waveform;
@@ -118,10 +126,8 @@ class ToneGenDialog:public EffectDialog {
    double amplitude[2];
    double length;
    bool isSelection;
-#ifdef LOGARITHMIC_TONE_CHIRP
    int interpolation;
    wxArrayString *interpolations;
-#endif
 
  private:
    TimeTextCtrl *mToneDurationT;

@@ -36,19 +36,14 @@ greater use in future.
 #include "../Prefs.h"
 #include "../Project.h"
 #include "../WaveTrack.h"
-
+#include "../widgets/ProgressDialog.h"
+#include "../ondemand/ODManager.h"
 //
 // public static methods
 //
 
-EffectArray Effect::mEffects;
-int Effect::sNumEffects = 0;
 double Effect::sDefaultGenerateLen = 30.0;
 
-// Some static variables used for Repeat Last Effect.
-int Effect::LastType=0;
-int Effect::LastIndex=0;
-Effect * Effect::pLastEffect=NULL;
 
 wxString Effect::StripAmpersand(const wxString& str)
 {
@@ -57,63 +52,6 @@ wxString Effect::StripAmpersand(const wxString& str)
    return strippedStr;
 }
 
-void Effect::RegisterEffect(Effect *f, int NewFlags)
-{
-   f->mID = sNumEffects;
-   sNumEffects++;
-   if( NewFlags != 0)
-      f->SetEffectFlags( NewFlags );
-
-   // Insert the effect into the list in alphabetical order
-   // A linear search is good enough as long as there are
-   // only a few dozen or even a few hundred effects.
-   wxString name = StripAmpersand(f->GetEffectName());
-   int len = mEffects.GetCount();
-   int i;
-   for(i=0; i<len; i++)
-      if (name.CmpNoCase(StripAmpersand(mEffects[i]->GetEffectName())) < 0) {
-         mEffects.Insert(f, i);
-         break;
-      }
-   if (i==len)
-      mEffects.Add(f);
-}
-
-void Effect::UnregisterEffects()
-{
-   for(int i=0; i<sNumEffects; i++)
-      delete mEffects[i];
-
-   mEffects.Clear();
-}
-
-int Effect::GetNumEffects()
-{
-   return sNumEffects;
-}
-
-Effect *Effect::GetEffect(int ID)
-{
-   for(int i=0; i<sNumEffects; i++)
-      if (mEffects[i]->mID == ID)
-         return mEffects[i];
-   
-   return NULL;
-}
-
-EffectArray *Effect::GetEffects(int flags /* = ALL_EFFECTS */)
-{
-   EffectArray *results = new EffectArray();
-
-   int len = mEffects.GetCount();
-   for(int i=0; i<len; i++) {
-      int g = mEffects[i]->GetEffectFlags();
-      if ((flags & g) == g)
-         results->Add(mEffects[i]);
-   }
-
-   return results;
-}
 
 //
 // public methods
@@ -122,7 +60,7 @@ EffectArray *Effect::GetEffects(int flags /* = ALL_EFFECTS */)
 Effect::Effect()
 {
    mWaveTracks = NULL;
-   m_pOutputWaveTracks = NULL;
+   mOutputWaveTracks = NULL;
 
    // Can change effect flags later (this is the new way)
    // OR using the old way, over-ride GetEffectFlags().
@@ -142,15 +80,14 @@ bool Effect::DoEffect(wxWindow *parent, int flags,
       mWaveTracks = NULL;
    }
 
-   if (m_pOutputWaveTracks) {
-      delete m_pOutputWaveTracks;
-      m_pOutputWaveTracks = NULL;
+   if (mOutputWaveTracks) {
+      delete mOutputWaveTracks;
+      mOutputWaveTracks = NULL;
    }
 
    mFactory = factory;
    mProjectRate = projectRate;
    mParent = parent;
-   mDialog = NULL; // It's up to descendants to set this.
    mTracks = list;
    mT0 = *t0;
    mT1 = *t1;
@@ -171,19 +108,19 @@ bool Effect::DoEffect(wxWindow *parent, int flags,
    bool returnVal = true;
    bool skipFlag = CheckWhetherSkipEffect();
    if (skipFlag == false) {
-      GetActiveProject()->ProgressShow(StripAmpersand(GetEffectName()),
-                                       GetEffectAction());
+      mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
+                                     GetEffectAction());
       returnVal = Process();
-      GetActiveProject()->ProgressHide();
+      delete mProgress;
    }
 
    End();
 
    delete mWaveTracks;
-   if (m_pOutputWaveTracks != mWaveTracks) // If processing completed successfully, they should be the same.
-      delete m_pOutputWaveTracks;
+   if (mOutputWaveTracks != mWaveTracks) // If processing completed successfully, they should be the same.
+      delete mOutputWaveTracks;
    mWaveTracks = NULL;
-   m_pOutputWaveTracks = NULL;
+   mOutputWaveTracks = NULL;
 
    if (returnVal) {
       *t0 = mT0;
@@ -195,23 +132,23 @@ bool Effect::DoEffect(wxWindow *parent, int flags,
 
 bool Effect::TotalProgress(double frac)
 {
-   return !GetActiveProject()->ProgressUpdate((int)(frac*1000 + 0.5));
+   return !mProgress->Update(rint(frac));
 }
 
 bool Effect::TrackProgress(int whichTrack, double frac)
 {
-   return TotalProgress((whichTrack+frac)/mNumTracks);
+   return !mProgress->Update(whichTrack + frac, (double) mNumTracks);
 }
 
 bool Effect::TrackGroupProgress(int whichGroup, double frac)
 {
-   return TotalProgress((whichGroup+frac)/mNumGroups);
+   return !mProgress->Update(whichGroup + frac, (double) mNumGroups);
 }
 
 //
 // private methods
 //
-// Use these two methods to copy the input tracks to m_pOutputWaveTracks, if 
+// Use these two methods to copy the input tracks to mOutputWaveTracks, if 
 // doing the processing on them, and replacing the originals only on success (and not cancel).
 void Effect::CopyInputWaveTracks()
 {
@@ -221,31 +158,39 @@ void Effect::CopyInputWaveTracks()
    // Copy the mWaveTracks, to process the copies.
    TrackListIterator iterIn(mWaveTracks);
    WaveTrack* pInWaveTrack = (WaveTrack*)(iterIn.First());
-   m_pOutputWaveTracks = new TrackList();
+   mOutputWaveTracks = new TrackList();
    WaveTrack* pOutWaveTrack = NULL;
    while (pInWaveTrack != NULL)
    {
       pOutWaveTrack = mFactory->DuplicateWaveTrack(*(WaveTrack*)pInWaveTrack);
-      m_pOutputWaveTracks->Add(pOutWaveTrack);
+      mOutputWaveTracks->Add(pOutWaveTrack);
       pInWaveTrack = (WaveTrack*)(iterIn.Next());
+      
+      //swap on demand tasks - they should now be processed on pOutWaveTrack. 
+      //need to undo this when the user hits cancel.    
+#ifdef EXPERIMENTAL_ONDEMAND      
+ //TODO: this is complicated because concurrent tasks/effects will write over the same blockfile.  Thus if the 
+//compute summary task goes last the effect will be overwritten.  we need a lot of mutexes.
+ //     ODManager::Instance()->ReplaceTaskWaveTrack(pInputTrack,pOutputTrack);
+#endif
    }
 }
 
 
 // If bGoodResult, replace mWaveTracks tracks in mTracks with successfully processed 
-// m_pOutputWaveTracks copies, get rid of old mWaveTracks, and set mWaveTracks to m_pOutputWaveTracks. 
-// Else clear and delete m_pOutputWaveTracks copies.
+// mOutputWaveTracks copies, get rid of old mWaveTracks, and set mWaveTracks to mOutputWaveTracks. 
+// Else clear and delete mOutputWaveTracks copies.
 void Effect::ReplaceProcessedWaveTracks(const bool bGoodResult)
 {
    if (bGoodResult)
    {
-      // Circular replacement of the input wave tracks with the processed m_pOutputWaveTracks tracks. 
+      // Circular replacement of the input wave tracks with the processed mOutputWaveTracks tracks. 
       // But mWaveTracks is temporary, so replace in mTracks. More bookkeeping.
       TrackListIterator iterIn(mWaveTracks);
       WaveTrack* pInWaveTrack = (WaveTrack*)(iterIn.First());
 
-      wxASSERT(m_pOutputWaveTracks != NULL); // Make sure we at least did the CopyInputWaveTracks().
-      TrackListIterator iterOut(m_pOutputWaveTracks);
+      wxASSERT(mOutputWaveTracks != NULL); // Make sure we at least did the CopyInputWaveTracks().
+      TrackListIterator iterOut(mOutputWaveTracks);
       WaveTrack* pOutWaveTrack = (WaveTrack*)(iterOut.First());
 
       TrackListIterator iterAllTracks(mTracks);
@@ -261,6 +206,12 @@ void Effect::ReplaceProcessedWaveTracks(const bool bGoodResult)
                mTracks->Add(pOutWaveTrack);
                if (pTrack == pFirstTrack)
                   pFirstTrack = pOutWaveTrack; // We replaced the first track, so update stop condition.
+                  
+               //swap the wavecache track the ondemand task uses, since now the new one will be kept in the project
+#ifdef EXPERIMENTAL_ONDEMAND      
+               if(ODManager::IsInstanceCreated())
+                  ODManager::Instance()->ReplaceWaveTrack(pInWaveTrack,pOutWaveTrack);
+#endif
             }
             delete pInWaveTrack;
 
@@ -276,12 +227,14 @@ void Effect::ReplaceProcessedWaveTracks(const bool bGoodResult)
 
       // Also need to clean up mWaveTracks, primarily because Preview uses it as the processed tracks. 
       delete mWaveTracks;
-      mWaveTracks = m_pOutputWaveTracks;
+      mWaveTracks = mOutputWaveTracks;
    }
    else
    {
       // Processing failed or was cancelled so throw away the processed tracks.
-      m_pOutputWaveTracks->Clear(true); // true => delete the tracks
+      mOutputWaveTracks->Clear(true); // true => delete the tracks
+      
+      //TODO:undo the non-gui ODTask transfer
    }
 }
 
@@ -308,6 +261,125 @@ void Effect::CountWaveTracks()
       }
       t = iter.Next();
    }
+}
+
+void Effect::HandleLinkedTracksOnGenerate(double length, double t0)
+{
+   AudacityProject *p = (AudacityProject*)mParent;
+   if ( !p || !(p->IsSticky()) || (mT1!=mT0) ) return;
+   
+   TrackListIterator iter(p->GetTracks());
+   
+   int editGroup = 0;
+   bool handleGroup = false;
+   Track *t=iter.First();
+   Track *n=t;
+   
+   while (t){//find edit group number
+      n=iter.Next();
+      if (t->GetSelected()) handleGroup = true;
+      if ( (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
+            || (!n) ) {
+         if (handleGroup){
+            t=iter.First();
+            for (int i=0; i<editGroup; i++){//go to first in edit group
+               while (t && t->GetKind()==Track::Wave) t=iter.Next();
+               while (t && t->GetKind()==Track::Label) t=iter.Next();
+            }
+            while (t && t->GetKind()==Track::Wave){
+               if ( !(t->GetSelected()) ){
+                  //printf("t(w)(gen): %x\n", t);
+                  TrackFactory *factory = p->GetTrackFactory();
+                  WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
+                  tmp->InsertSilence(0.0, length);
+                  tmp->Flush();
+                  ((WaveTrack *)t)->HandlePaste(t0, tmp);
+               }
+               t=iter.Next();
+            }
+            while (t && t->GetKind()==Track::Label){
+               //printf("t(l)(gen): %x\n", t);
+               ((LabelTrack *)t)->ShiftLabelsOnInsert(length, t0);
+               t=iter.Next();         
+            }
+         }
+         editGroup++;
+         handleGroup = false;
+      }
+      t=n;
+   }
+}
+
+bool Effect::HandleGroupChangeSpeed(double m_PercentChange, double mCurT0, double mCurT1)
+{
+   AudacityProject *p = (AudacityProject*)mParent;   
+   if (mCurT1 < mCurT0) return false;
+   TrackListIterator fullIter(p->GetTracks());
+   
+   int editGroup=0;   
+   bool insertSilence = false;
+   
+   double length = ( (mCurT1-mCurT0) / ((100 + m_PercentChange)/100) ) - (mCurT1-mCurT0);
+   if (length < 0) length = -length;  
+   
+   Track *t = fullIter.First();
+   Track *n = t;
+   while (t){//find edit group
+      n=fullIter.Next();
+      if (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
+         editGroup++;
+         
+      if (t->GetSelected()){
+         t=fullIter.First();
+         for (int i=0; i<editGroup; i++){//go to first in edit group
+            while (t && t->GetKind()==Track::Wave) t=fullIter.Next();
+            while (t && t->GetKind()==Track::Label) t=fullIter.Next();
+         }
+         insertSilence = false;
+         while (t && t->GetKind()==Track::Wave){
+            if ( !(t->GetSelected()) ){
+               if (m_PercentChange > 0) insertSilence = true;
+               if (m_PercentChange < 0){
+                  TrackFactory *factory = p->GetTrackFactory();
+                  WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
+                  tmp->InsertSilence(0.0, length);
+                  tmp->Flush();
+                  if ( !( ((WaveTrack *)t)->HandlePaste(mCurT1, tmp)) ) return false;
+               }
+            }
+            t=fullIter.Next();
+         }
+
+         if (insertSilence){
+            t=fullIter.First();
+            for (int i=0; i<editGroup; i++){//go to first in edit group
+               while (t && t->GetKind()==Track::Wave) t=fullIter.Next();
+               while (t && t->GetKind()==Track::Label) t=fullIter.Next();
+            }
+            while ( t && t->GetKind()==Track::Wave ){
+               if (t->GetSelected()){
+                  TrackFactory *factory = p->GetTrackFactory();
+                  WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
+                  tmp->InsertSilence(0.0, length);
+                  tmp->Flush();
+                  double change = (100 + m_PercentChange)/100;
+                  double insertPt = mCurT1 - (mCurT1 - mCurT0) + ((mCurT1 - mCurT0)/change);
+                  if ( !( ((WaveTrack *)t)->HandlePaste(insertPt, tmp)) ) return false;
+               }
+               t=fullIter.Next();
+            }
+         }
+         
+         while (t && t->GetKind()==Track::Label && !insertSilence){
+            ((LabelTrack *)t)->ShiftLabelsOnChangeSpeed(mCurT0, mCurT1, m_PercentChange);
+            t=fullIter.Next();
+         }
+         n=t;
+         editGroup++;//we've gone through a edit group
+      }else
+         t=n;
+   }
+   return true;  
 }
 
 float TrapFloat(float x, float min, float max)
@@ -369,11 +441,6 @@ void Effect::Preview()
    if (!::MixAndRender(mWaveTracks, mFactory, rate, floatSample, t0, t1,
                        &mixLeft, &mixRight))
    {
-      if (mDialog)
-      {
-         GetActiveProject()->SetEnabledWindow(mDialog);
-         mDialog->SetFocus();
-      }
       return;
    }
 
@@ -396,10 +463,10 @@ void Effect::Preview()
    // Effect is already inited; we call Process, End, and then Init
    // again, so the state is exactly the way it was before Preview
    // was called.
-   GetActiveProject()->ProgressShow(StripAmpersand(GetEffectName()),
-                                    _("Preparing preview"));
+   mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
+                                  _("Preparing preview"));
    bool bSuccess = Process();
-   GetActiveProject()->ProgressHide(mDialog);
+   delete mProgress;
    End();
    Init();
    if (bSuccess)
@@ -426,13 +493,12 @@ void Effect::Preview()
       if (token) {
          bool previewing = true;
 
-         GetActiveProject()->ProgressShow(StripAmpersand(GetEffectName()),
-                                          _("Previewing"));
+         mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
+                                        _("Previewing"));
 
          while (gAudioIO->IsStreamActive(token) && previewing) {
             ::wxMilliSleep(100);
-            int t = int(1000 * (gAudioIO->GetStreamTime() / t1));
-            previewing = GetActiveProject()->ProgressUpdate(t);
+            previewing = mProgress->Update(gAudioIO->GetStreamTime(), t1);
          }
          gAudioIO->StopStream();
 
@@ -440,7 +506,7 @@ void Effect::Preview()
             ::wxMilliSleep(100);
          }
 
-         GetActiveProject()->ProgressHide(mDialog);
+         delete mProgress;
       }
       else {
          wxMessageBox(_("Error while opening sound device. Please check the output device settings and the project sample rate."),
@@ -448,15 +514,12 @@ void Effect::Preview()
       }
    }
 
-   if (mWaveTracks == m_pOutputWaveTracks) // typical case, but depends on descendant implementation
-      m_pOutputWaveTracks = NULL; 
+   if (mWaveTracks == mOutputWaveTracks) // typical case, but depends on descendant implementation
+      mOutputWaveTracks = NULL; 
    mWaveTracks->Clear(true); // true => delete the tracks
    delete mWaveTracks;
 
    mWaveTracks = saveWaveTracks;
-
-   if (mDialog)
-      mDialog->SetFocus();
 }
 
 EffectDialog::EffectDialog(wxWindow * parent,

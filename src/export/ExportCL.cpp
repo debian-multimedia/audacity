@@ -199,7 +199,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL);
+   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -207,17 +207,19 @@ public:
                double t0,
                double t1,
                MixerSpec *mixerSpec = NULL,
-               Tags *metadata = NULL);
+               Tags *metadata = NULL,
+               int subformat = 0);
 };
 
 ExportCL::ExportCL()
 :  ExportPlugin()
 {
-   SetFormat(wxT("CL"));
-   SetExtension(wxT(""));
-   SetMaxChannels(255);
-   SetCanMetaData(false);
-   SetDescription(_("(external program)"));
+   AddFormat();
+   SetFormat(wxT("CL"),0);
+   AddExtension(wxT(""),0);
+   SetMaxChannels(255,0);
+   SetCanMetaData(false,0);
+   SetDescription(_("(external program)"),0);
 }
 
 void ExportCL::Destroy()
@@ -232,7 +234,8 @@ bool ExportCL::Export(AudacityProject *project,
                       double t0,
                       double t1, 
                       MixerSpec *mixerSpec,
-                      Tags *metadata)
+                      Tags *metadata,
+                      int subformat)
 {
    ExportCLProcess *p;
    wxString output;
@@ -319,10 +322,10 @@ bool ExportCL::Export(AudacityProject *project,
    bool cancelling = false;
 
    // Prepare the progress display
-   GetActiveProject()->ProgressShow(_("Export"),
+   ProgressDialog *progress = new ProgressDialog(_("Export"),
       selectionOnly ?
       _("Exporting the selected audio using command-line encoder") :
-      _("Exporting the entire project using command-line encoder"));
+   _("Exporting the entire project using command-line encoder"));
 
    // Start piping the mixed data to the command
    while (!cancelling && p->IsActive() && os->IsOk()) {
@@ -365,13 +368,11 @@ bool ExportCL::Export(AudacityProject *project,
       }
 
       // Update the progress display
-      int progressvalue = lrint(1000 * ((mixer->MixGetCurrentTime()-t0) /
-                                       (t1-t0)));
-      cancelling = !GetActiveProject()->ProgressUpdate(progressvalue);
+      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
    // Done with the progress display
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    // Should make the process die
    p->CloseOutput();
@@ -413,7 +414,7 @@ bool ExportCL::Export(AudacityProject *project,
    return true;
 }
 
-bool ExportCL::DisplayOptions(AudacityProject *project)
+bool ExportCL::DisplayOptions(AudacityProject *project, int format)
 {
    ExportCLOptions od(project);
 

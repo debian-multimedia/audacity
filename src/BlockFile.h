@@ -21,6 +21,13 @@
 #include "xml/XMLTagHandler.h"
 #include "xml/XMLWriter.h"
 
+#if defined(_WIN32)
+  //taken from private.h (wxWidgets internal declarations)
+  #ifndef MAX_PATH
+    #define MAX_PATH  260
+  #endif
+#endif
+
 class wxFFile;
 
 class SummaryInfo {
@@ -71,6 +78,8 @@ class BlockFile {
 
    /// Gets the filename of the disk file associated with this BlockFile
    virtual wxFileName GetFileName();
+   virtual void SetFileName(wxFileName &name);
+
    virtual sampleCount GetLength() { return mLen; }
 
    /// Locks this BlockFile, to prevent it from being moved
@@ -92,6 +101,16 @@ class BlockFile {
 
    /// Returns TRUE if this block references another disk file
    virtual bool IsAlias() { return false; }
+   
+   /// Returns TRUE if this block's complete summary has been computed and is ready (for OD)
+   virtual bool IsSummaryAvailable(){return true;}
+
+   /// Returns TRUE if this block's complete data is ready to be accessed by Read()
+   virtual bool IsDataAvailable(){return true;}
+   
+   /// Returns TRUE if the summary has not yet been written, but is actively being computed and written to disk 
+   virtual bool IsSummaryBeingComputed(){return false;}
+   
    /// Create a new BlockFile identical to this, using the given filename
    virtual BlockFile *Copy(wxFileName newFileName) = 0;
 
@@ -108,13 +127,21 @@ class BlockFile {
    //be able to tell the logging to shut up from outside too.
    void SilenceLog() { mSilentLog = TRUE; }
 
+   ///when the project closes, it locks the blockfiles.
+   ///Override this in case it needs special treatment
+   virtual void CloseLock(){Lock();}
 
  private:
 
    friend class DirManager;
+   //needed for Ref/Deref access.
+   friend class ODComputeSummaryTask;
+   friend class ODDecodeTask;
+   friend class ODPCMAliasBlockFile;
 
    virtual void Ref();
    virtual bool Deref();
+   virtual int RefCount(){return mRefCount;}
 
  protected:
    /// Calculate summary data for the given sample data

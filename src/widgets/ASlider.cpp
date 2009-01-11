@@ -34,6 +34,14 @@ of an LWSlider or ASlider.
 
 *//*******************************************************************/
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
+#ifndef WX_PRECOMP
+// Include your minimal set of headers here, or wx.h
+#include <wx/window.h>
+#endif
+
 
 #include "../Audacity.h"
 
@@ -766,7 +774,7 @@ void LWSlider::OnMouseEvent(wxMouseEvent & event)
       //
       // Do not change position until first drag.  This helps
       // with unintended value changes.
-      if( tolerantThumbRect.Inside( event.GetPosition() ) )
+      if( tolerantThumbRect.Contains( event.GetPosition() ) )
       {
          // Remember mouse position and current value
          mClickX = event.m_x;
@@ -1065,6 +1073,7 @@ void LWSlider::Refresh()
 BEGIN_EVENT_TABLE(ASlider, wxWindow)
    EVT_CHAR(ASlider::OnKeyEvent)
    EVT_MOUSE_EVENTS(ASlider::OnMouseEvent)
+   EVT_MOUSE_CAPTURE_LOST(ASlider::OnCaptureLost)
    EVT_PAINT(ASlider::OnPaint)
    EVT_SIZE(ASlider::OnSize)
    EVT_ERASE_BACKGROUND(ASlider::OnErase)
@@ -1158,6 +1167,12 @@ void ASlider::OnPaint(wxPaintEvent &event)
 void ASlider::OnMouseEvent(wxMouseEvent &event)
 {
    mLWSlider->OnMouseEvent(event);
+}
+
+void ASlider::OnCaptureLost(wxMouseCaptureLostEvent &event)
+{
+   wxMouseEvent e(wxEVT_LEFT_UP);
+   mLWSlider->OnMouseEvent(e);
 }
 
 void ASlider::OnKeyEvent(wxKeyEvent &event)

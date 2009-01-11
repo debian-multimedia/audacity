@@ -89,7 +89,7 @@ void MixerToolBar::Populate()
 
    mOutputSlider = new ASlider(this, wxID_ANY, _("Output Volume"),
                                wxDefaultPosition, wxSize(130, 25));
-   mOutputSlider->SetLabel(_("Slider-Output"));
+   mOutputSlider->SetName(_("Slider Output"));
    Add(mOutputSlider, 0, wxALIGN_CENTER);
 
    mRecordBitmap = new wxBitmap(theTheme.Bitmap(bmpMic));
@@ -100,7 +100,7 @@ void MixerToolBar::Populate()
 
    mInputSlider = new ASlider(this, wxID_ANY, _("Input Volume"),
                               wxDefaultPosition, wxSize(130, 25));
-   mInputSlider->SetLabel(_("Slider-Input"));
+   mInputSlider->SetName(_("Slider Input"));
    Add(mInputSlider, 0, wxALIGN_CENTER);
 
    mInputSourceChoice = NULL;
@@ -217,7 +217,7 @@ void MixerToolBar::UpdatePrefs()
    mInputSourceChoice->SetSelection(inputSource);
 
    // Resize the control
-   mInputSourceChoice->SetSize(mInputSourceChoice->GetBestFittingSize());
+   mInputSourceChoice->SetSize(mInputSourceChoice->GetEffectiveMinSize());
 
    // Show or hide the control based on input sources
    mInputSourceChoice->Show( inputSources.GetCount() != 0 );

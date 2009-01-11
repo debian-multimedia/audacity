@@ -21,6 +21,7 @@
 #include <wx/brush.h>
 #include <wx/pen.h>
 #include "Experimental.h"
+#include "Sequence.h"
 
 class wxDC;
 class wxRect;
@@ -54,7 +55,6 @@ class AUDACITY_DLL_API TrackArtist {
 
    void DrawVRuler(Track * t, wxDC * dc, wxRect & r);
    int GetWaveYPos(float value, int height, bool dB, float dBr);
-   int GetWaveYPosUnclipped(float value, int height, bool dB, float dBr);
 
    void SetInset(int left, int top, int right, int bottom);
 
@@ -70,17 +70,13 @@ class AUDACITY_DLL_API TrackArtist {
                      bool drawEnvelope, bool drawSamples,
                      bool drawSliders, bool dB, bool muted);
 
-#ifdef LOGARITHMIC_SPECTRUM
    void DrawSpectrum(WaveTrack *track,
                      wxDC & dc, wxRect & r,
                      ViewInfo * viewInfo, bool autocorrelation, bool logF);
-#else
-   void DrawSpectrum(WaveTrack *track,
-                     wxDC & dc, wxRect & r,
-                     ViewInfo * viewInfo, bool autocorrelation);
-#endif
+#ifdef USE_MIDI
    void DrawNoteTrack(NoteTrack *track,
                       wxDC & dc, wxRect & r, ViewInfo * viewInfo);
+#endif // USE_MIDI
 
    void DrawLabelTrack(LabelTrack *track,
                        wxDC & dc, wxRect & r, ViewInfo * viewInfo);
@@ -100,15 +96,9 @@ class AUDACITY_DLL_API TrackArtist {
                          bool drawSliders,
                          bool dB, bool muted);
 
-#ifdef LOGARITHMIC_SPECTRUM
    void DrawClipSpectrum(WaveTrack *track, WaveClip *clip,
                          wxDC & dc, wxRect & r,
                          ViewInfo * viewInfo, bool autocorrelation, bool logF);
-#else
-   void DrawClipSpectrum(WaveTrack *track, WaveClip *clip,
-                         wxDC & dc, wxRect & r,
-                         ViewInfo * viewInfo, bool autocorrelation);
-#endif
 
    void SetBackgroundBrushes(wxBrush unselectedBrush, wxBrush selectedBrush,
 			     wxPen unselectedPen, wxPen selectedPen) {
@@ -126,7 +116,7 @@ class AUDACITY_DLL_API TrackArtist {
    int mInsetBottom;
 
    float mdBrange;
-   bool mShowClipping;
+   long mShowClipping;
 
    wxBrush blankBrush;
    wxBrush unselectedBrush;
@@ -143,6 +133,8 @@ class AUDACITY_DLL_API TrackArtist {
    wxPen muteRmsPen;
    wxPen selsamplePen;
    wxPen muteSamplePen;
+   wxPen odProgressNotYetPen;
+   wxPen odProgressDonePen;
    wxPen shadowPen;
    wxPen clippedPen;
    wxPen muteClippedPen;
@@ -163,7 +155,7 @@ class AUDACITY_DLL_API TrackArtist {
    // Waveform utility functions
 
    void DrawWaveformBackground(wxDC &dc, wxRect r, uchar *imageBuffer,
-                               int *where, int ssel0, int ssel1,
+                               sampleCount *where, sampleCount ssel0, sampleCount ssel1,
                                double *env, 
                                float zoomMin, float zoomMax,
                                bool dB, bool drawEnvelope);
@@ -187,8 +179,8 @@ class AUDACITY_DLL_API TrackArtist {
    void DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
                       float zoomMin, float zoomMax,
                       double *envValues,
-                      float *min, float *max, float *rms,
-                      bool dB, bool muted);
+                      float *min, float *max, float *rms,int* bl,
+                      bool dB, bool muted, bool showProgress);
 
    void DrawNegativeOffsetTrackArrows(wxDC &dc, wxRect &r);
 

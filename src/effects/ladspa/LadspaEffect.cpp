@@ -43,8 +43,10 @@ effects from this one class.
 #include "LadspaEffect.h"       // This class's header file
 #include "../Internat.h"
 
-LadspaEffect::LadspaEffect(const LADSPA_Descriptor *data)
-{
+LadspaEffect::LadspaEffect(const LADSPA_Descriptor *data,
+                           const std::set<wxString>& categories)
+   : mCategories(categories) {
+   
    mData = data;
    pluginName = LAT1CTOWX(mData->Name);
 
@@ -149,6 +151,11 @@ wxString LadspaEffect::GetEffectName()
       return pluginName;
 }
 
+std::set<wxString> LadspaEffect::GetEffectCategories()
+{
+   return mCategories;
+}
+
 wxString LadspaEffect::GetEffectIdentifier()
 {
    wxStringTokenizer st(pluginName, wxT(" "));
@@ -218,7 +225,7 @@ bool LadspaEffect::PromptUser()
 }
 
 void LadspaEffect::GetSamples(WaveTrack *track,
-                              longSampleCount *start,
+                              sampleCount *start,
                               sampleCount *len)
 {
    double trackStart = track->GetStartTime();
@@ -235,7 +242,7 @@ void LadspaEffect::GetSamples(WaveTrack *track,
 
    if (t1 > t0) {
       *start = track->TimeToLongSamples(t0);
-      longSampleCount end = track->TimeToLongSamples(t1);
+      sampleCount end = track->TimeToLongSamples(t1);
       *len = (sampleCount)(end - *start);
    }
    else {
@@ -246,15 +253,15 @@ void LadspaEffect::GetSamples(WaveTrack *track,
 
 bool LadspaEffect::Process()
 {
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    int count = 0;
    Track *left = iter.First();
    Track *right;
    while(left) {
-      longSampleCount lstart, rstart;
+      sampleCount lstart = 0, rstart = 0;
       sampleCount len;
       GetSamples((WaveTrack *)left, &lstart, &len);
       
@@ -287,8 +294,8 @@ bool LadspaEffect::Process()
 }
 
 bool LadspaEffect::ProcessStereo(int count, WaveTrack *left, WaveTrack *right,
-                                 longSampleCount lstart, 
-                                 longSampleCount rstart,
+                                 sampleCount lstart, 
+                                 sampleCount rstart,
                                  sampleCount len)
 {
    /* Allocate buffers */
@@ -334,8 +341,8 @@ bool LadspaEffect::ProcessStereo(int count, WaveTrack *left, WaveTrack *right,
    // Actually perform the effect here
 
    sampleCount originalLen = len;
-   longSampleCount ls = lstart;
-   longSampleCount rs = rstart;
+   sampleCount ls = lstart;
+   sampleCount rs = rstart;
    while (len) {
       int block = mBlockSize;
       if (block > len)
@@ -612,14 +619,16 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
    gridSizer->AddGrowableCol(3);
 
    for (p = 0; p < numParams; p++) {
-      item = new wxStaticText(w, 0, wxString(mData->PortNames[ports[p]], wxConvISO8859_1));
-      gridSizer->Add(item, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
+      wxString labelText = LAT1CTOWX(mData->PortNames[ports[p]]);
+      item = new wxStaticText(w, 0, labelText + wxT(":"));
+      gridSizer->Add(item, 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT | wxALL, 5);
 
       wxString fieldText;
       LADSPA_PortRangeHint hint = mData->PortRangeHints[ports[p]];
 
       if (LADSPA_IS_HINT_TOGGLED(hint.HintDescriptor)) {
          toggles[p] = new wxCheckBox(w, p, wxT(""));
+         toggles[p]->SetName(labelText);
          toggles[p]->SetValue(inputControls[ports[p]] > 0);
          gridSizer->Add(toggles[p], 0, wxALL, 5);
          ConnectFocus(toggles[p]);
@@ -635,6 +644,7 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
             fieldText = Internat::ToDisplayString(inputControls[ports[p]]);
 
          fields[p] = new wxTextCtrl(w, p, fieldText);
+         fields[p]->SetName(labelText);
          gridSizer->Add(fields[p], 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
          ConnectFocus(fields[p]);
 
@@ -677,6 +687,7 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
                           0, 0, 1000,
                           wxDefaultPosition,
                           wxSize(200, -1));
+         sliders[p]->SetName(labelText);
          gridSizer->Add(sliders[p], 0, wxALIGN_CENTER_VERTICAL | wxEXPAND | wxALL, 5);
          ConnectFocus(sliders[p]);
 
@@ -699,6 +710,7 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
       item = new wxStaticText(w, 0, _("Length (seconds)"));
       gridSizer->Add(item, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
       mSeconds = new wxTextCtrl(w, LADSPA_SECONDS_ID, Internat::ToDisplayString(length));
+      mSeconds->SetName(_("Length (seconds)"));
       gridSizer->Add(mSeconds, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
       gridSizer->Add(1, 1, 0);
       gridSizer->Add(1, 1, 0);
@@ -717,8 +729,6 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
    Layout();
    Fit();
    SetSizeHints(GetSize());
-
-   eff->SetDialog(this);
 }
 
 LadspaEffectDialog::~LadspaEffectDialog()

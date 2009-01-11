@@ -282,10 +282,10 @@ bool EffectNoiseRemoval::Process()
 
    // This same code will both remove noise and profile it,
    // depending on 'mDoProfile'
-   this->CopyInputWaveTracks(); // Set up m_pOutputWaveTracks.
+   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(m_pOutputWaveTracks);
+   TrackListIterator iter(mOutputWaveTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -295,8 +295,8 @@ bool EffectNoiseRemoval::Process()
       double t1 = mT1 > trackEnd? trackEnd: mT1;
 
       if (t1 > t0) {
-         longSampleCount start = track->TimeToLongSamples(t0);
-         longSampleCount end = track->TimeToLongSamples(t1);
+         sampleCount start = track->TimeToLongSamples(t0);
+         sampleCount end = track->TimeToLongSamples(t1);
          sampleCount len = (sampleCount)(end - start);
 
          if (!ProcessOne(count, track, start, len)) {
@@ -353,6 +353,8 @@ void EffectNoiseRemoval::Initialize()
    mOneBlockAttackDecay = (int)(mNoiseGain / (mAttackDecayBlocks - 1));
    mMinSignalBlocks =
       (int)(mMinSignalTime * mSampleRate / (mWindowSize / 2));
+   if( mMinSignalBlocks < 1 )
+      mMinSignalBlocks = 1;
    mHistoryLen = (2 * mAttackDecayBlocks) - 1;
 
    if (mHistoryLen < mMinSignalBlocks)
@@ -615,7 +617,7 @@ void EffectNoiseRemoval::RemoveNoise()
 }
 
 bool EffectNoiseRemoval::ProcessOne(int count, WaveTrack * track,
-                                    longSampleCount start, sampleCount len)
+                                    sampleCount start, sampleCount len)
 {
    if (track == NULL)
       return false;
@@ -631,7 +633,7 @@ bool EffectNoiseRemoval::ProcessOne(int count, WaveTrack * track,
 
    bool bLoopSuccess = true;
    sampleCount blockSize;
-   longSampleCount samplePos = start;
+   sampleCount samplePos = start;
    while (samplePos < start + len) {
       //Get a blockSize of samples (smaller than the size of the buffer)
       blockSize = track->GetBestBlockSize(samplePos);
@@ -735,8 +737,6 @@ NoiseRemovalDialog::NoiseRemovalDialog(EffectNoiseRemoval * effect,
       (wxButton *)wxWindow::FindWindowById(ID_EFFECT_PREVIEW, this);
    m_pButton_RemoveNoise =
       (wxButton *)wxWindow::FindWindowById(wxID_OK, this);
-
-   effect->SetDialog(this);
 }
 
 void NoiseRemovalDialog::OnGetProfile( wxCommandEvent &event )

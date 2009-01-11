@@ -118,9 +118,8 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
                             rate, format);
 
    wxYield();
-   GetActiveProject()->ProgressShow(_NoAcc("&Mix and Render"),
-                                    _("Mixing and rendering tracks"));
-   wxBusyCursor busy;
+   ProgressDialog *progress = new ProgressDialog(_NoAcc("&Mix and Render"),
+                                                 _("Mixing and rendering tracks"));
    
    bool bCancel = false;
    while(!bCancel) {
@@ -141,11 +140,10 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
          mixRight->Append(buffer, format, blockLen);
       }
 
-      int progressvalue = int (1000 * (mixer->MixGetCurrentTime() / totalTime));
-      bCancel = !GetActiveProject()->ProgressUpdate(progressvalue);
+      bCancel = !progress->Update(mixer->MixGetCurrentTime(), totalTime);
    }
 
-   GetActiveProject()->ProgressHide();
+   delete progress;
 
    mixLeft->Flush();
    if (!mono) 
@@ -191,7 +189,7 @@ Mixer::Mixer(int numInputTracks, WaveTrack **inputTracks,
 
    mNumInputTracks = numInputTracks;
    mInputTrack = new WaveTrack*[mNumInputTracks];
-   mSamplePos = new longSampleCount[mNumInputTracks];
+   mSamplePos = new sampleCount[mNumInputTracks];
    for(i=0; i<mNumInputTracks; i++) {
       mInputTrack[i] = inputTracks[i];
       mSamplePos[i] = inputTracks[i]->TimeToLongSamples(startTime);
@@ -323,11 +321,11 @@ void MixBuffers(int numChannels, int *channelFlags, float *gains,
 }
    
 sampleCount Mixer::MixVariableRates(int *channelFlags, WaveTrack *track,
-                                    longSampleCount *pos, float *queue,
+                                    sampleCount *pos, float *queue,
                                     int *queueStart, int *queueLen,
                                     Resample *SRC)
 {
-   double trackRate = track->GetRate();
+   int trackRate = (int)(track->GetRate());
    double initialWarp = mRate / trackRate;
    double t = *pos / trackRate;
    int sampleSize = SAMPLE_SIZE(floatSample);
@@ -336,17 +334,22 @@ sampleCount Mixer::MixVariableRates(int *channelFlags, WaveTrack *track,
    sampleCount out = 0;
 
    // Find the last sample
-   longSampleCount last = -1;
+   sampleCount last = -1;
    WaveClipList::Node* it = track->GetClipIterator();
    while (it) {
-      longSampleCount end = it->GetData()->GetEndSample();
+      sampleCount end = it->GetData()->GetEndSample();
       if (end > last) {
          last = end;
       }
       it = it->GetNext();
    }
 
-   longSampleCount max = trackRate * mT1;
+   sampleCount max = (sampleCount) (trackRate * mT1);
+   /* time is floating point. Sample rate is integer. The number of samples
+    * has to be integer, but the multiplication gives a float result, which we
+    * round to get an integer result. TODO: is this always right or can it be
+    * off by one sometimes? Can we not get this information directly from the
+    * clip (which must know) rather than convert the time? */
    if (last > max)
       last = max;
 
@@ -427,7 +430,7 @@ sampleCount Mixer::MixVariableRates(int *channelFlags, WaveTrack *track,
 }
 
 sampleCount Mixer::MixSameRate(int *channelFlags, WaveTrack *track,
-                               longSampleCount *pos)
+                               sampleCount *pos)
 {
    int slen = mMaxOut;
    int c;
@@ -461,7 +464,7 @@ sampleCount Mixer::MixSameRate(int *channelFlags, WaveTrack *track,
    return slen;
 }
 
-sampleCount Mixer::Process(int maxToProcess)
+sampleCount Mixer::Process(sampleCount maxToProcess)
 {
    if (mT >= mT1)
       return 0;

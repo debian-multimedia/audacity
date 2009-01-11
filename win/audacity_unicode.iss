@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-unicode-1.3.5
+OutputBaseFilename=audacity-win-unicode-1.3.6
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -13,7 +13,7 @@ SolidCompression=yes
 
 ; installer-related directives
 AppName=Audacity 1.3 Beta (Unicode)
-AppVerName=Audacity 1.3.5 (Unicode)
+AppVerName=Audacity 1.3.6 (Unicode)
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
@@ -59,10 +59,32 @@ Name: associate_aup; Description: "&Associate Audacity project files"; GroupDesc
 [Files]
 Source: "..\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\win\unicode_release\audacity.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\win\unicode_release\Languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
-Source: "..\win\unicode_release\Nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion
-Source: "..\win\unicode_release\Plug-Ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny, fadein.ny, fadeout.ny, undcbias.ny"; Flags: ignoreversion
+Source: "..\win\unicode release\audacity.exe"; DestDir: "{app}"; Flags: ignoreversion
+
+; wxWidgets DLLs. Be specific (not *.dll) so we don't accidentally distribute avformat.dll, for example.
+; Don't use the WXWIN environment variable, because...
+; 1) Can't get the documented {%WXWIN|default dir} parsing to work.
+; 2) Need the DLL's in the release dir for testing, anyway.
+Source: "..\win\unicode release\wxbase28u_net_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\unicode release\wxbase28u_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\unicode release\wxmsw28u_adv_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\unicode release\wxmsw28u_core_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\win\unicode release\wxmsw28u_html_vc_custom.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+; MSVC runtime DLLs. Some users can't put these in the system dir, so just put them in the EXE dir.
+; It's legal, per http://www.fsf.org/licensing/licenses/gpl-faq.html#WindowsRuntimeAndGPL .
+; This is not an ideal solution, but should need the least tech support.
+; We'll know we have the right version, don't step on anybody else's older version, and
+; it's easy to make the zip (and they match better).
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\Microsoft.VC80.CRT.manifest"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcp80.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 8\VC\redist\x86\Microsoft.VC80.CRT\msvcr80.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+Source: "..\win\unicode release\languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
+Source: "..\win\unicode release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
+Source: "..\win\unicode release\nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion
+Source: "..\win\unicode release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny, fadein.ny, fadeout.ny, undcbias.ny"; Flags: ignoreversion
+
 
 
 [Icons]

@@ -31,6 +31,7 @@
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "../Experimental.h"
 
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
@@ -174,7 +175,7 @@ void ControlToolBar::Populate()
       ID_PAUSE_BUTTON,  true,  _("Pause"), _("Pause"));
 
    mPlay = MakeButton( bmpPlay, bmpPlayDisabled, 
-      ID_PLAY_BUTTON, true, _("Play"), _("Play (Shift for loop-play)"));
+      ID_PLAY_BUTTON, true, _("Play"), _("Play (Shift for Loop Play)"));
 
    MakeLoopImage();
 
@@ -188,7 +189,7 @@ void ControlToolBar::Populate()
       ID_FF_BUTTON, false, _("End"), _("Skip to End"));
 
    mRecord = MakeButton(bmpRecord, bmpRecordDisabled,
-      ID_RECORD_BUTTON, true, _("Record"), _("Record"));
+      ID_RECORD_BUTTON, true, _("Record"), _("Record (Shift for Append Record)"));
 
    mBatch = MakeButton(bmpCleanSpeech,bmpCleanSpeechDisabled,
       ID_BATCH_BUTTON, false, _("Clean Speech"), _("Clean Speech"));
@@ -331,9 +332,12 @@ void ControlToolBar::EnableDisableButtons()
    // Only interested in audio type tracks
    if (p) {
       TrackListIterator iter( p->GetTracks() );
-
       for (Track *t = iter.First(); t; t = iter.Next()) {
-         if (t->GetKind() == Track::Wave) {
+         if (t->GetKind() == Track::Wave
+#if defined(USE_MIDI)
+         || t->GetKind() == Track::Note
+#endif          
+         ) {
             tracks = true;
             break;
          }
@@ -500,7 +504,10 @@ void ControlToolBar::PlayPlayRegion(double t0, double t1,
          {
             token = gAudioIO->StartStream(
                mCutPreviewTracks->GetWaveTrackArray(false),
-               WaveTrackArray(), NULL, p->GetRate(), tcp0, tcp1, p, false,
+               WaveTrackArray(), 
+/* REQUIRES PORTMIDI */
+//               NoteTrackArray(),
+			   NULL, p->GetRate(), tcp0, tcp1, p, false,
                t0, t1-t0);
          } else
          {
@@ -515,7 +522,10 @@ void ControlToolBar::PlayPlayRegion(double t0, double t1,
             timetrack = t->GetTimeTrack();
          }
          token = gAudioIO->StartStream(t->GetWaveTrackArray(false),
-                               WaveTrackArray(), timetrack,
+                               WaveTrackArray(),
+/* REQUIRES PORTMIDI */
+//							   t->GetNoteTrackArray(false),
+							   timetrack,
                                p->GetRate(), t0, t1, p, looped);
       }
       if (token != 0) {
@@ -712,6 +722,9 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
 
    if (p) {
       TrackList *t = p->GetTracks();
+      TrackListIterator it(t);
+      if(it.First() == NULL)
+         mRecord->SetShift(false);
       double t0 = p->GetSel0();
       double t1 = p->GetSel1();
       if (t1 == t0)
@@ -720,14 +733,23 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       /* TODO: set up stereo tracks if that is how the user has set up
        * their preferences, and choose sample format based on prefs */
       WaveTrackArray newRecordingTracks, playbackTracks;
+/* REQUIRES PORTMIDI */
+//      NoteTrackArray midiTracks;
 
       bool duplex;
       gPrefs->Read(wxT("/AudioIO/Duplex"), &duplex, true);
-      if (duplex)
+            
+      if(duplex){
          playbackTracks = t->GetWaveTrackArray(false);
-      else
+/* REQUIRES PORTMIDI */
+//		 midiTracks = t->GetNoteTrackArray(false);
+     }
+      else {
          playbackTracks = WaveTrackArray();
-
+/* REQUIRES PORTMIDI */
+//		 midiTracks = NoteTrackArray();
+     }
+      
       // If SHIFT key was down, the user wants append to tracks
       int recordingChannels = 0;
       bool shifted = mRecord->WasShiftDown();
@@ -781,7 +803,7 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
          t1 = 1000000000.0;     // record for a long, long time (tens of years)
       }
       else {
-         recordingChannels = gPrefs->Read(wxT("/AudioIO/RecordChannels"), 1);
+         recordingChannels = gPrefs->Read(wxT("/AudioIO/RecordChannels"), 2);
          for (int c = 0; c < recordingChannels; c++) {
             WaveTrack *newTrack = p->GetTrackFactory()->NewWaveTrack();
 
@@ -821,7 +843,10 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       }
 
       int token = gAudioIO->StartStream(playbackTracks,
-                                        newRecordingTracks, t->GetTimeTrack(),
+                                        newRecordingTracks,
+/* REQUIRES PORTMIDI */
+//                                        midiTracks,
+                                        t->GetTimeTrack(),
                                         p->GetRate(), t0, t1, p);
 
       bool success = (token != 0);
