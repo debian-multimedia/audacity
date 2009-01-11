@@ -1,0 +1,21 @@
+--- audacity-1.3.5/src/toolbars/SelectionBar.cpp~	2008-05-07 22:19:50.000000000 +0100
++++ audacity-1.3.5/src/toolbars/SelectionBar.cpp	2008-05-19 04:13:33.226481108 +0100
+@@ -447,16 +447,9 @@
+    }
+ }
+ 
+-void SelectionBar::OnRate(wxCommandEvent & WXUNUSED(event))
++void SelectionBar::OnRate(wxCommandEvent &evt)
+ {
+-   int nSel = mRateBox->GetSelection();
+-   wxString sValue;
+-   if (nSel != -1) // one of the existing choices
+-      sValue = mRateBox->GetString(nSel);
+-   else
+-      sValue = mRateBox->GetValue();
+-
+-   if (sValue.ToDouble(&mRate) && // is a numeric value
++   if (evt.GetString().ToDouble(&mRate) && // is a numeric value
+          (mRate != 0.0))
+    {
+       if (mLeftTime) mLeftTime->SetSampleRate(mRate);

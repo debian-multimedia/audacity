@@ -1,0 +1,4 @@
+version=3
+
+# Pattern
+http://heanet.dl.sourceforge.net/sourceforge/audacity/audacity-src-([\d.]*)\.tar\.bz2 debian uupdate

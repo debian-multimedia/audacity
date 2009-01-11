@@ -1,0 +1,46 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/gnome.mk
+include /usr/share/cdbs/1/rules/simple-patchsys.mk
+include /usr/share/cdbs/1/rules/utils.mk
+
+# only enable jack on i386 and powerpc (See #406754)
+ifeq (i386,$(DEB_HOST_ARCH))
+T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
+else
+ ifeq (powerpc, ,$(DEB_HOST_ARCH))
+T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
+ else
+  ifeq (amd64, ,$(DEB_HOST_ARCH))
+T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
+  else
+T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=no
+  endif
+ endif
+endif
+
+DEB_CONFIGURE_EXTRA_FLAGS := $(T1_DEB_CONFIGURE_EXTRA_FLAGS) \
+                             --with-libsndfile=system \
+                             --with-vorbis=system \
+			     --with-id3tag=system \
+			     --with-libmad=system \
+			     --with-libflac=system \
+			     --with-expat=system \
+			     --with-portaudio=v19 \
+			     --enable-unicode \
+			     --without-portmixer
+
+DEB_COMPRESS_EXCLUDE := *.htb
+
+#binary-install/audacity::
+#	dh_desktop -paudacity
+#	dh_installmime -paudacity
+
+binary-post-install/audacity::
+	# Don't package unnecessary copy of GPL
+	rm debian/audacity/usr/share/doc/audacity/LICENSE.txt
+
+clean::
+	rm -f lib-src/libpormixer.a
+
