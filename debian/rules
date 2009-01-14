@@ -44,4 +44,3 @@ binary-post-install/audacity::
 
 clean::
 	rm -f lib-src/libpormixer.a
-
