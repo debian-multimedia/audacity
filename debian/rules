@@ -26,6 +26,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(T1_DEB_CONFIGURE_EXTRA_FLAGS) \
 			     --with-id3tag=system \
 			     --with-libmad=system \
 			     --with-libflac=system \
+			     --with-libtwolame=system \
 			     --with-expat=system \
 			     --with-portaudio=v19 \
 			     --enable-unicode \

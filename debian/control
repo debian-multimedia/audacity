@@ -21,6 +21,7 @@ Build-Depends: autotools-dev,
                libsamplerate0-dev,
                libsndfile1-dev,
                libsoundtouch1-dev,
+               libtwolame-dev,
                libvorbis-dev (>= 1.0.0-3),
                libwxgtk2.8-dev,
                zip
@@ -39,4 +40,4 @@ Description: A fast, cross-platform audio editor
  analysis tools.  Editing is very fast and provides unlimited
  undo/redo.
  .
- Supported file formats include Ogg Vorbis, MP3, WAV, AIFF, and AU.
+ Supported file formats include Ogg Vorbis, MP2, MP3, WAV, AIFF, and AU.
