@@ -9,10 +9,10 @@ include /usr/share/cdbs/1/rules/utils.mk
 ifeq (i386,$(DEB_HOST_ARCH))
 T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
 else
- ifeq (powerpc, ,$(DEB_HOST_ARCH))
+ ifeq (powerpc,$(DEB_HOST_ARCH))
 T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
  else
-  ifeq (amd64, ,$(DEB_HOST_ARCH))
+  ifeq (amd64,$(DEB_HOST_ARCH))
 T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=yes
   else
 T1_DEB_CONFIGURE_EXTRA_FLAGS := --with-jack=no
