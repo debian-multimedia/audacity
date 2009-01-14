@@ -24,6 +24,7 @@ Build-Depends: autotools-dev,
                libvorbis-dev (>= 1.0.0-3),
                libwxgtk2.8-dev,
                zip
+Homepage: http://audacity.sourceforge.net/
 Vcs-Git: git://git.debian.org/git/pkg-multimedia/audacity.git
 Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
 
@@ -39,5 +40,3 @@ Description: A fast, cross-platform audio editor
  undo/redo.
  .
  Supported file formats include Ogg Vorbis, MP3, WAV, AIFF, and AU.
- .
- For more information, see http://audacity.sourceforge.net/.
