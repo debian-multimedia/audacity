@@ -22,6 +22,7 @@ endif
 
 DEB_CONFIGURE_EXTRA_FLAGS := $(T1_DEB_CONFIGURE_EXTRA_FLAGS) \
                              --with-libsndfile=system \
+                             --with-libsamplerate=system \
                              --with-vorbis=system \
 			     --with-id3tag=system \
                              --with-soundtouch=system \
