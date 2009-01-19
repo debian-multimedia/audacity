@@ -25,6 +25,8 @@ Build-Depends: autotools-dev,
                libvorbis-dev (>= 1.0.0-3),
                libwxgtk2.8-dev,
                zip
+Build-Conflicts: libwxbase2.6-dev,
+                 wx2.6-headers
 Homepage: http://audacity.sourceforge.net/
 Vcs-Git: git://git.debian.org/git/pkg-multimedia/audacity.git
 Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
