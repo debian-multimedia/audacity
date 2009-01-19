@@ -16,8 +16,14 @@ audacity (1.3.6-3) UNRELEASED; urgency=low
   * Removed redundant debhelper calls from debian/rules and force remove
     of the license file.
   * Added patch to fix hyphen-used-as-minus-sign, thanks lintian.
+  * Added an audacity-dbg debug package.
+  * Versioned Build-Depends on libsoundtouch1-dev (>= 1.3.1-2) and
+    explicitely enable it in the configure flags (Closes: #459198).
+  * Added advice to also remove '~/.audacity' to debian/NEWS (Closes: #463955).
+  * Added Build-Conflicts against libwxbase2.6-dev and wx2.6-headers
+    (Closes: #405623).
 
- -- Fabian Greffrath <fabian@debian-unofficial.org>  Wed, 14 Jan 2009 14:19:22 +0100
+ -- Fabian Greffrath <fabian@debian-unofficial.org>  Mon, 19 Jan 2009 11:14:19 +0100
 
 audacity (1.3.6-2) unstable; urgency=low
 
