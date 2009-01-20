@@ -30,6 +30,7 @@ audacity (1.3.6-3) UNRELEASED; urgency=low
   * Audacity suggests libmp3lame0.
   * Added an arch:all audacity-data package that contains the architecture-
     independent content of '/usr/share'.
+  * Fixed faulty confflags --with-libid3tag and --with-libvorbis.
 
  -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 20 Jan 2009 14:00:00 +0100
 

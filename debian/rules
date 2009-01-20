@@ -23,16 +23,16 @@ endif
 DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --enable-unicode \
                              --with-expat=system \
-                             --with-id3tag=system \
                              --with-libflac=system \
+                             --with-libid3tag=system \
                              --with-libmad=system \
                              --with-libsamplerate=system \
                              --with-libsndfile=system \
                              --with-libtwolame=system \
-                             --with-portaudio=v19 \
+                             --with-libvorbis=system \
                              --without-portmixer \
-                             --with-soundtouch=system \
-                             --with-vorbis=system
+                             --with-portaudio=v19 \
+                             --with-soundtouch=system
 
 DEB_COMPRESS_EXCLUDE := *.htb
 
