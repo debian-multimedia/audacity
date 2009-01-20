@@ -36,9 +36,9 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
 
 DEB_COMPRESS_EXCLUDE := *.htb
 
-binary-post-install/audacity::
+binary-post-install/audacity-data::
 	# Don't package unnecessary copy of GPL
-	rm -f debian/audacity/usr/share/doc/audacity/LICENSE.txt
+	rm -f debian/audacity-data/usr/share/doc/audacity-data/LICENSE.txt
 
 clean::
 	rm -f lib-src/libpormixer.a
