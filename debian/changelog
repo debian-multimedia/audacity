@@ -27,6 +27,7 @@ audacity (1.3.6-3) UNRELEASED; urgency=low
     plug-ins! Left a notice in debian/NEWS.
   * Reordered configure flags in debian/rules and renamed
     T1_DEB_CONFIGURE_EXTRA_FLAGS to the more descriptive WITH_JACK_CONFFLAG.
+  * Audacity suggests libmp3lame0.
 
  -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 20 Jan 2009 09:15:11 +0100
 
