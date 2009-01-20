@@ -1,4 +1,4 @@
-audacity (1.3.6-3) UNRELEASED; urgency=low
+audacity (1.3.6-3) unstable; urgency=low
 
   * Explicitely built against the system libsamplerate, effectively disabling
     the internal libresample. This may break support for proprietary VST

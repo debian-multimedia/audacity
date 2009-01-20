@@ -1,4 +1,4 @@
-audacity (1.3.6-3) UNRELEASED; urgency=low
+audacity (1.3.6-3) unstable; urgency=low
 
   * Added myself to Uploaders.
   * Wrapped Uploaders and Build-Depends fields.
@@ -28,11 +28,14 @@ audacity (1.3.6-3) UNRELEASED; urgency=low
   * Reordered configure flags in debian/rules and renamed
     T1_DEB_CONFIGURE_EXTRA_FLAGS to the more descriptive WITH_JACK_CONFFLAG.
   * Audacity suggests libmp3lame0.
-  * Added an arch:all audacity-data package that contains the architecture-
-    independent content of '/usr/share'.
+  * Added an arch:all audacity-data package that contains most of the
+    architecture-independent content of the '/usr/share' directory.
   * Fixed faulty confflags --with-libid3tag and --with-libvorbis.
+  * Remove the redundant LICENSE.txt file immediately after the install rule.
+  * Do not manually remove lib-src/libpormixer.a in the clean rule. We build
+    --without-portmixer anyway.
 
- -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 20 Jan 2009 14:00:00 +0100
+ -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 20 Jan 2009 15:45:00 +0100
 
 audacity (1.3.6-2) unstable; urgency=low
 

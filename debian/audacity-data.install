@@ -1,4 +1,4 @@
-debian/tmp/usr/share
-debian/audacity.xpm usr/share/pixmaps
-debian/audacity16.xpm usr/share/pixmaps
+debian/tmp/usr/share/audacity
+debian/tmp/usr/share/locale
+debian/tmp/usr/share/mime
 debian/gnome-mime-application-x-audacity-project.xpm usr/share/pixmaps

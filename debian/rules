@@ -27,18 +27,16 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --with-libid3tag=system \
                              --with-libmad=system \
                              --with-libsamplerate=system \
+                             --without-libresample \
                              --with-libsndfile=system \
                              --with-libtwolame=system \
                              --with-libvorbis=system \
-                             --without-portmixer \
                              --with-portaudio=v19 \
+                             --without-portmixer \
                              --with-soundtouch=system
 
 DEB_COMPRESS_EXCLUDE := *.htb
 
-binary-post-install/audacity-data::
+common-install-impl::
 	# Don't package unnecessary copy of GPL
-	rm -f debian/audacity-data/usr/share/doc/audacity-data/LICENSE.txt
-
-clean::
-	rm -f lib-src/libpormixer.a
+	rm -f debian/tmp/usr/share/doc/audacity/LICENSE.txt

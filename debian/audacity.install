@@ -1,1 +1,6 @@
 debian/tmp/usr/bin
+debian/tmp/usr/share/applications
+debian/tmp/usr/share/doc
+debian/tmp/usr/share/man
+debian/audacity.xpm usr/share/pixmaps
+debian/audacity16.xpm usr/share/pixmaps
