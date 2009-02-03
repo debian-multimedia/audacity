@@ -91,6 +91,9 @@ class MyFLACFile : public FLAC::Decoder::File
    MyFLACFile(FLACImportFileHandle *handle) : mFile(handle)
    {
       mWasError = false;
+      set_metadata_ignore_all();
+      set_metadata_respond(FLAC__METADATA_TYPE_VORBIS_COMMENT);
+      set_metadata_respond(FLAC__METADATA_TYPE_STREAMINFO);
    }
    
    bool get_was_error() const
@@ -413,8 +416,15 @@ int FLACImportFileHandle::Import(TrackFactory *trackFactory,
    tags->Clear();
    size_t cnt = mFile->mComments.GetCount();
    for (c = 0; c < cnt; c++) {
-      tags->SetTag(mFile->mComments[c].BeforeFirst(wxT('=')),
-                   mFile->mComments[c].AfterFirst(wxT('=')));
+      wxString name = mFile->mComments[c].BeforeFirst(wxT('='));
+      wxString value = mFile->mComments[c].AfterFirst(wxT('='));
+      if (name.Upper() == wxT("DATE") && !tags->HasTag(TAG_YEAR)) {
+         long val;
+         if (value.Length() == 4 && value.ToLong(&val)) {
+            name = TAG_YEAR;
+         }
+      }
+      tags->SetTag(name, value);
    }
 
    return eImportSuccess;

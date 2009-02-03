@@ -13,7 +13,9 @@
 #include <wx/event.h>
 #include <wx/string.h>
 
-wxString KeyEventToKeyString(wxKeyEvent &keyEvent);
+wxString KeyStringNormalize(const wxString & key);
+wxString KeyStringDisplay(const wxString & key);
+wxString KeyEventToKeyString(const wxKeyEvent & keyEvent);
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

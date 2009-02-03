@@ -46,6 +46,7 @@ extern AudioIO *gAudioIO;
 void InitAudioIO();
 void DeinitAudioIO();
 wxString DeviceName(const PaDeviceInfo* info);
+bool ValidateDeviceNames();
 
 class AUDACITY_DLL_API AudioIOListener {
 public:
@@ -59,11 +60,17 @@ public:
 };
 
 #define MAX_MIDI_BUFFER_SIZE 5000
+
+#define DEFAULT_LATENCY_DURATION 100.0
+#define DEFAULT_LATENCY_CORRECTION -130.0
+
 class AudioIO {
 
  public:
    AudioIO();
    ~AudioIO();
+
+   void SetListener(AudioIOListener* listener);
    
    /** \brief Start up Portaudio for capture and recording as needed for
     * input monitoring and software playthrough only
@@ -245,6 +252,11 @@ class AudioIO {
     */
    wxString GetDeviceInfo();
 
+   /** \brief Ensure selected device names are valid
+    *
+    */
+   static bool ValidateDeviceNames(wxString play, wxString rec);
+
 private:
    /** \brief Return a valid sample rate that is supported by the current I/O
     * device(s).
@@ -425,6 +437,20 @@ private:
    TimeTrack *mTimeTrack;
    
 #if USE_PORTAUDIO_V19
+   /** brief The function which is called from PortAudio's callback thread
+    * context to collect and deliver audio for / from the sound device.
+    *
+    * This covers recording, playback, and doing both simultaneously. It is
+    * also invoked to do monitoring and software playthrough. Note that dealing
+    * with the two buffers needs some care to ensure that the right things
+    * happen for all possible cases.
+    * @param inputBuffer Buffer of length framesPerBuffer containing samples
+    * from the sound card, or null if not capturing audio.
+    * @param outputBuffer Uninitialised buffer of length framesPerBuffer which
+    * will be sent to the sound card after the callback, or null if not playing
+    * audio back.
+    * @param framesPerBuffer The length of the playback and recording buffers
+    */
    friend int audacityAudioCallback(
                 const void *inputBuffer, void *outputBuffer,
                 unsigned long framesPerBuffer,

@@ -55,10 +55,14 @@ libnyquist.a: libnyquist-recursive
 	ln -sf libnyquist/libnyquist.a libnyquist.a
 
 # libvamp
-libvamp-recursive:
-	$(MAKE) -C libvamp
-libvamp-hostsdk.a: libvamp-recursive
-	ln -sf libvamp/vamp-sdk/libvamp-hostsdk.a libvamp-hostsdk.a
+#
+# The reason for the "sdkstatic" is that's all that we really need
+# and it circumvents an issue when building on OSX...the makefile
+# has different options for OSX, but they aren't configurable via
+# the configure script.
+#
+vamp-sdk:
+	$(MAKE) -C libvamp sdkstatic
 
 # redland
 redland-recursive:
@@ -120,6 +124,12 @@ libsndfile-recursive:
 libsndfile.a: libsndfile-recursive
 	ln -sf libsndfile/src/.libs/libsndfile.a libsndfile.a
 
+# SBSMS
+sbsms-recursive:
+	$(MAKE) -C sbsms
+libsbsms.a: sbsms-recursive
+	ln -sf sbsms/src/.libs/libsbsms.a .
+
 # SoundTouch
 soundtouch-recursive:
 	$(MAKE) -C soundtouch
@@ -180,6 +190,7 @@ clean:
 	-$(MAKE) -C portmixer clean
 	-$(MAKE) -C portmixer/px_unix_oss clean
 	-$(MAKE) -C portmixer/px_mac_core clean
+	-$(MAKE) -C sbsms clean
 	-$(MAKE) -C soundtouch clean
 	-$(MAKE) -C twolame clean
 	-rm -rf @LOCAL_LIBS@
@@ -207,16 +218,17 @@ distclean:
 	-$(MAKE) -C portmixer distclean
 	-$(MAKE) -C portmixer/px_unix_oss distclean
 	-$(MAKE) -C portmixer/px_mac_core distclean
+	-$(MAKE) -C sbsms distclean
 	-$(MAKE) -C soundtouch distclean
 	-$(MAKE) -C twolame distclean
 	-rm -f @LOCAL_LIBS@
 
 # list here all the targets that aren't actually files to be made
-.PHONY: portsmf eexpat-recursive FileDialog-recursive \
+.PHONY: portSMF eexpat-recursive FileDialog-recursive \
 		widgetextra libogg-recursive \
 	libvorbis-recursive libnyquist-recursive libmad-recursive \
-	libid3tag-recursive soundtouch-recursive libsndfile-recursive \
-	libresample-recursive libsamplerate-recursive libvamp-recursive \
+	libid3tag-recursive sbsms-recursive soundtouch-recursive libsndfile-recursive \
+	libresample-recursive libsamplerate-recursive vamp-sdk \
 	portaudio-v19-recursive portmixer-recursive libtwolame-recursive \
 	liblrdf-recursive redland-recursive slv2-recursive
 

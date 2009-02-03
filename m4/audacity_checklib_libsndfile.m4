@@ -1,4 +1,7 @@
 dnl Add audacity / libsndfile license?
+dnl Please increment the serial number below whenever you alter this macro
+dnl for the benefit of automatic macro update systems
+# audacity_checklib_libsndfile.m4 serial 1
 
 AC_DEFUN([AUDACITY_CHECKLIB_LIBSNDFILE], [
 
@@ -36,6 +39,10 @@ AC_DEFUN([AUDACITY_CHECKLIB_LIBSNDFILE], [
       LIBSNDFILE_LOCAL_CXXFLAGS='-I$(top_srcdir)/lib-src/libsndfile/src'
       LIBSNDFILE_LOCAL_CONFIG_SUBDIRS="lib-src/libsndfile"
       AC_MSG_NOTICE([libsndfile libraries are available in this source tree])
+
+      dnl These must be visible so libvamp and sbsms can find us
+      dnl export SNDFILE_LIBS="'`pwd`/lib-src/libsndfile.a'"
+      dnl export SNDFILE_CFLAGS="'-I`pwd`/lib-src/libsndfile/src'"
 
       dnl Temporary fix for bug #248
       ac_configure_args="$ac_configure_args --disable-sqlite --disable-flac --disable-alsa"

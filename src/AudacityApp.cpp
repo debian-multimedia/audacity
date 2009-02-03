@@ -61,6 +61,7 @@ It handles initialization and termination by subclassing wxApp.
 #include "Benchmark.h"
 #include "DirManager.h"
 #include "effects/LoadEffects.h"
+#include "FFmpeg.h"
 #include "FreqWindow.h"
 #include "Internat.h"
 #include "LangChoice.h"
@@ -79,6 +80,7 @@ It handles initialization and termination by subclassing wxApp.
 #include "FFT.h"
 #include "BlockFile.h"
 #include "ondemand/ODManager.h"
+#include "commands/Keyboard.h"
 //temporarilly commented out till it is added to all projects
 //#include "Profiler.h"
 
@@ -88,8 +90,6 @@ It handles initialization and termination by subclassing wxApp.
 #ifdef USE_QUICKTIME
 #include "import/ImportQT.h"
 #endif
-
-#include "FFmpeg.h"
 
 #ifdef _DEBUG
     #ifdef _MSC_VER
@@ -170,6 +170,10 @@ It handles initialization and termination by subclassing wxApp.
 #     pragma comment(lib, "rasqal")
 #  endif
 
+#  if defined(USE_SBSMS)
+#     pragma comment(lib, "sbsms")
+#  endif
+
 #  if defined(USE_SOUNDTOUCH)
 #     pragma comment(lib, "soundtouch")
 #  endif
@@ -179,21 +183,7 @@ It handles initialization and termination by subclassing wxApp.
 #  endif
 
 #endif //(__WXMSW__)
-#if 0
-#if wxUSE_ACCESSIBILITY
-#if wxCHECK_VERSION(2, 8, 0)
-WXEXPORT const wxChar overrideTextCtrlNameStr[] = wxT("");
-WXEXPORT const wxChar overrideChoiceNameStr[] = wxT("");
-WXEXPORT const wxChar overrideComboBoxNameStr[] = wxT("");
-WXEXPORT const wxChar overrideSliderNameStr[] = wxT("");
-#else
-const wxChar *overrideTextCtrlNameStr = wxT("");
-const wxChar *overrideChoiceNameStr = wxT("");
-const wxChar *overrideComboBoxNameStr = wxT("");
-const wxChar *overrideSliderNameStr = wxT("");
-#endif
-#endif
-#endif
+
 ////////////////////////////////////////////////////////////
 /// Custom events
 ////////////////////////////////////////////////////////////
@@ -220,8 +210,7 @@ void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg)
 }
 #endif
 
-wxFrame *gParentFrame = NULL;
-wxWindow *gParentWindow = NULL;
+static wxFrame *gParentFrame = NULL;
 
 bool gInited = false;
 bool gIsQuitting = false;
@@ -250,15 +239,6 @@ void QuitAudacity(bool bForce)
 
    gIsQuitting = true;
 
-   wxLogWindow *lw = wxGetApp().mLogger;
-   if (lw)
-   {
-      lw->EnableLogging(false);
-      lw->SetActiveTarget(NULL);
-      delete lw;
-      wxGetApp().mLogger = NULL;
-   }
-
    // Try to close each open window.  If the user hits Cancel
    // in a Save Changes dialog, don't continue.
    // BG: unless force is true
@@ -283,13 +263,21 @@ void QuitAudacity(bool bForce)
       }
    }
 
+   wxLogWindow *lw = wxGetApp().mLogger;
+   if (lw)
+   {
+      lw->EnableLogging(false);
+      lw->SetActiveTarget(NULL);
+      delete lw;
+      wxGetApp().mLogger = NULL;
+   }
+
    if (gFreqWindow)
       gFreqWindow->Destroy();
+   gFreqWindow = NULL;
 
    if (gParentFrame)
       gParentFrame->Destroy();
-
-   gFreqWindow = NULL;
    gParentFrame = NULL;
 
    CloseScreenshotTools();
@@ -301,7 +289,7 @@ void QuitAudacity(bool bForce)
    //temporarilly commented out till it is added to all projects
    //delete Profiler::Instance();
    
-      //Delete the clipboard
+   //Delete the clipboard
    AudacityProject::DeleteClipboard();
    
    //delete the static lock for audacity projects
@@ -349,7 +337,7 @@ public:
          return false;
       }
 
-      AudacityProject *project = CreateNewAudacityProject(gParentWindow);
+      AudacityProject *project = CreateNewAudacityProject();
 
       wxString cmd(data);
 
@@ -433,7 +421,7 @@ void AudacityApp::MacNewFile()
    // when no project windows are open.
  
    if (gAudacityProjects.GetCount() == 0) {
-      CreateNewAudacityProject(gParentWindow);
+      CreateNewAudacityProject();
    }
 }
 
@@ -523,7 +511,7 @@ bool AudacityApp::MRUOpen(wxString fileName) {
          // bad things can happen, including data files moving to the new
          // project directory, etc.
          if (!proj || proj->GetDirty() || !proj->GetIsEmpty()) {
-            proj = CreateNewAudacityProject(gParentWindow);
+            proj = CreateNewAudacityProject();
          }
          // This project is clean; it's never been touched.  Therefore
          // all relevant member variables are in their initial state,
@@ -632,8 +620,8 @@ void AudacityApp::InitLang( const wxString & lang )
 // main frame
 bool AudacityApp::OnInit()
 {
-
    mLogger = NULL;
+
    #if USE_QUICKTIME
    ::InitQuicktime();
    #endif
@@ -778,8 +766,6 @@ bool AudacityApp::OnInit()
       return false;
    }
 
-
-
    // More initialization
    InitCleanSpeech();
 
@@ -787,6 +773,7 @@ bool AudacityApp::OnInit()
    InitAudioIO();
 
    LoadEffects();
+
 #ifdef EXPERIMENTAL_ONDEMAND
    //The On-Demand managerr initializes the first time its singleton is accessed
 //   ODManager::Instance();
@@ -795,11 +782,7 @@ bool AudacityApp::OnInit()
 #ifdef __WXMAC__
 
    // On the Mac, users don't expect a program to quit when you close the last window.
-   // Create an offscreen frame with a menu bar.  The frame should never
-   // be visible, but when all other windows are closed, this menu bar should
-   // become visible.
-
-   gParentFrame = new wxFrame(NULL, -1, wxT("invisible"), wxPoint(5000, 5000), wxSize(100, 100), wxFRAME_NO_TASKBAR);
+   // Create a menubar that will show when all project windows are closed.
 
    wxMenu *fileMenu = new wxMenu();
    fileMenu->Append(wxID_NEW, wxT("&New\tCtrl+N"));
@@ -811,35 +794,25 @@ bool AudacityApp::OnInit()
    wxMenuBar *menuBar = new wxMenuBar();
    menuBar->Append(fileMenu, wxT("&File"));
 
-   gParentFrame->SetMenuBar(menuBar);
+   wxMenuBar::MacSetCommonMenuBar(menuBar);
 
-   gParentFrame->Hide();
+   // This invisibale frame will be the "root" of all other frames and will
+   // become the active frame when no projects are open.
+   gParentFrame = new wxFrame(NULL, -1, wxEmptyString, wxPoint(0, 0), wxSize(0, 0), 0);
 
-   SetTopWindow(gParentFrame);
 #endif //__WXMAC__
 
    SetExitOnFrameDelete(true);
 
+   AudacityProject *project = CreateNewAudacityProject();
 
-
-   AudacityProject *project = CreateNewAudacityProject(gParentWindow);
-
-
-
-   project->Show( false );
    wxWindow * pWnd = MakeHijackPanel() ;
    if( pWnd )
    {
+      project->Show( false );
       SetTopWindow(pWnd);
       pWnd->Show( true );
    }
-   else
-   {
-      SetTopWindow(project);
-      project->Show( true );
-   }
-
-
 
    delete temporarywindow;
    
@@ -860,7 +833,9 @@ bool AudacityApp::OnInit()
    mLogger->EnableLogging(true);
    mLogger->SetLogLevel(wxLOG_Max);
 
+   #ifdef USE_FFMPEG
    FFmpegStartup();
+   #endif
 
    //
    // Auto-recovery
@@ -872,7 +847,6 @@ bool AudacityApp::OnInit()
       DirManager::SetDontDeleteTempFiles();
       QuitAudacity(true);
    }
-
 
    //
    // Command-line parsing, but only if we didn't recover
@@ -929,7 +903,7 @@ bool AudacityApp::OnInit()
             if (!project)
             {
                // Create new window for project
-               project = CreateNewAudacityProject(gParentWindow);
+               project = CreateNewAudacityProject();
             }
             project->OpenFile(argv[option]);
             project = NULL; // don't reuse this project for other file
@@ -1006,7 +980,7 @@ bool AudacityApp::OnInit()
             if (!project)
             {
                // Create new window for project
-               project = CreateNewAudacityProject(gParentWindow);
+               project = CreateNewAudacityProject();
             }
             project->OpenFile(fileToOpen);
             project = NULL; // don't reuse this project for other file
@@ -1395,9 +1369,6 @@ int AudacityApp::OnExit()
    DeinitAudioIO();
    Internat::CleanUp();// JKC
 
-   if (mLogger)
-      delete mLogger;
-
    if (mLocale)
       delete mLocale;
    delete mChecker;
@@ -1439,7 +1410,7 @@ void AudacityApp::OnMenuNew(wxCommandEvent & event)
    // all platforms.
  
    if(gAudacityProjects.GetCount() == 0)
-      CreateNewAudacityProject(gParentWindow);
+      CreateNewAudacityProject();
    else
       event.Skip();
 }

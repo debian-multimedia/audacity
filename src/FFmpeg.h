@@ -19,30 +19,22 @@ Describes shared object that is used to access FFmpeg libraries.
 /* FFmpeg is written in C99. It uses many types from stdint.h. Because we are
  * compiling this using a C++ compiler we have to put it in extern "C".
  * __STDC_CONSTANT_MACROS is defined to make <stdint.h> behave like it
- * is actually being compiled with a C99 compiler. This only works if these
- * headers get to stdint.h before anyone else does, otherwise it doesn't get
- * re-processed and doesn't work properly.
+ * is actually being compiled with a C99 compiler.
+ *
  * The symptoms are that INT64_C is not a valid type, which tends to break
  * somewhere down in the implementations using this file */
+
 /* In order to be able to compile this file when ffmpeg is not available we
  * need access to the value of USE_FFMPEG, which means config*.h needs to come
  * in before this file. The suggest way to achieve this is by including
  * Audacity.h */
 
 #if defined(USE_FFMPEG)
-	extern "C" {
-	#ifdef _STDINT_H
-   /* stdint.h has already been included. That's likely to break ffmpeg headers
-	* as described above so we issue a warning */
-	#warning "stdint.h included before ffmpeg headers, this may well not compile"
-	#endif
-   #if !defined(__STDC_CONSTANT_MACROS)
-	#define __STDC_CONSTANT_MACROS
-   #endif
-	#include <libavcodec/avcodec.h>
-	#include <libavformat/avformat.h>
-	#include <libavutil/fifo.h>
-	}
+extern "C" {
+   #include <libavcodec/avcodec.h>
+   #include <libavformat/avformat.h>
+   #include <libavutil/fifo.h>
+}
 #endif
 
 #include "Audacity.h"
@@ -74,13 +66,13 @@ void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl);
 //----------------------------------------------------------------------------
 wxString GetFFmpegVersion(wxWindow *parent);
 
+/* from here on in, this stuff only applies when ffmpeg is available */
+#if defined(USE_FFMPEG)
+
 //----------------------------------------------------------------------------
 // Attempt to load and enable/disable FFmpeg at startup
 //----------------------------------------------------------------------------
 void FFmpegStartup();
-
-/* from here on in, this stuff only applies when ffmpeg is available */
-#if defined(USE_FFMPEG)
 
 bool LoadFFmpeg(bool showerror);
 
@@ -105,7 +97,7 @@ public:
       S.SetBorder(10);
       S.StartVerticalLay(true);
       {
-         S.AddFixedText(wxT(
+         S.AddFixedText(_(
 "Audacity attempted to use FFmpeg libraries to import an audio file,\n\
 but libraries were not found.\n\
 If you want to use the FFmpeg import feature, please go to Preferences->Import/Export\n\
@@ -114,7 +106,7 @@ and tell Audacity where to look for the libraries."
 
          int dontShowDlg = 0;
          gPrefs->Read(wxT("/FFmpeg/NotFoundDontShow"),&dontShowDlg,0);
-         mDontShow = S.AddCheckBox(wxT("Do not show this warning again"),dontShowDlg ? wxT("true") : wxT("false"));
+         mDontShow = S.AddCheckBox(_("Do not show this warning again"),dontShowDlg ? wxT("true") : wxT("false"));
 
          S.AddStandardButtons(eOkButton);
       }
@@ -166,8 +158,8 @@ public:
    AVCodec*          (*avcodec_find_encoder_by_name)  (const char *name);
    AVCodec*          (*avcodec_find_decoder)          (enum CodecID id);
    AVCodec*          (*avcodec_find_decoder_by_name)  (const char *name);
-   enum CodecID      (*av_codec_get_id)               (const struct AVCodecTag **tags, unsigned int tag);
-   unsigned int      (*av_codec_get_tag)              (const struct AVCodecTag **tags, enum CodecID id);
+   enum CodecID      (*av_codec_get_id)               (const struct AVCodecTag * const *tags, unsigned int tag);
+   unsigned int      (*av_codec_get_tag)              (const struct AVCodecTag * const *tags, enum CodecID id);
    void              (*avcodec_string)                (char *buf, int buf_size, AVCodecContext *enc, int encode);
    void              (*avcodec_get_context_defaults)  (AVCodecContext *s);
    AVCodecContext*   (*avcodec_alloc_context)         (void);
@@ -202,14 +194,14 @@ public:
    AVOutputFormat*   (*guess_format)                  (const char *short_name, const char *filename, const char *mime_type);
    int               (*av_write_trailer)              (AVFormatContext *s);
    int               (*av_interleaved_write_frame)    (AVFormatContext *s, AVPacket *pkt);
-   int               (*av_write_frame)    (AVFormatContext *s, AVPacket *pkt);
+   int               (*av_write_frame)                (AVFormatContext *s, AVPacket *pkt);
    void              (*av_init_packet)                (AVPacket *pkt);
    int               (*av_fifo_init)                  (AVFifoBuffer *f, int size);
    void              (*av_fifo_free)                  (AVFifoBuffer *f);
    int               (*av_fifo_read)                  (AVFifoBuffer *f, uint8_t *buf, int buf_size);
    int               (*av_fifo_size)                  (AVFifoBuffer *f);
    int               (*av_fifo_generic_write)         (AVFifoBuffer *f, void *src, int size, int (*func)(void*, void*, int));
-   void              (*av_fifo_realloc)                (AVFifoBuffer *f, unsigned int size);
+   void              (*av_fifo_realloc)               (AVFifoBuffer *f, unsigned int size);
    void*             (*av_malloc)                     (unsigned int size);
    void              (*av_freep)                      (void *ptr);
    int64_t           (*av_rescale_q)                  (int64_t a, AVRational bq, AVRational cq);
@@ -242,10 +234,9 @@ public:
       return wxString::Format(wxT("F(%s),C(%s),U(%s)"),mAVFormatVersion.c_str(),mAVCodecVersion.c_str(),mAVUtilVersion.c_str());
    }
 
-   /* note these values are for Windows only - Mac and Unix have their own
-   * sections elsewhere */
-   //\todo { Section for Mac and *nix }
 #if defined(__WXMSW__)
+   /* Library names and file filters for Windows only */
+
    wxString GetLibraryTypeString()
    {
       return _("Only avformat.dll|*avformat*.dll|Dynamically Linked Libraries (*.dll)|*.dll|All Files (*.*)|*");
@@ -253,17 +244,62 @@ public:
 
    wxString GetLibAVFormatPath()
    {
-      return wxT("");
+      wxRegKey reg(wxT("HKEY_LOCAL_MACHINE\\Software\\FFmpeg for Audacity"));
+      wxString path;
+
+      if (reg.Exists()) {
+         reg.QueryValue(wxT("InstallPath"), path);
+      }
+
+      return path;
    }
 
    wxString GetLibAVFormatName()
    {
       return (wxT("avformat-") wxT(AV_STRINGIFY(LIBAVFORMAT_VERSION_MAJOR)) wxT(".dll"));
    }
-#else //__WXMSW__
+
+   wxString GetLibAVCodecName()
+   {
+      return (wxT("avcodec-") wxT(AV_STRINGIFY(LIBAVCODEC_VERSION_MAJOR)) wxT(".dll"));
+   }
+
+   wxString GetLibAVUtilName()
+   {
+      return (wxT("avutil-") wxT(AV_STRINGIFY(LIBAVUTIL_VERSION_MAJOR)) wxT(".dll"));
+   }
+#elif defined(__WXMAC__)
+   /* Library names and file filters for Mac OS only */
    wxString GetLibraryTypeString()
    {
-      return _("Only avformat.so|*avformat*.so*|Dynamically Linked Libraries (*.so)|*.so|All Files (*)|*");
+      return _("Dynamic Libraries (*.dylib)|*.dylib|All Files (*)|*");
+   }
+
+   wxString GetLibAVFormatPath()
+   {
+      return wxT("/usr/local/lib/audacity");
+   }
+
+   wxString GetLibAVFormatName()
+   {
+      return (wxT("libavformat.") wxT(AV_STRINGIFY(LIBAVFORMAT_VERSION_MAJOR)) wxT(".dylib"));
+   }
+
+   wxString GetLibAVCodecName()
+   {
+      return (wxT("libavcodec.") wxT(AV_STRINGIFY(LIBAVCODEC_VERSION_MAJOR)) wxT(".dylib"));
+   }
+
+   wxString GetLibAVUtilName()
+   {
+      return (wxT("libavutil.") wxT(AV_STRINGIFY(LIBAVUTIL_VERSION_MAJOR)) wxT(".dylib"));
+   }
+#else
+   /* Library names and file filters for other platforms, basically Linux and
+	* other *nix platforms */
+   wxString GetLibraryTypeString()
+   {
+      return _("Only libavformat.so|libavformat.so*|Dynamically Linked Libraries (*.so*)|*.so*|All Files (*)|*");
    }
 
    wxString GetLibAVFormatPath()
@@ -273,9 +309,19 @@ public:
 
    wxString GetLibAVFormatName()
    {
-      return (wxT("avformat-") wxT(AV_STRINGIFY(LIBAVFORMAT_VERSION_MAJOR)) wxT(".dll"));
+      return (wxT("libavformat.so.") wxT(AV_STRINGIFY(LIBAVFORMAT_VERSION_MAJOR)));
    }
-#endif //__WXMSW__
+
+   wxString GetLibAVCodecName()
+   {
+      return (wxT("libavcodec.so.") wxT(AV_STRINGIFY(LIBAVCODEC_VERSION_MAJOR)));
+   }
+
+   wxString GetLibAVUtilName()
+   {
+      return (wxT("libavutil.so.") wxT(AV_STRINGIFY(LIBAVUTIL_VERSION_MAJOR)));
+   }
+#endif // (__WXMAC__) || (__WXMSW__)
 
    /// Ugly reference counting. I thought of using wxStuff for that,
    /// but decided that wx reference counting is not useful, since
@@ -296,9 +342,6 @@ private:
    wxDynamicLibrary *avformat;
    wxDynamicLibrary *avcodec;
    wxDynamicLibrary *avutil;
-
-   ///! true if libavformat has internal static linkage, false otherwise
-   bool mStatic;
 
    ///! true if libraries are loaded, false otherwise
    bool mLibsLoaded;

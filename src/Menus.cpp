@@ -77,6 +77,7 @@ simplifies construction of menu items.
 #include "AboutDialog.h"
 #include "Benchmark.h"
 #include "Screenshot.h"
+#include "ondemand/ODManager.h"
 
 #include "Resample.h"
 #include "BatchProcessDialog.h"
@@ -472,6 +473,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->EndSubMenu();
 
    c->AddItem(wxT("ZeroCross"),      _("Find &Zero Crossings\tZ"),         FN(OnZeroCrossing));
+   c->SetCommandFlags(wxT("ZeroCross"), TracksSelectedFlag, TracksSelectedFlag);
 
    c->BeginSubMenu(_("Mo&ve Cursor"));
 
@@ -586,12 +588,12 @@ void AudacityProject::CreateMenusAndCommands()
    play, record, pause etc. */
    c->BeginMenu(_("T&ransport"));
    c->SetDefaultFlags(0, 0);
-      c->AddItem(wxT("Play"), _("Play\tSpacebar"), FN(OnPlayStop));
+      c->AddItem(wxT("Play"), _("Play\tSpace"), FN(OnPlayStop));
       c->SetCommandFlags(wxT("Play"), AudioIONotBusyFlag, AudioIONotBusyFlag);
-      c->AddItem(wxT("PlayLooped"), _("&Loop Play\tShift+Spacebar"), FN(OnPlayLooped));
+      c->AddItem(wxT("PlayLooped"), _("&Loop Play\tShift+Space"), FN(OnPlayLooped));
       c->SetCommandFlags(wxT("PlayLooped"), AudioIONotBusyFlag, AudioIONotBusyFlag);
       c->AddItem(wxT("Pause"), _("&Pause\tP"), FN(OnPause));
-      c->AddItem(wxT("Stop"), _("&Stop\tSpacebar"), FN(OnStop));
+      c->AddItem(wxT("Stop"), _("&Stop\tSpace"), FN(OnStop));
       c->AddItem(wxT("SkipStart"), _("Skip to Start\tHome"), FN(OnSkipStart));
       c->SetCommandFlags(wxT("SkipStart"), AudioIONotBusyFlag, AudioIONotBusyFlag);
       c->AddItem(wxT("SkipEnd"), _("Skip to End\tEnd"), FN(OnSkipEnd));
@@ -978,8 +980,8 @@ void AudacityProject::CreateMenusAndCommands()
    SetMenuBar(menubar);
 
    c->SetDefaultFlags(0, 0);
-   c->AddCommand(wxT("PrevFrame"),   _("Cycle backward through Dock, Track View, and Selection Bar\tCtrl+Shift+F6"), FN(PrevFrame));
-   c->AddCommand(wxT("NextFrame"),   _("Cycle forward through Dock, Track View, and Selection Bar\tCtrl+F6"), FN(NextFrame));
+   c->AddCommand(wxT("PrevFrame"),   _("Cycle backward through toolbars and Track View\tCtrl+Shift+F6"), FN(PrevFrame));
+   c->AddCommand(wxT("NextFrame"),   _("Cycle forward through toolbars and Track View\tCtrl+F6"), FN(NextFrame));
 
 //   c->SetDefaultFlags(TrackPanelHasFocus, TrackPanelHasFocus);
    c->AddCommand(wxT("SelectTool"),  _("Selection Tool\tF1"),          FN(OnSelectTool));
@@ -992,7 +994,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddCommand(wxT("NextTool"),   _("Next Tool\tD"),                 FN(OnNextTool));
    c->AddCommand(wxT("PrevTool"),   _("Previous Tool\tA"),             FN(OnPrevTool));
 
-   c->AddCommand(wxT("Play/Stop"),   _("Play/Stop\tSpacebar"),         FN(OnPlayStop));
+   c->AddCommand(wxT("Play/Stop"),   _("Play/Stop\tSpace"),        FN(OnPlayStop));
    c->AddCommand(wxT("Stop"),        _("Stop\tS"),                     FN(OnStop));
    c->AddCommand(wxT("Pause"),       _("Pause\tP"),                    FN(OnPause));
    c->AddCommand(wxT("Record"),      _("Record\tR"),                   FN(OnRecord));
@@ -1004,7 +1006,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddCommand(wxT("PlayOneSec"),     _("Play One Second\t1"),       FN(OnPlayOneSecond));
    c->AddCommand(wxT("PlayToSelection"),_("Play To Selection\tB"),       FN(OnPlayToSelection));
    c->AddCommand(wxT("PlayLooped"),     _("Play Looped\tL"),           FN(OnPlayLooped));
-   c->AddCommand(wxT("PlayLoopAlt"),    _("Play Looped\tShift+Spacebar"), FN(OnPlayLooped));
+   c->AddCommand(wxT("PlayLoopAlt"),    _("Play Looped\tShift+Space"), FN(OnPlayLooped));
    c->AddCommand(wxT("PlayCutPreview"), _("Play Cut Preview\tC"),      FN(OnPlayCutPreview));
 
    c->AddCommand(wxT("SkipStart"),   _("Skip to Start\tHome"),         FN(OnSkipStart));
@@ -1037,7 +1039,7 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddCommand(wxT("ShiftDown"),     _("Move Focus to Next and Change Selection\tShift+Down"),   FN(OnShiftDown));
    c->AddCommand(wxT("Toggle"),        _("Toggle Focused Track\tReturn"),                    FN(OnToggle));
    c->AddCommand(wxT("Toggle1"),       _("Toggle Focused Track\tNUMPAD_ENTER"),              FN(OnToggle));
-   c->AddCommand(wxT("Toggle2"),       _("Toggle Focused Track\tCtrl+Spacebar"),             FN(OnToggle));
+   c->AddCommand(wxT("Toggle2"),       _("Toggle Focused Track\tCtrl+Space"),            FN(OnToggle));
 
    c->AddCommand(wxT("CursorLeft"),    _("Cursor Left\tLeft"),                               FN(OnCursorLeft));
    c->AddCommand(wxT("CursorRight"),   _("Cursor Right\tRight"),                             FN(OnCursorRight));
@@ -1068,6 +1070,8 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->AddCommand(wxT("SnapToOn"),      _("Snap To On"),           FN(OnSnapToOn));
    c->AddCommand(wxT("SnapToOff"),     _("Snap To Off"),          FN(OnSnapToOff));
+   c->AddCommand(wxT("FullScreenOnOff"), _("Full screen on/off\tF11"),  FN(OnFullScreen));
+   c->SetCommandFlags(wxT("FullScreenOnOff"), 0, 0);
 
    mLastFlags = 0;
 
@@ -1248,6 +1252,15 @@ void AudacityProject::ModifyUndoMenus()
 
 void AudacityProject::RebuildMenuBar()
 {
+   // On OSX, we can't rebuild the menus while a modal dialog is being shown
+   // since the enabled state for menus like Quit and Preference gets out of
+   // sync with wxWidgets idea of what it should be.
+#if defined(__WXMAC__) && defined(__WXDEBUG__)
+   {
+      wxDialog *d = wxDynamicCast(wxGetTopLevelParent(FindFocus()), wxDialog);
+      wxASSERT((!d || !d->IsModal()));
+   }
+#endif
 
 // Under Windows we delete the menus, since we will soon recreate them.
 // rather oddly, the menus don't vanish as a result of doing this.
@@ -2027,6 +2040,7 @@ void AudacityProject::OnSetLeftSelection()
          TimeDialog D(this, wxID_ANY, _("Set Left Selection Bound"));
          D.SetSampleRate(mRate);
          D.SetFormatString(fmt);
+         D.SetTimeValue(mViewInfo.sel0);
          if(wxID_OK==D.ShowModal() )
             {
                //Get the value from the dialog
@@ -2062,6 +2076,7 @@ void AudacityProject::OnSetRightSelection()
          TimeDialog D(this, wxID_ANY, _("Set Right Selection Bound"));
          D.SetSampleRate(mRate);
          D.SetFormatString(fmt);
+         D.SetTimeValue(mViewInfo.sel1);
          if(wxID_OK==D.ShowModal() )
             {
                //Get the value from the dialog
@@ -2346,9 +2361,12 @@ bool AudacityProject::OnEffect(int type, Effect * f)
       //STM:
       //The following automatically re-zooms after sound was generated.
       // IMO, it was disorienting, removing to try out without re-fitting
-      //if (mTracks->GetEndTime() > prevEndTime)
-      //      OnZoomFit();
-
+      //mchinen:12/14/08 reapplying for generate effects
+      if ( f->GetEffectFlags() & INSERT_EFFECT)
+      {
+            OnZoomFit();
+          //  mTrackPanel->Refresh(false);
+      }
       RedrawProject();
       if (focus != NULL) {
          focus->SetFocus();
@@ -2439,7 +2457,7 @@ void AudacityProject::OnAnalyzePlugin(int index)
 
 void AudacityProject::OnNew()
 {
-   CreateNewAudacityProject(gParentWindow);
+   CreateNewAudacityProject();
 }
 
 void AudacityProject::OnOpen()
@@ -2674,6 +2692,18 @@ void AudacityProject::OnPreferences()
 {
    PrefsDialog dialog(this /* parent */ );
    dialog.ShowModal();
+
+   // LL:  Moved from PrefsDialog since wxWidgets on OSX can't deal with
+   //      rebuilding the menus while the PrefsDialog is still in the modal
+   //      state.
+   for (unsigned int j = 0; j < gAudacityProjects.GetCount(); j++) {
+      gAudacityProjects[j]->UpdatePrefsVariables();
+      gAudacityProjects[j]->RebuildMenuBar();
+      gAudacityProjects[j]->RebuildOtherMenus();
+      if (gAudacityProjects[j]->GetSelectionBar()) {
+         gAudacityProjects[j]->GetSelectionBar()->UpdateDisplay();
+      }
+   }
 }
 
 void AudacityProject::OnPageSetup()
@@ -2764,18 +2794,19 @@ void AudacityProject::OnCut()
    while (n) {
       if (n->GetSelected()) {
          dest = NULL;
-         if (n->GetKind() == Track::Wave && 
-             gPrefs->Read(wxT("/GUI/EnableCutLines"), (long)0))
+         switch (n->GetKind())
          {
-            ((WaveTrack*)n)->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
 #if defined(USE_MIDI)
-         } else if (n->GetKind() == Track::Note) {
-            // Since portsmf has a built-in cut operator, we use that instead
-            n->Cut(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            case Track::Note:
+               // Since portsmf has a built-in cut operator, we use that instead
+               n->Cut(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            break;
 #endif
-         } else {
-            n->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            default:
+               n->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            break;
          }
+
          if (dest) {
             dest->SetChannel(n->GetChannel());
             dest->SetTeamed(n->GetTeamed()); // do first
@@ -2787,15 +2818,32 @@ void AudacityProject::OnCut()
       n = iter.Next();
    }
 
-#if defined(USE_MIDI)
    n = iter.First();
    while (n) {
-      if (n->GetSelected() && n->GetKind() != Track::Note)
-         //if NoteTrack, it was cut, so do not clear anything
-         n->Clear(mViewInfo.sel0, mViewInfo.sel1);
+      if (n->GetSelected()) {
+         switch (n->GetKind())
+         {
+#if defined(USE_MIDI)
+            case Track::Note:
+               //if NoteTrack, it was cut, so do not clear anything
+            break;
+#endif
+            case Track::Wave:
+               if (gPrefs->Read(wxT("/GUI/EnableCutLines"), (long)0)) {
+                  ((WaveTrack*)n)->ClearAndAddCutLine(mViewInfo.sel0,
+                                                      mViewInfo.sel1);
+                  break;
+               }
+
+               // Fall through
+
+            default:
+               n->Clear(mViewInfo.sel0, mViewInfo.sel1);
+            break;
+         }
+      }
       n = iter.Next();
    }
-#endif
 
    msClipLen = (mViewInfo.sel1 - mViewInfo.sel0);
    msClipProject = this;
@@ -3991,7 +4039,7 @@ void AudacityProject::OnPlotSpectrum()
       wxMessageBox(msg);
    }
 
-   InitFreqWindow(gParentWindow);
+   InitFreqWindow(NULL);
    gFreqWindow->Plot(len, buffer, rate);
    gFreqWindow->Show(true);
    gFreqWindow->Raise();
@@ -4075,6 +4123,10 @@ void AudacityProject::OnImport()
    }
 
    gPrefs->Write(wxT("/NewImportingSession"), true);
+   //sort selected files by OD status.  Load non OD first so user can edit asap.
+   //first sort selectedFiles.
+   selectedFiles.Sort(CompareODFileName);
+   
    for (size_t ff = 0; ff < selectedFiles.GetCount(); ff++) {
       wxString fileName = selectedFiles[ff];
 
@@ -4086,6 +4138,10 @@ void AudacityProject::OnImport()
 
    HandleResize(); // Adjust scrollers for new track sizes.
 }
+
+
+
+
 
 void AudacityProject::OnImportLabels()
 {
@@ -5206,6 +5262,14 @@ void AudacityProject::OnSnapToOn()
 void AudacityProject::OnSnapToOff()
 {
    SetSnapTo(false);
+}
+
+void AudacityProject::OnFullScreen()
+{
+   if(wxTopLevelWindow::IsFullScreen())
+      wxTopLevelWindow::ShowFullScreen(false);
+   else
+      wxTopLevelWindow::ShowFullScreen(true);
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

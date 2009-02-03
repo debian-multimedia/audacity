@@ -25,6 +25,7 @@ other settings.
 
 #include "../Audacity.h"
 #include <wx/defs.h>
+#include <wx/choice.h>
 #include <wx/intl.h>
 
 #include "../Prefs.h"
@@ -76,7 +77,7 @@ void AudioIOPrefs::GetNamesAndLabels()
    int nDevices = Pa_CountDevices();
 #endif
 
-   int numChannels = 0; // find max no. of record channels available
+//   int numChannels = 0; // find max no. of record channels available
    for(j=0; j<nDevices; j++) {
       const PaDeviceInfo* info = Pa_GetDeviceInfo(j);
       Name = DeviceName(info);
@@ -88,12 +89,13 @@ void AudioIOPrefs::GetNamesAndLabels()
       if (info->maxInputChannels > 0) {
          mmRecordNames.Add( Name );
          mmRecordLabels.Add( Label );
-         if (info->maxInputChannels > numChannels)
-            numChannels = info->maxInputChannels;
+//         if (info->maxInputChannels > numChannels)
+//            numChannels = info->maxInputChannels;
       }
    }
 
    // Channel counts, mono, stereo etc...
+   const int numChannels = 16;
    for(int c=0; c<numChannels; c++)
    {
       mmChannelNames.Add(  wxString::Format(wxT("%d"), c+1));
@@ -118,7 +120,7 @@ void AudioIOPrefs::PopulateOrExchange( ShuttleGui & S )
    {
       S.StartMultiColumn(2, wxEXPAND);
       S.SetStretchyCol(1);
-      S.TieChoice( _("Device") + wxString(wxT(":")), wxT("PlaybackDevice"), 
+      mPlay = S.TieChoice( _("Device") + wxString(wxT(":")), wxT("PlaybackDevice"), 
          wxT(""), mmPlayNames, mmPlayLabels );
 
       S.AddPrompt( _("Using:") );
@@ -136,7 +138,7 @@ void AudioIOPrefs::PopulateOrExchange( ShuttleGui & S )
    {
       S.StartMultiColumn(2, wxEXPAND);
       S.SetStretchyCol(1);
-      S.TieChoice( _("Device") + wxString(wxT(":")), wxT("RecordingDevice"), 
+      mRec = S.TieChoice( _("Device") + wxString(wxT(":")), wxT("RecordingDevice"), 
          wxT(""), mmRecordNames, mmRecordLabels );
       S.TieChoice( _("Channels") + wxString(wxT(":")), wxT("RecordChannels"), 
          2, mmChannelNames, mmChannelLabels );
@@ -192,10 +194,12 @@ void AudioIOPrefs::PopulateOrExchange( ShuttleGui & S )
 #if USE_PORTAUDIO_V19
       // only show the following controls if we use Portaudio v19, because
       // for Portaudio v18 we always use default buffer sizes
-      S.TieTextBox( _("Audio to buffer:\n(higher = more latency)"),wxT("LatencyDuration"),100.0,9);
+      S.TieTextBox( _("Audio to buffer:\n(higher = more latency)"),wxT("LatencyDuration"),
+         DEFAULT_LATENCY_DURATION,9);
       S.AddUnits(  _("milliseconds") );
 #endif
-      S.TieTextBox( _("Latency correction:\n(negative = backwards)"),wxT("LatencyCorrection"),0.0,9);
+      S.TieTextBox( _("Latency correction:\n(negative = backwards)"),wxT("LatencyCorrection"),
+         DEFAULT_LATENCY_CORRECTION,9);
       S.AddUnits(  _("milliseconds") );
       S.EndThreeColumn();
    }
@@ -244,15 +248,20 @@ AudioIOPrefs::~AudioIOPrefs()
 
 bool AudioIOPrefs::Apply()
 {
+#if USE_PORTAUDIO_V19
+   if (!AudioIO::ValidateDeviceNames(mPlay->GetStringSelection(), mRec->GetStringSelection())) {
+      wxMessageBox(_("Playback and Recording device must use the same type, i.e., MME, DirectSound, etc."));
+      return false;
+   }
+#endif
+
    ShuttleGui S( this, eIsSavingToPrefs );
    PopulateOrExchange( S );
 
-#if USE_PORTAUDIO_V19
-   double latencyDuration = 100.0;
+   double latencyDuration = DEFAULT_LATENCY_DURATION;
    gPrefs->Read(wxT("/AudioIO/LatencyDuration"), &latencyDuration);
    if (latencyDuration < 0)
-      gPrefs->Write(wxT("/AudioIO/LatencyDuration"), 100.0);
-#endif
+      gPrefs->Write(wxT("/AudioIO/LatencyDuration"), DEFAULT_LATENCY_DURATION);
 
 #if USE_PORTMIXER
    if (gAudioIO)

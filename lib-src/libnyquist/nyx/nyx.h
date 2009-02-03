@@ -34,6 +34,7 @@ extern "C"
    typedef int (*nyx_audio_callback)(float *buffer,
                                      int channel,
                                      long start, long len,
+                                     long totlen,
                                      void *userdata);
 
    /* Set to 0 to stop capturing output */
@@ -53,7 +54,7 @@ extern "C"
    nyx_rval    nyx_eval_expression(const char *expr);
    
    int         nyx_get_audio_num_channels();
-   void        nyx_get_audio(nyx_audio_callback callback,
+   int         nyx_get_audio(nyx_audio_callback callback,
                              void *userdata);
 
    int         nyx_get_int();

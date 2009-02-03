@@ -287,6 +287,11 @@ void TrackArtist::DrawTracks(TrackList * tracks,
 
 void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
 {
+   // Label tracks do not have a vruler
+   if (t->GetKind() == Track::Label) {
+      return;
+   }
+
    // All waves have a ruler in the info panel
    // The ruler needs a bevelled surround.
    if (t->GetKind() == Track::Wave )
@@ -534,9 +539,7 @@ void TrackArtist::DrawVRuler(Track *t, wxDC * dc, wxRect & r)
    }
    #endif // USE_MIDI
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
    t->vrulerSize = vruler->mRect.GetSize();
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 }
 
 // Takes a value between -1      and     +1 and returns a value between 

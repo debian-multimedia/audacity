@@ -33,9 +33,11 @@ EffectManager::EffectManager()
 }
 
 EffectManager::~EffectManager() {
+#ifdef EFFECT_CATEGORIES
    CategoryMap::iterator i;
    for (i = mCategories.begin(); i != mCategories.end(); ++i)
       delete i->second;
+#endif
 }
 
 void EffectManager::RegisterEffect(Effect *f, int NewFlags)
@@ -104,6 +106,17 @@ Effect *EffectManager::GetEffect(int ID)
       if (mEffects[i]->mID == ID)
          return mEffects[i];
    
+   return NULL;
+}
+
+Effect* EffectManager::GetEffectByIdentifier(const wxString strTarget, const int kFlags /*= ALL_EFFECTS*/)
+{
+   for (unsigned int i = 0; i < mEffects.GetCount(); i++) 
+   {
+      int nFlags = mEffects[i]->GetEffectFlags();
+      if (((nFlags & kFlags) == nFlags) && strTarget.IsSameAs(mEffects[i]->GetEffectIdentifier()))
+         return mEffects[i];
+   }
    return NULL;
 }
 

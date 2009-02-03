@@ -445,11 +445,8 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
      mTrackArtist(NULL),
      mBacking(NULL),
      mRefreshBacking(false),
-     mAutoScrolling(false)
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
-     ,
+     mAutoScrolling(false),
      vrulerSize(36,0)
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 #ifndef __WXGTK__   //Get rid if this pragma for gtk
 #pragma warning( default: 4355 )
 #endif
@@ -909,6 +906,14 @@ void TrackPanel::DoDrawIndicator(wxDC & dc)
       if( onScreen )
       {
          x = GetLeftOffset() + int ( ( mLastIndicator - mViewInfo->h) * mViewInfo->zoom );
+
+         // LL:  Keep from trying to blit outsize of the source DC.  This results in a crash on
+         //      OSX due to allocating memory using negative sizes and can be caused by resizing
+         //      the project window while recording or playing.
+         int w = dc.GetSize().GetWidth();
+         if (x >= w) {
+            x = w - 1;
+         }
 
          dc.Blit( x, 0, 1, mBacking->GetHeight(), &mBackingDC, x, 0 );
       }
@@ -4815,9 +4820,7 @@ void TrackPanel::DrawEverythingElse(Track * t, wxDC * dc, wxRect & r,
       r.width = GetVRulerWidth();
       r.height -= (kTopInset + 2);
       mTrackArtist->DrawVRuler(t, dc, r);
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
       UpdateVRulerRect();
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
    }
 
    trackRect.y += t->GetHeight();
@@ -4882,11 +4885,7 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect rec,
    dc->SetTextForeground(theTheme.Colour( clrTrackPanelText ));
    bool bIsWave = (t->GetKind() == Track::Wave);
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
    mTrackInfo.DrawBackground(dc, r, t->GetSelected(), bIsWave, labelw, vrul);
-#else //!EXPERIMENTAL_RULER_AUTOSIZE
-   mTrackInfo.DrawBackground(dc, r, t->GetSelected(), bIsWave, labelw );
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
    DrawBordersAroundTrack(t, dc, r, labelw, vrul);
    DrawShadow(t, dc, r);
@@ -4953,7 +4952,6 @@ void TrackPanel::DrawOutsideOfTrack(Track * t, wxDC * dc, const wxRect r)
    }
 }
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
 void TrackPanel::UpdateVRulerRect()
 {
    TrackListIterator iter(mTracks);
@@ -4975,7 +4973,6 @@ void TrackPanel::UpdateVRulerRect()
       }
    }
 }
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
 /// The following function moves to the previous track
 /// selecting and unselecting depending if you are on the start of a
@@ -5828,25 +5825,40 @@ void TrackPanel::OnTrackMute(bool shiftDown, Track *t)
    }
 
    if (shiftDown) 
-      {
-         // Cosmetic...  
-         // Shift-click mutes this track and unmutes other tracks.
-         TrackListIterator iter(mTracks);
-         Track *i = iter.First();
-         while (i) {
-            if (i == t) {
+   {
+      // Cosmetic...  
+      // Shift-click mutes this track and unmutes other tracks.
+      TrackListIterator iter(mTracks);
+      Track *i = iter.First();
+      while (i) {
+         if (i == t) {
+            i->SetMute(true);
+            if(i->GetLinked()) { // also mute the linked track
+               i = iter.Next();
                i->SetMute(true);
             }
-            else {
-               i->SetMute(false);
-            }
-            i->SetSolo(false);
-            i = iter.Next();
          }
+         else {
+            i->SetMute(false);
+         }
+         i->SetSolo(false);
+         i = iter.Next();
       }
+   }
    else {
       // Normal click toggles this track.
       t->SetMute(!t->GetMute());
+      if(t->GetLinked())   // set mute the same on both, if a pair
+      {
+         bool muted = t->GetMute();
+         TrackListIterator iter(mTracks);
+         Track *i = iter.First();
+         while (i != t) {  // search for this track
+            i = iter.Next();
+         }
+         i = iter.Next();  // get the next one, since linked
+         i->SetMute(muted);   // and mute it as well
+      }
 
       if( IsSimpleSolo() )
       {
@@ -5854,17 +5866,21 @@ void TrackPanel::OnTrackMute(bool shiftDown, Track *t)
          Track *i = iter.First();
          int nPlaying=0;
 
-         // We also set a solo indicator if we have just one track playing.
+         // We also set a solo indicator if we have just one track / stereo pair playing.
          // otherwise clear solo on everything.
          while (i) {
             if( !i->GetMute())
+            {
                nPlaying += 1;
+               if(i->GetLinked())
+                  i = iter.Next();  // don't count this one as it is linked
+            }
             i = iter.Next();
          }
 
          i = iter.First();
          while (i) {
-            i->SetSolo( (nPlaying==1) && !i->GetMute() );
+            i->SetSolo( (nPlaying==1) && !i->GetMute() );   // will set both of a stereo pair
             i = iter.Next();
          }
       }
@@ -5891,6 +5907,17 @@ void TrackPanel::OnTrackSolo(bool shiftDown, Track *t)
    if ( bSoloMultiple ) 
    {
       t->SetSolo( !t->GetSolo() );
+      if(t->GetLinked())
+      {
+         bool soloed = t->GetSolo();
+         TrackListIterator iter(mTracks);
+         Track *i = iter.First();
+         while (i != t) {  // search for this track
+            i = iter.Next();
+         }
+         i = iter.Next();  // get the next one, since linked
+         i->SetSolo(soloed);   // and solo it as well
+      }
    }
    else 
    {
@@ -5900,17 +5927,29 @@ void TrackPanel::OnTrackSolo(bool shiftDown, Track *t)
       Track *i = iter.First();
       bool bWasSolo = t->GetSolo();
       while (i) {
-         i->SetSolo( (i==t) && !bWasSolo);
-         if( IsSimpleSolo() )
-            i->SetMute( (i!=t) && !bWasSolo);
+         if( i==t )
+         {
+            i->SetSolo(!bWasSolo);
+            if( IsSimpleSolo() )
+               i->SetMute(false);
+            if(t->GetLinked())
+            {
+               i = iter.Next();
+               i->SetSolo(!bWasSolo);
+               if( IsSimpleSolo() )
+                  i->SetMute(false);
+            }
+         }
+         else
+         {
+            i->SetSolo(false);
+            if( IsSimpleSolo() )
+               i->SetMute(!bWasSolo);
+         }
          i = iter.Next();
       }
-      //t->SetSolo(!t->GetSolo());
    }
-
-
    Refresh(false);
-
 }
 
 void TrackPanel::OnTrackClose()
@@ -6760,13 +6799,11 @@ wxRect TrackPanel::FindTrackRect(Track * target, bool label)
    return r;
 }
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
 int TrackPanel::GetVRulerWidth() const 
 {
 //return 36;
    return vrulerSize.x;
 }
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
 /// Displays the bounds of the selection in the status bar.
 void TrackPanel::DisplaySelection()
@@ -6909,12 +6946,10 @@ TrackInfo::~TrackInfo()
       delete mPans[i];
 }
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
 int TrackInfo::GetTitleWidth() const 
 {
    return 100;
 }
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
 void TrackInfo::GetCloseBoxRect(const wxRect r, wxRect & dest) const
 {
@@ -7001,7 +7036,6 @@ void TrackInfo::DrawBordersWithin(wxDC * dc, const wxRect r, bool bHasMuteSolo )
    dc->DrawLine(r.x, r.y + r.height - 19, GetTitleWidth(), r.y + r.height - 19);  // minimize bar
 }
 
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
 void TrackInfo::DrawBackground(wxDC * dc, const wxRect r, bool bSelected,
    bool bHasMuteSolo, const int labelw, const int vrul)
 {
@@ -7025,31 +7059,6 @@ void TrackInfo::DrawBackground(wxDC * dc, const wxRect r, bool bSelected,
       AColor::BevelTrackInfo( *dc, true, fill );
    }
 }
-#else //!EXPERIMENTAL_RULER_AUTOSIZE
-void TrackInfo::DrawBackground(wxDC * dc, const wxRect r, bool bSelected,
-   bool bHasMuteSolo, const int labelw)
-{
-   // fill in label
-   wxRect fill = r;
-   fill.width = labelw - r.x+1;
-   AColor::MediumTrackInfo(dc, bSelected);
-   dc->DrawRectangle(fill); 
-
-   if( bHasMuteSolo )
-   {
-      fill=wxRect( r.x+1, r.y+17, fill.width - 39, 32); 
-      AColor::BevelTrackInfo( *dc, true, fill );
-
-      fill=wxRect( r.x+1, r.y+67, fill.width, r.height-87); 
-      AColor::BevelTrackInfo( *dc, true, fill );
-   }
-   else
-   {
-      fill=wxRect( r.x+1, r.y+17, fill.width - 39, r.height-37); 
-      AColor::BevelTrackInfo( *dc, true, fill );
-   }
-}
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
 void TrackInfo::GetTrackControlsRect(const wxRect r, wxRect & dest) const
 {

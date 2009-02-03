@@ -142,6 +142,7 @@ void OnSortName();
 
 void OnSnapToOn();
 void OnSnapToOff();
+void OnFullScreen();
 
         // File Menu
 

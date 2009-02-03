@@ -101,6 +101,13 @@ bool ExportPlugin::CheckFileName(wxFileName &filename, int format)
   return true;
 }
 
+/** \brief Add a new entry to the list of formats this plug-in can export
+ *
+ * To configure the format use SetFormat, SetCanMetaData etc with the index of
+ * the format.
+ * @return The number of formats currently set up. This is one more than the
+ * index of the newly added format.
+ */
 int ExportPlugin::AddFormat()
 {
    FormatInfo *nf = new FormatInfo();
@@ -118,6 +125,10 @@ void ExportPlugin::Destroy()
    delete this;
 }
 
+/**
+ * @param index The plugin to set the format for (range 0 to one less than the
+ * count of formats)
+ */
 void ExportPlugin::SetFormat(const wxString & format, int index)
 {
    mFormatInfos[index]->mFormat = format;
@@ -218,16 +229,7 @@ bool ExportPlugin::IsExtension(wxString & ext, int index)
    return isext;
 }
 
-bool ExportPlugin::DisplayOptions(AudacityProject *project, int format)
-{
-   if (project == NULL) {
-      project = GetActiveProject();
-   }
-
-   return DoDisplayOptions(project, format);
-}
-
-bool ExportPlugin::DoDisplayOptions(AudacityProject *project, int format)
+bool ExportPlugin::DisplayOptions(wxWindow *parent, int format)
 {
    return false;
 }
@@ -343,14 +345,13 @@ bool Exporter::Process(AudacityProject *project, bool selectedOnly, double t0, d
       return false;
    }
 
-   // Ask user for file name
-   if (!GetFilename()) {
+   // Let user edit MetaData 
+   if (!(project->GetTags()->ShowEditDialog(project, _("Edit Metadata"), mProject->GetShowId3Dialog()))) {
       return false;
    }
 
-   // Let user edit MetaData 
-
-   if (!(project->GetTags()->ShowEditDialog(project, _("Edit Metadata"), mProject->GetShowId3Dialog()))) {
+   // Ask user for file name
+   if (!GetFilename()) {
       return false;
    }
 
@@ -422,8 +423,7 @@ bool Exporter::ExamineTracks()
 
    while (tr) {
       if (tr->GetKind() == Track::Wave) {
-         if (tr->GetSelected() || !mSelectedOnly) {
-
+         if ( (tr->GetSelected() || !mSelectedOnly) && !tr->GetMute() ) {  // don't count muted tracks
             mNumSelected++;
 
             if (tr->GetChannel() == Track::LeftChannel) {
@@ -463,8 +463,13 @@ bool Exporter::ExamineTracks()
       tr = iter1.Next();
    }
 
-   if (mSelectedOnly && mNumSelected == 0) {
-      wxMessageBox(_("No tracks are selected! Use Ctrl-A (Select All)\nChoose Export... to export all tracks."),
+   if (mNumSelected == 0) {
+      wxString message;
+      if(mSelectedOnly)
+         message = _("All the selected audio is muted.");
+      else
+         message = _("All the audio is muted.");
+      wxMessageBox(message,
                     _("Unable to export"),
                     wxOK | wxICON_INFORMATION);
       return false;
@@ -524,6 +529,7 @@ bool Exporter::GetFilename()
                     mFilename.GetFullName(),
                     maskString,
                     wxFD_SAVE | wxRESIZE_BORDER);
+      mDialog = &fd;
 
       fd.SetFilterIndex(mFilterIndex);
 
@@ -674,7 +680,11 @@ void Exporter::DisplayOptions(int index)
       return;
    }
 
-   mPlugins[mf]->DisplayOptions(mProject,msf);
+#if defined(__WXMSW__)
+   mPlugins[mf]->DisplayOptions(mProject, msf);
+#else
+   mPlugins[mf]->DisplayOptions(mDialog, msf);
+#endif
 }
 
 bool Exporter::CheckMix()

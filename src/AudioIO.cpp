@@ -217,6 +217,20 @@ wxString DeviceName(const PaDeviceInfo* info)
 #endif
 }
 
+bool AudioIO::ValidateDeviceNames(wxString play, wxString rec)
+{
+#if USE_PORTAUDIO_V19
+   const PaDeviceInfo *pInfo = Pa_GetDeviceInfo(AudioIO::getPlayDevIndex(play));
+   const PaDeviceInfo *rInfo = Pa_GetDeviceInfo(AudioIO::getRecordDevIndex(rec));
+
+   if (!pInfo || !rInfo || pInfo->hostApi != rInfo->hostApi) {
+      return false;
+   }
+#endif
+
+   return true;
+}
+
 AudioIO::AudioIO()
 {
    mAudioThreadShouldCallFillBuffersOnce = false;
@@ -473,7 +487,7 @@ void AudioIO::HandleDeviceChange()
       playbackParameters.suggestedLatency =
          Pa_GetDeviceInfo(playDeviceNum)->defaultLowOutputLatency;
    else
-      playbackParameters.suggestedLatency = 100; // we're just probing anyway
+      playbackParameters.suggestedLatency = DEFAULT_LATENCY_CORRECTION/1000.0; 
 
    PaStreamParameters captureParameters;
  
@@ -485,7 +499,7 @@ void AudioIO::HandleDeviceChange()
       captureParameters.suggestedLatency =
          Pa_GetDeviceInfo(recDeviceNum)->defaultLowInputLatency;
    else
-      captureParameters.suggestedLatency = 100; // we're just probing anyway
+      captureParameters.suggestedLatency = DEFAULT_LATENCY_CORRECTION/1000.0; 
 
    // try opening for record and playback
    error = Pa_OpenStream(&stream,
@@ -610,7 +624,7 @@ bool AudioIO::StartPortAudioStream(double sampleRate,
    PaStreamParameters *playbackParameters = NULL;
    PaStreamParameters *captureParameters = NULL;
    
-   double latencyDuration = 100.0;
+   double latencyDuration = DEFAULT_LATENCY_DURATION;
    gPrefs->Read(wxT("/AudioIO/LatencyDuration"), &latencyDuration);
 
    if( numPlaybackChannels > 0)
@@ -1328,7 +1342,7 @@ void AudioIO::StopStream()
          // case that we do not apply latency correction when recording the
          // first track in a project.
          //
-         double latencyCorrection = 0;
+         double latencyCorrection = DEFAULT_LATENCY_CORRECTION;
          gPrefs->Read(wxT("/AudioIO/LatencyCorrection"), &latencyCorrection);
          
          double recordingOffset =
@@ -1372,7 +1386,7 @@ void AudioIO::StopStream()
                      track->SetOffset(track->GetStartTime() + recordingOffset);
                      if(track->GetEndTime() < 0.)
                      {
-                        wxMessageDialog m(NULL, _("Latency setting has caused the recorded audio to be hidden before zero.\nAudacity has brought it back to start at zero.\nYou may have to use the Time Shift Tool (<---> or F5) to drag the track to the right place."), _("Latency problem"), wxOK);
+                        wxMessageDialog m(NULL, _("Latency Correction setting has caused the recorded audio to be hidden before zero.\nAudacity has brought it back to start at zero.\nYou may have to use the Time Shift Tool (<---> or F5) to drag the track to the right place."), _("Latency problem"), wxOK);
                         m.ShowModal();
                         track->SetOffset(0.);
                      }
@@ -1611,7 +1625,7 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
    }
 
 #if USE_PORTAUDIO_V19
-   double latencyDuration = 100.0;
+   double latencyDuration = DEFAULT_LATENCY_DURATION;
    long recordChannels = 1;
    gPrefs->Read(wxT("/AudioIO/LatencyDuration"), &latencyDuration);
    gPrefs->Read(wxT("/AudioIO/RecordChannels"), &recordChannels);
@@ -1722,6 +1736,9 @@ int AudioIO::GetOptimalSupportedSampleRate()
 double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
 {
    wxArrayLong rates;
+   if (capturing) wxLogDebug(wxT("AudioIO::GetBestRate() for capture"));
+   if (playing) wxLogDebug(wxT("AudioIO::GetBestRate() for playback"));
+   wxLogDebug(wxT("GetBestRate() suggested rate %.0lf Hz"), sampleRate);
 
    if (capturing && !playing) {
       rates = GetSupportedCaptureRates(-1, sampleRate);
@@ -1747,6 +1764,7 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
    long rate = (long)sampleRate;
    
    if (rates.Index(rate) != wxNOT_FOUND) {
+      wxLogDebug(wxT("GetBestRate() Returning %.0ld Hz"), rate);
       return rate;
       /* the easy case - the suggested rate (project rate) is in the list, and
        * we can just accept that and send back to the caller. This should be
@@ -1764,6 +1782,7 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
 
    if (rates.IsEmpty()) {
       /* we're stuck - there are no supported rates with this hardware. Error */
+      wxLogDebug(wxT("GetBestRate() Error - no supported sample rates"));
       return 0;
    }
    int i;
@@ -1771,10 +1790,12 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
          {
          if (rates[i] > rate) {
             // supported rate is greater than requested rate
+            wxLogDebug(wxT("GetBestRate() Returning next higher rate - %.0ld Hz"), rates[i]);
             return rates[i];
          }
          }
 
+   wxLogDebug(wxT("GetBestRate() Returning highest rate - %.0ld Hz"), rates[rates.GetCount() - 1]);
    return rates[rates.GetCount() - 1]; // the highest available rate
 }      
 
@@ -2034,151 +2055,153 @@ wxString AudioIO::GetDeviceInfo()
    }
 
 #if defined(USE_PORTMIXER)
-   int highestSampleRate = supportedSampleRates[supportedSampleRates.GetCount() - 1];
-   bool EmulateMixerInputVol = true;
-   bool EmulateMixerOutputVol = true;
-   float MixerInputVol = 1.0;
-   float MixerOutputVol = 1.0;
+   if (supportedSampleRates.GetCount() > 0)
+      {
+      int highestSampleRate = supportedSampleRates[supportedSampleRates.GetCount() - 1];
+      bool EmulateMixerInputVol = true;
+      bool EmulateMixerOutputVol = true;
+      float MixerInputVol = 1.0;
+      float MixerOutputVol = 1.0;
 
-   int error;
+      int error;
 
 #if USE_PORTAUDIO_V19
 
-   PaStream *stream;
+      PaStream *stream;
    
-   PaStreamParameters playbackParameters;
+      PaStreamParameters playbackParameters;
 
-   playbackParameters.device = playDeviceNum;
-   playbackParameters.sampleFormat = paFloat32;
-   playbackParameters.hostApiSpecificStreamInfo = NULL;
-   playbackParameters.channelCount = 2;
-   if (Pa_GetDeviceInfo(playDeviceNum)){
-      playbackParameters.suggestedLatency =
-         Pa_GetDeviceInfo(playDeviceNum)->defaultLowOutputLatency;
-   }
-   else{
-      playbackParameters.suggestedLatency = 100; // we're just probing anyway
-   }
+      playbackParameters.device = playDeviceNum;
+      playbackParameters.sampleFormat = paFloat32;
+      playbackParameters.hostApiSpecificStreamInfo = NULL;
+      playbackParameters.channelCount = 2;
+      if (Pa_GetDeviceInfo(playDeviceNum)){
+         playbackParameters.suggestedLatency =
+            Pa_GetDeviceInfo(playDeviceNum)->defaultLowOutputLatency;
+      }
+      else{
+         playbackParameters.suggestedLatency = DEFAULT_LATENCY_CORRECTION/1000.0; 
+      }
 
-   PaStreamParameters captureParameters;
+      PaStreamParameters captureParameters;
  
-   captureParameters.device = recDeviceNum;
-   captureParameters.sampleFormat = paFloat32;;
-   captureParameters.hostApiSpecificStreamInfo = NULL;
-   captureParameters.channelCount = 2;
-   if (Pa_GetDeviceInfo(recDeviceNum)){
-      captureParameters.suggestedLatency =
-         Pa_GetDeviceInfo(recDeviceNum)->defaultLowInputLatency;
-   }else{
-      captureParameters.suggestedLatency = 100; // we're just probing anyway
-   }
+      captureParameters.device = recDeviceNum;
+      captureParameters.sampleFormat = paFloat32;;
+      captureParameters.hostApiSpecificStreamInfo = NULL;
+      captureParameters.channelCount = 2;
+      if (Pa_GetDeviceInfo(recDeviceNum)){
+         captureParameters.suggestedLatency =
+            Pa_GetDeviceInfo(recDeviceNum)->defaultLowInputLatency;
+      }else{
+         captureParameters.suggestedLatency = DEFAULT_LATENCY_CORRECTION/1000.0; 
+      }
 
-   error = Pa_OpenStream(&stream,
+      error = Pa_OpenStream(&stream,
                          &captureParameters, &playbackParameters,
                          highestSampleRate, paFramesPerBufferUnspecified,
                          paClipOff | paDitherOff,
                          audacityAudioCallback, NULL);
 
-   if (error) {
-      error = Pa_OpenStream(&stream,
+      if (error) {
+         error = Pa_OpenStream(&stream,
                             &captureParameters, NULL,
                             highestSampleRate, paFramesPerBufferUnspecified,
                             paClipOff | paDitherOff,
                             audacityAudioCallback, NULL);
-   }
+      }
   
-#else
+#else // PA v18
 
-   PortAudioStream *stream;
+      PortAudioStream *stream;
 
-   error = Pa_OpenStream(&stream, recDeviceNum, 2, paFloat32, NULL,
+      error = Pa_OpenStream(&stream, recDeviceNum, 2, paFloat32, NULL,
                          playDeviceNum, 2, paFloat32, NULL,
                          highestSampleRate, 512, 1, paClipOff | paDitherOff,
                          audacityAudioCallback, NULL);
 
-   if (error) {
-      error = Pa_OpenStream(&stream, recDeviceNum, 2, paFloat32, NULL,
+      if (error) {
+         error = Pa_OpenStream(&stream, recDeviceNum, 2, paFloat32, NULL,
                             paNoDevice, 0, paFloat32, NULL,
                             highestSampleRate, 512, 1, paClipOff | paDitherOff,
                             audacityAudioCallback, NULL);
-   }
+      }
 
-#endif
+#endif // PX v19/18
 
-   if (error) {
-      s << wxT("Recieved ") << error << wxT(" while opening devices") << e;
-      return o.GetString();
-   }
+      if (error) {
+         s << wxT("Recieved ") << error << wxT(" while opening devices") << e;
+         return o.GetString();
+      }
 
-   PxMixer *PortMixer = Px_OpenMixer(stream, 0);
+      PxMixer *PortMixer = Px_OpenMixer(stream, 0);
 
-   if (!PortMixer) {
-      s << wxT("Unable to open Portmixer") << e;
+      if (!PortMixer) {
+         s << wxT("Unable to open Portmixer") << e;
+         Pa_CloseStream(stream);
+         return o.GetString();
+      }
+
+      s << wxT("==============================") << e;
+      s << wxT("Available mixers:") << e;
+
+      cnt = Px_GetNumMixers(stream);
+      for (int i = 0; i < cnt; i++) {
+         wxString name(Px_GetMixerName(stream, i), wxConvLocal);
+         s << i << wxT(" - ") << name << e;
+      }
+
+      s << wxT("==============================") << e;
+      s << wxT("Available capture sources:") << e;
+      cnt = Px_GetNumInputSources(PortMixer);
+      for (int i = 0; i < cnt; i++) {
+         wxString name(Px_GetInputSourceName(PortMixer, i), wxConvLocal);
+         s << i << wxT(" - ") << name << e;
+      }
+
+      s << wxT("==============================") << e;
+      s << wxT("Available playback volumes:") << e;
+      cnt = Px_GetNumOutputVolumes(PortMixer);
+      for (int i = 0; i < cnt; i++) {
+         wxString name(Px_GetOutputVolumeName(PortMixer, i), wxConvLocal);
+         s << i << wxT(" - ") << name << e;
+      }
+
+      // Determine mixer capabilities - it it doesn't support either
+      // input or output, we emulate them (by multiplying this value
+      // by all incoming/outgoing samples)
+
+      MixerOutputVol = Px_GetPCMOutputVolume(PortMixer);
+      EmulateMixerOutputVol = false;
+      Px_SetPCMOutputVolume(PortMixer, 0.0);
+      if (Px_GetPCMOutputVolume(PortMixer) > 0.1)
+         EmulateMixerOutputVol = true;
+      Px_SetPCMOutputVolume(PortMixer, 0.2f);
+      if (Px_GetPCMOutputVolume(PortMixer) < 0.1 ||
+          Px_GetPCMOutputVolume(PortMixer) > 0.3)
+         EmulateMixerOutputVol = true;
+      Px_SetPCMOutputVolume(PortMixer, MixerOutputVol);
+
+      MixerInputVol = Px_GetInputVolume(PortMixer);
+      EmulateMixerInputVol = false;
+      Px_SetInputVolume(PortMixer, 0.0);
+      if (Px_GetInputVolume(PortMixer) > 0.1)
+         EmulateMixerInputVol = true;
+      Px_SetInputVolume(PortMixer, 0.2f);
+      if (Px_GetInputVolume(PortMixer) < 0.1 ||
+          Px_GetInputVolume(PortMixer) > 0.3)
+         EmulateMixerInputVol = true;
+      Px_SetInputVolume(PortMixer, MixerInputVol);
+   
       Pa_CloseStream(stream);
-      return o.GetString();
-   }
-
-   s << wxT("==============================") << e;
-   s << wxT("Available mixers:") << e;
-
-   cnt = Px_GetNumMixers(stream);
-   for (int i = 0; i < cnt; i++) {
-      wxString name(Px_GetMixerName(stream, i), wxConvLocal);
-      s << i << wxT(" - ") << name << e;
-   }
-
-   s << wxT("==============================") << e;
-   s << wxT("Available capture sources:") << e;
-   cnt = Px_GetNumInputSources(PortMixer);
-   for (int i = 0; i < cnt; i++) {
-      wxString name(Px_GetInputSourceName(PortMixer, i), wxConvLocal);
-      s << i << wxT(" - ") << name << e;
-   }
-
-   s << wxT("==============================") << e;
-   s << wxT("Available playback volumes:") << e;
-   cnt = Px_GetNumOutputVolumes(PortMixer);
-   for (int i = 0; i < cnt; i++) {
-      wxString name(Px_GetOutputVolumeName(PortMixer, i), wxConvLocal);
-      s << i << wxT(" - ") << name << e;
-   }
-
-   // Determine mixer capabilities - it it doesn't support either
-   // input or output, we emulate them (by multiplying this value
-   // by all incoming/outgoing samples)
-
-   MixerOutputVol = Px_GetPCMOutputVolume(PortMixer);
-   EmulateMixerOutputVol = false;
-   Px_SetPCMOutputVolume(PortMixer, 0.0);
-   if (Px_GetPCMOutputVolume(PortMixer) > 0.1)
-      EmulateMixerOutputVol = true;
-   Px_SetPCMOutputVolume(PortMixer, 0.2f);
-   if (Px_GetPCMOutputVolume(PortMixer) < 0.1 ||
-       Px_GetPCMOutputVolume(PortMixer) > 0.3)
-      EmulateMixerOutputVol = true;
-   Px_SetPCMOutputVolume(PortMixer, MixerOutputVol);
-
-   MixerInputVol = Px_GetInputVolume(PortMixer);
-   EmulateMixerInputVol = false;
-   Px_SetInputVolume(PortMixer, 0.0);
-   if (Px_GetInputVolume(PortMixer) > 0.1)
-      EmulateMixerInputVol = true;
-   Px_SetInputVolume(PortMixer, 0.2f);
-   if (Px_GetInputVolume(PortMixer) < 0.1 ||
-       Px_GetInputVolume(PortMixer) > 0.3)
-      EmulateMixerInputVol = true;
-   Px_SetInputVolume(PortMixer, MixerInputVol);
-
-   Pa_CloseStream(stream);
-
-   s << wxT("==============================") << e;
-   s << wxT("Capture volume is ") << (EmulateMixerInputVol? wxT("emulated"): wxT("native")) << e;
-   s << wxT("Capture volume is ") << (EmulateMixerOutputVol? wxT("emulated"): wxT("native")) << e;
-
-   Px_CloseMixer(PortMixer);
+   
+      s << wxT("==============================") << e;
+      s << wxT("Capture volume is ") << (EmulateMixerInputVol? wxT("emulated"): wxT("native")) << e;
+      s << wxT("Capture volume is ") << (EmulateMixerOutputVol? wxT("emulated"): wxT("native")) << e;
+   
+      Px_CloseMixer(PortMixer);
 
 #endif
-
+      }  //end of massive if statement if a valid sample rate has been found
    return o.GetString();
 }
 
@@ -2328,6 +2351,11 @@ void AudioIO::FillBuffers()
    gAudioIO->mAudioThreadFillBuffersLoopActive = false;
    //if ( mMidiStreamActive && mMidiPlaybackTracks.GetCount() > 0 )
       //FillMidiBuffers();
+}
+
+void AudioIO::SetListener(AudioIOListener* listener)
+{
+   mListener = listener;
 }
 
 /* HCK MIDI PATCH START */
@@ -2702,30 +2730,23 @@ int audacityAudioCallback(void *inputBuffer, void *outputBuffer,
    unsigned int i;
    int t;
 
-   // Send data to VU meters
+   /* Send data to recording VU meter if applicable */
 
-   // It's critical that we don't update the meters while
-   // StopStream is trying to stop PortAudio, otherwise it can
-   // lead to a freeze.  We use two variables to synchronize:
-   // mUpdatingMeters tells StopStream when the callback is about
-   // to enter the code where it might update the meters, and
-   // mUpdateMeters is how the rest of the code tells the callback
-   // when it is allowed to actually do the updating.  Note that
-   // mUpdatingMeters must be set first to avoid a race condition.
-   gAudioIO->mUpdatingMeters = true;
-   if (gAudioIO->mUpdateMeters) {
-
-      if (gAudioIO->mOutputMeter && 
-          !gAudioIO->mOutputMeter->IsMeterDisabled() &&
-          outputBuffer) {
-         gAudioIO->mOutputMeter->UpdateDisplay(numPlaybackChannels,
-                                               framesPerBuffer,
-                                               (float *)outputBuffer);
-      }
-
-      if (gAudioIO->mInputMeter &&
-          !gAudioIO->mInputMeter->IsMeterDisabled() &&
-          inputBuffer) {
+   if (gAudioIO->mInputMeter &&
+         !gAudioIO->mInputMeter->IsMeterDisabled() &&
+         inputBuffer) {
+      // get here if meters are actually live , and being updated
+      /* It's critical that we don't update the meters while StopStream is
+       * trying to stop PortAudio, otherwise it can lead to a freeze.  We use
+       * two variables to synchronize:
+       *   mUpdatingMeters tells StopStream when the callback is about to enter
+       *     the code where it might update the meters, and
+       *   mUpdateMeters is how the rest of the code tells the callback when it
+       *     is allowed to actually do the updating.
+       * Note that mUpdatingMeters must be set first to avoid a race condition.
+       */
+      gAudioIO->mUpdatingMeters = true;
+      if (gAudioIO->mUpdateMeters) {
          if (gAudioIO->mCaptureFormat == floatSample)
             gAudioIO->mInputMeter->UpdateDisplay(numCaptureChannels,
                                                  framesPerBuffer,
@@ -2739,8 +2760,9 @@ int audacityAudioCallback(void *inputBuffer, void *outputBuffer,
                                                  tempFloats);
          }
       }
-   }
-   gAudioIO->mUpdatingMeters = false;
+      gAudioIO->mUpdatingMeters = false;
+   }  // end recording VU meter update
+
 
    // Stop recording if 'silence' is detected
    if(gAudioIO->mPauseRec && inputBuffer) {
@@ -3025,7 +3047,10 @@ int audacityAudioCallback(void *inputBuffer, void *outputBuffer,
 
       // Record the reported latency from PortAudio.
       // TODO: Don't recalculate this with every callback?
+
      #if USE_PORTAUDIO_V19
+      // 01/21/2009:  Disabled until a better solution presents itself.
+     #if 0
       // As of 06/17/2006, portaudio v19 returns inputBufferAdcTime set to
       // zero.  It is being worked on, but for now we just can't do much
       // but follow the leader.
@@ -3047,13 +3072,13 @@ int audacityAudioCallback(void *inputBuffer, void *outputBuffer,
             gAudioIO->mLastRecordingOffset = -si->inputLatency;
          }
       }
+     #endif
      #else
       if (numCaptureChannels > 0 && numPlaybackChannels > 0)
          gAudioIO->mLastRecordingOffset = (Pa_StreamTime(gAudioIO->mPortStreamV18) - outTime) / gAudioIO->mRate;
       else
          gAudioIO->mLastRecordingOffset = 0;
      #endif
-
    } // if mStreamToken > 0
    else {
       // No tracks to play, but we should clear the output, and
@@ -3075,6 +3100,28 @@ int audacityAudioCallback(void *inputBuffer, void *outputBuffer,
          }
       }
    }
+   /* Send data to playback VU meter if applicable */
+   if (gAudioIO->mOutputMeter && 
+      !gAudioIO->mOutputMeter->IsMeterDisabled() &&
+      outputBuffer) {
+      // Get here if playback meter is live 
+      /* It's critical that we don't update the meters while StopStream is
+       * trying to stop PortAudio, otherwise it can lead to a freeze.  We use
+       * two variables to synchronize:
+       *  mUpdatingMeters tells StopStream when the callback is about to enter
+       *    the code where it might update the meters, and 
+       *  mUpdateMeters is how the rest of the code tells the callback when it
+       *    is allowed to actually do the updating.
+       * Note that mUpdatingMeters must be set first to avoid a race condition.
+       */
+      gAudioIO->mUpdatingMeters = true;
+      if (gAudioIO->mUpdateMeters) {
+         gAudioIO->mOutputMeter->UpdateDisplay(numPlaybackChannels,
+                                               framesPerBuffer,
+                                               (float *)outputBuffer);
+      }
+      gAudioIO->mUpdatingMeters = false;
+   }  // end playback VU meter update
 
    return callbackReturn;
 }
