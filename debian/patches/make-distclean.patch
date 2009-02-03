@@ -1,0 +1,43 @@
+diff -Nurp debian.git/lib-src/libnyquist/Makefile.in audacity-1.3.7/lib-src/libnyquist/Makefile.in
+--- debian.git/lib-src/libnyquist/Makefile.in	2009-02-03 11:20:23.000000000 +0100
++++ audacity-1.3.7/lib-src/libnyquist/Makefile.in	2009-02-03 20:28:23.000000000 +0100
+@@ -520,4 +520,5 @@ cleaner: clean
+ 	rm -f points.dat
+ 
+ distclean: cleaner
++	-$(MAKE) -C misc distclean
+ 	rm -f Makefile
+diff -Nurp debian.git/lib-src/libnyquist/misc/Makefile.in audacity-1.3.7/lib-src/libnyquist/misc/Makefile.in
+--- debian.git/lib-src/libnyquist/misc/Makefile.in	2009-02-03 13:03:56.000000000 +0100
++++ audacity-1.3.7/lib-src/libnyquist/misc/Makefile.in	2009-02-03 19:51:37.000000000 +0100
+@@ -65,3 +65,5 @@ cleaner: clean
+ 	rm -f *.BAK
+ 	rm -f *~
+ 
++distclean: cleaner
++	rm -f Makefile
+diff -Nurp debian.git/lib-src/libvamp/Makefile.in audacity-1.3.7/lib-src/libvamp/Makefile.in
+--- debian.git/lib-src/libvamp/Makefile.in	2009-02-03 13:03:56.000000000 +0100
++++ audacity-1.3.7/lib-src/libvamp/Makefile.in	2009-02-03 19:45:18.000000000 +0100
+@@ -248,7 +248,7 @@ clean:		
+ 		rm -f $(SDK_OBJECTS) $(HOSTSDK_OBJECTS) $(PLUGIN_OBJECTS) $(HOST_OBJECTS) $(RDFGEN_OBJECTS)
+ 
+ distclean:	clean
+-		rm -f $(SDK_STATIC) $(SDK_DYNAMIC) $(HOSTSDK_STATIC) $(HOSTSDK_DYNAMIC) $(PLUGIN_TARGET) $(HOST_TARGET) $(RDFGEN_TARGET) *~ */*~
++		rm -f $(SDK_STATIC) $(SDK_DYNAMIC) $(HOSTSDK_STATIC) $(HOSTSDK_DYNAMIC) $(PLUGIN_TARGET) $(HOST_TARGET) $(RDFGEN_TARGET) *~ */*~ config.log config.status Makefile
+ 
+ install:	$(SDK_STATIC) $(SDK_DYNAMIC) $(HOSTSDK_STATIC) $(HOSTSDK_DYNAMIC) $(PLUGIN_TARGET) $(HOST_TARGET) $(RDFGEN_TARGET)
+ 		mkdir -p $(DESTDIR)$(INSTALL_API_HEADERS)
+diff -Nurp debian.git/lib-src/lib-widget-extra/Makefile.in audacity-1.3.7/lib-src/lib-widget-extra/Makefile.in
+--- debian.git/lib-src/lib-widget-extra/Makefile.in	2009-02-03 11:20:23.000000000 +0100
++++ audacity-1.3.7/lib-src/lib-widget-extra/Makefile.in	2009-02-03 19:43:44.000000000 +0100
+@@ -82,6 +82,9 @@ clean:
+ 	rm -rf $(OBJS)
+ 	rm -f $(LIBFILE) $(EXTRAS)
+ 
++distclean: clean
++	rm -rf config.log config.status Makefile
++
+ #
+ # Rule for compiling C++ files
+ #
