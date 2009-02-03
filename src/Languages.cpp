@@ -101,8 +101,8 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    //     charset conversion on Linux platforms
    localLanguageName[wxT("ar")] = wxT("Arabic");
    localLanguageName[wxT("bg")] = wxT("Balgarski");
+   localLanguageName[wxT("bs")] = wxT("Bosnian");
    localLanguageName[wxT("ca")] = wxT("Catalan");
-   localLanguageName[wxT("cb")] = wxT("Khmer");
    localLanguageName[wxT("cs")] = wxT("Czech");
    localLanguageName[wxT("da")] = wxT("Dansk");
    localLanguageName[wxT("de")] = wxT("Deutsch");
@@ -113,8 +113,11 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("fi")] = wxT("Suomi");
    localLanguageName[wxT("fr")] = wxT("Francais");
    localLanguageName[wxT("ga")] = wxT("Gaeilge");
+   localLanguageName[wxT("id")] = wxT("Bahasa Indonesia"); // aka Indonesian
    localLanguageName[wxT("it")] = wxT("Italiano");
    localLanguageName[wxT("ja")] = wxT("Nihongo");
+   localLanguageName[wxT("ka")] = wxT("Georgian");
+   localLanguageName[wxT("km")] = wxT("Khmer");
    localLanguageName[wxT("lo")] = wxT("Lao"); // aka Laothian
    localLanguageName[wxT("lt")] = wxT("Lietuviu");
    localLanguageName[wxT("he")] = wxT("Hebrew");
@@ -131,6 +134,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("sv")] = wxT("Svenska");
    localLanguageName[wxT("tr")] = wxT("Turkce");
    localLanguageName[wxT("uk")] = wxT("Ukrainska");
+   localLanguageName[wxT("ca@valencia")] = wxT("Valencian (southern Catalan)");
    localLanguageName[wxT("vi")] = wxT("Vietnamese");
    localLanguageName[wxT("zh")] = wxT("Chinese (Simplified)");
    localLanguageName[wxT("zh_TW")] = wxT("Chinese (Traditional)");

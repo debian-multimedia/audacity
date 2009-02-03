@@ -71,7 +71,7 @@ class AudacityProject;
 class RecordingRecoveryHandler;
 class ODLock;
 
-AudacityProject *CreateNewAudacityProject(wxWindow * parentFrame);
+AudacityProject *CreateNewAudacityProject();
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
 void RedrawAllProjects();
 void RefreshCursorForAllProjects();
@@ -229,7 +229,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void UpdateMenus();
    void UpdatePrefs();
    void UpdatePrefsVariables();
-   void RedrawProject();
+   void RedrawProject(const bool bForceWaveTracks = false);
    void RefreshCursor();
    void SelectNone();
    void SelectAllIfNone();

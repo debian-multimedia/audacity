@@ -138,7 +138,7 @@ void nyx_susp_fetch(register nyx_susp_type susp, snd_list_type snd_list)
       n = susp->len - susp->susp.current;
 
    err = susp->callback(out_ptr, susp->channel,
-                            susp->susp.current, n, susp->userdata);
+                            susp->susp.current, n, 0, susp->userdata);
    if (err)
       longjmp(nyx_cntxt.c_jmpbuf, 1);      
 
@@ -409,7 +409,7 @@ int nyx_get_audio_num_channels()
       return 1;
 }
 
-void nyx_get_audio(nyx_audio_callback callback, void *userdata)
+int nyx_get_audio(nyx_audio_callback callback, void *userdata)
 {
    sample_block_type block;
    sound_type snd;
@@ -417,10 +417,12 @@ void nyx_get_audio(nyx_audio_callback callback, void *userdata)
    float *buffer;
    long bufferlen;
    long *totals;
+   long *lens;
    long cnt;
    int result = 0;
    int num_channels;
    int ch, i;
+   int success = FALSE;
 
    if (nyx_get_type(nyx_result) != nyx_audio)
       return;
@@ -428,6 +430,7 @@ void nyx_get_audio(nyx_audio_callback callback, void *userdata)
    num_channels = nyx_get_audio_num_channels();
    snds = (sound_type *)malloc(num_channels * sizeof(sound_type));
    totals = (long *)malloc(num_channels * sizeof(long));
+   lens = (long *)malloc(num_channels * sizeof(long));
 
    /* setup the error return */
    xlbegin(&nyx_cntxt,CF_TOPLEVEL|CF_CLEANUP|CF_BRKLEVEL,(LVAL)1);
@@ -441,6 +444,7 @@ void nyx_get_audio(nyx_audio_callback callback, void *userdata)
          snd = getsound(getelement(nyx_result, ch));
       snds[ch] = snd;
       totals[ch] = 0;
+      lens[ch] = snd_length(snd, snd->stop);
    }
 
    buffer = NULL;
@@ -472,20 +476,28 @@ void nyx_get_audio(nyx_audio_callback callback, void *userdata)
             buffer[i] *= snd->scale;
 
          result = callback(buffer, ch,
-                           totals[ch], cnt, userdata);
+                           totals[ch], cnt, lens[ch], userdata);
 
-         if (result == 0)
-            totals[ch] += cnt;
+         if (result != 0) {
+            goto finish;
+         }
+
+         totals[ch] += cnt;
       }
    }
 
+   success = TRUE;
+
  finish:
-      if (buffer)
-         free(buffer);
+   if (buffer)
+      free(buffer);
    free(snds);
    free(totals);
+   free(lens);
 
    xlend(&nyx_cntxt);
+
+   return success;
 }
 
 int nyx_get_int()

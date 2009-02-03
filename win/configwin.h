@@ -14,11 +14,12 @@
 #define USE_NYQUIST 1
 #define USE_PORTMIXER 1
 // #define USE_SLV2 1
+#define USE_SBSMS 1
 #define USE_SOUNDTOUCH 1
 #define USE_VAMP 1
 #undef USE_VST
 #define USE_MIDI 1 // define this to use portSMF for midi file support
-#define EXPERIMENTAL_SCOREALIGN 1
+//#define EXPERIMENTAL_SCOREALIGN 1
 
 #define INSTALL_PREFIX "."
 

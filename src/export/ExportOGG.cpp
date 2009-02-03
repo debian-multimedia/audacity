@@ -60,10 +60,8 @@ END_EVENT_TABLE()
 /// 
 /// 
 ExportOGGOptions::ExportOGGOptions(wxWindow *parent, int format)
-:  wxDialog(NULL, wxID_ANY,
-            wxString(_("Specify Ogg Vorbis Options")),
-            wxDefaultPosition, wxDefaultSize,
-            wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP)
+:  wxDialog(parent, wxID_ANY,
+            wxString(_("Specify Ogg Vorbis Options")))
 {
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
@@ -130,7 +128,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   bool DisplayOptions(wxWindow *parent, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -332,9 +330,9 @@ bool ExportOGG::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportOGG::DisplayOptions(AudacityProject *project, int format)
+bool ExportOGG::DisplayOptions(wxWindow *parent, int format)
 {
-   ExportOGGOptions od(project,format);
+   ExportOGGOptions od(parent, format);
 
    od.ShowModal();
 
@@ -351,6 +349,9 @@ bool ExportOGG::FillComment(AudacityProject *project, vorbis_comment *comment, T
 
    wxString n, v;
    for (bool cont = metadata->GetFirst(n, v); cont; cont = metadata->GetNext(n, v)) {
+      if (n == TAG_YEAR) {
+         n = wxT("DATE");
+      }
       vorbis_comment_add_tag(comment,
                              (char *) (const char *) n.mb_str(wxConvUTF8),
                              (char *) (const char *) v.mb_str(wxConvUTF8));

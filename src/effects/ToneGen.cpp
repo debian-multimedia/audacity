@@ -332,6 +332,7 @@ void ToneGenDialog::PopulateOrExchangeStandard( ShuttleGui & S )
                       wxDefaultPosition,
                       wxDefaultSize,
                       true);
+         mToneDurationT->SetName(_("Duration"));
          mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(wxT("hh:mm:ss + samples")):(wxT("seconds"))));
          mToneDurationT->EnableMenu();
       }
@@ -354,10 +355,10 @@ void ToneGenDialog::PopulateOrExchangeExtended( ShuttleGui & S )
       S.AddFixedText(wxT(""));
       S.AddTitle(_("Start"));
       S.AddTitle(_("End"));
-      S.TieTextBox(_("Frequency (Hz)"),frequency[0], 10);
-      S.TieTextBox(wxT(""), frequency[1], 10);
-      S.TieTextBox(_("Amplitude (0-1)"),amplitude[0], 10);
-      S.TieTextBox(wxT(""), amplitude[1], 10);
+      S.TieTextBox(_("Frequency (Hz)"),frequency[0], 10)->SetName(_("Frequency Hertz Start"));
+      S.TieTextBox(wxT(""), frequency[1], 10)->SetName(_("Frequency Hertz End"));
+      S.TieTextBox(_("Amplitude (0-1)"),amplitude[0], 10)->SetName(_("Amplitude Start"));
+      S.TieTextBox(wxT(""), amplitude[1], 10)->SetName(_("Amplitude End"));
    }
    S.EndMultiColumn();
    S.StartMultiColumn(2, wxCENTER);
@@ -375,6 +376,7 @@ void ToneGenDialog::PopulateOrExchangeExtended( ShuttleGui & S )
                       wxDefaultPosition,
                       wxDefaultSize,
                       true);
+         mToneDurationT->SetName(_("Duration"));
          mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(wxT("hh:mm:ss + samples")):(wxT("seconds"))));
          mToneDurationT->EnableMenu();
       }

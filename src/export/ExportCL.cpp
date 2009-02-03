@@ -51,10 +51,8 @@ END_EVENT_TABLE()
 /// 
 /// 
 ExportCLOptions::ExportCLOptions(wxWindow *parent)
-:  wxDialog(NULL, wxID_ANY,
-   wxString(_("Specify Command Line Encoder")),
-   wxDefaultPosition, wxDefaultSize,
-   wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP)
+:  wxDialog(parent, wxID_ANY,
+            wxString(_("Specify Command Line Encoder")))
 {
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
@@ -199,7 +197,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   bool DisplayOptions(wxWindow *parent, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -241,15 +239,50 @@ bool ExportCL::Export(AudacityProject *project,
    wxString output;
    wxString cmd;
    bool show;
+   long rc;
 
    // Retrieve settings
    gPrefs->Read(wxT("/FileFormats/ExternalProgramShowOutput"), &show, false);
    cmd = gPrefs->Read(wxT("/FileFormats/ExternalProgramExportCommand"), wxT("lame - \"%f.mp3\""));
    cmd.Replace(wxT("%f"), fName);
 
+#if defined(__WXMSW__)
+   // Give Windows a chance at finding lame command in the default location.
+   wxString paths[] = {wxT("HKEY_LOCAL_MACHINE\\Software\\Lame for Audacity"),
+                       wxT("HKEY_LOCAL_MACHINE\\Software\\FFmpeg for Audacity")};
+   wxString opath;
+   wxString npath;
+   wxRegKey reg;
+
+   wxGetEnv(wxT("PATH"), &opath);
+   npath = opath;
+
+   for (int i = 0; i < WXSIZEOF(paths); i++) {
+      reg.SetName(paths[i]);
+
+      if (reg.Exists()) {
+         wxString ipath;
+         reg.QueryValue(wxT("InstallPath"), ipath);
+         if (!ipath.IsEmpty()) {
+            npath += wxPATH_SEP + ipath;
+         }
+      }
+   }
+
+   wxSetEnv(wxT("PATH"),npath.c_str());
+#endif
+
    // Kick off the command
    p = new ExportCLProcess(&output);
-   if (!wxExecute(cmd, wxEXEC_ASYNC, p)) {
+   rc = wxExecute(cmd, wxEXEC_ASYNC, p);
+
+#if defined(__WXMSW__)
+   if (!opath.IsEmpty()) {
+      wxSetEnv(wxT("PATH"),opath.c_str());
+   }
+#endif
+
+   if (!rc) {
       wxMessageBox(wxString::Format(_("Cannot export audio to %s"),
                                     fName.c_str()));
       p->Detach();
@@ -414,9 +447,9 @@ bool ExportCL::Export(AudacityProject *project,
    return true;
 }
 
-bool ExportCL::DisplayOptions(AudacityProject *project, int format)
+bool ExportCL::DisplayOptions(wxWindow *parent, int format)
 {
-   ExportCLOptions od(project);
+   ExportCLOptions od(parent);
 
    od.ShowModal();
 

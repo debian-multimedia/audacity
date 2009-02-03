@@ -104,7 +104,10 @@ bool EffectChangeTempo::Process()
 {
    mSoundTouch = new SoundTouch();
    mSoundTouch->setTempoChange(m_PercentChange);
-   return this->EffectSoundTouch::Process();
+   bool success = this->EffectSoundTouch::Process();
+   if( success )
+      mT1 = mT0 + (mT1 - mT0)/(m_PercentChange/100 + 1.);
+   return success;
 }
 
 //----------------------------------------------------------------------------
@@ -422,13 +425,17 @@ void ChangeTempoDialog::OnText_ToLength(wxCommandEvent & event)
    }
 }
 
-
 void ChangeTempoDialog::OnPreview(wxCommandEvent &event)
 {
    TransferDataFromWindow();
 
 	// Save & restore parameters around Preview, because we didn't do OK.
 	double oldPercentChange = mEffect->m_PercentChange;
+   if( m_PercentChange < -99.0)
+   {
+      m_PercentChange = -99.0;
+      this->Update_Text_PercentChange();
+   }
 	mEffect->m_PercentChange = m_PercentChange;
 	mEffect->Preview();
 	mEffect->m_PercentChange = oldPercentChange;
@@ -442,6 +449,7 @@ void ChangeTempoDialog::Update_Text_PercentChange()
 		wxString str;
 		str.Printf(wxT("%.3f"), m_PercentChange);
 		m_pTextCtrl_PercentChange->SetValue(str);
+      FindWindow(wxID_OK)->Enable(m_PercentChange > -100.0);
 	}
 }
 

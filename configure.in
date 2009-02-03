@@ -215,7 +215,7 @@ dnl If the C++ compiler supports making symbols within audacity hidden then
 dnl we would like to do so. This means that only the required symbols for
 dnl plug-in functionality are exposed, rather than everything in the program.
 dnl-------------------------------------------------------------------------
-AUDACITY_CHECK_VISIBILITY
+gl_VISIBILITY
 
 dnl-------------------------------------------------------------
 dnl Configure the libraries which are essential to audacity.
@@ -289,7 +289,9 @@ dnl-------------------------------------------------------------
 dnl Optional library support. Lots of things we could use, but 
 dnl can do without if they aren't available.
 dnl-------------------------------------------------------------
-LIBRARIES="LIBVORBIS LIBMAD LIBSNDFILE LIBFLAC LIBID3TAG LIBSAMPLERATE LIBRESAMPLE LIBSOUNDTOUCH LIBNYQUIST LIBVAMP LIBEXPAT LIBTWOLAME FFMPEG LIBLRDF SLV2 REDLAND PORTSMF"
+dnl LIBRARIES="LIBVORBIS LIBMAD LIBSNDFILE LIBFLAC LIBID3TAG LIBSAMPLERATE LIBRESAMPLE LIBSBSMS LIBSOUNDTOUCH LIBNYQUIST LIBVAMP LIBEXPAT LIBTWOLAME FFMPEG LIBLRDF SLV2 REDLAND PORTSMF"
+dnl disable plugin categorisation and LV2 libs for 1.3.7 release
+LIBRARIES="LIBVORBIS LIBMAD LIBSNDFILE LIBFLAC LIBID3TAG LIBSAMPLERATE LIBRESAMPLE LIBSBSMS LIBSOUNDTOUCH LIBNYQUIST LIBVAMP LIBEXPAT LIBTWOLAME FFMPEG PORTSMF"
 
 AC_MSG_NOTICE([Determining what libraries are available in this tree and on the system])
 
@@ -301,14 +303,15 @@ AUDACITY_CHECKLIB_LIBVORBIS
 AUDACITY_CHECKLIB_LIBMAD
 AUDACITY_CHECKLIB_LIBFLAC
 AUDACITY_CHECKLIB_LIBID3TAG
+AUDACITY_CHECKLIB_LIBSBSMS
 AUDACITY_CHECKLIB_LIBSOUNDTOUCH
 AUDACITY_CHECKLIB_LIBNYQUIST
 AUDACITY_CHECKLIB_LIBVAMP
 AUDACITY_CHECKLIB_LIBTWOLAME
 AUDACITY_CHECKLIB_FFMPEG
-AUDACITY_CHECKLIB_REDLAND
-AUDACITY_CHECKLIB_SLV2
-AUDACITY_CHECKLIB_LIBLRDF
+dnl AUDACITY_CHECKLIB_REDLAND
+dnl AUDACITY_CHECKLIB_SLV2
+dnl AUDACITY_CHECKLIB_LIBLRDF
 AUDACITY_CHECKLIB_PORTSMF
 
 dnl Decide what libraries to build with, and whether to use system or local libraries
@@ -405,11 +408,11 @@ if ( test "$LIBRESAMPLE_USE_LOCAL" = "yes" || test "$LIBRESAMPLE_USE_SYSTEM" = "
    fi
 fi
 
-if ( test "$SLV2_USE_LOCAL" != "yes" && test "$LIBLRDF_USE_LOCAL" != "yes") && test "$REDLAND_USE_LOCAL" = "yes" ; then
-   AC_MSG_NOTICE([Not building local Redland library since we don't use the local SLV2 or liblrdf libraries])
-   REDLAND_USE_LOCAL=no
-   REDLAND_USE_SYSTEM=no
-fi
+dnl if ( test "$SLV2_USE_LOCAL" != "yes" && test "$LIBLRDF_USE_LOCAL" != "yes") && test "$REDLAND_USE_LOCAL" = "yes" ; then
+dnl   AC_MSG_NOTICE([Not building local Redland library since we don't use the local SLV2 or liblrdf libraries])
+dnl   REDLAND_USE_LOCAL=no
+dnl   REDLAND_USE_SYSTEM=no
+dnl fi
 
 dnl If we are using a local copy of liblrdf then some extra files need to be
 dnl installed on the system, so we need to add the targets to
@@ -427,7 +430,7 @@ for lib in $LIBRARIES ; do
    if test "x$LIB_USE_LOCAL" = "xyes" ; then
       eval LIBSRC_BUILD=\"$LIBSRC_BUILD \$${lib}_LOCAL_BUILD\"
       eval LOCAL_LIBS=\"$LOCAL_LIBS \$${lib}_LOCAL_LIBS\"
-      eval BUILD_LDFLAGS=\"$BUILD_LDFLAGS \$${lib}_LOCAL_LDFLAGS\"
+      eval BUILD_LDFLAGS=\"\$BUILD_LDFLAGS \$${lib}_LOCAL_LDFLAGS\"
       eval OPTOBJS=\"$OPTOBJS \$${lib}_LOCAL_OPTOBJS\"
       eval CXXFLAGS=\"\$CXXFLAGS \$${lib}_LOCAL_CXXFLAGS\"
       eval CONFIG_SUBDIRS=\"\$${lib}_LOCAL_CONFIG_SUBDIRS\"
@@ -647,36 +650,10 @@ if [[ "$use_portmixer" = "yes" ]] ; then
    fi
 fi
 
-case "$host_os" in
-dnl   darwin* | rhapsody*)
-dnl      AC_MSG_WARN([[Not using native lrint() and lrintf() because they are missing on 10.1.]])
-dnl      ;;
-   *)
-      dnl For all other Unix systems, we want to check for lrint/lrintf
-      AC_C99_FUNC_LRINT
-      AC_C99_FUNC_LRINTF
-      ;;
-esac
+dnl Check for lrint/lrintf
+AC_C99_FUNC_LRINT
+AC_C99_FUNC_LRINTF
 
-
-dnl Special configuration for LADSPA on Mac OS X
-if [[ "$use_ladspa" = "yes" ]] ; then
-   case "$host_os" in
-      darwin7*)
-         LIBS="$LIBS -ldl"
-         ;;
-      darwin[[123456]].* | rhapsody*)
-         LOCAL_LIBS="$LOCAL_LIBS libdl.a"
-         CXXFLAGS="$CXXFLAGS -I$(srcdir)/lib-src/dlcompat"
-         if test ! -f "lib-src/dlcompat/Makefile"; then
-            echo "--- Configuring dlcompat";
-            AC_CONFIG_SUBDIRS([lib-src/dlcompat])
-         fi    
-         ;;
-      *)
-         ;;
-   esac
-fi
 
 if [[ "$use_ladspa" = "yes" ]] ; then
    OPTOBJS="$OPTOBJS effects/ladspa/LoadLadspa.o"
@@ -684,6 +661,15 @@ if [[ "$use_ladspa" = "yes" ]] ; then
 
    AC_DEFINE(USE_LADSPA, 1,
              [Define if LADSPA plug-ins are enabled])
+
+   dnl Special configuration for LADSPA on Mac OS X
+   case "$host_os" in
+      darwin7*)
+         LIBS="$LIBS -ldl"
+         ;;
+      *)
+         ;;
+   esac
 fi
 
 if [[ "$use_audiounits" = "yes" ]] ; then
@@ -714,7 +700,7 @@ case "${host_os}" in
 esac
 
 AC_CONFIG_FILES([Makefile src/Makefile lib-src/Makefile \
-                 lib-src/libnyquist/Makefile lib-src/libvamp/Makefile \
+                 lib-src/libnyquist/Makefile lib-src/libnyquist/misc/Makefile \
                  locale/Makefile])
 dnl There are various other files we might need to process, depends on what
 dnl has been enabled previously

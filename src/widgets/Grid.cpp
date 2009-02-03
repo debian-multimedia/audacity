@@ -395,13 +395,78 @@ void Grid::OnKeyDown(wxKeyEvent &event)
 {
    switch (event.GetKeyCode())
    {
+      case WXK_LEFT:
+      case WXK_RIGHT:
+      {
+         int rows = GetNumberRows();
+         int cols = GetNumberCols();
+         int crow = GetGridCursorRow();
+         int ccol = GetGridCursorCol();
+
+         if (event.GetKeyCode() == WXK_LEFT) {
+            if (crow == 0 && ccol == 0) {
+               // do nothing
+            }
+            else if (ccol == 0) {
+               SetGridCursor(crow - 1, cols - 1);
+            }
+            else {
+               SetGridCursor(crow, ccol - 1);
+            }
+         }
+         else {
+            if (crow == rows - 1 && ccol == cols - 1) {
+               // do nothing
+            }
+            else if (ccol == cols - 1) {
+               SetGridCursor(crow + 1, 0);
+            }
+            else {
+               SetGridCursor(crow, ccol + 1);
+            }
+         }
+      }
+      break;
+
       case WXK_TAB:
       {
-         int flags = wxNavigationKeyEvent::FromTab |
-                     ( event.ShiftDown() ?
-                       wxNavigationKeyEvent::IsBackward :
-                       wxNavigationKeyEvent::IsForward );
-         Navigate(flags);
+         int rows = GetNumberRows();
+         int cols = GetNumberCols();
+         int crow = GetGridCursorRow();
+         int ccol = GetGridCursorCol();
+
+         if (event.ControlDown()) {
+            int flags = wxNavigationKeyEvent::FromTab |
+                        ( event.ShiftDown() ?
+                          wxNavigationKeyEvent::IsBackward :
+                          wxNavigationKeyEvent::IsForward );
+            Navigate(flags);
+         }
+         else if (event.ShiftDown()) {
+            if (crow == 0 && ccol == 0) {
+               Navigate(wxNavigationKeyEvent::FromTab | wxNavigationKeyEvent::IsBackward);
+               return;
+            }
+            else if (ccol == 0) {
+               SetGridCursor(crow - 1, cols - 1);
+            }
+            else {
+               SetGridCursor(crow, ccol - 1);
+            }
+         }
+         else {
+            if (crow == rows - 1 && ccol == cols - 1) {
+               Navigate(wxNavigationKeyEvent::FromTab | wxNavigationKeyEvent::IsForward);
+               return;
+            }
+            else if (ccol == cols - 1) {
+               SetGridCursor(crow + 1, 0);
+            }
+            else {
+               SetGridCursor(crow, ccol + 1);
+            }
+         }
+         MakeCellVisible(GetGridCursorRow(), GetGridCursorCol());
       }
       break;
 

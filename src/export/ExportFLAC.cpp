@@ -29,7 +29,6 @@ and libvorbis examples, Monty <monty@xiph.org>
 #include <wx/log.h>
 #include <wx/msgdlg.h>
 
-#include <vorbis/vorbisenc.h>
 #include "FLAC++/encoder.h"
 
 #include "../float_cast.h"
@@ -64,10 +63,8 @@ END_EVENT_TABLE()
 /// 
 /// 
 ExportFLACOptions::ExportFLACOptions(wxWindow *parent)
-:  wxDialog(NULL, wxID_ANY,
-            wxString(_("Specify FLAC Options")),
-            wxDefaultPosition, wxDefaultSize,
-            wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP)
+:  wxDialog(parent, wxID_ANY,
+            wxString(_("Specify FLAC Options")))
 {
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
@@ -179,7 +176,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   bool DisplayOptions(wxWindow *parent, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -350,9 +347,9 @@ bool ExportFLAC::Export(AudacityProject *project,
    return !cancelling;
 }
 
-bool ExportFLAC::DisplayOptions(AudacityProject *project, int format)
+bool ExportFLAC::DisplayOptions(wxWindow *parent, int format)
 {
-   ExportFLACOptions od(project);
+   ExportFLACOptions od(parent);
 
    od.ShowModal();
 
@@ -377,6 +374,9 @@ bool ExportFLAC::GetMetadata(AudacityProject *project, Tags *tags)
 
    wxString n, v;
    for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {
+      if (n == TAG_YEAR) {
+         n = wxT("DATE");
+      }
       FLAC::Metadata::VorbisComment::Entry entry(n.mb_str(wxConvUTF8),
                                                  v.mb_str(wxConvUTF8));
       ::FLAC__metadata_object_vorbiscomment_append_comment(mMetadata,

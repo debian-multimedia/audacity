@@ -1,4 +1,4 @@
-########################################
+#######################################
 #
 # Audacity Makefile
 #
@@ -38,7 +38,7 @@ override CFLAGS += @CFLAGS@
 override CXXFLAGS += @CXXFLAGS@
 
 # CPPFLAGS are for both C and C++.
-override CPPFLAGS += -fno-strict-aliasing -I$(srcdir)/include -I. -DLIBDIR=\"$(libdir)\" @CPPFLAGS@ 
+override CPPFLAGS += -fno-strict-aliasing -I$(srcdir)/include -I. -DLIBDIR=\"$(libdir)\" -D__STDC_CONSTANT_MACROS @CPPFLAGS@ 
 
 # LDFLAGS are for linking. BUILD_LDFLAGS are not valid during configure because
 # they reference libs that haven't been built yet
@@ -114,6 +114,8 @@ OBJS = \
 	effects/EffectManager.o \
 	effects/SimpleMono.o \
 	effects/SimplePairedTwoTrack.o \
+	effects/SBSMSEffect.o \
+	effects/TimeScale.o \
 	effects/SoundTouchEffect.o \
 	effects/LoadEffects.o \
 	effects/Amplify.o \
@@ -124,6 +126,7 @@ OBJS = \
 	effects/ChangeTempo.o \
 	effects/ClickRemoval.o \
 	effects/Compressor.o \
+	effects/Contrast.o \
 	effects/DtmfGen.o \
 	effects/Echo.o \
 	effects/Equalization.o \
@@ -191,7 +194,6 @@ OBJS = \
 	toolbars/ToolManager.o \
 	toolbars/ToolsToolBar.o \
 	toolbars/TranscriptionToolBar.o \
-	widgets/treebook.o \
 	widgets/AButton.o \
 	widgets/ASlider.o \
 	widgets/AttachableScrollBar.o \
@@ -264,7 +266,8 @@ $(DIRS):
 	mkdir -p ../Audacity.app/Contents/MacOS
 	mkdir -p ../Audacity.app/Contents/Resources
 	cp -f ../audacity ../Audacity.app/Contents/MacOS/Audacity
-	cp -f ../mac/Info.plist ../Audacity.app/Contents
+	gcc -E -dM Audacity.h | grep AUDACITY >Info.plist.h
+	gcc -E -P -x c -Wno-trigraphs -traditional -include Info.plist.h ../mac/Info.plist >../Audacity.app/Contents/Info.plist
 	test -f "../Audacity.app/Contents/PkgInfo" || \
 	     echo "APPLauDy" > ../Audacity.app/Contents/PkgInfo
 	cp -f ../mac/Resources/*.icns ../Audacity.app/Contents/Resources

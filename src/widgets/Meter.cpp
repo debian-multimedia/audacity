@@ -70,6 +70,35 @@
 #include "../AllThemeResources.h"
 #include "../Experimental.h"
 
+/* Updates to the meter are passed accross via meter updates, each contained in
+ * a MeterUpdateMsg object */
+wxString MeterUpdateMsg::toString()
+{
+wxString output;  // somewhere to build up a string in
+output = wxString::Format(wxT("Meter update msg: %i channels, %i samples\n"), \
+      kMaxMeterBars, numFrames);
+for (int i = 0; i<kMaxMeterBars; i++)
+   {  // for each channel of the meters
+   output += wxString::Format(wxT("%f peak, %f rms "), peak[i], rms[i]);
+   if (clipping[i])
+      output += wxString::Format(wxT("clipped "));
+   else
+      output += wxString::Format(wxT("no clip "));
+   output += wxString::Format(wxT("%i head, %i tail\n"), headPeakCount[i], tailPeakCount[i]);
+   }
+return output;
+}
+
+wxString MeterUpdateMsg::toStringIfClipped()
+{
+for (int i = 0; i<kMaxMeterBars; i++)
+   {
+   if (clipping[i] || (headPeakCount[i] > 0) || (tailPeakCount[i] > 0))
+      return toString();
+   }
+return wxT("");
+}
+
 //
 // The Meter passes itself messages via this queue so that it can
 // communicate between the audio thread and the GUI thread.
@@ -106,6 +135,8 @@ bool MeterUpdateQueue::Put(MeterUpdateMsg &msg)
    // state is ambiguous (mStart==mEnd)
    if (len >= mBufferSize-1)
       return false;
+
+   //wxLogDebug(wxT("Put: %s"), msg.toString().c_str());
 
    mBuffer[mEnd] = msg;
    mEnd = (mEnd+1)%mBufferSize;
@@ -253,11 +284,7 @@ Meter::Meter(wxWindow* parent, wxWindowID id,
    }
 
    CreateIcon(2);
-#ifdef EXPERIMENTAL_RULER_AUTOSIZE
    mRuler.SetFonts(GetFont(), GetFont(), GetFont());
-#else //!EXPERIMENTAL_RULER_AUTOSIZE
-   mRuler.SetFonts(GetFont(), GetFont());
-#endif //EXPERIMENTAL_RULER_AUTOSIZE
 
    mTimer.SetOwner(this, OnMeterUpdateID);
    Reset(44100.0, true);
@@ -357,7 +384,7 @@ void Meter::OnMouse(wxMouseEvent &evt)
 
    #if WANT_METER_MENU
       if (evt.RightDown() ||
-          (evt.ButtonDown() && mMenuRect.Inside(evt.m_x, evt.m_y))) 
+          (evt.ButtonDown() && mMenuRect.Contains(evt.m_x, evt.m_y))) 
       {
          wxMenu *menu = new wxMenu();
          // Note: these should be kept in the same order as the enum
@@ -424,7 +451,7 @@ void Meter::Reset(double sampleRate, bool resetClipping)
 
    mT = 0;
    mRate = sampleRate;
-   for(j=0; j<mNumBars; j++)
+   for(j=0; j<kMaxMeterBars; j++)
       ResetBar(&mBar[j], resetClipping);
 
    // wxTimers seem to be a little unreliable - sometimes they stop for
@@ -500,10 +527,8 @@ void Meter::UpdateDisplay(int numChannels, int numFrames, float *sampleData)
 
          // In addition to looking for mNumPeakSamplesToClip peaked
          // samples in a row, also send the number of peaked samples
-         // at the head and tail, in case there's a run of 
-         // Send the number of peaked samples at the head and tail,
-         // in case there's a run of peaked samples that crosses
-         // block boundaries
+         // at the head and tail, in case there's a run of peaked samples
+         // that crosses block boundaries
          if (fabs(sptr[j])>=MAX_AUDIO) {
             if (msg.headPeakCount[j]==i)
                msg.headPeakCount[j]++;
@@ -546,7 +571,8 @@ void Meter::OnMeterUpdate(wxTimerEvent &evt)
       
       if (mMeterDisabled)
          return;
-      
+      //wxLogDebug(wxT("Pop: %s"), msg.toString().c_str());
+
       mT += deltaT;
       for(j=0; j<mNumBars; j++) {
          if (mDecay) {

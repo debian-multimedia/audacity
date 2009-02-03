@@ -8,7 +8,11 @@
 
 **********************************************************************/
 
+#include <wx/defs.h>
+
 #include <wx/choice.h>
+#include <wx/dynlib.h>
+#include <wx/filename.h>
 #include <wx/intl.h>
 #include <wx/timer.h>
 #include <wx/msgdlg.h>
@@ -33,15 +37,16 @@
 
 #include "Export.h"
 
-#ifdef __WXMAC__
-#define __MOVIES__   /* Apple's Movies.h not compatible with Audacity */
-/* #define __MACHELP__ */
-
-#include <wx/mac/private.h>
-# ifdef __UNIX__
-#  include <CoreServices/CoreServices.h>
-# else
-# endif
+#ifdef USE_LIBID3TAG 
+   #include <id3tag.h>
+   // DM: the following functions were supposed to have been
+   // included in id3tag.h - should be fixed in the next release
+   // of mad.
+   extern "C" {
+      struct id3_frame *id3_frame_new(char const *);
+      id3_length_t id3_latin1_length(id3_latin1_t const *);
+      void id3_latin1_decode(id3_latin1_t const *, id3_ucs4_t *);
+   } 
 #endif
 
 //----------------------------------------------------------------------------
@@ -50,10 +55,11 @@
 
 static int ReadExportFormatPref()
 {
-   return gPrefs->Read(wxT("/FileFormats/ExportFormat_SF1"),
 #if defined(__WXMAC__)
+   return gPrefs->Read(wxT("/FileFormats/ExportFormat_SF1"),
                        (long int)(SF_FORMAT_AIFF | SF_FORMAT_PCM_16));
 #else
+   return gPrefs->Read(wxT("/FileFormats/ExportFormat_SF1"),
                        (long int)(SF_FORMAT_WAV | SF_FORMAT_PCM_16));
 #endif
 }
@@ -110,25 +116,26 @@ END_EVENT_TABLE()
 /// 
 ExportPCMOptions::ExportPCMOptions(wxWindow *parent, int selformat)
 :  wxDialog(NULL, wxID_ANY,
-            wxString(_("Specify Uncompressed Options")),
-            wxDefaultPosition, wxDefaultSize,
-            wxDEFAULT_DIALOG_STYLE | wxSTAY_ON_TOP)
+            wxString(_("Specify Uncompressed Options")))
 {
    mOk = NULL;   
    int format = 0;
    switch (selformat)
    {
-   case 0:
-      format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+   case 0:  // other uncompressed
+      format = ReadExportFormatPref();
       break;
-   case 1:
+   case 1:  // 16-bit AIFF
       format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16;
       break;
-   case 3:
+   case 2:  // 16-bit WAV
+      format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+      break;
+   case 3:  // GSM WAV
       format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
       break;
-   case 2:
-   default:
+   default: // bug - forgot to extend this case statement
+      wxASSERT(false);
       format = ReadExportFormatPref();
       break;
    }
@@ -314,7 +321,7 @@ public:
 
    // Required
 
-   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   bool DisplayOptions(wxWindow *parent, int format = 0);
    bool Export(AudacityProject *project,
                int channels,
                wxString fName,
@@ -324,10 +331,12 @@ public:
                MixerSpec *mixerSpec = NULL,
                Tags *metadata = NULL,
                int subformat = 0); 
-
+   // optional
+   wxString GetExtension(int index = 0);
 private:
 
    bool AddStrings(AudacityProject *project, SNDFILE *sf, Tags *tags);
+   void AddID3Chunk(wxString fName, Tags *tags);
 
 };
 
@@ -340,50 +349,56 @@ ExportPCM::ExportPCM()
    si.samplerate = 0;
    si.channels = 0;
 
-   si.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
-   for (si.channels = 1; sf_format_check(&si); si.channels++){};
-   AddFormat();
-   SetFormat(wxT("WAV"),0);
-   SetCanMetaData(true,0);
-   SetDescription(_("WAV (Microsoft) signed 16 bit PCM"),0);
-   wxString wavext = sf_header_extension(si.format);
-   AddExtension(wavext,0);
-   SetMaxChannels(si.channels - 1,0);
+   int format; // the index of the format we are setting up at the moment
 
-   si.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16;
-   for (si.channels = 1; sf_format_check(&si); si.channels++){};
-   AddFormat();
-   SetFormat(wxT("AIFF"),1);
-   SetCanMetaData(true,1);
-   SetDescription(_("AIFF (Apple) signed 16 bit PCM"),1);
-   wxString aiffext = sf_header_extension(si.format);
-   AddExtension(aiffext,1);
-   SetMaxChannels(si.channels - 1,1);
-
-   AddFormat();
-   SetFormat(wxT("LIBSNDFILE"),2);
-   SetCanMetaData(true,2);
-   SetDescription(_("Other uncompressed files"),2);
+   /* add default user controlled format to list of formats this plug-in does
+    * at position 0 */
+   format = AddFormat() - 1;  // store the index = 1 less than the count
+   SetFormat(wxT("LIBSNDFILE"),format);
+   SetCanMetaData(true,format);
+   SetDescription(_("Other uncompressed files"),format);
    wxArrayString allext = sf_get_all_extensions();
+   wxString wavext = sf_header_extension(SF_FORMAT_WAV);   // get WAV ext.
 #if defined(wxMSW)
-   // On Windows make sure WAV is at the beginning of the list.
+   // On Windows make sure WAV is at the beginning of the list of all possible
+   // extensions for this format
    allext.Remove(wavext);
    allext.Insert(wavext,0);
-#else
-   allext.Remove(aiffext);
-   allext.Insert(aiffext,0);
 #endif
-   SetExtensions(allext,2);
-   SetMaxChannels(255,2);
+   SetExtensions(allext,format);
+   SetMaxChannels(255,format);
 
+   /* add AIFF 16-bit to list of sub-formats for this plug-in at position 1 */
+   si.format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16;
+   for (si.channels = 1; sf_format_check(&si); si.channels++){};
+   format = AddFormat() - 1;
+   SetFormat(wxT("AIFF"),format);
+   SetCanMetaData(true,format);
+   SetDescription(_("AIFF (Apple) signed 16 bit PCM"),format);
+   wxString aiffext = sf_header_extension(si.format);
+   AddExtension(aiffext,format);
+   SetMaxChannels(si.channels - 1,format);
+
+   /* add WAV 16-bit at position 2 */
+   si.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+   for (si.channels = 1; sf_format_check(&si); si.channels++){};
+   format = AddFormat() - 1;
+   SetFormat(wxT("WAV"),format);
+   SetCanMetaData(true,format);
+   SetDescription(_("WAV (Microsoft) signed 16 bit PCM"),format);
+   // we sorted out wavext near the begining
+   AddExtension(wavext,format);
+   SetMaxChannels(si.channels - 1,format);
+
+   /* add GSM6.10 to list of formats at position 3 */
    si.format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
    for (si.channels = 1; sf_format_check(&si); si.channels++){};
-   AddFormat();
-   SetFormat(wxT("GSM610"),3);
-   SetCanMetaData(true,3);
-   SetDescription(_("GSM 6.10 WAV (mobile)"),3);
-   AddExtension(sf_header_extension(si.format),3);
-   SetMaxChannels(si.channels - 1,3);
+   format = AddFormat() - 1;
+   SetFormat(wxT("GSM610"),format);
+   SetCanMetaData(true,format);
+   SetDescription(_("GSM 6.10 WAV (mobile)"),format);
+   AddExtension(sf_header_extension(si.format),format);
+   SetMaxChannels(si.channels - 1,format);
 }
 
 void ExportPCM::Destroy()
@@ -391,6 +406,12 @@ void ExportPCM::Destroy()
    delete this;
 }
 
+/**
+ *
+ * @param subformat Control whether we are doing a "preset" export to a popular
+ * file type, or giving the user full control over libsndfile. Set to 0 
+ * (default) gives full control, 1 gives 16-bit AIFF, 2 gives 16-bit WAV 
+ * 3 gives a GSM 6.10 WAV file */ 
 bool ExportPCM::Export(AudacityProject *project,
                        int numChannels,
                        wxString fName,
@@ -406,16 +427,25 @@ bool ExportPCM::Export(AudacityProject *project,
    int sf_format;
    switch (subformat)
    {
-   case 0:
-      sf_format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+   case 0:  // other uncompressed
+      sf_format = ReadExportFormatPref();
       break;
-   case 1:
+   case 1:  // AIFF
       sf_format = SF_FORMAT_AIFF | SF_FORMAT_PCM_16;
       break;
-   case 2:
-   default:
-      sf_format = ReadExportFormatPref();
+   case 2:  // WAV
+      sf_format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
+      break;
+   case 3:
+      sf_format = SF_FORMAT_WAV | SF_FORMAT_GSM610;
+      break;
+   default: // land here if supplied a sub-format that we don't know about
+      wxASSERT(false);  // raise assertion - this is a bug
+      sf_format = ReadExportFormatPref(); // treat it like 0 so users get a
+      // working result
+   break;
    }
+
    wxString     formatStr;
    SF_INFO      info;
    SNDFILE     *sf = NULL;
@@ -498,7 +528,6 @@ bool ExportPCM::Export(AudacityProject *project,
       
       samplePtr mixed = mixer->GetBuffer();
 
-      
       ODManager::LockLibSndFileMutex();
       if (format == int16Sample)
          sf_writef_short(sf, (short *)mixed, numSamples);
@@ -515,7 +544,6 @@ bool ExportPCM::Export(AudacityProject *project,
 
    delete[] waveTracks;                            
 
-   
    ODManager::LockLibSndFileMutex();
    err = sf_close(sf);
    ODManager::UnlockLibSndFileMutex();
@@ -529,19 +557,14 @@ bool ExportPCM::Export(AudacityProject *project,
                     buffer));
    }
 
-#ifdef __WXMAC__
-
-   FSSpec spec;
-
-   wxMacFilename2FSSpec(fName, &spec);
-
-   FInfo finfo;
-   if (FSpGetFInfo(&spec, &finfo) == noErr) {
-      finfo.fdType = sf_header_mactype(sf_format & SF_FORMAT_TYPEMASK);
-      finfo.fdCreator = AUDACITY_CREATOR;
-
-      FSpSetFInfo(&spec, &finfo);
+   if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF) {
+      AddID3Chunk(fName, metadata);
    }
+
+#ifdef __WXMAC__
+   wxFileName fn(fName);
+   fn.MacSetTypeAndCreator(sf_header_mactype(sf_format & SF_FORMAT_TYPEMASK),
+                           AUDACITY_CREATOR);
 #endif
    
    return !cancelling;
@@ -576,20 +599,171 @@ bool ExportPCM::AddStrings(AudacityProject *project, SNDFILE *sf, Tags *tags)
    return true;
 }
 
-bool ExportPCM::DisplayOptions(AudacityProject *project, int format)
+void ExportPCM::AddID3Chunk(wxString fName, Tags *tags)
 {
-   if (format != 2)
-   {
-      wxMessageBox(wxT("No options for this format. Use 'Other uncompressed files'."));
+#ifdef USE_LIBID3TAG 
+
+   struct id3_tag *tp = id3_tag_new();
+
+   wxString n, v;
+   for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {
+      const char *name = "TXXX";
+
+      if (n.CmpNoCase(TAG_TITLE) == 0) {
+         name = ID3_FRAME_TITLE;
+      }
+      else if (n.CmpNoCase(TAG_ARTIST) == 0) {
+         name = ID3_FRAME_ARTIST;
+      }
+      else if (n.CmpNoCase(TAG_ALBUM) == 0) {
+         name = ID3_FRAME_ALBUM;
+      }
+      else if (n.CmpNoCase(TAG_YEAR) == 0) {
+         name = ID3_FRAME_YEAR;
+      }
+      else if (n.CmpNoCase(TAG_GENRE) == 0) {
+         name = ID3_FRAME_GENRE;
+      }
+      else if (n.CmpNoCase(TAG_COMMENTS) == 0) {
+         name = ID3_FRAME_COMMENT;
+      }
+      else if (n.CmpNoCase(TAG_TRACK) == 0) {
+         name = ID3_FRAME_TRACK;
+      }
+
+      struct id3_frame *frame = id3_frame_new(name);
+
+      if (!n.IsAscii() || !v.IsAscii()) {
+         id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_UTF_16);
+      }
+      else {
+         id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_ISO_8859_1);
+      }
+
+      id3_ucs4_t *ucs4 =
+         id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) v.mb_str(wxConvUTF8));
+
+      if (strcmp(name, ID3_FRAME_COMMENT) == 0) {
+         // A hack to get around iTunes not recognizing the comment.  The
+         // language defaults to XXX and, since it's not a valid language,
+         // iTunes just ignores the tag.  So, either set it to a valid language
+         // (which one???) or just clear it.  Unfortunately, there's no supported
+         // way of clearing the field, so do it directly.
+         id3_field *f = id3_frame_field(frame, 1);
+         memset(f->immediate.value, 0, sizeof(f->immediate.value));
+         id3_field_setfullstring(id3_frame_field(frame, 3), ucs4);
+      }
+      else if (strcmp(name, "TXXX") == 0) {
+         id3_field_setstring(id3_frame_field(frame, 2), ucs4);
+         free(ucs4);
+
+         ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) n.mb_str(wxConvUTF8));
+           
+         id3_field_setstring(id3_frame_field(frame, 1), ucs4);
+      }
+      else {
+         id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
+      }
+
+      free(ucs4);
+
+      id3_tag_attachframe(tp, frame);
+   }
+
+   tp->options &= (~ID3_TAG_OPTION_COMPRESSION); // No compression
+
+   // If this version of libid3tag supports it, use v2.3 ID3
+   // tags instead of the newer, but less well supported, v2.4
+   // that libid3tag uses by default.
+#ifdef ID3_TAG_HAS_TAG_OPTION_ID3V2_3
+   tp->options |= ID3_TAG_OPTION_ID3V2_3;
+#endif
+
+   id3_length_t len;
+
+   len = id3_tag_render(tp, 0);
+   id3_byte_t *buffer = (id3_byte_t *)malloc(len + 1);
+   if (buffer == NULL) {
+      id3_tag_delete(tp);
+      return;
+   }
+   buffer[len + 1] = '\0';
+
+   len = id3_tag_render(tp, buffer);
+
+   id3_tag_delete(tp);
+
+   wxFFile f(fName, wxT("r+b"));
+   if (f.IsOpened()) {
+      wxUint32 sz;
+      
+      sz = wxUINT32_SWAP_ON_LE((wxUint32) len);
+      f.SeekEnd(0);
+      f.Write("ID3 ", 4);
+      f.Write(&sz, 4);
+
+      f.Write(buffer, len + (len & 0x01));
+
+      sz = wxUINT32_SWAP_ON_LE((wxUint32) f.Tell() - 8);
+      f.Seek(4);
+      f.Write(&sz, 4);
+
+      f.Close();
+   }
+
+   free(buffer);
+#endif
+   return;
+}
+
+/** @param format The same information as the subformat argument to the Export
+ * method. Controls use of pre-defined export settings.*/
+bool ExportPCM::DisplayOptions(wxWindow *parent, int format)
+{
+   wxString nopt(_("There are no options for this format.\n"));
+   /* i18n-hint: This is pointing users at another possible export format in 
+    * the list. So you should translate the quoted string 
+    * 'Other uncompressed files' exactly the same as you do the same string
+    * when it comes up on it's own.*/
+   wxString usepcm(_("If you need more control over the export format please use the 'Other uncompressed files' format."));
+
+   /* actual code - decide what options if any are useful to show */
+   if(format == 1)
+   {   // 16-bit AIFF
+      wxMessageBox(nopt + _("Your file will be exported as a 16-bit AIFF (Apple/SGI) file.\n") + usepcm);
       return true;
    }
-   ExportPCMOptions od(project,format);
+   else if (format == 2)
+   {  // 16-bit WAV
+      wxMessageBox(nopt + _("Your file will be exported as a 16-bit WAV (Microsoft) file.\n") + usepcm);
+      return true;
+   }
+   else if (format == 3)
+   {  // GSM WAV
+      wxMessageBox(nopt + _("Your file will be exported as a GSM 6.10 WAV file.\n") + usepcm);
+      return true;
+   }
 
+   // default, full user control
+   ExportPCMOptions od(parent,format);
    od.ShowModal();
 
    return true;
 }
 
+wxString ExportPCM::GetExtension(int index)
+{
+if (index == 0)
+   {  // get extension libsndfile thinks is correct for currently selected
+      // format
+   wxString fileext = sf_header_extension(ReadExportFormatPref());
+   return fileext; 
+   }
+else
+   {  // do as the default in Export.cpp
+   return mFormatInfos[index]->mExtensions[0];
+   }
+}
 //----------------------------------------------------------------------------
 // Constructor
 //----------------------------------------------------------------------------

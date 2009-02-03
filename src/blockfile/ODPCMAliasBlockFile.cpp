@@ -108,7 +108,7 @@ wxLongLong ODPCMAliasBlockFile::GetSpaceUsage()
    if(IsSummaryAvailable())
    {
       wxLongLong ret;
-      mFileNameMutex.Unlock();
+      mFileNameMutex.Lock();
       wxFFile summaryFile(mFileName.GetFullPath());
       ret= summaryFile.Length();
       mFileNameMutex.Unlock();
@@ -218,6 +218,8 @@ BlockFile *ODPCMAliasBlockFile::Copy(wxFileName newFileName)
 {
    BlockFile *newBlockFile;
    
+   //mAliasedFile can change so we lock readdatamutex, which is responsible for it.
+   mReadDataMutex.Lock();
    //If the file has been written AND it has been saved, we create a PCM alias blockfile because for
    //all intents and purposes, it is the same.  
    //However, if it hasn't been saved yet, we shouldn't create one because the default behavior of the
@@ -240,6 +242,7 @@ BlockFile *ODPCMAliasBlockFile::Copy(wxFileName newFileName)
       //The client code will need to schedule this blockfile for OD summarizing if it is going to a new track.
    }
    
+   mReadDataMutex.Unlock();
    
    return newBlockFile;
 }
@@ -251,6 +254,8 @@ BlockFile *ODPCMAliasBlockFile::Copy(wxFileName newFileName)
 /// and this object reconstructed, it needs to avoid trying to open it as well as schedule itself for OD loading
 void ODPCMAliasBlockFile::SaveXML(XMLWriter &xmlFile)
 {
+   //we lock this so that mAliasedFileName doesn't change.
+   mReadDataMutex.Lock();
    if(IsSummaryAvailable())
    {
       PCMAliasBlockFile::SaveXML(xmlFile);
@@ -260,9 +265,12 @@ void ODPCMAliasBlockFile::SaveXML(XMLWriter &xmlFile)
    {
       xmlFile.StartTag(wxT("odpcmaliasblockfile"));
 
+      //unlock to prevent deadlock and resume lock after.
+      mReadDataMutex.Unlock();
       mFileNameMutex.Lock();
       xmlFile.WriteAttr(wxT("summaryfile"), mFileName.GetFullName());
       mFileNameMutex.Unlock();
+      mReadDataMutex.Lock();
       
       xmlFile.WriteAttr(wxT("aliasfile"), mAliasedFileName.GetFullPath());
       xmlFile.WriteAttr(wxT("aliasstart"), mAliasStart);
@@ -275,6 +283,8 @@ void ODPCMAliasBlockFile::SaveXML(XMLWriter &xmlFile)
 
       xmlFile.EndTag(wxT("odpcmaliasblockfile"));
    }
+   
+   mReadDataMutex.Unlock();
 }
 
 /// Constructs a ODPCMAliasBlockFile from the xml output of WriteXML.
@@ -413,6 +423,8 @@ void ODPCMAliasBlockFile::WriteSummary()
      //wxFFile summaryFile(mFileName.GetFullPath(), wxT("wb"));
    
    FILE* summaryFile=fopen(mFileNameChar, "wb");
+   
+   mFileNameMutex.Unlock();
 
    if( !summaryFile){//.IsOpened() ){
       
@@ -439,8 +451,6 @@ void ODPCMAliasBlockFile::WriteSummary()
    fclose(summaryFile);
    DeleteSamples(sampleData);
    delete [] (char *) summaryData;
-   
-   mFileNameMutex.Unlock();
    
    
     //     printf("write successful. filename: %s\n",mFileNameChar);
@@ -717,6 +727,17 @@ bool ODPCMAliasBlockFile::ReadSummary(void *data)
    
    mFileNameMutex.Unlock();
    return (read == mSummaryInfo.totalSummaryBytes);
+}
+
+/// Prevents a read on other threads.
+void ODPCMAliasBlockFile::LockRead()
+{
+   mReadDataMutex.Lock();
+}
+/// Allows reading on other threads.
+void ODPCMAliasBlockFile::UnlockRead()
+{
+   mReadDataMutex.Unlock();
 }
 
 

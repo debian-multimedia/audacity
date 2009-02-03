@@ -297,13 +297,17 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\locale\bs.po"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\locale\ca.po"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\locale\cb.po"
+				RelativePath="..\..\..\locale\ca@valencia.po"
 				>
-			</File>
+			</File> 
 			<File
 				RelativePath="..\..\..\locale\cs.po"
 				>
@@ -361,11 +365,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\locale\id.po"
+				>
+			</File> 
+			<File
 				RelativePath="..\..\..\locale\it.po"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\locale\ja.po"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\locale\ka.po"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\locale\km.po"
 				>
 			</File>
 			<File

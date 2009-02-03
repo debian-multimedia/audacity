@@ -52,6 +52,15 @@ function.
 
 extern FFmpegLibs *FFmpegLibsInst;
 
+bool CheckFFmpegPresence()
+{
+   if (!FFmpegLibsInst->ValidLibsLoaded())
+   {
+      wxMessageBox(_("Properly configured FFmpeg is required to proceed.\nYou can configure it in Preferences->Import/Export."));
+      return false;
+   }
+   return true;
+}
 
 //----------------------------------------------------------------------------
 // ExportFFmpeg
@@ -68,7 +77,7 @@ public:
    bool CheckFileName(wxFileName &filename, int format = 0);
 
    /// Format intialization
-   bool Init(const char *shortname, AudacityProject *project);
+   bool Init(const char *shortname, AudacityProject *project, Tags *metadata);
    
    /// Codec intialization
    bool InitCodecs(AudacityProject *project);
@@ -84,7 +93,7 @@ public:
 
    /// Shows options dialog
    ///\param format - index of export type
-   bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
+   bool DisplayOptions(wxWindow *parent, int format = 0);
 
    /// Check whether or not current project sample rate is compatible with the export codec
    bool CheckSampleRate(int rate, int lowrate, int highrate, const int *sampRates);
@@ -185,15 +194,12 @@ void ExportFFmpeg::Destroy()
 
 bool ExportFFmpeg::CheckFileName(wxFileName &filename, int format)
 {
-  if (!FFmpegLibsInst->ValidLibsLoaded())
-  {
-    wxMessageBox(wxT("Properly configured FFmpeg is required to proceed.\nYou can configure it in Preferences->Import/Export."));
-    return false;
-  }
-  return true;
+   if (!CheckFFmpegPresence())
+     return false;
+   return true;
 }
 
-bool ExportFFmpeg::Init(const char *shortname,AudacityProject *project)
+bool ExportFFmpeg::Init(const char *shortname, AudacityProject *project, Tags *metadata)
 {
    int err;
    //FFmpegLibsInst->LoadLibs(NULL,true); //Loaded at startup or from Prefs now
@@ -232,6 +238,7 @@ bool ExportFFmpeg::Init(const char *shortname,AudacityProject *project)
       return false;
    }
 
+   mEncAudioStream->id = 0;
    mEncFormatCtx->timestamp = 0;
 
    // Open the output file.
@@ -259,6 +266,15 @@ bool ExportFFmpeg::Init(const char *shortname,AudacityProject *project)
    // Open the audio stream's codec and initialise any stream related data.
    if (!InitCodecs(project))
       return false;
+
+   if (metadata == NULL) metadata = project->GetTags();
+
+   if (fmts[mSubFormat].canmetadata)
+   {
+      mSupportsUTF8 = fmts[mSubFormat].canutf8;
+      AddTags(metadata);
+   }
+
 
    // Write headers to the output file.
    if ((err = FFmpegLibsInst->av_write_header(mEncFormatCtx)) < 0)
@@ -366,23 +382,23 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
    this->mEncAudioStream->quality = mEncAudioCodecCtx->global_quality = mEncAudioCodecCtx->global_quality * FF_QP2LAMBDA;
    mEncAudioCodecCtx->sample_rate = mSampleRate;
    mEncAudioCodecCtx->channels = mChannels;
-   mEncAudioCodecCtx->time_base.num = 0;
-   mEncAudioCodecCtx->time_base.den = 1;
+   mEncAudioCodecCtx->time_base.num = 1;
+   mEncAudioCodecCtx->time_base.den = mEncAudioCodecCtx->sample_rate;
    mEncAudioCodecCtx->sample_fmt = SAMPLE_FMT_S16;
-   mEncAudioCodecCtx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+   //mEncAudioCodecCtx->strict_std_compliance = FF_COMPLIANCE_STRICT;
 
    // Is the required audio codec compiled into libavcodec?
    if ((codec = FFmpegLibsInst->avcodec_find_encoder(mEncAudioCodecCtx->codec_id)) == NULL)
    {
       wxLogMessage(wxT("FFmpeg : ERROR - Can't find audio codec 0x%x."),mEncAudioCodecCtx->codec_id);
-      wxMessageBox(wxString::Format(wxT("FFmpeg cannot find audio codec 0x%x.\nSupport for this codec is probably not compiled in."),mEncAudioCodecCtx->codec_id));
+      wxMessageBox(wxString::Format(_("FFmpeg cannot find audio codec 0x%x.\nSupport for this codec is probably not compiled in."),mEncAudioCodecCtx->codec_id));
       return false;
    }
 
    if (mEncFormatCtx->oformat->flags & AVFMT_GLOBALHEADER)
    {
       mEncAudioCodecCtx->flags |= CODEC_FLAG_GLOBAL_HEADER;
-      mEncAudioStream->codec->flags |= CODEC_FLAG_GLOBAL_HEADER;
+      mEncFormatCtx->flags |= CODEC_FLAG_GLOBAL_HEADER;
    }
 
    // Open the codec.
@@ -575,7 +591,7 @@ bool ExportFFmpeg::EncodeAudioFrame(int16_t *pFrame, int frameSize)
       pkt.flags |= PKT_FLAG_KEY;
 
       // Write the encoded audio frame to the output file.
-      if ((ret = FFmpegLibsInst->av_write_frame(mEncFormatCtx, &pkt)) != 0)
+      if ((ret = FFmpegLibsInst->av_interleaved_write_frame(mEncFormatCtx, &pkt)) != 0)
       {
          wxLogMessage(wxT("FFmpeg : ERROR - Failed to write audio frame to file."));
          return false;
@@ -589,16 +605,13 @@ bool ExportFFmpeg::Export(AudacityProject *project,
                        int channels, wxString fName,
                        bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata, int subformat)
 {
-   if (!FFmpegLibsInst->ValidLibsLoaded())
-   {
-      wxMessageBox(wxT("Properly configured FFmpeg is required to proceed.\nYou can configure it in Preferences->Import/Export."));
+   if (!CheckFFmpegPresence())
       return false;
-   }
    mChannels = channels;
    if (channels > fmts[subformat].maxchannels)
    {
       wxLogMessage(wxT("Attempted to export %d channels, but max. channels = %d"),channels,fmts[subformat].maxchannels);
-      wxMessageBox(wxString::Format(wxT("Attempted to export %d channels, but max. channels for selected output format is %d"),channels,fmts[subformat].maxchannels),wxT("Error"));
+      wxMessageBox(wxString::Format(_("Attempted to export %d channels, but max. channels for selected output format is %d"),channels,fmts[subformat].maxchannels),_("Error"));
       return false;
    }
    mName = fName;
@@ -611,17 +624,9 @@ bool ExportFFmpeg::Export(AudacityProject *project,
    wxString shortname(fmts[mSubFormat].shortname);
    if (mSubFormat == FMT_OTHER)
       shortname = gPrefs->Read(wxT("/FileFormats/FFmpegFormat"),wxT("matroska"));
-   ret = Init(shortname.mb_str(),project);
+   ret = Init(shortname.mb_str(),project, metadata);
 
    if (!ret) return false;
-
-   if (metadata == NULL) metadata = project->GetTags();
-
-   if (fmts[mSubFormat].canmetadata)
-   {
-      this->mSupportsUTF8 = fmts[mSubFormat].canutf8;
-      AddTags(metadata);
-   }
 
    int pcmBufferSize = 1024;
    int numWaveTracks;
@@ -771,46 +776,43 @@ int ExportFFmpeg::AskResample(int bitrate, int rate, int lowrate, int highrate, 
 }
 
 
-bool ExportFFmpeg::DisplayOptions(AudacityProject *project, int format)
+bool ExportFFmpeg::DisplayOptions(wxWindow *parent, int format)
 {
-   if (!FFmpegLibsInst->ValidLibsLoaded())
-   {
-      wxMessageBox(wxT("Properly configured FFmpeg is required to proceed.\nYou can configure it in Preferences->Import/Export."));
+   if (!CheckFFmpegPresence())
       return false;
-   }
    if (format == FMT_M4A)
    {
-      ExportFFmpegAACOptions od(project);
+      ExportFFmpegAACOptions od(parent);
       od.ShowModal();
       return true;
    }
    else if (format == FMT_AC3)
    {
-      ExportFFmpegAC3Options od(project);
+      ExportFFmpegAC3Options od(parent);
       od.ShowModal();
       return true;
    }
    else if (format == FMT_AMRNB)
    {
-      ExportFFmpegAMRNBOptions od(project);
+      ExportFFmpegAMRNBOptions od(parent);
       od.ShowModal();
       return true;
    }
    else if (format == FMT_AMRWB)
    {
-      ExportFFmpegAMRWBOptions od(project);
+      ExportFFmpegAMRWBOptions od(parent);
       od.ShowModal();
       return true;
    }
    else if (format == FMT_WMA2)
    {
-      ExportFFmpegWMAOptions od(project);
+      ExportFFmpegWMAOptions od(parent);
       od.ShowModal();
       return true;
    }
    else if (format == FMT_OTHER)
    {
-      ExportFFmpegOptions od(project);
+      ExportFFmpegOptions od(parent);
       od.ShowModal();
       return true;
    }

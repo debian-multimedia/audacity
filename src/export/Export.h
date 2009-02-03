@@ -65,23 +65,35 @@ public:
    virtual int GetFormatCount();
    virtual wxString GetFormat(int index);
    virtual wxString GetDescription(int index);
-   virtual wxString GetExtension(int index);
-   virtual wxArrayString GetExtensions(int index);
+   /** @brief Return the (first) file name extension for the sub-format.
+    * @param index The sub-format for which the extension is wanted */
+   virtual wxString GetExtension(int index = 0);
+   /** @brief Return all the file name extensions used for the sub-format.
+    * @param index the sub-format for which the extension is required */
+   virtual wxArrayString GetExtensions(int index = 0);
    virtual wxString GetMask(int index);
    virtual int GetMaxChannels(int index);
    virtual bool GetCanMetaData(int index);
    
    virtual bool IsExtension(wxString & ext, int index);
 
-   virtual bool DisplayOptions(AudacityProject *project = NULL, int format = 0);
-   virtual bool DoDisplayOptions(AudacityProject *project, int format = 0);
+   virtual bool DisplayOptions(wxWindow *parent, int format = 0);
 
    virtual bool CheckFileName(wxFileName &filename, int format = 0);
 
    /** \brief called to export audio into a file.
     *
+    * @param selectedOnly Set to true if all tracks should be mixed, to false
+    * if only the selected tracks should be mixed and exported.
     * @param metadata A Tags object that will over-ride the one in *project and
     * be used to tag the file that is exported.
+    * @param subformat Control which of the multiple formats this exporter is
+    * capable of exporting should be used. Used where a single export plug-in
+    * handles a number of related formats, but they have separate
+    * entries in the Format drop-down list box. For example, the options to
+    * export to "Other PCM", "AIFF 16 Bit" and "WAV 16 Bit" are all the same
+    * libsndfile export plug-in, but with subformat set to 0, 1, and 2
+    * respectively.
     */
    virtual bool Export(AudacityProject *project,
                        int channels,
@@ -102,7 +114,7 @@ public:
                          MixerSpec *mixerSpec,
                          int subformat);
 
-private:
+protected:
 
    FormatInfoArray mFormatInfos;
 };
@@ -140,7 +152,7 @@ private:
    bool ExportTracks();
 
 private:
-
+   FileDialog *mDialog;
    AudacityProject *mProject;
    MixerSpec *mMixerSpec;
 

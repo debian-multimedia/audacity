@@ -66,6 +66,7 @@ scroll information.  It also has some status flags.
 #include <wx/ffile.h>
 #include <wx/filedlg.h>
 #include <wx/filefn.h>
+#include <wx/filename.h>
 #include <wx/intl.h>
 #include <wx/log.h>
 #include <wx/menu.h>
@@ -304,6 +305,7 @@ public:
                ((wxFileDataObject*)GetDataObject())->SetData(0, "");
                firstFileAdded = true;
             }
+
             ((wxFileDataObject*)GetDataObject())->AddFile(name);
 
             // We only want to process one flavor
@@ -313,12 +315,49 @@ public:
 
       return foundSupported;
    }
+
+   bool OnDrop(wxCoord x, wxCoord y)
+   {
+      bool foundSupported = false;
+      bool firstFileAdded = false;
+      OSErr result;
+
+      UInt16 items = 0;
+      CountDragItems((DragReference)m_currentDrag, &items);
+
+      for (UInt16 index = 1; index <= items; index++) {
+
+         DragItemRef theItem = 0;
+         GetDragItemReferenceNumber((DragReference)m_currentDrag, index, &theItem);
+
+         UInt16 flavors = 0;
+         CountDragItemFlavors((DragReference)m_currentDrag, theItem , &flavors ) ;
+
+         for (UInt16 flavor = 1 ;flavor <= flavors; flavor++) {
+
+            FlavorType theType = 0;
+            result = GetFlavorType((DragReference)m_currentDrag, theItem, flavor, &theType);
+            if (theType != kDragPromisedFlavorFindFile && theType != kDragFlavorTypeHFS) {
+               continue;
+            }
+            return true;
+         }
+      }
+
+      return CurrentDragHasSupportedFormat();
+   }
+
 #endif
 
    bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames)
    {
-      for (unsigned int i = 0; i < filenames.GetCount(); i++) {
-         mProject->Import(filenames[i]);
+      //sort by OD non OD.  load Non OD first so user can start editing asap.
+      wxArrayString sortednames(filenames);
+      
+      sortednames.Sort(CompareODFileName);
+      for (unsigned int i = 0; i < sortednames.GetCount(); i++) {
+         
+         mProject->Import(sortednames[i]);
       }
       mProject->HandleResize(); // Adjust scrollers for new track sizes.
       return true;
@@ -352,27 +391,25 @@ bool ImportXMLTagHandler::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
    return true; //v result from Import?
 };
 
-AudacityProject *CreateNewAudacityProject(wxWindow * parentWindow)
+AudacityProject *CreateNewAudacityProject()
 {
    bool bMaximized;
    wxRect wndRect;
 
-#if defined(__WXMAC__)
-   if (gParentFrame->IsShown()) {
-      gParentFrame->Hide();
-   }
-#endif
-   
    GetNextWindowPlacement(&wndRect, &bMaximized);
 
    //Create and show a new project
-   AudacityProject *p = new AudacityProject(parentWindow, -1,
-                                            wxPoint(wndRect.x, wndRect.y), wxSize(wndRect.width, wndRect.height));
+   AudacityProject *p = new AudacityProject(NULL, -1,
+                                            wxPoint(wndRect.x, wndRect.y),
+                                            wxSize(wndRect.width, wndRect.height));
 
    gAudacityProjects.Add(p);
    
    if(bMaximized)
       p->Maximize(true);
+
+   //Initialise the Listener
+   gAudioIO->SetListener(p);
 
    //Set the new project as active:
    SetActiveProject(p);
@@ -874,9 +911,29 @@ void AudacityProject::UpdatePrefs()
    }
 }
 
-void AudacityProject::RedrawProject()
+void AudacityProject::RedrawProject(const bool bForceWaveTracks /*= false*/)
 {
    FixScrollbars();
+   if (bForceWaveTracks && mTracks)
+   {
+      TrackListIterator iter(mTracks);
+      Track* pTrack = iter.First();
+      while (pTrack) 
+      {
+         if (pTrack->GetKind() == Track::Wave)
+         {
+            WaveTrack* pWaveTrack = (WaveTrack*)pTrack;
+            WaveClipList::Node* node = pWaveTrack->GetClipIterator();
+            while (node) 
+            {
+               WaveClip *clip = node->GetData();
+               clip->MarkChanged();
+               node = node->GetNext();
+            }
+         }
+         pTrack = iter.Next();
+      }
+   }
    mTrackPanel->Refresh(false);
 }
 
@@ -1683,6 +1740,12 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
    
    if (gAudacityProjects.IsEmpty() && !gIsQuitting) {
       bool quitOnClose;
+
+      // LL:  On the Mac, we don't want the logger open after all projects
+      //      have been closed since it's menu will show instead of the
+      //      common menu.
+      wxGetApp().mLogger->Show(false);
+      
 #ifdef __WXMAC__
       bool defaultQuitOnClose = false;
 #else
@@ -1694,11 +1757,8 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
       if (quitOnClose)
          QuitAudacity();
       else {
-#ifdef __WXMAC__
-         gParentFrame->Show();
-         wxGetApp().SetTopWindow(gParentFrame);
-#else
-         CreateNewAudacityProject(gParentWindow);
+#if !defined(__WXMAC__)
+         CreateNewAudacityProject();
 #endif
       }
    }
@@ -1830,6 +1890,12 @@ void AudacityProject::OpenFiles(AudacityProject *proj)
    if (selectedFiles.GetCount() == 0) {
       return;
    }
+   
+   
+   //sort selected files by OD status.  
+   //For the open menu we load OD first so user can edit asap.
+   //first sort selectedFiles.
+   selectedFiles.Sort(CompareODFirstFileName);
 
    for (size_t ff = 0; ff < selectedFiles.GetCount(); ff++) {
       wxString fileName = selectedFiles[ff];
@@ -1861,7 +1927,7 @@ void AudacityProject::OpenFiles(AudacityProject *proj)
       // project directory, etc.
       if (!proj || proj->mDirty || !proj->mTracks->IsEmpty()) {
          // Open in a new window
-         proj = CreateNewAudacityProject(gParentWindow);
+         proj = CreateNewAudacityProject();
       }
       // This project is clean; it's never been touched.  Therefore
       // all relevant member variables are in their initial state,
@@ -2483,6 +2549,19 @@ bool AudacityProject::Save(bool overwrite /* = true */ ,
    }
    else
    {
+      TrackListIterator iter(mTracks);
+      bool bHasTracks = (iter.First() != NULL);
+      if (!bHasTracks)
+      {
+         if (mUndoManager.UnsavedChanges()) {
+            int result = wxMessageBox(_("Your project is now empty.\nIf saved, the project will have no tracks.\n\nTo save any previously open tracks:\nClick 'No', Edit > Undo until all tracks\nare open, then File > Save Project.\n\nSave anyway?"),
+                                      _("Warning empty project"),
+                                      wxYES_NO | wxICON_QUESTION, this);
+            if (result == wxNO)
+               return false;
+         }
+      }
+
       if (!fromSaveAs && mDirManager->GetProjectName() == wxT(""))
          return SaveAs();
 
@@ -2617,15 +2696,8 @@ bool AudacityProject::Save(bool overwrite /* = true */ ,
    saveFile.Close();
    
 #ifdef __WXMAC__
-   FSSpec spec;
-
-   wxMacFilename2FSSpec(mFileName, &spec);
-   FInfo finfo;
-   if (FSpGetFInfo(&spec, &finfo) == noErr) {
-      finfo.fdType = AUDACITY_PROJECT_TYPE;
-      finfo.fdCreator = AUDACITY_CREATOR;
-      FSpSetFInfo(&spec, &finfo);
-   }
+   wxFileName fn(mFileName);
+   fn.MacSetTypeAndCreator(AUDACITY_PROJECT_TYPE, AUDACITY_CREATOR);
 #endif
 
    if (!bWantSaveCompressed)
@@ -2766,10 +2838,12 @@ void AudacityProject::AddImportedTracks(wxString fileName,
       }
       mTracks->Add(newTracks[i]);
       newTracks[i]->SetSelected(true);
-      if (numTracks > 1)
+      if (numTracks > 2 || (numTracks > 1 && !newTracks[i]->GetTeamed())) {
          newTracks[i]->SetName(trackNameBase + wxString::Format(wxT(" %d" ), i + 1));
-      else
+      }
+      else {
          newTracks[i]->SetName(trackNameBase);
+      }
          
       // Check if new track contains aliased blockfiles and if yes,
       // remember this to show a warning later
@@ -2792,15 +2866,8 @@ void AudacityProject::AddImportedTracks(wxString fileName,
    // Automatically assign rate of imported file to whole project,
    // if this is the first file that is imported
    if (initiallyEmpty && newRate > 0) {
-      // msmeyer: Before changing rate, check if rate is supported
-      // by current sound card. If it is not, don't change it,
-      // otherwise playback won't work.
-      wxArrayLong rates = AudioIO::GetSupportedSampleRates(-1, -1, newRate);
-      if (rates.Index((int)newRate) != wxNOT_FOUND)
-      {
-         mRate = newRate;
-         GetSelectionBar()->SetRate(mRate);
-      }
+      mRate = newRate;
+      GetSelectionBar()->SetRate(mRate);
    }
 
    PushState(wxString::Format(_("Imported '%s'"), fileName.c_str()),

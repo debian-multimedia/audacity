@@ -80,8 +80,8 @@ CommandManager.  It holds the callback for one command.
 #include <wx/defs.h>
 #include <wx/hash.h>
 #include <wx/intl.h>
-#include <wx/msgdlg.h>
 #include <wx/log.h>
+#include <wx/msgdlg.h>
 #include <wx/tokenzr.h>
 
 #include "../AudacityApp.h"
@@ -358,6 +358,7 @@ void CommandManager::InsertItem(wxString name, wxString label_in,
                                 int checkmark)
 {
    wxString label = label_in;
+
    if (ItemShouldBeHidden(label))
       return;
 
@@ -424,26 +425,6 @@ void CommandManager::InsertItem(wxString name, wxString label_in,
    dummy.Printf(wxT("%s%08d"), label.c_str(), mHiddenID);
    newLabel = label;
 
-   bool shortcut = false;
-
-   if (mCommandIDHash[ID]->key.Length() > 0)
-      shortcut = true;
-   
-   // Mac OS X fixes
-  #ifdef __WXMAC__
-   if (newLabel.Length() > 0 && newLabel[0] == wxT('&'))
-      newLabel = newLabel.Right(newLabel.Length()-1);
-
-   if (shortcut == true &&
-       (mCommandIDHash[ID]->key.Length() < 5 ||
-        mCommandIDHash[ID]->key.Left(5) != wxT("Ctrl+")))
-      shortcut = false;
-  #endif
-   
-   if (shortcut) {
-      dummy = dummy + wxT("\t") + mCommandIDHash[ID]->key;
-   }
-
    if (checkmark >= 0) {
       menu->InsertCheckItem(pos, ID, dummy);
       menu->Check(ID, checkmark != 0);
@@ -463,6 +444,7 @@ void CommandManager::AddItem(wxString name, wxString label_in,
                              CommandFunctor *callback, int checkmark)
 {
    wxString label = label_in;
+
    if( ItemShouldBeHidden( label ) )
       return;
 
@@ -483,26 +465,6 @@ void CommandManager::AddItem(wxString name, wxString label_in,
    dummy.Printf(wxT("%s%08d"), label.c_str(), mHiddenID);
    newLabel = label;
 
-   bool shortcut = false;
-
-   if (mCommandIDHash[ID]->key.Length() > 0)
-      shortcut = true;
-   
-   // Mac OS X fixes
-  #ifdef __WXMAC__
-   if (newLabel.Length() > 0 && newLabel[0] == wxT('&'))
-      newLabel = newLabel.Right(newLabel.Length()-1);
-
-   if (shortcut == true &&
-       (mCommandIDHash[ID]->key.Length() < 5 ||
-        mCommandIDHash[ID]->key.Left(5) != wxT("Ctrl+")))
-      shortcut = false;
-  #endif
-   
-   if (shortcut) {
-      dummy = dummy + wxT("\t") + mCommandIDHash[ID]->key;
-   }
-
    if (checkmark >= 0) {
       CurrentMenu()->AppendCheckItem(ID, dummy);
       CurrentMenu()->Check(ID, checkmark !=0);
@@ -510,6 +472,7 @@ void CommandManager::AddItem(wxString name, wxString label_in,
    else {
       CurrentMenu()->Append(ID, dummy);
    }
+
    CurrentMenu()->SetLabel(ID, newLabel);
    mbSeparatorAllowed = true;
 }
@@ -627,26 +590,26 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
 
    mCurrentID = NextIdentifier(mCurrentID);
    tmpEntry->id = mCurrentID;
+   tmpEntry->key = KeyStringNormalize(GetKey(label));
 
-  #ifdef __WXMAC__
+#if defined(__WXMAC__)
    if (name == wxT("Preferences"))
       tmpEntry->id = wxID_PREFERENCES;
    else if (name == wxT("Exit"))
       tmpEntry->id = wxID_EXIT;
    else if (name == wxT("About"))
       tmpEntry->id = wxID_ABOUT;
-  #endif
-  
+#endif
+
+   tmpEntry->defaultKey = tmpEntry->key;
    tmpEntry->name = name;
    tmpEntry->label = label;
    tmpEntry->labelPrefix = labelPrefix;
    tmpEntry->menu = menu;
    tmpEntry->callback = callback;
    tmpEntry->multi = multi;
-   tmpEntry->index = index;
+   tmpEntry->index = index; 
    tmpEntry->count = count;
-   tmpEntry->key = GetKey(label);
-   tmpEntry->defaultKey = GetKey(label);
    tmpEntry->flags = mDefaultFlags;
    tmpEntry->mask = mDefaultMask;
    tmpEntry->enabled = true;
@@ -654,7 +617,7 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
    // Key from preferences overridse the default key given
    gPrefs->SetPath(wxT("/NewKeys"));
    if (gPrefs->HasEntry(name)) {
-      tmpEntry->key = gPrefs->Read(name, GetKey(label));
+      tmpEntry->key = KeyStringNormalize(gPrefs->Read(name, tmpEntry->key));
    }
    gPrefs->SetPath(wxT("/"));
    
@@ -794,6 +757,7 @@ void CommandManager::HandleMenuOpen(wxMenuEvent &evt)
 
    // Windows does not send a CLOSE event if you move from one 
    // top-level menu to another, so simulate it.
+#if !defined(__WXMAC__)
    if (mOpenMenu) {
       wxMenuEvent dummy;
       HandleMenuClose(dummy);
@@ -801,6 +765,7 @@ void CommandManager::HandleMenuOpen(wxMenuEvent &evt)
 
    // Remember this menu
    mOpenMenu = m;
+#endif
 
    // Turn on the accelerators
    ToggleAccels(m, true);
@@ -810,6 +775,10 @@ void CommandManager::HandleMenuOpen(wxMenuEvent &evt)
 
 void CommandManager::HandleMenuClose(wxMenuEvent &evt)
 {
+#if defined(__WXMAC__)
+   mOpenMenu = evt.GetMenu();
+#endif
+
    // This can happen when if the Windows system menu is used   
    if (mOpenMenu == NULL)
       return;
@@ -885,7 +854,7 @@ void CommandManager::TellUserWhyDisallowed( wxUint32 flagsGot, wxUint32 flagsReq
 {
    // The default string for 'reason' is a catch all.  I hope it won't ever be seen
    // and that we will get something more specific.
-   wxString reason = _("Disallowed for some reason.  Try selecting some Audio first?");
+   wxString reason = _("Disallowed for some reason.  Try selecting some audio first?");
 
    wxUint32 missingFlags = flagsRequired & (~flagsGot );
    if( missingFlags & AudioIONotBusyFlag )
@@ -956,7 +925,7 @@ bool CommandManager::HandleMenuID(int id, wxUint32 flags, wxUint32 mask)
 bool CommandManager::HandleKey(wxKeyEvent &evt, wxUint32 flags, wxUint32 mask)
 {
    wxString keyStr = KeyEventToKeyString(evt);
-	CommandListEntry *entry = mCommandKeyHash[keyStr];
+   CommandListEntry *entry = mCommandKeyHash[keyStr];
    return HandleCommandEntry( entry, flags, mask );
 }
 
@@ -1024,7 +993,7 @@ wxString CommandManager::GetPrefixedLabelFromName(wxString name)
    if (!entry)
       return wxT("");
 
-   return entry->labelPrefix + entry->label;
+   return entry->labelPrefix + wxT(" ") + entry->label;
 }
 
 wxString CommandManager::GetKeyFromName(wxString name)
@@ -1069,8 +1038,10 @@ bool CommandManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
       }
 
       if (mCommandNameHash[name]) {
-         mCommandNameHash[name]->key = key;
-         mXMLKeysRead++;
+         if (GetDefaultKeyFromName(name) != key) {
+            mCommandNameHash[name]->key = KeyStringNormalize(key);
+            mXMLKeysRead++;
+         }
       }
    }
 

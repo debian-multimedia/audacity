@@ -6,9 +6,6 @@
 
   Dominic Mazzoni
 
-  2004.06.23 added mp3 export using tompg.exe for multiple export, by ChackoN
-  tested under w2k only
-
 *******************************************************************//**
 
 \class ExportMultiple
@@ -191,7 +188,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
 
    wxString name = mProject->GetName();
 
-   mFormatIndex = -1;
+   mPluginIndex = -1;
 
    wxString defaultFormat = gPrefs->Read(wxT("/Export/Format"),
       wxT("WAV"));
@@ -202,15 +199,15 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
       for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
       {
          if (mPlugins[i]->GetFormat(j) == defaultFormat) {
-            mFormatIndex = i;
+            mPluginIndex = i;
             mSubFormatIndex = j;
          }
-         if (mFormatIndex == -1) mFilterIndex++;
+         if (mPluginIndex == -1) mFilterIndex++;
       }
    }
-   if (mFormatIndex == -1)
+   if (mPluginIndex == -1)
    {
-      mFormatIndex = 0;
+      mPluginIndex = 0;
       mFilterIndex = 0;
       mSubFormatIndex = 0;
    }
@@ -231,7 +228,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
       mFormat = S.Id(FormatID)
          .TieChoice(_("Export format:"),
                     wxT("/Export/MultipleFormat"),
-                    mPlugins[mFormatIndex]->GetFormat(mSubFormatIndex),
+                    mPlugins[mPluginIndex]->GetFormat(mSubFormatIndex),
                     formats,
                     formats);
       S.Id(OptionsID).AddButton(_("Options..."));
@@ -356,7 +353,7 @@ void ExportMultiple::EnableControls()
       return;
    }
 
-   mFirst->Enable(mLabel->GetValue() && mByName->GetValue());
+   mFirst->Enable(mLabel->GetValue());
    
    enable = mLabel->GetValue() &&
             mByName->GetValue() &&
@@ -371,7 +368,8 @@ void ExportMultiple::EnableControls()
    bool ok = true;
 
    if (mLabel->GetValue() && mFirst->GetValue() &&
-       mFirstFileName->GetValue() == wxT(""))
+       mFirstFileName->GetValue() == wxT("") &&
+       mPrefix->GetValue() == wxT(""))
       ok = false;
 
    if (mByNumber->GetValue() &&
@@ -398,14 +396,14 @@ void ExportMultiple::OnOptions(wxCommandEvent& event)
        {
          if ((size_t)sel == c)
          {
-            mFormatIndex = i;
+            mPluginIndex = i;
             mSubFormatIndex = j;
          }
          c++;
        }
      }
    }
-   mPlugins[mFormatIndex]->DisplayOptions(mProject,mSubFormatIndex);
+   mPlugins[mPluginIndex]->DisplayOptions(this,mSubFormatIndex);
 }
 
 void ExportMultiple::OnCreate(wxCommandEvent& event)
@@ -496,8 +494,9 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
        for (int j = 0; j < mPlugins[i]->GetFormatCount(); j++)
        {
          if ((size_t)mFilterIndex == c)
-         {
-            mFormatIndex = i;
+         {  // this is the selected format. Store the plug-in and sub-format
+            // needed to acheive it.
+            mPluginIndex = i;
             mSubFormatIndex = j;
          }
          c++;
@@ -505,7 +504,7 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
      }
    }
 
-   bool overwrite = mOverwrite->GetValue();
+//   bool overwrite = mOverwrite->GetValue();
    bool ok;
 
    if (mLabel->GetValue()) {
@@ -572,8 +571,9 @@ bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
                               // don't duplicate them
    ExportKit setting;   // the current batch of settings
    setting.destfile.SetPath(mDir->GetValue());
-   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension(mSubFormatIndex));
-
+   setting.destfile.SetExt(mPlugins[mPluginIndex]->GetExtension(mSubFormatIndex));
+   wxLogDebug(wxT("Plug-in index = %d, Sub-format = %d"), mPluginIndex, mSubFormatIndex);
+   wxLogDebug(wxT("File extension is %s"), setting.destfile.GetExt().c_str());
    wxString name;    // used to hold file name whilst we mess with it
    wxString title;   // un-messed-with title of file for tagging with
 
@@ -611,7 +611,10 @@ bool ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
 
       // Numbering files...
       if (!byName) {
-         name.Printf(wxT("%s-%d"), prefix.c_str(), l+1);
+         if (numFiles > 9)
+            name.Printf(wxT("%s-%02d"), prefix.c_str(), l+1);
+         else
+            name.Printf(wxT("%s-%d"), prefix.c_str(), l+1);
       }
 
       // store sanitised and user checjed name in object
@@ -678,6 +681,7 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
    Track *tr, *tr2;
    int channels = 0;  // how many channels export?
    int l = 0;     // track counter
+   int numTracks = 0;
    bool ok = true;
    wxArrayString otherNames;
    wxArrayPtrVoid selected;   /**< Array of pointers to the tracks which were
@@ -687,7 +691,7 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
    exportSettings.Alloc(mNumLabels);   // allocated some guessed space to use
    ExportKit setting;   // the current batch of settings
    setting.destfile.SetPath(mDir->GetValue());
-   setting.destfile.SetExt(mPlugins[mFormatIndex]->GetExtension(mSubFormatIndex));
+   setting.destfile.SetExt(mPlugins[mPluginIndex]->GetExtension(mSubFormatIndex));
 
    wxString name;    // used to hold file name whilst we mess with it
    wxString title;   // un-messed-with title of file for tagging with
@@ -701,6 +705,10 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
       if (tr->GetSelected()) {
          selected.Add(tr);
          tr->SetSelected(false);
+      }
+
+      if (!tr->GetLinked()) {
+         numTracks++;
       }
    }
 
@@ -746,7 +754,12 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
          name = title;
       }
       else {
-         name = (wxString::Format(wxT("%s-%d"), prefix.c_str(), l+1));
+         if (numTracks > 9) {
+            name = (wxString::Format(wxT("%s-%02d"), prefix.c_str(), l+1));
+         }
+         else {
+            name = (wxString::Format(wxT("%s-%d"), prefix.c_str(), l+1));
+         }
       }
 
       // store sanitised and user checked name in object
@@ -775,7 +788,7 @@ bool ExportMultiple::ExportMultipleByTrack(bool byName,
       /* add the settings to the array of settings to be used for export */
       exportSettings.Add(setting);
 
-      l++;  // next label, count up one
+      l++;  // next track, count up one
    }
    // end of user-interactive data gathering loop, start of export processing
    // loop
@@ -844,7 +857,10 @@ bool ExportMultiple::DoExport(int channels,
                               double t1,
                               Tags tags)
 {
-
+   wxLogDebug(wxT("Doing multiple Export: File name \"%s\""), (name.GetFullName()).c_str());
+   wxLogDebug(wxT("Channels: %i, Start: %lf, End: %lf "), channels, t0, t1);
+   if (selectedOnly) wxLogDebug(wxT("Selected Region Only"));
+   else wxLogDebug(wxT("Whole Project"));
 
    // Generate a unique name if we're not allowed to overwrite
    if (!mOverwrite->GetValue()) {
@@ -856,14 +872,15 @@ bool ExportMultiple::DoExport(int channels,
    }
 
    // Call the format export routine
-   bool rc = mPlugins[mFormatIndex]->Export(mProject,
+   bool rc = mPlugins[mPluginIndex]->Export(mProject,
                                             channels,
                                             name.GetFullPath(),
                                             selectedOnly,
                                             t0,
                                             t1,
                                             NULL,
-                                            &tags);
+                                            &tags,
+                                            mSubFormatIndex);
    return rc;
 }
 

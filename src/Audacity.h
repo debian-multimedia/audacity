@@ -20,9 +20,9 @@
 // Increment as appropriate every time you release a new version
 #define AUDACITY_VERSION   1
 #define AUDACITY_RELEASE   3
-#define AUDACITY_REVISION  6
+#define AUDACITY_REVISION  7
 #define AUDACITY_MODLEVEL  0
-#define AUDACITY_SUFFIX    wxT("") // wxT("-alpha_") __TDATE__ 
+#define AUDACITY_SUFFIX    wxT("") // wxT("-alpha_") __TDATE__
 
 #define AUDACITY_MAKESTR( x ) #x
 #define AUDACITY_QUOTE( x ) AUDACITY_MAKESTR( x )
@@ -49,8 +49,6 @@
 #define AUDACITY_FILE_FORMAT_VERSION "1.3.0"
 
 class wxWindow;
-
-extern wxWindow *gParentWindow;
 
 void QuitAudacity(bool bForce);
 void QuitAudacity();

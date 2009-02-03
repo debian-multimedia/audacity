@@ -21,6 +21,7 @@
 #include "ChangeSpeed.h"
 #include "ClickRemoval.h"
 #include "Compressor.h"
+#include "Contrast.h"
 #include "DtmfGen.h"
 #include "Echo.h"
 #include "Equalization.h"
@@ -36,6 +37,9 @@
 #include "Reverse.h"
 #include "Silence.h"
 #include "StereoToMono.h"
+#ifdef USE_SBSMS 
+#include "TimeScale.h"
+#endif
 #include "ToneGen.h"
 #include "TruncSilence.h"
 #include "Wahwah.h"
@@ -257,9 +261,13 @@ void LoadEffects()
    em.RegisterEffect(new EffectReverse());
    em.RegisterEffect(new EffectStereoToMono(), HIDDEN_EFFECT);// NOT in normal effects list.
    em.RegisterEffect(new EffectTruncSilence(), SIMPLE_EFFECT);
+#ifdef USE_SBSMS 
+   em.RegisterEffect(new EffectTimeScale());
+#endif
    em.RegisterEffect(new EffectWahwah());
 
    // Analyze menu
+   em.RegisterEffect(new EffectContrast(), ANALYZE_EFFECT);
    em.RegisterEffect(new EffectFindClipping(), ANALYZE_EFFECT);
 
 #ifdef USE_NYQUIST
