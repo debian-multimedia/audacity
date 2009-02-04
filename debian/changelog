@@ -1,7 +1,8 @@
 audacity (1.3.7-1) UNRELEASED; urgency=low
 
   [ Benjamin Drung ]
-  * New upstream release (Closes: #486155).
+  * New upstream release.
+    + Fixes error on second build (Closes: #442497, #486155).
   * Dropped hyphen-used-as-minus-sign.patch (applied upstream).
   * Added curly-brace-before-preprocessor-endif.patch to fix compile error.
   * Added myself to Uploaders.
@@ -10,12 +11,10 @@ audacity (1.3.7-1) UNRELEASED; urgency=low
   * Removed Ubuntu changelog entries.
 
   [ Fabian Greffrath ]
-  * New upstream release fixes the "FTBFS if build twice in a row" issue
-    (Closes: #442497, #486155).
   * Removed spurious "DEB_COMPRESS_EXCLUDE := *.htb" from debian/rules.
     There isn't even one file of this name in the packages.
 
- -- Fabian Greffrath <fabian@debian-unofficial.org>  Wed, 04 Feb 2009 15:30:39 +0100
+ -- Benjamin Drung <benjamin.drung@gmail.com>  Wed, 04 Feb 2009 20:16:48 +0100
 
 audacity (1.3.6-3) unstable; urgency=low
 
