@@ -35,8 +35,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --without-portmixer \
                              --with-soundtouch=system
 
-DEB_COMPRESS_EXCLUDE := *.htb
-
 common-install-impl::
 	# Don't package unnecessary copy of GPL
 	rm -f debian/tmp/usr/share/doc/audacity/LICENSE.txt
