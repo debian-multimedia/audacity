@@ -23,6 +23,7 @@ endif
 DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --enable-unicode \
                              --with-expat=system \
+                             --with-ffmpeg=system \
                              --with-libflac=system \
                              --with-libid3tag=system \
                              --with-libmad=system \

@@ -1,3 +1,15 @@
+audacity (1.3.7-2) experimental; urgency=low
+
+  * Build against system FFmpeg for import and export support
+    (Closes: #512278, #5143333).
+  * Build-Depend on recent versions of the ffmpeg headers and recommend ffmpeg
+    shared libraries with recent sonames to make sure the ffmpeg packages are
+    new enough for audacity.
+  * Recent ffmpeg packages have Speex support enabled, so audacity can also
+    benefit from this feature (Closes: #329802).
+
+ -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 10 Feb 2009 11:34:13 +0100
+
 audacity (1.3.7-1) experimental; urgency=low
 
   [ Benjamin Drung ]
