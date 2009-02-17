@@ -7,8 +7,10 @@ audacity (1.3.7-2) experimental; urgency=low
     new enough for audacity.
   * Recent ffmpeg packages have Speex support enabled, so audacity can also
     benefit from this feature (Closes: #329802).
+  * Re-enable PortMixer, as recommended upstream:
+    <http://sourceforge.net/mailarchive/message.php?msg_name=1234719213.4602.23.camel%40delph>
 
- -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 10 Feb 2009 11:34:13 +0100
+ -- Fabian Greffrath <fabian@debian-unofficial.org>  Tue, 17 Feb 2009 10:27:17 +0100
 
 audacity (1.3.7-1) experimental; urgency=low
 

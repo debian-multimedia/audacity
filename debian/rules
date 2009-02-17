@@ -33,7 +33,7 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --with-libtwolame=system \
                              --with-libvorbis=system \
                              --with-portaudio=v19 \
-                             --without-portmixer \
+                             --with-portmixer \
                              --with-soundtouch=system
 
 common-install-impl::
