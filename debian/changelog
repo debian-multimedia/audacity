@@ -1,4 +1,4 @@
-audacity (1.3.7-2) experimental; urgency=low
+audacity (1.3.7-2) unstable; urgency=low
 
   * Build against system FFmpeg for import and export support
     (Closes: #512278, #5143333).
