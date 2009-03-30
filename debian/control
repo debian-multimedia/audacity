@@ -2,8 +2,7 @@ Source: audacity
 Section: sound
 Priority: optional
 Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
-Uploaders: Matt Brubeck <mbrubeck@debian.org>,
-           Free Ekanayaka <freee@debian.org>,
+Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian@debian-unofficial.org>,
            Benjamin Drung <benjamin.drung@gmail.com>
 Standards-Version: 3.8.0
