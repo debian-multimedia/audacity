@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
 Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian@debian-unofficial.org>,
-           Benjamin Drung <benjamin.drung@gmail.com>
+           Benjamin Drung <bdrung@ubuntu.com>
 Standards-Version: 3.8.0
 Build-Depends: autotools-dev,
                cdbs (>= 0.4.4),
