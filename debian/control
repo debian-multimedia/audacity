@@ -63,7 +63,7 @@ Description: A fast, cross-platform audio editor (data)
  This package contains the architecture-independent data files.
 
 Package: audacity-dbg
-Section: devel
+Section: debug
 Priority: extra
 Architecture: any
 Depends: audacity (= ${binary:Version}), ${misc:Depends}
