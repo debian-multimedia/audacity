@@ -1,7 +1,10 @@
-audacity (1.3.7-3) UNRELEASED; urgency=low
+audacity (1.3.7-3) unstable; urgency=low
 
   [ Fabian Greffrath ]
   * Remove Matt Brubeck <mbrubeck@debian.org> from Uploaders (Closes: #521481).
+
+  [ Reinhard Tartler ]
+  * Recommend alternatively on the "unstripped" ffmpeg variants (LP: #344061).
 
   [ Benjamin Drung ]
   * debian/control:
