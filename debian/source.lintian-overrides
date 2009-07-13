@@ -1,3 +1,0 @@
-# lib-src/sbsms/config/ltmain.sh is not used any more.
-audacity source: ancient-libtool ltconfig
-audacity source: ancient-libtool lib-src/sbsms/config/ltmain.sh 1.4.3
