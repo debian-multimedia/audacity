@@ -5,7 +5,7 @@ Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alio
 Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian@debian-unofficial.org>,
            Benjamin Drung <bdrung@ubuntu.com>
-Standards-Version: 3.8.1
+Standards-Version: 3.8.2
 Build-Depends: autotools-dev,
                cdbs (>= 0.4.4),
                debhelper (>= 5),
