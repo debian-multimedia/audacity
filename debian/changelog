@@ -6,11 +6,13 @@ audacity (1.3.8-1) UNRELEASED; urgency=low
     - desktop_file.patch
     - make-distclean.patch
     - pulseaudio.patch
+  * Drop portaudio.patch, it does not apply anymore and audacity was
+    never build against portaudio.
   * debian/NEWS: Fix typo (thanks to Lintian).
   * Bump Standards-Version to 3.8.2 (no changes).
   * Drop debian/source.lintian-overrides, not needed any longer.
 
- -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 17 Jul 2009 15:04:57 +0200
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 17 Jul 2009 18:12:04 +0200
 
 audacity (1.3.7-3) unstable; urgency=low
 
