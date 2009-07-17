@@ -1,4 +1,4 @@
-audacity (1.3.8-1) UNRELEASED; urgency=low
+audacity (1.3.8-1) unstable; urgency=low
 
   * New upstream release.
   * Drop patches that are applied or adopted upstream:
@@ -11,8 +11,9 @@ audacity (1.3.8-1) UNRELEASED; urgency=low
   * debian/NEWS: Fix typo (thanks to Lintian).
   * Bump Standards-Version to 3.8.2 (no changes).
   * Drop debian/source.lintian-overrides, not needed any longer.
+  * Update debian/watch file to search on Google Code.
 
- -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 17 Jul 2009 18:12:04 +0200
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 17 Jul 2009 21:53:50 +0200
 
 audacity (1.3.7-3) unstable; urgency=low
 
