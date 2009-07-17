@@ -1,2 +1,3 @@
 version=3
-http://sf.net/audacity/audacity-minsrc-(.+)\.tar\.bz2
+http://code.google.com/p/audacity/downloads/list \
+	http://audacity.googlecode.com/files/audacity-minsrc-(.+)\.tar\.bz2
