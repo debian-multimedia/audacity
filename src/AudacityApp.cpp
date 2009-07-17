@@ -34,6 +34,7 @@ It handles initialization and termination by subclassing wxApp.
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 #include <wx/snglinst.h>
+#include <wx/sysopt.h>
 #include <wx/fontmap.h>
 
 #include <wx/fs_zip.h>
@@ -60,8 +61,12 @@ It handles initialization and termination by subclassing wxApp.
 #include "AudioIO.h"
 #include "Benchmark.h"
 #include "DirManager.h"
+#include "commands/CommandHandler.h"
+#include "commands/AppCommandEvent.h"
 #include "effects/LoadEffects.h"
+#include "effects/Contrast.h"
 #include "FFmpeg.h"
+#include "GStreamerLoader.h"
 #include "FreqWindow.h"
 #include "Internat.h"
 #include "LangChoice.h"
@@ -149,6 +154,14 @@ It handles initialization and termination by subclassing wxApp.
 
 #  if defined(USE_MIDI)
 #     pragma comment(lib, "portsmf")
+#     endif
+
+#  if defined(EXPERIMENTAL_MIDI_OUT)
+#     pragma comment(lib, "portmidi")
+#  endif
+
+#  if defined(EXPERIMENTAL_SCOREALIGN)
+#     pragma comment(lib, "libscorealign")
 #  endif
 
 #  if defined(USE_NYQUIST)
@@ -157,10 +170,6 @@ It handles initialization and termination by subclassing wxApp.
 
 #  if defined(USE_PORTMIXER)
 #     pragma comment(lib, "portmixer")
-#  endif
-
-#  if defined(EXPERIMENTAL_SCOREALIGN)
-#     pragma comment(lib, "libscorealign")
 #  endif
 
 #  if defined(USE_SLV2)
@@ -244,7 +253,17 @@ void QuitAudacity(bool bForce)
    // BG: unless force is true
 
    // BG: Are there any projects open?
-   if (!gAudacityProjects.IsEmpty())
+	//-   if (!gAudacityProjects.IsEmpty())
+/*start+*/
+   if (gAudacityProjects.IsEmpty())
+   {
+#ifdef __WXMAC__
+      AudacityProject::DeleteClipboard();
+#endif
+   }
+	else
+/*end+*/
+
    {
       while (gAudacityProjects.Count())
       {
@@ -263,6 +282,8 @@ void QuitAudacity(bool bForce)
       }
    }
 
+   ModuleManager::Dispatch(AppQuiting);
+
    wxLogWindow *lw = wxGetApp().mLogger;
    if (lw)
    {
@@ -272,14 +293,11 @@ void QuitAudacity(bool bForce)
       wxGetApp().mLogger = NULL;
    }
 
-   if (gFreqWindow)
-      gFreqWindow->Destroy();
-   gFreqWindow = NULL;
-
    if (gParentFrame)
       gParentFrame->Destroy();
    gParentFrame = NULL;
 
+   CloseContrastDialog();
    CloseScreenshotTools();
    
    //release ODManager Threads
@@ -288,9 +306,6 @@ void QuitAudacity(bool bForce)
    //print out profile if we have one by deleting it
    //temporarilly commented out till it is added to all projects
    //delete Profiler::Instance();
-   
-   //Delete the clipboard
-   AudacityProject::DeleteClipboard();
    
    //delete the static lock for audacity projects
    AudacityProject::DeleteAllProjectsDeleteLock();
@@ -305,6 +320,170 @@ void QuitAudacity()
 {
    QuitAudacity(false);
 }
+
+#if defined(__WXGTK__) && defined(HAVE_GTK)
+
+///////////////////////////////////////////////////////////////////////////////
+// Provide the ability to receive notification from the session manager
+// when the user is logging out or shutting down.
+//
+// Most of this was taken from nsNativeAppSupportUnix.cpp from Mozilla.
+///////////////////////////////////////////////////////////////////////////////
+
+#include <dlfcn.h>
+#include <gtk/gtk.h>
+
+typedef struct _GnomeProgram GnomeProgram;
+typedef struct _GnomeModuleInfo GnomeModuleInfo;
+typedef struct _GnomeClient GnomeClient;
+
+typedef enum
+{
+  GNOME_SAVE_GLOBAL,
+  GNOME_SAVE_LOCAL,
+  GNOME_SAVE_BOTH
+} GnomeSaveStyle;
+
+typedef enum
+{
+  GNOME_INTERACT_NONE,
+  GNOME_INTERACT_ERRORS,
+  GNOME_INTERACT_ANY
+} GnomeInteractStyle;
+
+typedef enum
+{
+  GNOME_DIALOG_ERROR,
+  GNOME_DIALOG_NORMAL
+} GnomeDialogType;
+
+typedef GnomeProgram * (*_gnome_program_init_fn)(const char *,
+                                                 const char *,
+                                                 const GnomeModuleInfo *,
+                                                 int,
+                                                 char **,
+                                                 const char *,
+                                                 ...);
+typedef const GnomeModuleInfo * (*_libgnomeui_module_info_get_fn)();
+typedef GnomeClient * (*_gnome_master_client_fn)(void);
+typedef void (*GnomeInteractFunction)(GnomeClient *,
+                                      gint,
+                                      GnomeDialogType,
+                                      gpointer);
+typedef void (*_gnome_client_request_interaction_fn)(GnomeClient *,
+                                                     GnomeDialogType,
+                                                     GnomeInteractFunction,
+                                                     gpointer);
+typedef void (*_gnome_interaction_key_return_fn)(gint, gboolean);
+
+static _gnome_client_request_interaction_fn gnome_client_request_interaction;
+static _gnome_interaction_key_return_fn gnome_interaction_key_return;
+
+void interact_cb(GnomeClient *client,
+                 gint key,
+                 GnomeDialogType type,
+                 gpointer data)
+{
+   wxCloseEvent e(wxEVT_QUERY_END_SESSION, wxID_ANY);
+   e.SetEventObject(&wxGetApp());
+   e.SetCanVeto(true);
+
+   wxGetApp().ProcessEvent(e);
+
+   gnome_interaction_key_return(key, e.GetVeto());
+}
+
+gboolean save_yourself_cb(GnomeClient *client,
+                          gint phase,
+                          GnomeSaveStyle style,
+                          gboolean shutdown,
+                          GnomeInteractStyle interact,
+                          gboolean fast,
+                          gpointer user_data)
+{
+   if (!shutdown || interact != GNOME_INTERACT_ANY) {
+      return TRUE;
+   }
+
+   if (gAudacityProjects.IsEmpty()) {
+      return TRUE;
+   }
+
+   gnome_client_request_interaction(client,
+                                    GNOME_DIALOG_NORMAL,
+                                    interact_cb,
+                                    NULL);
+
+   return TRUE;
+}
+
+class GnomeShutdown
+{
+ public:
+   GnomeShutdown()
+   {
+      mArgv[0] = strdup("Audacity");
+
+      mGnomeui = dlopen("libgnomeui-2.so.0", RTLD_NOW);
+      if (!mGnomeui) {
+         return;
+      }
+
+      mGnome = dlopen("libgnome-2.so.0", RTLD_NOW);
+      if (!mGnome) {
+         return;
+      }
+
+      _gnome_program_init_fn gnome_program_init = (_gnome_program_init_fn)
+         dlsym(mGnome, "gnome_program_init");
+      _libgnomeui_module_info_get_fn libgnomeui_module_info_get = (_libgnomeui_module_info_get_fn)
+         dlsym(mGnomeui, "libgnomeui_module_info_get");
+      _gnome_master_client_fn gnome_master_client = (_gnome_master_client_fn)
+         dlsym(mGnomeui, "gnome_master_client");
+
+      gnome_client_request_interaction = (_gnome_client_request_interaction_fn)
+         dlsym(mGnomeui, "gnome_client_request_interaction");
+      gnome_interaction_key_return = (_gnome_interaction_key_return_fn)
+         dlsym(mGnomeui, "gnome_interaction_key_return");
+
+
+      if (!gnome_program_init || !libgnomeui_module_info_get) {
+         return;
+      }
+
+      gnome_program_init(mArgv[0],
+                         "1.0",
+                         libgnomeui_module_info_get(),
+                         1,
+                         mArgv,
+                         NULL);
+
+      mClient = gnome_master_client();
+      if (mClient == NULL) {
+         return;
+      }
+
+      g_signal_connect(mClient, "save-yourself", G_CALLBACK(save_yourself_cb), NULL);
+   }
+
+   virtual ~GnomeShutdown()
+   {
+      // Do not dlclose() the libraries here lest you want segfaults...
+
+      free(mArgv[0]);
+   }
+
+ private:
+
+   char *mArgv[1];
+   void *mGnomeui;
+   void *mGnome;
+   GnomeClient *mClient;
+};
+
+GnomeShutdown GnomeShutdownInstance;
+
+#endif
 
 #if defined(__WXMSW__)
 
@@ -456,6 +635,8 @@ void AudacityApp::OnMacOpenFile(wxCommandEvent & event)
 typedef int (AudacityApp::*SPECIALKEYEVENT)(wxKeyEvent&);
 
 BEGIN_EVENT_TABLE(AudacityApp, wxApp)
+   EVT_QUERY_END_SESSION(AudacityApp::OnEndSession)
+
    EVT_KEY_DOWN(AudacityApp::OnKeyDown)
    EVT_CHAR(AudacityApp::OnChar)
    EVT_KEY_UP(AudacityApp::OnKeyUp)
@@ -469,8 +650,12 @@ BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_COMMAND(wxID_ANY, EVT_OPEN_AUDIO_FILE, AudacityApp::OnMacOpenFile)
 #endif
    // Recent file event handlers.  
+   EVT_MENU(wxID_FILE, AudacityApp::OnMRUClear)
    EVT_MENU_RANGE(wxID_FILE1, wxID_FILE9, AudacityApp::OnMRUFile)
 // EVT_MENU_RANGE(6050, 6060, AudacityApp::OnMRUProject)
+
+   // Handle AppCommandEvents (usually from a script)
+   EVT_APP_COMMAND(wxID_ANY, AudacityApp::OnReceiveCommand)
 END_EVENT_TABLE()
 
 // Backend for OnMRUFile and OnMRUProject
@@ -496,7 +681,7 @@ bool AudacityApp::MRUOpen(wxString fileName) {
                   newFileName.GetName().c_str()),
                   _("Error opening project"),
                   wxOK | wxCENTRE);
-               continue;
+               return(true);
             }
          }
          
@@ -517,12 +702,6 @@ bool AudacityApp::MRUOpen(wxString fileName) {
          // all relevant member variables are in their initial state,
          // and it's okay to open a new project inside this window.
          proj->OpenFile(fileName);
-
-         // Add file to "recent files" list.
-         proj->GetRecentFiles()->AddFileToHistory(fileName);
-         gPrefs->SetPath(wxT("/RecentFiles"));
-         proj->GetRecentFiles()->Save(*gPrefs);
-         gPrefs->SetPath(wxT(".."));
       }
       else {
          // File doesn't exist - remove file from history
@@ -534,18 +713,18 @@ bool AudacityApp::MRUOpen(wxString fileName) {
    return(true);
 }
 
-void AudacityApp::OnMRUFile(wxCommandEvent& event) {
-   AudacityProject *proj = GetActiveProject();
+void AudacityApp::OnMRUClear(wxCommandEvent& event)
+{
+   mRecentFiles->Clear();
+}
 
+void AudacityApp::OnMRUFile(wxCommandEvent& event) {
    int n = event.GetId() - wxID_FILE1;
-   wxString fileName = proj->GetRecentFiles()->GetHistoryFile(n);
+   wxString fileName = mRecentFiles->GetHistoryFile(n);
 
    bool opened = MRUOpen(fileName);
    if(!opened) {
-      proj->GetRecentFiles()->RemoveFileFromHistory(n);
-      gPrefs->SetPath(wxT("/RecentFiles"));
-      proj->GetRecentFiles()->Save(*gPrefs);
-      gPrefs->SetPath(wxT(".."));
+      mRecentFiles->RemoveFileFromHistory(n);
    }
 }
 
@@ -620,6 +799,11 @@ void AudacityApp::InitLang( const wxString & lang )
 // main frame
 bool AudacityApp::OnInit()
 {
+#if defined(__WXMAC__)
+   // Disable window animation
+   wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
+#endif
+   
    mLogger = NULL;
 
    #if USE_QUICKTIME
@@ -641,6 +825,10 @@ bool AudacityApp::OnInit()
 	#if defined(__WXMSW__) && !defined(__WXUNIVERSAL__) && !defined(__CYGWIN__)
 		this->AssociateFileTypes(); 
 	#endif
+
+   // TODO - read the number of files to store in history from preferences
+   mRecentFiles = new FileHistory(/* number of files */);
+   mRecentFiles->Load(*gPrefs, wxT("RecentFiles"));
 
    //
    // Paths: set search path and temp dir path
@@ -730,8 +918,11 @@ bool AudacityApp::OnInit()
    // Initialize the ModuleManager
    ModuleManager::Initialize();
 
+   // Initialize the CommandHandler
+   InitCommandHandler();
+
    // load audacity plug-in modules
-   LoadModules();
+   LoadModules(*mCmdHandler);
 
    // Locale
    // wxWindows 2.3 has a much nicer wxLocale API.  We can make this code much
@@ -774,10 +965,6 @@ bool AudacityApp::OnInit()
 
    LoadEffects();
 
-#ifdef EXPERIMENTAL_ONDEMAND
-   //The On-Demand managerr initializes the first time its singleton is accessed
-//   ODManager::Instance();
-#endif
 
 #ifdef __WXMAC__
 
@@ -785,16 +972,20 @@ bool AudacityApp::OnInit()
    // Create a menubar that will show when all project windows are closed.
 
    wxMenu *fileMenu = new wxMenu();
-   fileMenu->Append(wxID_NEW, wxT("&New\tCtrl+N"));
-   fileMenu->Append(wxID_OPEN, wxT("&Open...\tCtrl+O"));
+   wxMenu *recentMenu = new wxMenu();
+   fileMenu->Append(wxID_NEW, wxString(_("&New")) + wxT("\tCtrl+N"));
+   fileMenu->Append(wxID_OPEN, wxString(_("&Open...")) + wxT("\tCtrl+O"));
+   fileMenu->AppendSubMenu(recentMenu, _("Open &Recent..."));
    fileMenu->Append(wxID_ABOUT, _("&About Audacity..."));
-   /* i18n-hint: Mac OS X shortcut should be Ctrl+, */
-   fileMenu->Append(wxID_PREFERENCES, _("&Preferences...\tCtrl+,"));
+   fileMenu->Append(wxID_PREFERENCES, wxString(_("&Preferences...")) + wxT("\tCtrl+,"));
 
    wxMenuBar *menuBar = new wxMenuBar();
    menuBar->Append(fileMenu, wxT("&File"));
 
    wxMenuBar::MacSetCommonMenuBar(menuBar);
+
+   mRecentFiles->UseMenu(recentMenu);
+   mRecentFiles->AddFilesToMenu(recentMenu);
 
    // This invisibale frame will be the "root" of all other frames and will
    // become the active frame when no projects are open.
@@ -805,6 +996,7 @@ bool AudacityApp::OnInit()
    SetExitOnFrameDelete(true);
 
    AudacityProject *project = CreateNewAudacityProject();
+   mCmdHandler->SetProject(project);
 
    wxWindow * pWnd = MakeHijackPanel() ;
    if( pWnd )
@@ -817,7 +1009,7 @@ bool AudacityApp::OnInit()
    delete temporarywindow;
    
    if( project->mShowSplashScreen )
-      project->OnHelpWelcome();//ShowSplashScreen( project );
+      project->OnHelpWelcome();
 
    // JKC 10-Sep-2007: Enable monitoring from the start.
    // (recommended by lprod.org).
@@ -825,8 +1017,6 @@ bool AudacityApp::OnInit()
    // PLAY or RECORD completes.  
    // So we also call StartMonitoring when STOP is called.
    project->MayStartMonitoring();
-
-   mImporter = new Importer;
 
    mLogger = new wxLogWindow(NULL,wxT("Debug Log"),false,false);
    mLogger->SetActiveTarget(mLogger);
@@ -836,6 +1026,12 @@ bool AudacityApp::OnInit()
    #ifdef USE_FFMPEG
    FFmpegStartup();
    #endif
+
+   #ifdef USE_GSTREAMER
+   GStreamerStartup();
+   #endif
+
+   mImporter = new Importer;
 
    //
    // Auto-recovery
@@ -998,6 +1194,26 @@ bool AudacityApp::OnInit()
    return TRUE;
 }
 
+void AudacityApp::InitCommandHandler()
+{
+   mCmdHandler = new CommandHandler(*this);
+   //SetNextHandler(mCmdHandler);
+}
+
+void AudacityApp::DeInitCommandHandler()
+{
+   wxASSERT(NULL != mCmdHandler);
+   delete mCmdHandler;
+   mCmdHandler = NULL;
+}
+
+// AppCommandEvent callback - just pass the event on to the CommandHandler
+void AudacityApp::OnReceiveCommand(AppCommandEvent &event)
+{
+   wxASSERT(NULL != mCmdHandler);
+   mCmdHandler->OnReceiveCommand(event);
+}
+
 bool AudacityApp::InitCleanSpeech()
 {
    wxString userdatadir = FileNames::DataDir();
@@ -1005,7 +1221,7 @@ bool AudacityApp::InitCleanSpeech()
    wxString presets = wxT("");
 
    #ifdef __WXGTK__
-   if (presetsFromPrefs.GetChar(0) != wxT('/'))
+   if (presetsFromPrefs.Length() > 0 && presetsFromPrefs[0] != wxT('/'))
       presetsFromPrefs = wxT("");
    #endif //__WXGTK__
 
@@ -1057,7 +1273,7 @@ bool AudacityApp::InitTempDir()
    wxString temp = wxT("");
 
    #ifdef __WXGTK__
-   if (tempFromPrefs.GetChar(0) != wxT('/'))
+   if (tempFromPrefs.Length() > 0 && tempFromPrefs[0] != wxT('/'))
       tempFromPrefs = wxT("");
    #endif
 
@@ -1252,21 +1468,42 @@ void AudacityApp::AddMultiPathsToPathList(wxString multiPathString,
 }
 
 // static
-void AudacityApp::FindFilesInPathList(wxString pattern,
-                                      wxArrayString pathList,
-                                      int flags,
-                                      wxArrayString &results)
+void AudacityApp::FindFilesInPathList(const wxString & pattern,
+                                      const wxArrayString & pathList,
+                                      wxArrayString & results,
+                                      int flags)
 {
    wxLogNull nolog;
 
-   if (pattern == wxT(""))
+   if (pattern == wxT("")) {
       return;
+   }
 
    wxFileName f;
 
-   for(unsigned i=0; i<pathList.GetCount(); i++) {
+   for(size_t i = 0; i < pathList.GetCount(); i++) {
       f = pathList[i] + wxFILE_SEP_PATH + pattern;
-      wxDir::GetAllFiles(f.GetPath(), &results, f.GetFullName(), wxDIR_FILES);
+      wxDir::GetAllFiles(f.GetPath(), &results, f.GetFullName(), flags);
+   }
+}
+
+void AudacityApp::OnEndSession(wxCloseEvent & event)
+{
+   bool force = !event.CanVeto();
+
+   // Try to close each open window.  If the user hits Cancel
+   // in a Save Changes dialog, don't continue.
+   if (!gAudacityProjects.IsEmpty()) {
+      while (gAudacityProjects.Count()) {
+         if (force) {
+            gAudacityProjects[0]->Close(true);
+         }
+         else if (!gAudacityProjects[0]->Close()) {
+            gIsQuitting = false;
+            event.Veto();
+            break;
+         }
+      }
    }
 }
 
@@ -1333,6 +1570,11 @@ void AudacityApp::OnKeyUp(wxKeyEvent & event)
       event.Skip(false);
 }
 
+void AudacityApp::AddFileToHistory(const wxString & name)
+{
+   mRecentFiles->AddFileToHistory(name);
+}
+
 int AudacityApp::OnExit()
 {
    gIsQuitting = true;
@@ -1359,7 +1601,16 @@ int AudacityApp::OnExit()
       }
    }
 
+   DeInitCommandHandler();
+
+   mRecentFiles->Save(*gPrefs, wxT("RecentFiles"));
+   delete mRecentFiles;
+
    FinishPreferences();
+
+   #ifdef USE_FFMPEG
+   DropFFmpegLibs();
+   #endif
 
    UnloadEffects();
 
@@ -1367,7 +1618,6 @@ int AudacityApp::OnExit()
    BlockFile::Deinit();
 
    DeinitAudioIO();
-   Internat::CleanUp();// JKC
 
    if (mLocale)
       delete mLocale;

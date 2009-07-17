@@ -169,7 +169,7 @@ void ExportFFmpegAACOptions::PopulateOrExchange(ShuttleGui & S)
    {
       S.StartTwoColumn();
       {
-      S.TieSlider(wxT("Quality:"),wxT("/FileFormats/AACQuality"),100,500,10);
+      S.TieSlider(_("Quality:"),wxT("/FileFormats/AACQuality"),100,500,10);
    }
       S.EndTwoColumn();
    }
@@ -411,6 +411,7 @@ WX_DEFINE_LIST(FFmpegPresetList);
 FFmpegPresets::FFmpegPresets()
 {
    mPresets = new FFmpegPresetList();
+   mPresets->DeleteContents(true);
    XMLFileReader xmlfile;
    wxFileName xmlFileName(FileNames::DataDir(), wxT("ffmpeg_presets.xml"));
    xmlfile.Parse(this,xmlFileName.GetFullPath());
@@ -419,6 +420,7 @@ FFmpegPresets::FFmpegPresets()
 FFmpegPresets::~FFmpegPresets()
 {
    XMLFileWriter writer;
+   // FIXME: Catch XMLFileWriterException
    wxFileName xmlFileName(FileNames::DataDir(), wxT("ffmpeg_presets.xml"));
    writer.Open(xmlFileName.GetFullPath(),wxT("wb"));
    WriteXMLHeader(writer);
@@ -435,6 +437,7 @@ void FFmpegPresets::ImportPresets(wxString &filename)
 void FFmpegPresets::ExportPresets(wxString &filename)
 {
    XMLFileWriter writer;
+   // FIXME: Catch XMLFileWriterException
    writer.Open(filename,wxT("wb"));
    WriteXMLHeader(writer);
    WriteXML(writer);
@@ -513,7 +516,6 @@ void FFmpegPresets::SavePreset(ExportFFmpegOptions *parent, wxString &name)
       mPresets->push_front(preset);
    }
 
-   wxListBox *lb;
    wxSpinCtrl *sc;
    wxTextCtrl *tc;
    wxCheckBox *cb;
@@ -925,13 +927,13 @@ void ExportFFmpegOptions::PopulateOrExchange(ShuttleGui & S)
             mBitrateSpin->SetToolTip(_("Bit Rate (bits/second) - influences the resulting file size and quality\nSome codecs may only accept specific values (128k, 192k, 256k etc)\n0 - automatic\nRecommended - 192000"));
 
             mQualitySpin = S.Id(FEQualityID).TieSpinCtrl(_("Quality:"), wxT("/FileFormats/FFmpegQuality"), 0,500,-1);
-            mQualitySpin->SetToolTip(_("Overral quality, used differently by different codecs\nRequired for vorbis\n0 - automatic\n-1 - off (use bitrate instead)"));
+            mQualitySpin->SetToolTip(_("Overall quality, used differently by different codecs\nRequired for vorbis\n0 - automatic\n-1 - off (use bitrate instead)"));
 
             mSampleRateSpin = S.Id(FESampleRateID).TieSpinCtrl(_("Sample Rate:"), wxT("/FileFormats/FFmpegSampleRate"), 0,200000,0);
             mSampleRateSpin->SetToolTip(_("Sample rate (Hz)\n0 - don't change sample rate"));
 
             mCutoffSpin = S.Id(FECutoffID).TieSpinCtrl(_("Cutoff Bandwidth:"), wxT("/FileFormats/FFmpegCutOff"), 0,10000000,0);
-            mCutoffSpin->SetToolTip(_("Audio cutoff bandwidth (Hz)\nOptional\n0 - automatic\n"));
+            mCutoffSpin->SetToolTip(_("Audio cutoff bandwidth (Hz)\nOptional\n0 - automatic"));
 
             mProfileChoice = S.Id(FEProfileID).TieChoice(_("Profile:"), wxT("/FileFormats/FFmpegAACProfile"), 
                mProfileLabels[0], mProfileNames, mProfileLabels);
@@ -966,7 +968,7 @@ void ExportFFmpegOptions::PopulateOrExchange(ShuttleGui & S)
 
                mPredictionOrderMethodChoice = S.Id(FEPredOrderID).TieChoice(_("Prediction Order Method:"), wxT("/FileFormats/FFmpegPredOrderMethod"), 
                   mPredictionOrderMethodLabels[4], mPredictionOrderMethodNames, mPredictionOrderMethodLabels);
-               mProfileChoice->SetToolTip(_("Prediction Order Method\nEstimate - fastest, lower compression\nLog search - slowest, best compression\nFull search - default"));
+               mPredictionOrderMethodChoice->SetToolTip(_("Prediction Order Method\nEstimate - fastest, lower compression\nLog search - slowest, best compression\nFull search - default"));
 
                mMinPartitionOrderSpin = S.Id(FEMinPartOrderID).TieSpinCtrl(_("Minimal partition order"), wxT("/FileFormats/FFmpegMinPartOrder"), -1,8,-1);
                mMinPartitionOrderSpin->SetToolTip(_("Minimal partition order\nOptional\n-1 - default\nmin - 0\nmax - 8"));

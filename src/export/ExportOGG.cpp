@@ -129,7 +129,7 @@ public:
    // Required
 
    bool DisplayOptions(wxWindow *parent, int format = 0);
-   bool Export(AudacityProject *project,
+   int Export(AudacityProject *project,
                int channels,
                wxString fName,
                bool selectedOnly,
@@ -160,7 +160,7 @@ void ExportOGG::Destroy()
    delete this;
 }
 
-bool ExportOGG::Export(AudacityProject *project,
+int ExportOGG::Export(AudacityProject *project,
                        int numChannels,
                        wxString fName,
                        bool selectionOnly,
@@ -175,7 +175,7 @@ bool ExportOGG::Export(AudacityProject *project,
    double    quality = (gPrefs->Read(wxT("/FileFormats/OggExportQuality"), 50)/(float)100.0);
 
    wxLogNull logNo;            // temporarily disable wxWindows error messages 
-   bool      cancelling = false;
+   int updateResult = eProgressSuccess;
    int       eos = 0;
 
    FileIO outFile(fName, FileIO::Output);
@@ -249,13 +249,14 @@ bool ExportOGG::Export(AudacityProject *project,
                             t0, t1,
                             numChannels, SAMPLES_PER_RUN, false,
                             rate, floatSample, true, mixerSpec);
+   delete [] waveTracks;
 
    ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
       selectionOnly ?
       _("Exporting the selected audio as Ogg Vorbis") :
       _("Exporting the entire project as Ogg Vorbis"));
 
-   while (!cancelling && !eos) {
+   while (updateResult == eProgressSuccess && !eos) {
       float **vorbis_buffer = vorbis_analysis_buffer(&dsp, SAMPLES_PER_RUN);
       sampleCount samplesThisRun = mixer->Process(SAMPLES_PER_RUN);
 
@@ -311,7 +312,7 @@ bool ExportOGG::Export(AudacityProject *project,
          }
       }
 
-      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
+      updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
    delete progress;;
@@ -327,7 +328,7 @@ bool ExportOGG::Export(AudacityProject *project,
 
    outFile.Close();
 
-   return !cancelling;
+   return updateResult;
 }
 
 bool ExportOGG::DisplayOptions(wxWindow *parent, int format)

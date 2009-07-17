@@ -55,6 +55,7 @@ and ImportLOF.cpp.
 #include "ImportLOF.h"
 #include "ImportFLAC.h"
 #include "ImportFFmpeg.h"
+#include "ImportGStreamer.h"
 #include "../Track.h"
 #include "../Prefs.h"
 
@@ -82,6 +83,10 @@ Importer::Importer()
    #if defined(USE_FFMPEG)
    GetFFmpegImportPlugin(mImportPluginList, mUnusableImportPluginList);
    #endif
+   #if defined(USE_GSTREAMER)
+   GetGStreamerImportPlugin(mImportPluginList, mUnusableImportPluginList);
+   #endif
+
 }
 
 Importer::~Importer()
@@ -94,7 +99,7 @@ Importer::~Importer()
 
 void Importer::GetSupportedImportFormats(FormatList *formatList)
 {
-   ImportPluginList::Node *importPluginNode = mImportPluginList->GetFirst();
+   ImportPluginList::compatibility_iterator importPluginNode = mImportPluginList->GetFirst();
    while(importPluginNode)
    {
       ImportPlugin *importPlugin = importPluginNode->GetData();
@@ -117,11 +122,11 @@ int Importer::Import(wxString fName,
    wxString extension = fName.AfterLast(wxT('.'));
 
    // This list is used to call plugins in correct order
-   ImportPluginList *importPlugins = new ImportPluginList;
+   ImportPluginList importPlugins;
 
    bool haveCompatiblePlugin = false;
 
-   ImportPluginList::Node *importPluginNode;
+   ImportPluginList::compatibility_iterator importPluginNode;
    
    // If user explicitly selected a filter,
    // then we should try importing via corresponding plugin first
@@ -135,11 +140,11 @@ int Importer::Import(wxString fName,
       if (plugin->GetPluginFormatDescription().CompareTo(type) == 0)
       {
          // This plugin corresponds to user-selected filter, try it first.
-         importPlugins->Insert(plugin);
+         importPlugins.Insert(plugin);
       }
       else if (plugin->SupportsExtension(extension))
       {
-         importPlugins->Append(plugin);
+         importPlugins.Append(plugin);
       }
       if (plugin->SupportsExtension(extension))
         haveCompatiblePlugin = true;
@@ -151,18 +156,18 @@ int Importer::Import(wxString fName,
    while(importPluginNode)
    {
       ImportPlugin *plugin = importPluginNode->GetData();
-      if (importPlugins->Find(plugin) == NULL)
+      if (importPlugins.Find(plugin) == NULL)
       {
          // Skip MP3 import plugin. Opens some non-mp3 audio files (ac3 for example) as garbage.
          if (plugin->GetPluginFormatDescription().CompareTo( _("MP3 files") ) != 0)
          {
-            importPlugins->Append(plugin);
+            importPlugins.Append(plugin);
          }        
       }
       importPluginNode = importPluginNode->GetNext();
    }
 
-   importPluginNode = importPlugins->GetFirst();
+   importPluginNode = importPlugins.GetFirst();
    while(importPluginNode)
    {
       ImportPlugin *plugin = importPluginNode->GetData();
@@ -191,7 +196,7 @@ int Importer::Import(wxString fName,
 
          delete inFile;
 
-         if (res == eImportSuccess)
+         if (res == eProgressSuccess || res == eProgressStopped)
          {
             // LOF ("list-of-files") has different semantics
             if (extension.IsSameAs(wxT("lof"), false))
@@ -203,7 +208,7 @@ int Importer::Import(wxString fName,
             }
          }
 
-         if (res == eImportCancelled)
+         if (res == eProgressCancelled || res == eProgressFailed)
          {
             return 0;
          }
@@ -219,7 +224,7 @@ int Importer::Import(wxString fName,
    // None of our plugins can handle this file.  It might be that
    // Audacity supports this format, but support was not compiled in.
    // If so, notify the user of this fact
-   UnusableImportPluginList::Node *unusableImporterNode
+   UnusableImportPluginList::compatibility_iterator unusableImporterNode
       = mUnusableImportPluginList->GetFirst();
    while(unusableImporterNode)
    {

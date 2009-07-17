@@ -68,13 +68,6 @@ class Tags;
 
 class ImportFileHandle;
 
-enum
-{
-   eImportSuccess,
-   eImportCancelled,
-   eImportFailed
-};
-
 class ImportPlugin
 {
 public:

@@ -33,6 +33,7 @@ Gives an Error message with an option for help.
 #include "../HelpText.h"
 #include "../Internat.h"
 #include "../Project.h"
+#include "../Prefs.h"
 
 class ErrorDialog : public wxDialog
 {
@@ -51,8 +52,6 @@ private:
    DECLARE_EVENT_TABLE()
 	   
 };
-void ShowHtmlInBrowser( const wxString &Url );
-
 
 BEGIN_EVENT_TABLE(ErrorDialog, wxDialog)
    EVT_BUTTON( wxID_OK, ErrorDialog::OnOk)
@@ -120,12 +119,43 @@ void ErrorDialog::OnOk(wxCommandEvent &event)
    EndModal(true);
 }
 
-void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &HtmlText, bool bIsFile = false )
+// Helper class to make browser "simulate" a modal dialog
+class HtmlTextHelpDialog : public BrowserFrame
+{
+public:
+   HtmlTextHelpDialog() : BrowserFrame()
+   {
+      MakeModal( true );
+   }
+   virtual ~HtmlTextHelpDialog()
+   {
+      MakeModal( false );
+      // On Windows, for some odd reason, the Audacity window will be sent to
+      // the back.  So, make sure that doesn't happen.
+      GetParent()->Raise();
+   }
+};
+
+void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &HtmlText, bool bIsFile = false, bool bModal = false )
 {
    LinkingHtmlWindow *html;
 
-   BrowserFrame * pWnd = new BrowserFrame();
-   pWnd->Create(pParent, wxID_ANY, Title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);// & ~wxSYSTEM_MENU);
+   BrowserFrame * pWnd;
+   if( bModal )
+      pWnd = new HtmlTextHelpDialog();
+   else
+      pWnd = new BrowserFrame();
+
+   pWnd->Create(pParent, wxID_ANY, Title, wxDefaultPosition, wxDefaultSize,
+#if defined(__WXMAC__)
+      // On OSX, the html frame can go behind the help dialog and if the help
+      // html frame is modal, you can't get back to it.  Pressing escape gets
+      // you out of this, but it's just easier to add the wxSTAY_ON_TOP flag
+      // to prevent it from falling behind the dialog.  Not the perfect solution
+      // but acceptable in this case.
+      wxSTAY_ON_TOP |
+#endif
+      wxDEFAULT_FRAME_STYLE);
 
    ShuttleGui S( pWnd, eIsCreating );
 
@@ -190,17 +220,6 @@ void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &Ht
    return;
 }
 
-
-
-void ShowHtmlInBrowser( const wxString &Url )
-{
-#if defined(__WXMSW__) || defined(__WXMAC__)
-   OpenInDefaultBrowser(Url);
-#else
-   wxLaunchDefaultBrowser(Url);
-#endif
-}
-
 void ErrorDialog::OnHelp(wxCommandEvent &event)
 {
    if( dhelpURL.StartsWith(wxT("innerlink:")) )
@@ -208,10 +227,12 @@ void ErrorDialog::OnHelp(wxCommandEvent &event)
       ShowHtmlText(
          this, 
          TitleText(dhelpURL.Mid( 10 ) ),
-         HelpText( dhelpURL.Mid( 10 )) );
+         HelpText( dhelpURL.Mid( 10 )),
+         false,
+         true );
       return;
    }
-   ShowHtmlInBrowser( dhelpURL );
+   OpenInDefaultBrowser( dhelpURL );
 	EndModal(true);
 }
 
@@ -231,17 +252,27 @@ void ShowHelpDialog(wxWindow *parent,
                      const wxString &remoteURL)
 {
    AudacityProject * pProj = GetActiveProject();
-   wxString HelpMode = wxT("Standard");
+   wxString HelpMode = wxT("Local");
 
    if( pProj )
    {
       HelpMode = pProj->mHelpPref;
+      // these next lines are for legacy cfg files (pre 2.0) where we had different modes
+      if( (HelpMode == wxT("Standard")) || (HelpMode == wxT("InBrowser")) )
+      {
+         HelpMode = wxT("Local");
+         pProj->mHelpPref = HelpMode;
+         gPrefs->Write(wxT("/GUI/Help"), HelpMode);
+      }
    }
 
-   if( (HelpMode == wxT("FromInternet")) && !remoteURL.IsEmpty() )
+   if( localFileName.Contains(wxT("Quick_Help")) )
+      // 'Quick_Help' is installed locally
+      OpenInDefaultBrowser( localFileName );
+   else if( (HelpMode == wxT("FromInternet")) && !remoteURL.IsEmpty() )
    {
       // Always go to remote URL.  Use External browser.
-      ShowHtmlInBrowser( remoteURL );
+      OpenInDefaultBrowser( remoteURL );
    }
    else if( !wxFileExists( localFileName ))
    {
@@ -250,14 +281,15 @@ void ShowHelpDialog(wxWindow *parent,
       wxASSERT( !remoteURL.IsEmpty() );
       // I can't find it'.
       // Use Built-in browser to suggest you use the remote url.
+//use the remote link
       wxString Text = HelpText( wxT("remotehelp") );
       Text.Replace( wxT("*URL*"), remoteURL );
       ShowHtmlText( parent, _("Help on the Internet"), Text );
    }
-   else if( HelpMode == wxT("InBrowser") ) 
+   else if( HelpMode == wxT("Local") ) 
    {
       // Local file, External browser 
-      ShowHtmlInBrowser( wxString(wxT("file:"))+localFileName );
+      OpenInDefaultBrowser( wxString(wxT("file:"))+localFileName );
    }
    else
    {

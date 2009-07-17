@@ -22,6 +22,7 @@
 #include <math.h>
 
 #include <wx/filefn.h>
+#include <wx/file.h>
 #include <wx/ffile.h>
 #include <wx/utils.h>
 #include <wx/log.h>
@@ -205,7 +206,15 @@ int LegacyBlockFile::ReadData(samplePtr data, sampleFormat format,
    info.frames = mLen + (mSummaryInfo.totalSummaryBytes /
                          SAMPLE_SIZE(mFormat));
    
-   SNDFILE *sf=sf_open(OSFILENAME(mFileName.GetFullPath()), SFM_READ, &info);
+   wxFile f;   // will be closed when it goes out of scope
+   SNDFILE *sf = NULL;
+
+   if (f.Open(mFileName.GetFullPath())) {
+      // Even though there is an sf_open() that takes a filename, use the one that
+      // takes a file descriptor since wxWidgets can open a file with a Unicode name and
+      // libsndfile can't (under Windows).
+      sf = sf_open_fd(f.fd(), SFM_READ, &info, FALSE);
+   }
 
    wxLogNull *silence=0;
    if(mSilentLog)silence= new wxLogNull();

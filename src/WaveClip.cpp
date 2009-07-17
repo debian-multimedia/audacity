@@ -217,8 +217,13 @@ class SpecCache {
 public:
    SpecCache(int cacheLen, int half, bool autocorrelation)
    {
+      minFreqOld = -1;
+      maxFreqOld = -1;
+      gainOld = -1;
+      rangeOld = -1;
       windowTypeOld = -1;
       windowSizeOld = -1;
+      frequencyGainOld = false;
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
       fftSkipPointsOld = -1;
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
@@ -237,8 +242,13 @@ public:
       delete[] where;
    }
 
+   int          minFreqOld;
+   int          maxFreqOld;
+   int          gainOld;
+   int          rangeOld;
    int          windowTypeOld;
    int          windowSizeOld;
+   int          frequencyGainOld;
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
    int          fftSkipPointsOld;
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
@@ -251,6 +261,35 @@ public:
    float       *freq;
 };
 
+#ifdef EXPERIMENTAL_USE_REALFFTF
+#include "FFT.h"
+void ComputeSpectrumUsingRealFFTf(float *buffer, HFFT hFFT, float *window, int len, float *out)
+{
+   int i;
+   if(len > hFFT->Points*2)
+      len = hFFT->Points*2;
+   for(i=0; i<len; i++)
+      buffer[i] *= window[i];
+   for( ; i<(hFFT->Points*2); i++)
+      buffer[i]=0; // zero pad as needed
+   RealFFTf(buffer, hFFT);
+   // Handle the (real-only) DC
+   float power = buffer[0]*buffer[0];
+   if(power <= 0)
+      out[0] = -160.0;
+   else
+      out[0] = 10.0*log10(power);
+   for(i=1;i<hFFT->Points;i++) {
+      power = (buffer[hFFT->BitReversed[i]  ]*buffer[hFFT->BitReversed[i]  ])
+            + (buffer[hFFT->BitReversed[i]+1]*buffer[hFFT->BitReversed[i]+1]);
+      if(power <= 0)
+         out[i] = -160.0;
+      else
+         out[i] = 10.0*log10(power);
+   }
+}
+#endif // EXPERIMENTAL_USE_REALFFTF
+
 WaveClip::WaveClip(DirManager *projDirManager, sampleFormat format, int rate)
 {
    mOffset = 0;
@@ -258,6 +297,12 @@ WaveClip::WaveClip(DirManager *projDirManager, sampleFormat format, int rate)
    mSequence = new Sequence(projDirManager, format);
    mEnvelope = new Envelope();
    mWaveCache = new WaveCache(1);
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   mWindowType = -1;
+   mWindowSize = -1;
+   hFFT = NULL;
+   mWindow = NULL;
+#endif
    mSpecCache = new SpecCache(1, 1, false);
    mSpecPxCache = new SpecPxCache(1);
    mAppendBuffer = NULL;
@@ -279,10 +324,16 @@ WaveClip::WaveClip(WaveClip& orig, DirManager *projDirManager)
    mEnvelope->SetOffset(orig.GetOffset());
    mEnvelope->SetTrackLen(((double)orig.mSequence->GetNumSamples()) / orig.mRate);
    mWaveCache = new WaveCache(1);
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   mWindowType = -1;
+   mWindowSize = -1;
+   hFFT = NULL;
+   mWindow = NULL;
+#endif
    mSpecCache = new SpecCache(1, 1, false);
    mSpecPxCache = new SpecPxCache(1);
 
-   for (WaveClipList::Node* it=orig.mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=orig.mCutLines.GetFirst(); it; it=it->GetNext())
       mCutLines.Append(new WaveClip(*it->GetData(), projDirManager));
  
    mAppendBuffer = NULL;
@@ -297,6 +348,12 @@ WaveClip::~WaveClip()
    delete mWaveCache;
    delete mSpecCache;
    delete mSpecPxCache;
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   if(hFFT != NULL)
+      EndFFT(hFFT);
+   if(mWindow != NULL)
+      delete[] mWindow;
+#endif
 
    if (mAppendBuffer)
       DeleteSamples(mAppendBuffer);
@@ -645,6 +702,11 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
                                double t0, double pixelsPerSecond,
                                bool autocorrelation)
 {
+   int minFreq = gPrefs->Read(wxT("/Spectrum/MinFreq"), 0L);
+   int maxFreq = gPrefs->Read(wxT("/Spectrum/MaxFreq"), 8000L);
+   int range = gPrefs->Read(wxT("/Spectrum/Range"), 80L);
+   int gain = gPrefs->Read(wxT("/Spectrum/Gain"), 20L);
+   int frequencygain = gPrefs->Read(wxT("/Spectrum/FrequencyGain"), 0L);
    int windowType;
    int windowSize = gPrefs->Read(wxT("/Spectrum/FFTSize"), 256);
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
@@ -654,9 +716,42 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
    int half = windowSize/2;
    gPrefs->Read(wxT("/Spectrum/WindowType"), &windowType, 3);
 
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   // Update the FFT and window if necessary
+   if((mWindowType != windowType) || (mWindowSize != windowSize)
+      || (hFFT == NULL) || (mWindow == NULL) || (mWindowSize != hFFT->Points*2) ) {
+      mWindowType = windowType;
+      mWindowSize = windowSize;
+      if(hFFT != NULL)
+         EndFFT(hFFT);
+      hFFT = InitializeFFT(mWindowSize);
+      if(mWindow != NULL) delete[] mWindow;
+      // Create the requested window function
+      mWindow = new float[mWindowSize];
+      int i;
+      for(i=0; i<windowSize; i++)
+         mWindow[i]=1.0;
+      WindowFunc(mWindowType, mWindowSize, mWindow);
+      // Scale the window function to give 0dB spectrum for 0dB sine tone
+      double ws=0;
+      for(i=0; i<windowSize; i++)
+         ws += mWindow[i];
+      if(ws > 0) {
+         ws = 2.0/ws;
+         for(i=0; i<windowSize; i++)
+            mWindow[i] *= ws;
+      }
+   }
+#endif // EXPERIMENTAL_USE_REALFFTF
+
    if (mSpecCache &&
+       mSpecCache->minFreqOld == minFreq &&
+       mSpecCache->maxFreqOld == maxFreq &&
+       mSpecCache->rangeOld == range &&
+       mSpecCache->gainOld == gain &&
        mSpecCache->windowTypeOld == windowType &&
        mSpecCache->windowSizeOld == windowSize &&
+       mSpecCache->frequencyGainOld == frequencygain &&
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
        mSpecCache->fftSkipPointsOld == fftSkipPoints &&
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
@@ -692,8 +787,13 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
    // with the current one, re-use as much of the cache as
    // possible
    if (oldCache->dirty == mDirty &&
+       oldCache->minFreqOld == minFreq &&
+       oldCache->maxFreqOld == maxFreq &&
+       oldCache->rangeOld == range &&
+       oldCache->gainOld == gain &&
        oldCache->windowTypeOld == windowType &&
        oldCache->windowSizeOld == windowSize &&
+       oldCache->frequencyGainOld == frequencygain &&
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
        oldCache->fftSkipPointsOld == fftSkipPoints &&
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
@@ -728,8 +828,24 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
 #else //!EXPERIMENTAL_FFT_SKIP_POINTS
    float *buffer = new float[windowSize];
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
+   mSpecCache->minFreqOld = minFreq;
+   mSpecCache->maxFreqOld = maxFreq;
+   mSpecCache->gainOld = gain;
+   mSpecCache->rangeOld = range;
    mSpecCache->windowTypeOld = windowType;
    mSpecCache->windowSizeOld = windowSize;
+   mSpecCache->frequencyGainOld = frequencygain;
+
+   float *gainfactor = NULL;
+   if(frequencygain > 0) {
+      // Compute a frequency-dependant gain factor
+      // scaled such that 1000 Hz gets a gain of 0dB
+      double factor = 0.001*(double)mRate/(double)windowSize;
+      gainfactor = new float[half];
+      for(x = 0; x < half; x++) {
+         gainfactor[x] = frequencygain*log10(factor * x);
+      }
+   }
 
    for (x = 0; x < mSpecCache->len; x++)
       if (recalc[x]) {
@@ -757,14 +873,15 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
             }
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
             if (start + len*fftSkipPoints1 > mSequence->GetNumSamples()) {
-               len = (mSequence->GetNumSamples() - start)/fftSkipPoints1;
-               for (i = len*fftSkipPoints1; i < (sampleCount)windowSize; i++)
+               int newlen = (mSequence->GetNumSamples() - start)/fftSkipPoints1;
+               for (i = newlen*fftSkipPoints1; i < (sampleCount)len*fftSkipPoints1; i++)
 #else //!EXPERIMENTAL_FFT_SKIP_POINTS
             if (start + len > mSequence->GetNumSamples()) {
-               len = mSequence->GetNumSamples() - start;
-               for (i = len; i < (sampleCount)windowSize; i++)
+               int newlen = mSequence->GetNumSamples() - start;
+               for (i = newlen; i < (sampleCount)len; i++)
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
                   adj[i] = 0;
+               len = newlen;
             }
 
             if (len > 0)
@@ -782,12 +899,29 @@ bool WaveClip::GetSpectrogram(float *freq, sampleCount *where,
                mSequence->Get((samplePtr)adj, floatSample, start, len);
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
 
-            ComputeSpectrum(buffer, windowSize, windowSize,
-                            mRate, &mSpecCache->freq[half * x],
-                            autocorrelation, windowType);
+#ifdef EXPERIMENTAL_USE_REALFFTF
+            if(autocorrelation) {
+               ComputeSpectrum(buffer, windowSize, windowSize,
+                               mRate, &mSpecCache->freq[half * x],
+                               autocorrelation, windowType);
+            } else {
+               ComputeSpectrumUsingRealFFTf(buffer, hFFT, mWindow, mWindowSize, &mSpecCache->freq[half * x]);
+            }
+#else  // EXPERIMENTAL_USE_REALFFTF
+           ComputeSpectrum(buffer, windowSize, windowSize,
+                           mRate, &mSpecCache->freq[half * x],
+                           autocorrelation, windowType);
+#endif // EXPERIMENTAL_USE_REALFFTF
+           if(gainfactor) {
+              // Apply a frequency-dependant gain factor
+              for(i=0; i<half; i++)
+                 mSpecCache->freq[half * x + i] += gainfactor[i];
+           }
          }
       }
 
+   if(gainfactor)
+      delete[] gainfactor;
    delete[]buffer;
    delete[]recalc;
    delete oldCache;
@@ -1023,7 +1157,7 @@ void WaveClip::WriteXML(XMLWriter &xmlFile)
    mSequence->WriteXML(xmlFile);
    mEnvelope->WriteXML(xmlFile);
 
-   for (WaveClipList::Node* it=mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=mCutLines.GetFirst(); it; it=it->GetNext())
       it->GetData()->WriteXML(xmlFile);
 
    xmlFile.EndTag(wxT("waveclip"));
@@ -1088,7 +1222,7 @@ bool WaveClip::Paste(double t0, WaveClip* other)
       OffsetCutLines(t0, other->GetEndTime()-other->GetStartTime());
       
       // Paste cut lines contained in pasted clip
-      for (WaveClipList::Node* it=other->mCutLines.GetFirst(); it; it=it->GetNext())
+      for (WaveClipList::compatibility_iterator it=other->mCutLines.GetFirst(); it; it=it->GetNext())
       {
          WaveClip* cutline = it->GetData();
          WaveClip* newCutLine = new WaveClip(*cutline,
@@ -1155,9 +1289,9 @@ bool WaveClip::Clear(double t0, double t1)
       if (clip_t1 > GetEndTime())
          clip_t1 = GetEndTime();
 
-      WaveClipList::Node* nextIt = (WaveClipList::Node*)-1;
+      WaveClipList::compatibility_iterator nextIt;
 
-      for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=nextIt)
+      for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=nextIt)
       {
          nextIt = it->GetNext();
          WaveClip* clip = it->GetData();
@@ -1206,9 +1340,9 @@ bool WaveClip::ClearAndAddCutLine(double t0, double t1)
    newClip->SetOffset(clip_t0-mOffset);
 
    // Sort out cutlines that belong to the new cutline
-   WaveClipList::Node* nextIt = (WaveClipList::Node*)-1;
+   WaveClipList::compatibility_iterator nextIt;
 
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=nextIt)
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=nextIt)
    {
       nextIt = it->GetNext();
       WaveClip* clip = it->GetData();
@@ -1253,7 +1387,7 @@ bool WaveClip::FindCutLine(double cutLinePosition,
                            double* cutlineStart /* = NULL */,
                            double* cutlineEnd /* = NULL */)
 {
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
    {
       WaveClip* cutline = it->GetData();
       if (fabs(mOffset + cutline->GetOffset() - cutLinePosition) < 0.0001)
@@ -1271,7 +1405,7 @@ bool WaveClip::FindCutLine(double cutLinePosition,
 
 bool WaveClip::ExpandCutLine(double cutLinePosition)
 {
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
    {
       WaveClip* cutline = it->GetData();
       if (fabs(mOffset + cutline->GetOffset() - cutLinePosition) < 0.0001)
@@ -1289,7 +1423,7 @@ bool WaveClip::ExpandCutLine(double cutLinePosition)
 
 bool WaveClip::RemoveCutLine(double cutLinePosition)
 {
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
    {
       if (fabs(mOffset + it->GetData()->GetOffset() - cutLinePosition) < 0.0001)
       {
@@ -1306,7 +1440,7 @@ void WaveClip::RemoveAllCutLines()
 {
    while (!mCutLines.IsEmpty())
    {
-      WaveClipList::Node* head = mCutLines.GetFirst();
+      WaveClipList::compatibility_iterator head = mCutLines.GetFirst();
       delete head->GetData();
       mCutLines.DeleteNode(head);
    }
@@ -1314,7 +1448,7 @@ void WaveClip::RemoveAllCutLines()
 
 void WaveClip::OffsetCutLines(double t0, double len)
 {
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
    {
       WaveClip* cutLine = it->GetData();
       if (mOffset + cutLine->GetOffset() >= t0)
@@ -1325,21 +1459,21 @@ void WaveClip::OffsetCutLines(double t0, double len)
 void WaveClip::Lock()
 {
    GetSequence()->Lock();
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
       it->GetData()->Lock();
 }
 
 void WaveClip::CloseLock()
 {
    GetSequence()->CloseLock();
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
       it->GetData()->Lock();
 }
 
 void WaveClip::Unlock()
 {
    GetSequence()->Unlock();
-   for (WaveClipList::Node* it = mCutLines.GetFirst(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
       it->GetData()->Unlock();
 }
 
@@ -1396,7 +1530,8 @@ bool WaveClip::Resample(int rate, ProgressDialog *progress)
 
       if (progress)
       {
-         error = !progress->Update(pos, numSamples);
+         int updateResult = progress->Update(pos, numSamples);
+         error = (updateResult != eProgressSuccess);
          if (error)
          {
             break;
@@ -1424,6 +1559,10 @@ bool WaveClip::Resample(int rate, ProgressDialog *progress)
          mWaveCache = NULL;
       }
       mWaveCache = new WaveCache(1);
+      // Invalidate the spectrum display cache
+      if (mSpecCache)
+         delete mSpecCache;
+      mSpecCache = new SpecCache(1, 1, false);
    }
 
    return !error;

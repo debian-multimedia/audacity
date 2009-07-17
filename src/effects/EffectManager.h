@@ -104,22 +104,6 @@ class AUDACITY_DLL_API EffectManager {
 #endif
 
  private:
-   int mLastType;
-   int mLastIndex;
-   Effect * mLastEffect;
-
- public:
-   
-   void SetLastEffect(int type, Effect * pEffect){
-      mLastType=type;
-      mLastEffect = pEffect;
-   }
-   
-   int GetLastEffectType(){ return mLastType;}
-   
-   Effect * GetLastEffect(){ return mLastEffect;}
-
- private:
    
    EffectArray mEffects;
    int mNumEffects;
@@ -128,14 +112,14 @@ class AUDACITY_DLL_API EffectManager {
    // This maps URIs to EffectCategory pointers for all added categories.
    // It is needed for fast lookup and easy deletion.
    typedef std::map<wxString, EffectCategory*> CategoryMap;
-   CategoryMap mCategories;
+   CategoryMap *mCategories;
    
    // These are the root categories, i.e. the ones without parents.
-   CategorySet mRootCategories;
+   CategorySet *mRootCategories;
    
    // Special category that all effects with unknown category URIs
    // are placed in.
-   EffectSet mUnsorted;
+   EffectSet *mUnsorted;
 #endif
 
 };

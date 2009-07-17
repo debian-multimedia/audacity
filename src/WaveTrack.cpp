@@ -32,6 +32,7 @@ Track classes.
 #include <wx/debug.h>
 
 #include <math.h>
+#include <algorithm>
 
 #include "float_cast.h"
 
@@ -49,6 +50,8 @@ Track classes.
 #include "Prefs.h"
 
 #include "ondemand/ODManager.h"
+
+using std::max;
 
 WaveTrack* TrackFactory::DuplicateWaveTrack(WaveTrack &orig)
 {
@@ -73,11 +76,7 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
       rate = GetActiveProject()->GetRate();
    }
 
-#ifdef EXPERIMENTAL_SAVE_DEFAULT_VIEW
    gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0L);
-#else //!EXPERIMENTAL_SAVE_DEFAULT_VIEW
-   mDisplay = 0; // Move to GUIWaveTrack
-#endif //EXPERIMENTAL_SAVE_DEFAULT_VIEW
 
    mLegacyProjectFileOffset = 0;
 
@@ -92,23 +91,18 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
    mDisplayNumLocations = 0;
    mDisplayLocations = NULL;
    mDisplayNumLocationsAllocated = 0;
-   mStickyLabelTrack = NULL;
 }
 
 WaveTrack::WaveTrack(WaveTrack &orig):
    Track(orig)
 {
-#ifdef EXPERIMENTAL_SAVE_DEFAULT_VIEW
    gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0L);
-#else //!EXPERIMENTAL_SAVE_DEFAULT_VIEW
-   mDisplay = 0; // Move to GUIWaveTrack
-#endif //EXPERIMENTAL_SAVE_DEFAULT_VIEW
 
    mLegacyProjectFileOffset = 0;
 
    Init(orig);
 
-   for (WaveClipList::Node *node = orig.mClips.GetFirst(); node; node = node->GetNext())
+   for (WaveClipList::compatibility_iterator node = orig.mClips.GetFirst(); node; node = node->GetNext())
       mClips.Append(new WaveClip(*node->GetData(), mDirManager));
 }
 
@@ -128,7 +122,6 @@ void WaveTrack::Init(const WaveTrack &orig)
    mDisplayNumLocations = 0;
    mDisplayLocations = NULL;
    mDisplayNumLocationsAllocated = 0;
-   mStickyLabelTrack = NULL;
 }
 
 void WaveTrack::Merge(const Track &orig)
@@ -142,16 +135,14 @@ WaveTrack::~WaveTrack()
 {   
    //Let the ODManager know this WaveTrack is disappearing.  
    //Deschedules tasks associated with this track.  
-#ifdef EXPERIMENTAL_ONDEMAND
    if(ODManager::IsInstanceCreated())
       ODManager::Instance()->RemoveWaveTrack(this);
-#endif
    
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       delete it->GetData();
    mClips.Clear();
    if (mDisplayLocations)
-      delete mDisplayLocations;
+      delete [] mDisplayLocations;
       
 }
 
@@ -164,7 +155,7 @@ void WaveTrack::SetOffset(double o)
 {
    double delta = o - GetOffset();
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
       clip->SetOffset(clip->GetOffset() + delta);
@@ -198,7 +189,7 @@ double WaveTrack::GetRate() const
 void WaveTrack::SetRate(double newRate)
 {
    mRate = (int) newRate;
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->SetRate((int) newRate);
 }
 
@@ -245,7 +236,7 @@ float WaveTrack::GetChannelGain(int channel)
 
 bool WaveTrack::ConvertToSampleFormat(sampleFormat format)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->ConvertToSampleFormat(format);
    mFormat = format;
 
@@ -254,7 +245,7 @@ bool WaveTrack::ConvertToSampleFormat(sampleFormat format)
 
 bool WaveTrack::IsEmpty(double t0, double t1)
 {
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
 
    //printf("Searching for overlap in %.6f...%.6f\n", t0, t1);
    for (it=GetClipIterator(); it; it=it->GetNext())
@@ -321,7 +312,7 @@ bool WaveTrack::Trim (double t0, double t1)
    // the left selection t0.
    double firstGreaterOffset = -1;
 
-   WaveClipList::Node * it;
+   WaveClipList::compatibility_iterator  it;
    for(it = GetClipIterator(); it; it = it->GetNext())
       {
             
@@ -382,7 +373,7 @@ bool WaveTrack::Copy(double t0, double t1, Track **dest)
 
    newTrack->Init(*this);
 
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
    
    for (it=GetClipIterator(); it; it=it->GetNext())
    {
@@ -441,225 +432,206 @@ bool WaveTrack::Copy(double t0, double t1, Track **dest)
 
    return true;
 }
-#ifdef EXPERIMENTAL_FULL_LINKING
 bool WaveTrack::Paste(double t0, Track *src)
 {
+   return Paste(t0, src, NULL, false);
+}
+
+bool WaveTrack::Paste(double t0, Track *src, TrackList* tracks, bool relativeLabels)
+{
    AudacityProject *p = GetActiveProject();
-   if( p && p->IsSticky())
-      return HandleGroupPaste(t0, src);
+   if( p && p->IsSticky() && GetNode() )
+      return HandleGroupPaste(t0, src, tracks, relativeLabels);
    else
       return HandlePaste(t0, src);
 }
 
-#else
-bool WaveTrack::Paste(double t0, Track *src)
-{
-   bool editClipCanMove = true;
-   gPrefs->Read(wxT("/GUI/EditClipCanMove"), &editClipCanMove);
-   
-   //printf("paste: entering WaveTrack::Paste\n");
-   
-   // JKC Added...
-   if( src == NULL )
-      return false;
-
-   if (src->GetKind() != Track::Wave)
-      return false;
-      
-   //printf("paste: we have a wave track\n");
-
-   WaveTrack* other = (WaveTrack*)src;
-   
-   //
-   // Pasting is a bit complicated, because with the existence of multiclip mode,
-   // we must guess the behaviour the user wants.
-   //
-   // Currently, two modes are implemented:
-   //
-   // - If a single clip should be pasted, and it should be pasted inside another
-   //   clip, no new clips are generated. The audio is simply inserted.
-   //   This resembles the old (pre-multiclip support) behaviour. However, if
-   //   the clip is pasted outside of any clip, a new clip is generated. This is
-   //   the only behaviour which is different to what was done before, but it
-   //   shouldn't confuse users too much.
-   //
-   // - If multiple clips should be pasted, these are always pasted as single
-   //   clips, and the current clip is splitted, when necessary. This may seem
-   //   strange at first, but it probably is better than trying to auto-merge
-   //   anything. The user can still merge the clips by hand (which should be
-   //   a simple command reachable by a hotkey or single mouse click).
-   //
-
-   if (other->GetNumClips() == 0)
-      return false;
-
-   //printf("paste: we have at least one clip\n");
-
-   double insertDuration = other->GetEndTime();
-   WaveClipList::Node* it;
-
-   #ifdef EXPERIMENTAL_STICKY_TRACKS
-   if (mStickyLabelTrack) mStickyLabelTrack->ShiftLabelsOnInsert(insertDuration, t0);
-   #endif
-   #ifdef EXPERIMENTAL_LABEL_LINKING
-   AudacityProject *p = GetActiveProject();
-   if( p && p->IsSticky()){
-      TrackListIterator iter(p->GetTracks());
-      Track *t = iter.First();
-      
-      while (t && t!=this) t = iter.Next(true);
-      while (t && t->GetKind()==Track::Wave) t = iter.Next();
-
-      while (t && t->GetKind()==Track::Label){
-         //printf("t: %x\n", t);
-         ((LabelTrack *)t)->ShiftLabelsOnInsert(insertDuration, t0);
-         t = iter.Next();
-      }
-   }
-   #endif
-   //printf("Check if we need to make room for the pasted data\n");
-   
-   // Make room for the pasted data, unless the space being pasted in is empty of
-   // any clips
-   if (!IsEmpty(t0, t0+insertDuration-1.0/mRate) && editClipCanMove) {
-      if (other->GetNumClips() > 1) {
-         // We need to insert multiple clips, so split the current clip and
-         // move everything to the right, then try to paste again
-         Track *tmp = NULL;
-         Cut(t0, GetEndTime()+1.0/mRate, &tmp);
-         Paste(t0 + insertDuration, tmp);
-         delete tmp;
-      } else
-      {
-         // We only need to insert one single clip, so just move all clips
-         // to the right of the paste point out of the way
-         for (it=GetClipIterator(); it; it=it->GetNext())
-         {
-            WaveClip* clip = it->GetData();
-            if (clip->GetStartTime() > t0-(1.0/mRate))
-               clip->Offset(insertDuration);
-         }
-      }
-   }
-
-   if (other->GetNumClips() == 1)
-   {
-      // Single clip mode
-      // printf("paste: checking for single clip mode!\n");
-      
-      WaveClip *insideClip = NULL;
-
-      for (it=GetClipIterator(); it; it=it->GetNext())
-      {
-         WaveClip *clip = it->GetData();
-
-         // The 1.0/mRate is the time for one sample - kind of a fudge factor,
-         // because an overlap of less than a sample should not trigger
-         // traditional behaviour.
-
-         if (editClipCanMove)
-         {
-            if (t0+src->GetEndTime()-1.0/mRate > clip->GetStartTime() &&
-                t0 < clip->GetEndTime() - 1.0/mRate)
-            {
-               //printf("t0=%.6f: inside clip is %.6f ... %.6f\n",
-               //       t0, clip->GetStartTime(), clip->GetEndTime());
-               insideClip = clip;
-               break;
-            }
-         } else
-         {
-            if (t0 >= clip->GetStartTime() && t0 < clip->GetEndTime())
-            {
-               insideClip = clip;
-               break;
-            }
-         }
-      }
-
-      if (insideClip)
-      {
-         // Exhibit traditional behaviour
-         //printf("paste: traditional behaviour\n");
-         if (!editClipCanMove)
-         {
-            // We did not move other clips out of the way already, so
-            // check if we can paste without having to move other clips
-            for (it=GetClipIterator(); it; it=it->GetNext())
-            {
-               WaveClip *clip = it->GetData();
-               
-               if (clip->GetStartTime() > insideClip->GetStartTime() &&
-                   insideClip->GetEndTime() + insertDuration >
-                                                      clip->GetStartTime())
-               {
-                  wxMessageBox(
-                     _("There is not enough room available to paste the selection"),
-                     _("Error"), wxICON_STOP);
-                  return false;
-               }
-            }
-         }
-         
-         return insideClip->Paste(t0, other->GetClipByIndex(0));
-      }
-
-      // Just fall through and exhibit new behaviour
-   }
-
-   // Insert new clips
-   //printf("paste: multi clip mode!\n");
-
-   if (!editClipCanMove && !IsEmpty(t0, t0+insertDuration-1.0/mRate))
-   {
-      wxMessageBox(
-         _("There is not enough room available to paste the selection"),
-         _("Error"), wxICON_STOP);
-      return false;
-   }
-
-   for (it=other->GetClipIterator(); it; it=it->GetNext())
-   {
-      WaveClip* clip = it->GetData();
-
-      WaveClip* newClip = new WaveClip(*clip, mDirManager);
-      newClip->Resample(mRate);
-      newClip->Offset(t0);
-      newClip->MarkChanged();
-      mClips.Append(newClip);
-   }
-   return true;
-}
-#endif
-
 bool WaveTrack::Clear(double t0, double t1)
+{
+   return Clear(t0, t1, NULL);
+}
+
+bool WaveTrack::Clear(double t0, double t1, TrackList* tracks)
 {
    bool addCutLines = false;
    bool split = false;
-#ifdef EXPERIMENTAL_FULL_LINKING
    AudacityProject *p = GetActiveProject();
-   if( p && p->IsSticky())
-      return HandleGroupClear(t0, t1, addCutLines, split);
+   if( p && p->IsSticky() && GetNode() )
+      return HandleGroupClear(t0, t1, addCutLines, split, tracks);
    else
       return HandleClear(t0, t1, addCutLines, split);
-#else   
-   return HandleClear(t0, t1, addCutLines, split);
-#endif
 }
 
 bool WaveTrack::ClearAndAddCutLine(double t0, double t1)
 {
    bool addCutLines = true;
    bool split = false;
-#ifdef EXPERIMENTAL_FULL_LINKING
    AudacityProject *p = GetActiveProject();
    if( p && p->IsSticky() )
       return HandleGroupClear(t0, t1, addCutLines, split);
    else
       return HandleClear(t0, t1, addCutLines, split);
-#else   
-   return HandleClear(t0, t1, addCutLines, split);
-#endif
+}
+
+//
+// ClearAndPaste() is a specialized version of HandleClear()
+// followed by HandlePaste() and is used mostly by effects that
+// can't replace track data directly using Get()/Set().
+//
+// HandleClear() removes any cut/split lines lines with the
+// cleared range, but, in most cases, effects want to preserve
+// the existing cut/split lines, so they are saved before the
+// HandleClear()/HandlePaste() and restored after.
+//
+// If the pasted track overlaps two or more clips, then it will
+// be pasted with visible split lines.  Normally, effects do not
+// want these extra lines, so they may be merged out.
+//
+bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
+                              bool merge, TrackList* tracks, bool relativeLabels)
+{
+   WaveClipList::compatibility_iterator ic;
+   WaveClipList::compatibility_iterator it;
+   double dur = wxMin(t1 - t0, src->GetEndTime());
+   wxArrayDouble splits;
+   WaveClipArray cuts;
+   WaveClip *clip;
+
+   // If duration is 0, then it's just a plain paste
+   if (dur == 0.0) {
+      return Paste(t0, src, tracks, relativeLabels);
+   }
+
+   // Align to a sample
+   t0 = LongSamplesToTime(TimeToLongSamples(t0));
+   t1 = LongSamplesToTime(TimeToLongSamples(t1));
+
+   // Save the cut/split lines whether preserving or not since merging
+   // needs to know if a clip boundary is being crossed since HandlePaste()
+   // will add split lines around the pasted clip if so.
+   for (ic = GetClipIterator(); ic; ic = ic->GetNext()) {
+      double st;
+
+      clip = ic->GetData();
+      st = LongSamplesToTime(TimeToLongSamples(clip->GetStartTime()));
+
+      // Remember split line
+      if (st >= t0 && st <= t1) {
+         splits.Add(st);
+      }
+
+      // Search for cut lines
+      WaveClipList* cutlines = clip->GetCutLines();
+      it = cutlines->GetFirst();
+      while (it) {
+         WaveClipList::compatibility_iterator in = it->GetNext();
+         WaveClip *cut = it->GetData();
+         double cs = LongSamplesToTime(TimeToLongSamples(clip->GetOffset() +
+                                                         cut->GetOffset()));
+
+         // Remember cut point
+         if (cs >= t0 && cs <= t1) {
+            // Remove cut point from this clips cutlines array, otherwise
+            // it will not be deleted when HandleClear() is called.
+            cutlines->DeleteNode(it);
+
+            // Remember the absolute offset and add to our cuts array.
+            cut->SetOffset(cs);
+            cuts.Add(cut);
+         }
+
+         it = in;
+      }
+   }
+
+   // Now, clear the selection
+   if (HandleClear(t0, t1, false, false)) {
+      // And paste in the new data
+      if (Paste(t0, src, tracks, relativeLabels)) {
+         unsigned int i;
+
+         // First, merge the new clip(s) in with the existing clips
+         if (merge && splits.GetCount() > 0)
+         {
+            WaveClipArray clips;
+
+            // Now t1 represents the absolute end of the pasted data.
+            t1 = t0 + src->GetEndTime();
+
+            // Get a sorted array of the clips
+            FillSortedClipArray(clips);
+
+            // Scan the sorted clips for the first clip whose start time
+            // exceeds the pasted regions end time.
+            for (i = 0; i < clips.GetCount(); i++) {
+               clip = clips[i];
+               
+               // Merge this clip and the previous clip if the end time
+               // falls within it and this isn't the first clip in the track.
+               if (fabs(t1 - clip->GetStartTime()) < WAVETRACK_MERGE_POINT_TOLERANCE) {
+                  if (i > 0) {
+                     MergeClips(GetClipIndex(clips[i - 1]), GetClipIndex(clip));
+                  }
+                  break;
+               }
+            }
+
+            // Refill the array since clips have changed.
+            FillSortedClipArray(clips);
+
+            // Scan the sorted clips to look for the start of the pasted
+            // region.
+            for (i = 0; i < clips.GetCount(); i++) {
+               clip = clips[i];
+
+               // Merge this clip and the next clip if the start time
+               // falls within it and this isn't the last clip in the track.
+               if (fabs(t0 - clip->GetEndTime()) < WAVETRACK_MERGE_POINT_TOLERANCE) {
+                  if (i < clips.GetCount() - 1) {
+                     MergeClips(GetClipIndex(clip), GetClipIndex(clips[i + 1]));
+                  }
+                  break;
+               }
+            }
+         }
+
+         // Restore cut/split lines
+         if (preserve) {
+
+            // Restore the split lines by simply resplitting at the saved time.
+            for (i = 0; i < splits.GetCount(); i++) {
+               SplitAt(splits[i]);
+            }
+
+            // Restore the saved cut lines
+            for (ic = GetClipIterator(); ic; ic = ic->GetNext()) {
+               double st;
+               double et;
+
+               clip = ic->GetData();
+               st = clip->GetStartTime();
+               et = clip->GetEndTime();
+
+               // Scan the cuts for any that live within this clip
+               for (i = 0; i < cuts.GetCount(); i++) {
+                  WaveClip *cut = cuts[i];
+                  double cs = cut->GetOffset();
+
+                  // Offset the cut from the start of the clip and add it to
+                  // this clips cutlines.
+                  if (cs >= st && cs <= et) {
+                     cut->SetOffset(cs - st);
+                     clip->GetCutLines()->Append(cut);
+                     cuts.RemoveAt(i);
+                     i--;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   return true;
 }
 
 bool WaveTrack::SplitDelete(double t0, double t1)
@@ -669,44 +641,33 @@ bool WaveTrack::SplitDelete(double t0, double t1)
    return HandleClear(t0, t1, addCutLines, split);
 }
 
-bool WaveTrack::HandleGroupClear(double t0, double t1, bool addCutLines, bool split)
+bool WaveTrack::HandleGroupClear(double t0, double t1, bool addCutLines, bool split, TrackList* tracks)
 {
+   // get tracks
    AudacityProject *p = GetActiveProject();
-   if(p){
-      TrackListIterator iter(p->GetTracks());
-      
-      int editGroup = 0;
-      Track *t=iter.First();
-      Track *n=t;
-      
-      while (t && t!= this){//find edit group number
-         if (t->GetSelected()) return true;//multiple tracks have been selected, we only want to handle one
-         n=iter.Next(true);//to skip handling the second channel of stereo
-         if (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
-            editGroup++;
-         t=n;
+
+   if (p) {
+      if (!tracks) tracks = p->GetTracks();
+   }
+   else return false;
+
+   TrackGroupIterator it(tracks);
+   Track *t = it.First(this);
+   if (t == NULL)
+      // the present track is in a project with groups but doesn't belong to any of them
+      return HandleClear(t0, t1, addCutLines, split);
+
+   for( ; t; t = it.Next() ) {
+      if (t->GetKind() == Track::Wave) {
+         if ( !( ( (WaveTrack *) t)->HandleClear(t0, t1, addCutLines, split) ) )
+            return false;
       }
-      if (!t) return true;//we didnt find the track because it's stereo
-      
-      t=iter.First();
-      for (int i=0; i<editGroup; i++){//go to first in edit group
-         while (t && t->GetKind()==Track::Wave) t=iter.Next();
-         while (t && t->GetKind()==Track::Label) t=iter.Next();
+      else if (t->GetKind() == Track::Label) {
+         if (!split)
+            ( (LabelTrack *)t )->ShiftLabelsOnClear(t0, t1);
       }
-      
-      while (t && t->GetKind()==Track::Wave){
-         //printf ("t(w): %x\n", t);
-         if ( !( ((WaveTrack *)t)->HandleClear(t0, t1, addCutLines, split)) ) return false;
-         t=iter.Next();
-      }
-      
-      while (t && t->GetKind()==Track::Label && !split){
-         //printf ("t(l): %x\n", t);
-         ((LabelTrack *)t)->ShiftLabelsOnClear(t0, t1);
-         t=iter.Next();
-      }
-   }else return false;
-   
+   }
+
    return true;
 }
 
@@ -716,32 +677,10 @@ bool WaveTrack::HandleClear(double t0, double t1,
    if (t1 < t0)
       return false;
 
-#ifdef EXPERIMENTAL_STICKY_TRACKS
-   if (!split){
-      if (mStickyLabelTrack) mStickyLabelTrack->ShiftLabelsOnClear(t0, t1);
-   }
-#endif
-#ifdef EXPERIMENTAL_LABEL_LINKING
-   AudacityProject *p = GetActiveProject();
-   if( p && p->IsSticky() && !split){
-      TrackListIterator iter(p->GetTracks());
-      Track *t = iter.First();
-      
-      while (t && t!=this) t = iter.Next(true);
-      while (t && t->GetKind()==Track::Wave) t = iter.Next();
-
-      while (t && t->GetKind()==Track::Label){
-         //printf("t: %x\n", t);
-         ((LabelTrack *)t)->ShiftLabelsOnClear(t0, t1);
-         t = iter.Next();
-      }
-   }
-#endif
-
    bool editClipCanMove = true;
    gPrefs->Read(wxT("/GUI/EditClipCanMove"), &editClipCanMove);
 
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
    WaveClipList clipsToDelete;
    WaveClipList clipsToAdd;
    
@@ -817,21 +756,22 @@ bool WaveTrack::HandleClear(double t0, double t1,
                 * region being cleared. If one of the ends of the clip is inside
                 * the region, then one of the glue points will be redundant. */
                // clip->Clear keeps points < t0 and >= t1 via Envelope::CollapseRegion
-               double val;
-               if (t0 > clip->GetStartTime())
-                  {  // start of clip is before start of region to clear
-                  val = clip->GetEnvelope()->GetValue(t0);
-                  clip->GetEnvelope()->Insert(t0 - clip->GetOffset() - 1.0/clip->GetRate(), val);
-                  }
-
-               if (t1 < clip->GetEndTime())
-                  {  // end of clip is after end of region
-                  val = clip->GetEnvelope()->GetValue(t1);
-                  clip->GetEnvelope()->Insert(t1 - clip->GetOffset(), val);
-                  }
-
+               if (clip->GetEnvelope()->GetNumberOfPoints() > 0) {   // don't insert env pts if none exist
+                  double val;
+                  if (t0 > clip->GetStartTime())
+                     {  // start of clip is before start of region to clear
+                     val = clip->GetEnvelope()->GetValue(t0);
+                     clip->GetEnvelope()->Insert(t0 - clip->GetOffset() - 1.0/clip->GetRate(), val);
+                     }
+                  if (t1 < clip->GetEndTime())
+                     {  // end of clip is after end of region
+                     val = clip->GetEnvelope()->GetValue(t1);
+                     clip->GetEnvelope()->Insert(t1 - clip->GetOffset(), val);
+                     }
+               }
                if (!clip->Clear(t0,t1))
                   return false;
+               clip->GetEnvelope()->RemoveUnneededPoints(t0);
             }
          }
       } else
@@ -858,57 +798,62 @@ bool WaveTrack::HandleClear(double t0, double t1,
    return true;
 }
 
-bool WaveTrack::HandleGroupPaste(double t0, Track *src)
+bool WaveTrack::HandleGroupPaste(double t0, Track *src, TrackList* tracks, bool relativeLabels)
 {
+   // get tracks
    AudacityProject *p = GetActiveProject();
-   if(p){
-      double length = src->GetEndTime();
-      
-      TrackListIterator iter(p->GetTracks());
-      
-      int editGroup = 0;
-      Track *t=iter.First();
-      Track *n=t;
-      
-      while (t && t!= this){//find edit group number
-         n=iter.Next();
-         //we only add silence when we're on the first selected track
-         //to avoid adding it multiple times, though we paste in still
-         if (t->GetSelected()) return HandlePaste(t0, src);
-         if (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
-            editGroup++;
-         t=n;
-      }
-      
-      t=iter.First();
-      for (int i=0; i<editGroup; i++){//go to first in edit group
-         while (t && t->GetKind()==Track::Wave) t=iter.Next();
-         while (t && t->GetKind()==Track::Label) t=iter.Next();
-      }
-      
-      while (t && t->GetKind()==Track::Wave){
-         if (t==this){//paste in the track
+
+   if (p) {
+      if (!tracks) tracks = p->GetTracks();
+   }
+   else return false;
+   
+   double length = src->GetEndTime();
+   ViewInfo *info = &p->mViewInfo;
+   double sel_len = max(info->sel1 - max(info->sel0, t0), 0.0);
+   
+   TrackGroupIterator it(tracks);
+   Track *t = it.First(this);
+   if (t == NULL)
+      // the present track is in a project with groups but doesn't belong to any of them
+      return HandlePaste(t0, src);
+
+   for( ; t; t = it.Next() ) {
+      if (t->GetKind() == Track::Wave) {
+         if (t==this) {
+            //paste in the track
             if ( !( ((WaveTrack *)t)->HandlePaste(t0, src)) ) return false;
-            if (t->GetLinked()) t=iter.Next();
-         }else{//insert silence
-            if (! (t->GetSelected()) ){
-               TrackFactory *factory = p->GetTrackFactory();
-               WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
-               tmp->InsertSilence(0.0, length);
-               tmp->Flush();
-               if ( !( ((WaveTrack *)t)->HandlePaste(t0, tmp)) ) return false;
+            if (t->GetLinked()) t=it.Next();
+         }
+         else {
+            if (! (t->GetSelected()) ) {
+               if ( sel_len > length )
+                  // if selection is bigger than the content to add then we need to clear the extra length in the group tracks
+                  ((WaveTrack*)t)->HandleClear(t0+length, t0+sel_len, false, false);
+               else if (sel_len < length) {               
+                  // if selection is smaller than the content to add then we need to add extra silence in the group tracks
+                  TrackFactory *factory = p->GetTrackFactory();
+                  WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
+                  tmp->InsertSilence(0.0, length-sel_len);
+                  tmp->Flush();
+                  if ( !( ((WaveTrack *)t)->HandlePaste(t0+sel_len, tmp)) ) return false;
+               }
             }
          }
-         t=iter.Next();
       }
-      
-      while (t && t->GetKind()==Track::Label){
-         //printf ("t(l)(p): %x\n", t);
-         ((LabelTrack *)t)->ShiftLabelsOnInsert(length, t0);
-         t=iter.Next();
+      else if (t->GetKind() == Track::Label) {
+         LabelTrack *lt = (LabelTrack *)t;
+         if (relativeLabels && (sel_len != 0.0))
+            lt->ScaleLabels(info->sel0, info->sel1, length/sel_len);
+         else {
+            if ((length - sel_len) > 0.0)
+               lt->ShiftLabelsOnInsert(length-sel_len, t0);
+            else if ((length - sel_len) < 0.0)
+               lt->ShiftLabelsOnClear(info->sel0+length, info->sel1);
+         }
       }
-   }else return false;
-      
+   }
+
    return true;
 }
 
@@ -956,27 +901,8 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
    //printf("paste: we have at least one clip\n");
 
    double insertDuration = other->GetEndTime();
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
 
-#ifdef EXPERIMENTAL_STICKY_TRACKS
-   if (mStickyLabelTrack) mStickyLabelTrack->ShiftLabelsOnInsert(insertDuration, t0);
-#endif
-#ifdef EXPERIMENTAL_LABEL_LINKING
-   AudacityProject *p = GetActiveProject();
-   if( p && p->IsSticky()){
-      TrackListIterator iter(p->GetTracks());
-      Track *t = iter.First();
-      
-      while (t && t!=this) t = iter.Next(true);
-      while (t && t->GetKind()==Track::Wave) t = iter.Next();
-
-      while (t && t->GetKind()==Track::Label){
-         //printf("t: %x\n", t);
-         ((LabelTrack *)t)->ShiftLabelsOnInsert(insertDuration, t0);
-         t = iter.Next();
-      }
-   }
-#endif
    //printf("Check if we need to make room for the pasted data\n");
    
    // Make room for the pasted data, unless the space being pasted in is empty of
@@ -1100,7 +1026,7 @@ bool WaveTrack::Silence(double t0, double t1)
    sampleCount len = (sampleCount)floor(t1 * mRate + 0.5) - start;
    bool result = true;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip *clip = it->GetData();
 
@@ -1146,7 +1072,7 @@ bool WaveTrack::InsertSilence(double t, double len)
       return clip->InsertSilence(0, len);
    }
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip *clip = it->GetData();
       if (clip->GetStartTime() > t)
@@ -1171,7 +1097,7 @@ bool WaveTrack::Disjoin(double t0, double t1)
    
    wxBusyCursor busy;
    
-   for( WaveClipList::Node *it = GetClipIterator(); it; it = it->GetNext() )
+   for( WaveClipList::compatibility_iterator it = GetClipIterator(); it; it = it->GetNext() )
    {
       WaveClip *clip = it->GetData();
 
@@ -1249,7 +1175,7 @@ bool WaveTrack::Join(double t0, double t1)
 {
    // Merge all WaveClips overlapping selection into one
 
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
    WaveClipList clipsToDelete;
    WaveClip *newClip;
 
@@ -1320,7 +1246,7 @@ sampleCount WaveTrack::GetBestBlockSize(sampleCount s)
 {
    sampleCount bestBlockSize = GetMaxBlockSize();
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
       sampleCount startSample = (sampleCount)floor(clip->GetStartTime()*mRate + 0.5);
@@ -1338,7 +1264,7 @@ sampleCount WaveTrack::GetBestBlockSize(sampleCount s)
 sampleCount WaveTrack::GetMaxBlockSize()
 {
    int maxblocksize = 0;
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
       if (clip->GetSequence()->GetMaxBlockSize() > maxblocksize)
@@ -1400,6 +1326,18 @@ bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
             // track is created.
             mLegacyProjectFileOffset = dblValue;
          }
+         else if (!wxStrcmp(attr, wxT("mute")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mMute = (nValue != 0);
+         else if (!wxStrcmp(attr, wxT("solo")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mSolo = (nValue != 0);
+         else if (!wxStrcmp(attr, wxT("height")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mHeight = nValue;
+         else if (!wxStrcmp(attr, wxT("minimized")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mMinimized = (nValue != 0);
          else if (!wxStrcmp(attr, wxT("gain")) && 
                   XMLValueChecker::IsGoodString(strValue) && 
                   Internat::CompatibleToDouble(strValue, &dblValue))
@@ -1420,7 +1358,7 @@ bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          }
          else if (!wxStrcmp(attr, wxT("linked")) && 
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
-            mLinked = (nValue != 0);
+            SetLinked(nValue != 0);
          
       } // while
       return true;
@@ -1479,11 +1417,15 @@ void WaveTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("channel"), mChannel);
    xmlFile.WriteAttr(wxT("linked"), mLinked);
    xmlFile.WriteAttr(wxT("offset"), mOffset, 8);
+   xmlFile.WriteAttr(wxT("mute"), mMute);
+   xmlFile.WriteAttr(wxT("solo"), mSolo);
+   xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
+   xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
    xmlFile.WriteAttr(wxT("rate"), mRate);
    xmlFile.WriteAttr(wxT("gain"), (double)mGain);
    xmlFile.WriteAttr(wxT("pan"), (double)mPan);
    
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       it->GetData()->WriteXML(xmlFile);
    }
@@ -1493,7 +1435,7 @@ void WaveTrack::WriteXML(XMLWriter &xmlFile)
 
 bool WaveTrack::GetErrorOpening()
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (it->GetData()->GetSequence()->GetErrorOpening())
          return true;
 
@@ -1502,7 +1444,7 @@ bool WaveTrack::GetErrorOpening()
 
 bool WaveTrack::Lock()
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->Lock();
 
    return true;
@@ -1510,7 +1452,7 @@ bool WaveTrack::Lock()
 
 bool WaveTrack::CloseLock()
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->CloseLock();
 
    return true;
@@ -1519,13 +1461,13 @@ bool WaveTrack::CloseLock()
 
 bool WaveTrack::Unlock()
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->Unlock();
 
    return true;
 }
 
-sampleCount WaveTrack::TimeToLongSamples(double t0)
+AUDACITY_DLL_API sampleCount WaveTrack::TimeToLongSamples(double t0) const
 {
    return (sampleCount)floor(t0 * mRate + 0.5);
 }
@@ -1543,7 +1485,7 @@ double WaveTrack::GetStartTime()
    if (mClips.IsEmpty())
       return 0;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (!found)
       {
          found = true;
@@ -1562,7 +1504,7 @@ double WaveTrack::GetEndTime()
    if (mClips.IsEmpty())
       return 0;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (!found)
       {
          found = true;
@@ -1592,7 +1534,7 @@ bool WaveTrack::GetMinMax(float *min, float *max,
 
    bool result = true;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
 
@@ -1627,7 +1569,7 @@ bool WaveTrack::GetRMS(float *rms, double t0, double t1)
    double sumsq = 0.0;
    sampleCount length = 0;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
 
@@ -1655,7 +1597,7 @@ bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
    // Simple optimization: When this buffer is completely contained within one clip,
    // don't clear anything (because we never won't have to). Otherwise, just clear
    // everything to be on the safe side.
-   WaveClipList::Node* it;
+   WaveClipList::compatibility_iterator it;
    
    bool doClear = true;
    for (it=GetClipIterator(); it; it=it->GetNext())
@@ -1709,7 +1651,7 @@ bool WaveTrack::Set(samplePtr buffer, sampleFormat format,
 {
    bool result = true;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip *clip = it->GetData();
 
@@ -1752,7 +1694,7 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
    double startTime = t0;
    double endTime = t0+tstep*bufferLen;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip *clip = it->GetData();
       
@@ -1782,7 +1724,7 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
 
 WaveClip* WaveTrack::GetClipAtX(int xcoord)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       wxRect r;
       it->GetData()->GetDisplayRect(&r);
@@ -1805,7 +1747,7 @@ Envelope* WaveTrack::GetEnvelopeAtX(int xcoord)
 // Search for any active DragPoint on the current track
 Envelope* WaveTrack::GetActiveEnvelope(void)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
       Envelope* env = clip->GetEnvelope() ;
@@ -1862,7 +1804,7 @@ int WaveTrack::GetNumClips() const
 
 void WaveTrack::MoveClipToTrack(int clipIndex, WaveTrack* dest)
 {
-   WaveClipList::Node* node = mClips.Item(clipIndex);
+   WaveClipList::compatibility_iterator node = mClips.Item(clipIndex);
    WaveClip* clip = node->GetData();
    mClips.DeleteNode(node);
    dest->mClips.Append(clip);
@@ -1870,7 +1812,7 @@ void WaveTrack::MoveClipToTrack(int clipIndex, WaveTrack* dest)
 
 void WaveTrack::MoveClipToTrack(WaveClip *clip, WaveTrack* dest)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext()) {
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext()) {
       if (it->GetData() == clip) {
          WaveClip* clip = it->GetData();
          mClips.DeleteNode(it);
@@ -1886,7 +1828,7 @@ bool WaveTrack::CanOffsetClip(WaveClip* clip, double amount,
    if (allowedAmount)
       *allowedAmount = amount;
 
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* c = it->GetData();
       if (c != clip && c->GetStartTime() < clip->GetEndTime()+amount &&
@@ -1930,7 +1872,7 @@ bool WaveTrack::CanOffsetClip(WaveClip* clip, double amount,
 
 bool WaveTrack::CanInsertClip(WaveClip* clip)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* c = it->GetData();
       if (c->GetStartTime() < clip->GetEndTime() && c->GetEndTime() > clip->GetStartTime())
@@ -1950,7 +1892,7 @@ bool WaveTrack::Split( double t0, double t1 )
 
 bool WaveTrack::SplitAt(double t)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* c = it->GetData();
       if (t > c->GetStartTime() && t < c->GetEndTime())
@@ -2024,7 +1966,7 @@ void WaveTrack::UpdateLocationsCache()
       WaveClip* clip = clips.Item(i);
 
       WaveClipList* cutlines = clip->GetCutLines();
-      for (WaveClipList::Node* it = cutlines->GetFirst(); it;
+      for (WaveClipList::compatibility_iterator it = cutlines->GetFirst(); it;
            it = it->GetNext())
       {
          // Add cut line expander point
@@ -2062,14 +2004,14 @@ bool WaveTrack::ExpandCutLine(double cutLinePosition, double* cutlineStart,
    gPrefs->Read(wxT("/GUI/EditClipCanMove"), &editClipCanMove);
 
    // Find clip which contains this cut line   
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* clip = it->GetData();
       double start = 0, end = 0;
 
       if (clip->FindCutLine(cutLinePosition, &start, &end))
       {
-         WaveClipList::Node* it2;
+         WaveClipList::compatibility_iterator it2;
          
          if (!editClipCanMove)
          {
@@ -2120,7 +2062,7 @@ bool WaveTrack::ExpandCutLine(double cutLinePosition, double* cutlineStart,
 
 bool WaveTrack::RemoveCutLine(double cutLinePosition)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (it->GetData()->RemoveCutLine(cutLinePosition))
          return true;
 
@@ -2148,7 +2090,7 @@ bool WaveTrack::MergeClips(int clipidx1, int clipidx2)
 
 bool WaveTrack::Resample(int rate, ProgressDialog *progress)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (!it->GetData()->Resample(rate, progress))
       {
          // FIXME: The track is now in an inconsistent state since some
@@ -2173,7 +2115,7 @@ void WaveTrack::FillSortedClipArray(WaveClipArray& clips)
 {
    clips.Empty();
    
-   for (WaveClipList::Node *it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       clips.Add(it->GetData());
    
    clips.Sort(SortClipArrayCmpFunc);
@@ -2182,14 +2124,14 @@ void WaveTrack::FillSortedClipArray(WaveClipArray& clips)
 ///Deletes all clips' wavecaches.  Careful, This may not be threadsafe.
 void WaveTrack::DeleteWaveCaches()
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->DeleteWaveCache();
 }
 
 ///Adds an invalid region to the wavecache so it redraws that portion only.
 void WaveTrack::AddInvalidRegion(sampleCount startSample, sampleCount endSample)
 {
-   for (WaveClipList::Node* it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->AddInvalidRegion(startSample,endSample);
 }
 

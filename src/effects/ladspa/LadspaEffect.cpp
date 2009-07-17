@@ -126,13 +126,15 @@ LadspaEffect::LadspaEffect(const LADSPA_Descriptor *data,
       }
    }
 
-   flags = PLUGIN_EFFECT;
+   int flags = PLUGIN_EFFECT;
    if (inputs == 0)
       flags |= INSERT_EFFECT;
    else if (outputs == 0)
       flags |= ANALYZE_EFFECT;
    else
       flags |= PROCESS_EFFECT;   
+
+   SetEffectFlags(flags);
 }
 
 LadspaEffect::~LadspaEffect()
@@ -182,7 +184,7 @@ bool LadspaEffect::Init()
    mBlockSize = 0;
    mainRate = 0;
 
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
    Track *left = iter.First();
    while(left) {
       if (mainRate == 0)
@@ -224,39 +226,12 @@ bool LadspaEffect::PromptUser()
    return true;
 }
 
-void LadspaEffect::GetSamples(WaveTrack *track,
-                              sampleCount *start,
-                              sampleCount *len)
-{
-   double trackStart = track->GetStartTime();
-   double trackEnd = track->GetEndTime();
-   double t0 = mT0 < trackStart? trackStart: mT0;
-   double t1 = mT1 > trackEnd? trackEnd: mT1;
-
-   if (flags & INSERT_EFFECT) {
-      t1 = t0 + mLength;
-      if (mT0 == mT1) {
-         track->InsertSilence(t0, t1);
-      }
-   }
-
-   if (t1 > t0) {
-      *start = track->TimeToLongSamples(t0);
-      sampleCount end = track->TimeToLongSamples(t1);
-      *len = (sampleCount)(end - *start);
-   }
-   else {
-      *start = 0;
-      *len  = 0;
-   }
-}
-
 bool LadspaEffect::Process()
 {
-   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+   this->CopyInputTracks(); // Set up mOutputTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(mOutputWaveTracks);
+   TrackListIterator iter(mOutputTracks);
    int count = 0;
    Track *left = iter.First();
    Track *right;
@@ -289,7 +264,7 @@ bool LadspaEffect::Process()
       count++;
    }
 
-   this->ReplaceProcessedWaveTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult); 
    return bGoodResult;
 }
 
@@ -733,9 +708,11 @@ LadspaEffectDialog::LadspaEffectDialog(LadspaEffect *eff,
 
 LadspaEffectDialog::~LadspaEffectDialog()
 {
+   delete[]toggles;
    delete[]sliders;
    delete[]fields;
    delete[]labels;
+   delete[]ports;
 }
 
 void LadspaEffectDialog::OnCheckBox(wxCommandEvent &event)

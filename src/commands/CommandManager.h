@@ -17,6 +17,7 @@
 #include <wx/menu.h>
 #include <wx/hashmap.h>
 
+#include "../AudacityApp.h"
 #include "../xml/XMLTagHandler.h"
 
 class CommandFunctor
@@ -47,6 +48,7 @@ struct CommandListEntry
    wxString defaultKey;
    wxString label;
    wxString labelPrefix;
+   wxString labelTop;
    wxMenu *menu;
    CommandFunctor *callback;
    bool multi;
@@ -92,17 +94,44 @@ class AUDACITY_DLL_API CommandManager: public XMLTagHandler
    void InsertItem(wxString name, wxString label, CommandFunctor *callback,
                    wxString after, int checkmark = -1);
 
-   void AddItem(wxString name, wxString label, CommandFunctor *callback,
-                int checkmark = -1);
    void AddItemList(wxString name, wxArrayString labels,
                     CommandFunctor *callback, bool plugins = false);
 
+   void AddCheck(const wxChar *name,
+                 const wxChar *label,
+                 CommandFunctor *callback,
+                 int checkmark = 0);
+
+   void AddItem(const wxChar *name,
+                const wxChar *label,
+                CommandFunctor *callback,
+                int flags = NoFlagsSpecifed,
+                int mask = NoFlagsSpecifed);
+
+   void AddItem(const wxChar *name,
+                const wxChar *label_in,
+                CommandFunctor *callback,
+                const wxChar *accel,
+                int flags = NoFlagsSpecifed,
+                int mask = NoFlagsSpecifed,
+                int checkmark = -1);
 
    void AddSeparator();
 
    // A command doesn't actually appear in a menu but might have a
    // keyboard shortcut.
-   void AddCommand(wxString name, wxString label, CommandFunctor *callback);
+   void AddCommand(const wxChar *name,
+                   const wxChar *label,
+                   CommandFunctor *callback,
+                   int flags = NoFlagsSpecifed,
+                   int mask = NoFlagsSpecifed);
+
+   void AddCommand(const wxChar *name,
+                   const wxChar *label,
+                   CommandFunctor *callback,
+                   const wxChar *accel,
+                   int flags = NoFlagsSpecifed,
+                   int mask = NoFlagsSpecifed);
 
    //
    // Command masks
@@ -127,6 +156,11 @@ class AUDACITY_DLL_API CommandManager: public XMLTagHandler
    void Modify(wxString name, wxString newLabel);
 
    //
+   // Modifying accelerators
+   //
+   void SetKeyFromName(wxString name, wxString key);
+
+   //
    // Displaying menus
    //
    void HandleMenuOpen(wxMenuEvent &evt);
@@ -139,17 +173,24 @@ class AUDACITY_DLL_API CommandManager: public XMLTagHandler
    bool HandleMenuID(int id, wxUint32 flags, wxUint32 mask);
    bool HandleKey(wxKeyEvent &evt, wxUint32 flags, wxUint32 mask);
    bool HandleTextualCommand(wxString & Str, wxUint32 flags, wxUint32 mask);
-   void TellUserWhyDisallowed( wxUint32 flagsGot, wxUint32 flagsRequired );
+   void TellUserWhyDisallowed(wxUint32 flagsGot, wxUint32 flagsRequired);
+
    //
    // Accessing
    //
 
+   void GetCategories(wxArrayString &cats);
    void GetAllCommandNames(wxArrayString &names, bool includeMultis);
 
    wxString GetLabelFromName(wxString name);
-   wxString GetPrefixedLabelFromName( wxString name );
+   wxString GetPrefixedLabelFromName(wxString name);
+   wxString GetCategoryFromName(wxString name);
    wxString GetKeyFromName(wxString name);
    wxString GetDefaultKeyFromName(wxString name);
+
+#if defined(__WXDEBUG__)
+   void CheckDups();
+#endif
 
    //
    // Loading/Saving
@@ -194,6 +235,7 @@ private:
    bool mbSeparatorAllowed; // false at the start of a menu and immediately after a separator.
    int mHidingLevel;
 
+   wxString mCurrentMenuName;
    wxMenu * mCurrentMenu;
    wxMenu * mOpenMenu;
 

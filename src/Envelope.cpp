@@ -158,22 +158,15 @@ double Envelope::fromDB(double value) const
    return pow(10.0, ((fabs(value) * envdBRange) - envdBRange) / 20.0)*sign;;
 }
 
-void DrawPoint(wxDC & dc, wxRect & r, int x, int y, bool top, bool contour)
+void DrawPoint(wxDC & dc, const wxRect & r, int x, int y, bool top)
 {
    if (y >= 0 && y <= r.height) {
-      if(contour){
-         wxRect circle(r.x + x - 2, r.y + y - 2,
-                       4, 4);
-         dc.DrawEllipse(circle);
-      }else{
-         wxRect circle(r.x + x - 2, r.y + (top? y-1: y-4),
-                       4, 4);
-         dc.DrawEllipse(circle);
-      }
+      wxRect circle(r.x + x, r.y + (top ? y - 1: y - 2), 4, 4);
+      dc.DrawEllipse(circle);
    }
 }
 
-void Envelope::Draw(wxDC & dc, wxRect & r, double h, double pps, bool dB,
+void Envelope::Draw(wxDC & dc, const wxRect & r, double h, double pps, bool dB,
                     float zoomMin, float zoomMax)
 {
    h -= mOffset;
@@ -193,25 +186,36 @@ void Envelope::Draw(wxDC & dc, wxRect & r, double h, double pps, bool dB,
 
          double v = mEnv[i]->val;
          int x = int ((mEnv[i]->t - h) * pps);
-         int y,y2;
+         int y, y2;
 
-	 y = GetWaveYPosNew(v, zoomMin, zoomMax, r.height, dB,
-			    true, dBr, false);
-	 DrawPoint(dc, r, x, y, true, false);
+         y = GetWaveYPos(v, zoomMin, zoomMax, r.height, dB,
+            true, dBr, false);
+         if (!mMirror) {
+            DrawPoint(dc, r, x, y, true);
+         }
+         else {
+            y2 = GetWaveYPos(-v-.000000001, zoomMin, zoomMax, r.height, dB,
+               true, dBr, false);
 
-         if (mMirror) {
-	   y2 = GetWaveYPosNew(-v-.000000001, zoomMin, zoomMax, r.height, dB,
-			       true, dBr, false);
-	   DrawPoint(dc, r, x, y2, false, false);
+            // This follows the same logic as the envelop drawing in
+            // TrackArtist::DrawEnvelope().
+            if (y2 - y < 9) {
+               int value = (int)((zoomMax / (zoomMax - zoomMin)) * r.height);
+               y = value - 4;
+               y2 = value + 4;
+            }
+
+            DrawPoint(dc, r, x, y, true);
+            DrawPoint(dc, r, x, y2, false);
 	   
-	   // Contour
-	   y = GetWaveYPosNew(v, zoomMin, zoomMax, r.height, dB,
-			      false, dBr, false);
-	   y2 = GetWaveYPosNew(-v-.000000001, zoomMin, zoomMax, r.height, dB,
-			       false, dBr, false);
-	   if(y<=y2){
-	     DrawPoint(dc, r, x, y, true, true);
-	     DrawPoint(dc, r, x, y2, false, true);
+            // Contour
+            y = GetWaveYPos(v, zoomMin, zoomMax, r.height, dB,
+               false, dBr, false);
+            y2 = GetWaveYPos(-v-.000000001, zoomMin, zoomMax, r.height, dB,
+               false, dBr, false);
+            if (y <= y2) {
+               DrawPoint(dc, r, x, y, true);
+               DrawPoint(dc, r, x, y2, false);
             }
          }
 
@@ -344,15 +348,15 @@ bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
          int numControlPoints;
 
          // Outer control points
-         y[0] = GetWaveYPosNew( mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[0] = GetWaveYPos( mEnv[i]->val, zoomMin, zoomMax, r.height,
                                 dB, true, dBr, false);
-         y[1] = GetWaveYPosNew( -mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[1] = GetWaveYPos( -mEnv[i]->val, zoomMin, zoomMax, r.height,
                                 dB, true, dBr, false);
 
          // Inner control points(contour)
-         y[2] = GetWaveYPosNew( mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[2] = GetWaveYPos( mEnv[i]->val, zoomMin, zoomMax, r.height,
                                 dB, false, dBr, false);
-         y[3] = GetWaveYPosNew( -mEnv[i]->val-.00000001, zoomMin, zoomMax, 
+         y[3] = GetWaveYPos( -mEnv[i]->val-.00000001, zoomMin, zoomMax, 
                                 r.height, dB, false, dBr, false);
 
          numControlPoints = 4;
@@ -387,14 +391,14 @@ bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
       
       double v = GetValueAtX( event.m_x, r, h, pps );
       
-      int ct = GetWaveYPosNew( v, zoomMin, zoomMax, r.height, dB, 
+      int ct = GetWaveYPos( v, zoomMin, zoomMax, r.height, dB, 
                                false, dBr, false) ;
-      int cb = GetWaveYPosNew( -v-.000000001, zoomMin, zoomMax, r.height, dB, 
+      int cb = GetWaveYPos( -v-.000000001, zoomMin, zoomMax, r.height, dB, 
                                false, dBr, false) ;
       if( ct <= cb || !mMirror ){
-         int t = GetWaveYPosNew( v, zoomMin, zoomMax, r.height, dB, 
+         int t = GetWaveYPos( v, zoomMin, zoomMax, r.height, dB, 
                                  true, dBr, false) ;
-         int b = GetWaveYPosNew( -v, zoomMin, zoomMax, r.height, dB, 
+         int b = GetWaveYPos( -v, zoomMin, zoomMax, r.height, dB, 
                                  true, dBr, false) ;
          
          ct = (t + ct) / 2;
@@ -662,7 +666,7 @@ Cases:
          }
       }
 
-      // In theses statement, remember we subtracted mOffset from t0
+      // In these statements, remember we subtracted mOffset from t0
       if( t0 < mTrackEpsilon )
          atStart = true;
       if( (mTrackLen - t0) < mTrackEpsilon )
@@ -732,9 +736,17 @@ Cases:
       mTrackLen += deltat;
    }
    else {   // Case 10:
-      mTrackLen = e->mTrackLen;
-      mOffset = e->mOffset;
-      //wxLogDebug(wxT("Case 10: mTrackLen %f mOffset %f t0 %f"), mTrackLen, mOffset, t0);
+      if( mTrackLen == 0 ) // creating a new envelope
+      {
+         mTrackLen = e->mTrackLen;
+         mOffset = e->mOffset;
+         //wxLogDebug(wxT("Case 10, new env/clip: mTrackLen %f mOffset %f t0 %f"), mTrackLen, mOffset, t0);
+      }
+      else
+      {
+         mTrackLen += e->mTrackLen;
+         //wxLogDebug(wxT("Case 10, paste into current env: mTrackLen %f mOffset %f t0 %f"), mTrackLen, mOffset, t0);
+      }
    }
 
    // Copy points from inside the selection
@@ -751,7 +763,12 @@ Cases:
          e->Delete(0);  // they were not there when we entered this
 }
 
-void Envelope::RemoveUnneededPoints(double tolerence)
+// Deletes 'unneeded' points, starting from the left.
+// If 'time' is set and positive, just deletes points in a small region
+// around that value.
+// 'Unneeded' means that the envelope doesn't change by more than
+// 'tolerence' without the point being there.
+void Envelope::RemoveUnneededPoints(double time, double tolerence)
 {
    unsigned int len = mEnv.Count();
    unsigned int i;
@@ -762,11 +779,26 @@ void Envelope::RemoveUnneededPoints(double tolerence)
 
    for (i = 0; i < len; i++) {
       when = mEnv[i]->t;
+      if(time >= 0)
+      {
+         if(fabs(when + mOffset - time) > 0.00025) // 2 samples at 8kHz, 11 at 44.1kHz
+            continue;
+      }
       val = mEnv[i]->val;
       Delete(i);  // try it to see if it's doing anything
       val1 = GetValue(when + mOffset);
       if( fabs(val -val1) > tolerence )
+      {
          Insert(when,val); // put it back, we needed it
+         
+         //Insert may have modified instead of inserting, if two points were at the same time.
+         // in which case len needs to shrink i and len, because the array size decreased.
+         if(mEnv.Count()!=len)
+         {
+            len--;
+            i--;
+         }
+      }
       else {   // it made no difference so leave it out
          len--;
          i--;
@@ -837,15 +869,36 @@ void Envelope::GetPoints(double *bufferWhen,
 // Although this renders the name a slight misnomer, a duplicate
 // 'replaces' the current control point.
 
-// Envelopes start at zero and are offset by other things by mOffset.
-// This is worth remembering.
-// If you call 'Insert' from WaveClip, subtract mOffset from the time.
-// If you call it from Envelope, don't. Kind of makes sense. MJS.
+/** @brief Add a control point to the envelope
+ *
+ * Control point positions start at zero and are measured in seconds from the
+ * start of the envelope. The position of the envelope on the project-wide
+ * time scale is store in seconds in Envelope::mOffset.
+ * This is worth remembering.
+ * If you call Envelope::Insert() from WaveClip, or anywhere else outside the
+ * Envelope class that is using project timing, subtract the envelope's mOffset
+ * from the time.
+ * If you call Envelope::Insert() from within Envelope, don't subtract mOffset 
+ * because you are working in relative time inside the envelope
+ * @param when the time in seconds when the envelope point should be created.
+ * @param value the envelope value to use at the given point.
+ * @return the index of the new envelope point within array of envelope points.
+ */
 int Envelope::Insert(double when, double value)
 {
    // in debug builds, do a spot of argument checking
-   wxASSERT(when <= (mTrackLen));
-   wxASSERT(when >= 0);
+   if(when > mTrackLen)
+   {
+      wxString msg;
+      msg = wxString::Format(wxT("when %.20f mTrackLen %.20f diff %.20f"), when, mTrackLen, when-mTrackLen);
+      wxASSERT_MSG(when <= (mTrackLen), msg);
+   }
+   if(when < 0)
+   {
+      wxString msg;
+      msg = wxString::Format(wxT("when %.20f mTrackLen %.20f"), when);
+      wxASSERT_MSG(when >= 0, msg);
+   }
 
    int len = mEnv.Count();
 
@@ -902,6 +955,7 @@ void Envelope::SetTrackLen(double trackLen)
          delete mEnv[i];
          mEnv.RemoveAt(i);
          len--;
+         i--;
       }
 }
 
@@ -915,11 +969,11 @@ double Envelope::GetValue(double t) const
 }
 
 // 'X' is in pixels and relative to track.
-double Envelope::GetValueAtX( int x, wxRect & r, double h, double pps )
+double Envelope::GetValueAtX(int x, const wxRect & r, double h, double pps)
 {
    // Convert x to time.
    double t = (x - r.x) / pps + h ;//-mOffset;
-   return GetValue( t );
+   return GetValue(t);
 }
 
 
@@ -935,8 +989,18 @@ void Envelope::GetValues(double *buffer, int bufferLen,
    double tprev, vprev, tnext = 0, vnext, vstep = 0;
 
    // in debug builds, do a spot of argument checking
-   wxASSERT(t0 <= (mTrackLen));
-   wxASSERT(t0 >= 0);
+   if(t0 > mTrackLen)
+   {
+      wxString msg;
+      msg = wxString::Format(wxT("t0 %.20f mTrackLen %.20f diff %.20f"), t0, mTrackLen, t0-mTrackLen);
+      wxASSERT_MSG(t0 <= mTrackLen, msg);
+   }
+   if(t0 < 0)
+   {
+      wxString msg;
+      msg = wxString::Format(wxT("t0 %.20f"), t0);
+      wxASSERT_MSG(t0 >= 0, msg);
+   }
 
    for (int b = 0; b < bufferLen; b++) {
       if (len <= 0) {

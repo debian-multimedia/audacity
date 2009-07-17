@@ -3,8 +3,15 @@
   Audacity: A Digital Audio Editor
 
   ProgressDialog.cpp
+
+  Copyright
+     Leland Lucius
+     Vaughan Johnson
   
-  Leland Lucius
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
 
 *******************************************************************//**
 
@@ -981,12 +988,13 @@ static const unsigned char beep[] =
 
 BEGIN_EVENT_TABLE(ProgressDialog, wxDialog)
    EVT_BUTTON(wxID_CANCEL, ProgressDialog::OnCancel)
+   EVT_BUTTON(wxID_OK, ProgressDialog::OnStop)
 END_EVENT_TABLE()  
 
 //
 // Constructor
 //
-ProgressDialog::ProgressDialog(const wxString & title, const wxString & message)
+ProgressDialog::ProgressDialog(const wxString & title, const wxString & message, ProgressDialogFlags flags)
 : wxDialog(wxTheApp->GetTopWindow(),
            wxID_ANY,
            title,
@@ -1001,15 +1009,11 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message)
    wxWindow *w;
    wxSize ds;
 
-   SetExtraStyle(GetExtraStyle() | wxWS_EX_TRANSIENT);
-
    // There's a problem where the focus is not returned to the window that had
    // it before creating this object.  The reason is not entirely understood
    // but if the dialog window never gets shown then the focus does not get
    // returned to the original window.  It seems to have something to do with
    // wxWindowDisabler as the problem doesn't occur when it isn't created.
-   //
-   // This only seems to be a problem on OSX and GTK.
    //
    // This never used to be a problem for us because we didn't actually create
    // the wxProgressDialog until after the elapsed time reached .5 seconds.
@@ -1017,13 +1021,18 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message)
    // seconds had passed.  This left a small window where the user would be able
    // to interact with the main window and possibly do things like get two
    // effects running at the same time.
-   //
-   // The resolution (workaround...hackage) seems to be that this dialog MUST
-   // have a parent and that we set the focus back to that parent when we're done.
-   //
-   // Therefore we use whatever wxApp::GetTopWindow() returns as the parent.  The
-   // only time this will be NULL is when Audacity is either starting or stopping.
-   // In either case, it doesn't really matter where focus winds up.
+
+   mHadFocus = wxWindow::FindFocus();
+
+#if defined(__WXGTK__)
+   // Under GTK, when applying any effect that prompts the user, it's more than
+   // like that FindFocus() will return NULL.  So, make sure something has focus.
+   if (GetParent()) {
+      GetParent()->SetFocus();
+   }
+#endif
+
+   SetExtraStyle(GetExtraStyle() | wxWS_EX_TRANSIENT);
 
    v = new wxBoxSizer(wxVERTICAL);
 
@@ -1092,9 +1101,26 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message)
    v->Add(g, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT | wxBOTTOM, 10);
    ds.y += mRemaining->GetSize().y + 10;
 
-   w = new wxButton(this, wxID_CANCEL, _("Cancel"));
-   v->Add(w, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 10);
+   wxBoxSizer *h = new wxBoxSizer(wxHORIZONTAL);
+
+   if (!(flags & pdlgHideStopButton))
+   {
+      w = new wxButton(this, wxID_OK, _("Stop"));
+      h->Add(w, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 10);
+      ds.x += w->GetSize().x + 10;
+   }
+ 
+   if (!(flags & pdlgHideCancelButton))
+   {
+      w = new wxButton(this, wxID_CANCEL, _("Cancel"));
+      h->Add(w, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 10);
+      ds.x += w->GetSize().x + 10;
+   }
+
+   v->Add(h, 0, wxALIGN_RIGHT | wxRIGHT | wxBOTTOM, 10);
+
    ds.y += w->GetSize().y + 10;
+
    SetSizerAndFit(v);
 
    wxClientDC dc(this);
@@ -1109,6 +1135,7 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message)
    mStartTime = wxGetLocalTimeMillis().GetValue();
    mLastUpdate = mStartTime;
    mCancel = false;
+   mStop = false;
 
    Show(false);
 
@@ -1136,8 +1163,16 @@ ProgressDialog::~ProgressDialog()
 
    }
 
+#if defined(__WXGTK__)
+   // Under GTK, when applying any effect that prompts the user, it's more than
+   // like that FindFocus() will return NULL.  So, make sure something has focus.
    if (GetParent()) {
       GetParent()->SetFocus();
+   }
+#endif
+
+   if (mHadFocus) {
+      mHadFocus->SetFocus();
    }
 }
 
@@ -1177,12 +1212,17 @@ ProgressDialog::Show(bool show)
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(int value, const wxString & message)
 {
    if (mCancel)
    {
-      return false;
+      // for compatibility with old Update, that returned false on cancel
+      return eProgressCancelled; 
+   }
+   else if (mStop)
+   {
+      return eProgressStopped;
    }
 
    SetMessage(message);
@@ -1227,13 +1267,13 @@ ProgressDialog::Update(int value, const wxString & message)
 
    wxYieldIfNeeded();
 
-   return true;
+   return eProgressSuccess;
 }
 
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(double current, const wxString & message)
 {
    return Update((int)(current * 1000), message);
@@ -1242,7 +1282,7 @@ ProgressDialog::Update(double current, const wxString & message)
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(wxULongLong_t current, wxULongLong_t total, const wxString & message)
 {
    return Update((int)(current * 1000 / total), message);
@@ -1251,7 +1291,7 @@ ProgressDialog::Update(wxULongLong_t current, wxULongLong_t total, const wxStrin
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(wxLongLong current, wxLongLong total, const wxString & message)
 {
    return Update((int)(current.GetValue() * 1000ll / total.GetValue()), message);
@@ -1260,7 +1300,7 @@ ProgressDialog::Update(wxLongLong current, wxLongLong total, const wxString & me
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(wxLongLong_t current, wxLongLong_t total, const wxString & message)
 {
    return Update((int)(current * 1000ll / total), message);
@@ -1269,7 +1309,7 @@ ProgressDialog::Update(wxLongLong_t current, wxLongLong_t total, const wxString 
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(int current, int total, const wxString & message)
 {
    return Update((int)(current *  ((double)(1000.0 / total))), message);
@@ -1278,7 +1318,7 @@ ProgressDialog::Update(int current, int total, const wxString & message)
 //
 // Update the time and, optionally, the message
 //
-bool
+int
 ProgressDialog::Update(double current, double total, const wxString & message)
 {
    return Update((int)(current * 1000.0 / total), message);
@@ -1302,6 +1342,14 @@ ProgressDialog::OnCancel(wxCommandEvent & e)
 {
    FindWindowById(wxID_CANCEL, this)->Disable();
    mCancel = true;
+}
+
+void
+ProgressDialog::OnStop(wxCommandEvent & e)
+{
+   FindWindowById(wxID_OK, this)->Disable();
+   mCancel = false;
+   mStop = true;
 }
 
 void
@@ -1333,6 +1381,64 @@ ProgressDialog::Beep()
       }
    }
 }
+
+TimerProgressDialog::TimerProgressDialog(const wxLongLong_t duration, 
+                                          const wxString & title, 
+                                          const wxString & message /*= wxEmptyString*/, 
+                                          ProgressDialogFlags flags /*= pdlgEmptyFlags*/)
+: ProgressDialog(title, message, flags)
+{
+   mDuration = duration;
+}
+
+int TimerProgressDialog::Update(const wxString & message /*= wxEmptyString*/)
+{
+   if (mCancel)
+   {
+      // for compatibility with old Update, that returned false on cancel
+      return eProgressCancelled; 
+   }
+   else if (mStop)
+   {
+      return eProgressStopped;
+   }
+
+   SetMessage(message);
+
+   wxLongLong_t now = wxGetLocalTimeMillis().GetValue();
+   wxLongLong_t elapsed = now - mStartTime;
+   wxLongLong_t remains = mStartTime + mDuration - now;
+
+   if (!IsShown() && elapsed > 500)
+   {
+      Show(true);
+   }
+
+   int nGaugeValue = (1000 * elapsed) / mDuration; // range = [0,1000]
+   wxASSERT((nGaugeValue >= 0) && (nGaugeValue <= 1000));
+   if (nGaugeValue != mLastValue)
+   {
+      mGauge->SetValue(nGaugeValue);
+      mLastValue = nGaugeValue;
+   }
+
+   // Only update if a full second has passed.
+   if (now - mLastUpdate > 1000)
+   {
+      wxTimeSpan tsElapsed(0, 0, 0, elapsed);
+      wxTimeSpan tsRemains(0, 0, 0, remains);
+
+      mElapsed->SetLabel(tsElapsed.Format(wxT("%H:%M:%S")));
+      mRemaining->SetLabel(tsRemains.Format(wxT("%H:%M:%S")));
+
+      mLastUpdate = now;
+   }
+
+   wxYieldIfNeeded();
+
+   return eProgressSuccess;
+}
+
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

@@ -59,6 +59,14 @@ EffectCompressor::EffectCompressor()
 	mLevelCircle = NULL;
 }
 
+EffectCompressor::~EffectCompressor()
+{
+   if (mCircle)
+      delete[] mCircle;
+   if (mLevelCircle)
+      delete[] mLevelCircle;
+}
+
 bool EffectCompressor::TransferParameters( Shuttle & shuttle )
 {
    shuttle.TransferDouble( wxT("Threshold"), mThresholdDB, -12.0f );
@@ -404,10 +412,11 @@ void CompressorPanel::OnPaint(wxPaintEvent & evt)
 
    // Yellow line for threshold
    memDC.SetPen(wxPen(wxColour(220, 220, 0), 1, wxSOLID));
-   memDC.DrawLine(mEnvRect.x,
-                  mEnvRect.y + mEnvRect.height - kneeY,
-                  mEnvRect.x + mEnvRect.width,
-                  mEnvRect.y + mEnvRect.height - kneeY);
+   AColor::Line(memDC,
+                mEnvRect.x,
+                mEnvRect.y + mEnvRect.height - kneeY,
+                mEnvRect.x + mEnvRect.width - 1,
+                mEnvRect.y + mEnvRect.height - kneeY);
 
    // Was: Nice dark red line for the compression diagram
 //   memDC.SetPen(wxPen(wxColour(180, 40, 40), 3, wxSOLID));
@@ -415,15 +424,17 @@ void CompressorPanel::OnPaint(wxPaintEvent & evt)
    // Nice blue line for compressor, same color as used in the waveform envelope.
    memDC.SetPen( AColor::WideEnvelopePen) ;
 
-   memDC.DrawLine(mEnvRect.x,
-                  mEnvRect.y + mEnvRect.height,
-                  mEnvRect.x + kneeX,
-                  mEnvRect.y + mEnvRect.height - kneeY);
+   AColor::Line(memDC,
+                mEnvRect.x,
+                mEnvRect.y + mEnvRect.height,
+                mEnvRect.x + kneeX - 1,
+                mEnvRect.y + mEnvRect.height - kneeY);
 
-   memDC.DrawLine(mEnvRect.x + kneeX,
-                  mEnvRect.y + mEnvRect.height - kneeY,
-                  mEnvRect.x + mEnvRect.width,
-                  mEnvRect.y + mEnvRect.height - finalY);
+   AColor::Line(memDC,
+                mEnvRect.x + kneeX,
+                mEnvRect.y + mEnvRect.height - kneeY,
+                mEnvRect.x + mEnvRect.width - 1,
+                mEnvRect.y + mEnvRect.height - finalY);
 
    // Paint border again
    memDC.SetBrush(*wxTRANSPARENT_BRUSH);
@@ -489,8 +500,9 @@ void CompressorDialog::PopulateOrExchange(ShuttleGui & S)
    }
    S.EndHorizontalLay();
 
-   S.StartMultiColumn(3, wxCENTER | wxALIGN_CENTER_VERTICAL);
+   S.StartMultiColumn(3, wxEXPAND | wxALIGN_CENTER_VERTICAL);
    {
+      S.SetStretchyCol(1);
       mThresholdLabel = S.AddVariableText(_("Threshold:"), true,
                                           wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
       S.SetStyle(wxSL_HORIZONTAL);
@@ -527,7 +539,7 @@ void CompressorDialog::PopulateOrExchange(ShuttleGui & S)
 
    S.StartHorizontalLay(wxCENTER, false);
    {
-      mGainCheckBox = S.AddCheckBox(_("Normalize to 0dB after compressing"),
+      mGainCheckBox = S.AddCheckBox(_("Make-up gain for 0dB after compressing"),
                                     wxT("true"));
    }
    S.EndHorizontalLay();

@@ -98,7 +98,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    sampleCount totalFrames;
    double rate = 44100.0;
    double percent = 100.0;
-   SNDFILE *sndFile;
+   SNDFILE *sndFile = NULL;
    SF_INFO sndInfo;
    int result;
 
@@ -130,8 +130,16 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    sndInfo.channels = (int)numChannels;
    sndInfo.format = encoding | SF_FORMAT_RAW;
 
-   sndFile = sf_open(OSFILENAME(fileName), SFM_READ, &sndInfo);
-   if (!sndFile) {
+   wxFile f;   // will be closed when it goes out of scope
+
+   if (f.Open(fileName)) {
+      // Even though there is an sf_open() that takes a filename, use the one that
+      // takes a file descriptor since wxWidgets can open a file with a Unicode name and
+      // libsndfile can't (under Windows).
+      sndFile = sf_open_fd(f.fd(), SFM_READ, &sndInfo, FALSE);
+   }
+
+   if (!sndFile){
       // TODO: Handle error
       char str[1000];
       sf_error_str((SNDFILE *)NULL, str, 1000);
@@ -187,11 +195,10 @@ int ImportRaw(wxWindow *parent, wxString fileName,
 
    if (numChannels == 2) {
       channels[0]->SetLinked(true);
-      channels[1]->SetTeamed(true);
    }
 
    sampleCount maxBlockSize = channels[0]->GetMaxBlockSize();
-   bool cancelled = false;
+   int updateResult = eProgressSuccess;
 
    samplePtr srcbuffer = NewSamples(maxBlockSize * numChannels, format);
    samplePtr buffer = NewSamples(maxBlockSize, format);
@@ -234,22 +241,25 @@ int ImportRaw(wxWindow *parent, wxString fileName,
          framescompleted += block;
       }
 
-      cancelled = !progress.Update((wxULongLong_t)framescompleted,
+      updateResult = progress.Update((wxULongLong_t)framescompleted,
                                    (wxULongLong_t)totalFrames);
-      if (cancelled)
+      if (updateResult != eProgressSuccess)
          break;
       
    } while (block > 0 && framescompleted < totalFrames);
 
    sf_close(sndFile);
 
-   bool res = (!cancelled && block >= 0);
+   int res = updateResult;
+   if (block < 0)
+     res = eProgressFailed;
 
-   if (!res) {
+   if (res == eProgressFailed || res == eProgressCancelled) {
       for (c = 0; c < numChannels; c++)
          delete channels[c];
       delete[] channels;
 
+      // It's a shame we can't return proper error code
       return 0;
    }
 

@@ -15,10 +15,13 @@
 
 #include "portaudio.h"
 #include "Audacity.h"
+#include "Experimental.h"
 
 #ifdef USE_MIDI
-//#include "portmidi.h"
-//#include "porttime.h"
+#ifdef EXPERIMENTAL_MIDI_OUT
+#include "portmidi.h"
+#include "porttime.h"
+#endif // EXPERIMENTAL_MIDI_OUT
 #include "allegro.h"
 #endif // USE_MIDI
 
@@ -41,7 +44,7 @@ class AudioThread;
 class Meter;
 class TimeTrack;
 
-extern AudioIO *gAudioIO;
+extern AUDACITY_DLL_API AudioIO *gAudioIO;
 
 void InitAudioIO();
 void DeinitAudioIO();
@@ -64,7 +67,7 @@ public:
 #define DEFAULT_LATENCY_DURATION 100.0
 #define DEFAULT_LATENCY_CORRECTION -130.0
 
-class AudioIO {
+class AUDACITY_DLL_API AudioIO {
 
  public:
    AudioIO();
@@ -89,8 +92,9 @@ class AudioIO {
     * instance.  For use with IsStreamActive() below */
 
    int StartStream(WaveTrackArray playbackTracks, WaveTrackArray captureTracks,
-/* REQUIRES PORTMIDI */
-                   //NoteTrackArray midiTracks,
+#ifdef EXPERIMENTAL_MIDI_OUT
+                   NoteTrackArray *midiTracks,
+#endif
                    TimeTrack *timeTrack, double sampleRate,
                    double t0, double t1,
                    AudioIOListener* listener,
@@ -122,6 +126,12 @@ class AudioIO {
     * new stream, use IsBusy() */
    bool IsStreamActive();
    bool IsStreamActive(int token);
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+   /** \brief Are any Note tracks playing MIDI?
+    */
+   bool IsMidiActive(); // 
+#endif
 
    /** \brief Returns true if the stream is active, or even if audio I/O is
     * busy cleaning up its data or writing to disk.
@@ -155,7 +165,7 @@ class AudioIO {
     * soundcard mixer (driven by PortMixer) */
    wxArrayString GetInputSourceNames();
 
-   /** \Brief update state after changing what audio devices are selected 
+   /** \brief update state after changing what audio devices are selected 
     *
     * Called when the devices stored in the preferences are changed to update
     * the audio mixer capabilities
@@ -284,14 +294,14 @@ private:
                              unsigned int numPlaybackChannels,
                              unsigned int numCaptureChannels,
                              sampleFormat captureFormat);
-
-/* REQUIRES PORTMIDI */
-//   bool StartPortMidiStream();
-
    void FillBuffers();
 
-/* REQUIRES PORTMIDI */
-//   void  FillMidiBuffers();
+#ifdef EXPERIMENTAL_MIDI_OUT
+   bool StartPortMidiStream();
+   void OutputEvent();
+   void FillMidiBuffers();
+   void GetNextEvent();
+#endif
 
    /** \brief Get the number of audio samples free in all of the playback
     * buffers.
@@ -336,31 +346,38 @@ private:
 
    double NormalizeStreamTime(double absoluteTime) const;
 
-//   MIDI_PLAYBACK:
-//   PmStream           *mMidiStream;
-//   PmEvent             mMidiBuffer[MAX_MIDI_BUFFER_SIZE];
-//   PmEvent             mMidiQueue[MAX_MIDI_BUFFER_SIZE];
-//   PmError             mLastPmError;
-//   long                mCurrentMidiTime;
-//   long                mLastMidiTime;
-//   Alg_seq             *mSeq;
-//   int                 mVC;   // Visible Channel
-//   int                 mCnt;
-//   long                mMidiWait;
-//   bool                mMidiStreamActive;
-//   bool                mUpdateMidiTracks;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   //   MIDI_PLAYBACK:
+   PmStream           *mMidiStream;
+   //   PmEvent             mMidiBuffer[MAX_MIDI_BUFFER_SIZE];
+   //   PmEvent             mMidiQueue[MAX_MIDI_BUFFER_SIZE];
+   PmError             mLastPmError;
+   long                mCurrentMidiTime;
+   long                mMidiLatency; // latency value for PortMidi
+   long                mLastMidiTime; // timestamp of last midi message
+   Alg_seq_ptr         mSeq;
+   Alg_iterator_ptr    mIterator;
+   Alg_event_ptr       mNextEvent; // the next event to play (or null)
+   double              mNextEventTime; // the time of the next event
+                       // (note that this could be a note's time+duration)
+   bool                mNextIsNoteOn; // is the next event a note-off?
+   int                 mVC;   // Visible Channel mask
+   //   int                 mCnt;
+   long                mMidiWait;
+   bool                mMidiStreamActive;
+   // when true, mSendMidiState means send only updates, not note-on's,
+   // used to send state changes that precede the selected notes
+   bool                mSendMidiState;
+   NoteTrackArray      *mMidiPlaybackTracks;
+   //   NoteTrackArray      mMidiCaptureTracks;
 
+#endif
    AudioThread        *mThread;
    Resample          **mResample;
    RingBuffer        **mCaptureBuffers;
    WaveTrackArray      mCaptureTracks;
    RingBuffer        **mPlaybackBuffers;
    WaveTrackArray      mPlaybackTracks;
-
-/* REQUIRES PORTMIDI */
-//   NoteTrackArray      mMidiPlaybackTracks;
-//   RingBuffer        **mMidiPlaybackBuffers;
-//   NoteTrackArray      mMidiCaptureTracks;
 
    Mixer             **mPlaybackMixers;
    int                 mStreamToken;
@@ -369,9 +386,9 @@ private:
    double              mFactor;
    double              mRate;
    double              mT;
-   double              mT0;
-   double              mT1;
-   double              mTime;
+   double              mT0; // playback starts at offset of mT0
+   double              mT1; // and ends at offset of mT1
+   double              mTime; // current time position during playback
    double              mWarpedT1;
    double              mSeek;
    double              mPlaybackRingBufferSecs;
@@ -379,15 +396,7 @@ private:
    double              mMaxPlaybackSecsToCopy;
    double              mMinCaptureSecsToCopy;
    bool                mPaused;
-#if USE_PORTAUDIO_V19
    PaStream           *mPortStreamV19;
-/* REQUIRES PORTMIDI */
-//   volatile bool       mInCallbackFinishedState;
-
-#else /* USE_PORTAUDIO_V19 */
-   PortAudioStream    *mPortStreamV18;
-   volatile bool       mInCallbackFinishedState;
-#endif /* USE_PORTAUDIO_V19 */
    bool                mSoftwarePlaythrough;
    bool                mPauseRec;
    float               mSilenceLevel;
@@ -435,8 +444,7 @@ private:
    friend void DeinitAudioIO();
 
    TimeTrack *mTimeTrack;
-   
-#if USE_PORTAUDIO_V19
+
    /** brief The function which is called from PortAudio's callback thread
     * context to collect and deliver audio for / from the sound device.
     *
@@ -445,24 +453,25 @@ private:
     * with the two buffers needs some care to ensure that the right things
     * happen for all possible cases.
     * @param inputBuffer Buffer of length framesPerBuffer containing samples
-    * from the sound card, or null if not capturing audio.
+    * from the sound card, or null if not capturing audio. Note that the data
+    * type will depend on the format of audio data that was chosen when the
+    * stream was created (so could be floats or various integers)
     * @param outputBuffer Uninitialised buffer of length framesPerBuffer which
     * will be sent to the sound card after the callback, or null if not playing
     * audio back.
     * @param framesPerBuffer The length of the playback and recording buffers
+    * @param PaStreamCallbackTimeInfo Pointer to PortAudio time information
+    * structure, which tells us how long we have been playing / recording
+    * @param statusFlags PortAudio stream status flags
+    * @param userData pointer to user-defined data structure. Provided for
+    * flexibility by PortAudio, but not used by Audacity - the data is stored in
+    * the AudioIO class instead.
     */
    friend int audacityAudioCallback(
                 const void *inputBuffer, void *outputBuffer,
                 unsigned long framesPerBuffer,
                 const PaStreamCallbackTimeInfo *timeInfo,
                 PaStreamCallbackFlags statusFlags, void *userData );
-#else /* USE_PORTAUDIO_V19 */
-   friend int audacityAudioCallback(
-                void *inputBuffer, void *outputBuffer,
-                unsigned long framesPerBuffer,
-                PaTimestamp outTime, void *userData );
-#endif /* USE_PORTAUDIO_V19 */
-
 };
 
 #endif

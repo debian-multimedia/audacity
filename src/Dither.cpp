@@ -187,17 +187,6 @@ void Dither::Apply(enum DitherType ditherType,
             }
         }
 
-        if (destFormat == floatSample)
-        {
-            // Only float samples can contain a value that
-            // must be clipped.
-            float* p = (float*)dest;
-            for (i = 0; i < len; i++, p++)
-                if (*p > 1.0)
-                    *p = 1.0;
-                else if (*p < -1.0)
-                    *p = -1.0;
-        }
     } else
     if (destFormat == floatSample)
     {

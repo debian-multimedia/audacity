@@ -17,13 +17,19 @@
 #include "Audacity.h"
 
 #include <wx/app.h>
+#include <wx/dir.h>
 #include <wx/event.h>
+#include <wx/docview.h>
 #include <wx/intl.h>
 #include <wx/snglinst.h>
 #include <wx/log.h>
 
+#include "widgets/FileHistory.h"
+
 class IPCServ;
 class Importer;
+class CommandHandler;
+class AppCommandEvent;
 
 void SaveWindowSize();
 
@@ -44,7 +50,10 @@ DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_CAPTURE_KEY, -1);
 
 // These flags represent the majority of the states that affect
 // whether or not items in menus are enabled or disabled.
-enum {
+enum 
+{
+   AlwaysEnabledFlag      = 0x00000000,
+
    AudioIONotBusyFlag     = 0x00000001,
    TimeSelectedFlag       = 0x00000002,
    TracksSelectedFlag     = 0x00000004,
@@ -70,7 +79,10 @@ enum {
    CutCopyAvailableFlag   = 0x00200000,
    WaveTracksExistFlag    = 0x00400000,
    NoteTracksExistFlag    = 0x00800000,  //gsw
-   NoteTracksSelectedFlag = 0x01000000   //gsw
+   NoteTracksSelectedFlag = 0x01000000,  //gsw
+   HaveRecentFiles        = 0x02000000,
+
+   NoFlagsSpecifed        = 0xffffffff
 };
 
 class AudacityApp:public wxApp {
@@ -95,6 +107,8 @@ class AudacityApp:public wxApp {
    void OnMenuPreferences(wxCommandEvent & event);
    void OnMenuExit(wxCommandEvent & event);
 
+   void OnEndSession(wxCloseEvent & event);
+
    void OnKeyDown(wxKeyEvent & event);
    void OnChar(wxKeyEvent & event);
    void OnKeyUp(wxKeyEvent & event);
@@ -103,10 +117,13 @@ class AudacityApp:public wxApp {
    void OnReleaseKeyboard(wxCommandEvent & event);
 
    // Most Recently Used File support (for all platforms).
+   void OnMRUClear(wxCommandEvent &event);
    void OnMRUFile(wxCommandEvent &event);
 // void OnMRUProject(wxCommandEvent &event);
    // Backend for above - returns true for success, false for failure
    bool MRUOpen(wxString fileName);
+
+   void OnReceiveCommand(AppCommandEvent &event);
 
    #ifdef __WXMAC__
     // In response to Apple Events
@@ -139,19 +156,27 @@ class AudacityApp:public wxApp {
                                        wxArrayString &pathList);
    static void AddMultiPathsToPathList(wxString multiPathString,
                                        wxArrayString &pathList);
-   static void FindFilesInPathList(wxString pattern,
-                                   wxArrayString pathList,
-                                   int flags, // wxFILE, wxDIR, or 0
-                                   wxArrayString &results);
+   static void FindFilesInPathList(const wxString & pattern,
+                                   const wxArrayString & pathList,
+                                   wxArrayString &results,
+                                   int flags = wxDIR_FILES);
+
+   FileHistory *GetRecentFiles() {return mRecentFiles;}
+   void AddFileToHistory(const wxString & name);
 
    Importer *mImporter;
 
    wxLogWindow *mLogger;
  private:
+   CommandHandler *mCmdHandler;
+   FileHistory *mRecentFiles;
 
    wxLocale *mLocale;
 
    wxSingleInstanceChecker *mChecker;
+
+   void InitCommandHandler();
+   void DeInitCommandHandler();
 
    bool InitTempDir();
    bool CreateSingleInstanceChecker(wxString dir);

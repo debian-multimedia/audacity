@@ -4,10 +4,10 @@
 # Audacity Team <audacity-translation@lists.sourceforge.net>, 2008.
 #
 msgid ""
-msgstr "Project-Id-Version: Audacity 1.3.6\n"
+msgstr "Project-Id-Version: Audacity 1.3.7\n"
 "Report-Msgid-Bugs-To: audacity-translation@lists.sourceforge.net\n"
 "POT-Creation-Date: 2008-11-03 21:55+0000\n"
-"PO-Revision-Date: 2008-12-02 20:30+0100\n"
+"PO-Revision-Date: 2009-02-28 11:18+0100\n"
 "Last-Translator: Pelladi Gabor <audacity-translation@lists.sourceforge.net>\n"
 "Language-Team: HU <hu@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -29,12 +29,12 @@ msgid "Audacity is a free program written by a team of volunteer <a href=\"http:
 msgstr "Az Audacity egy ingyenes program, képzett <a href=\"http://audacity.sourceforge.net/community/developers\">fejlesztők</a> munkája, akik szerte a világon dolgoznak a fejlesztésén. Eredményes együttműködésük a <a href=\"http://sourceforge.net\">SourceForge.net</a>-nek, egy ingyenes és nyilt forráskódú programok készítését támogató online-szolgáltatásnak köszönhető. Az Audacity futtatható Windows 98-on és az újabb változatokon, Mac OS X-en, Linuxon, és más, Unix-on alapuló operációs rendszereken. Az Audacity régebbi verziói Mac OS 9-en is futtathatóak."
 
 #: AboutDialog.cpp:179
-msgid "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>."
-msgstr "Ez a programnak egy béta verziója. Tartalmazhat hibákat és elkészületlen funkciókat. Számítunk a visszajelzésére, ezért kérjük, jelezze az észlelt hibákat és a kívánt változtatásokat a <b>feedback@audacityteam.org</b> címen. Az Audacity használstához a <a href=\"http://audacityteam.org/forum/\">Fórumban</a> találhat segítséget."
+msgid "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>."
+msgstr ""
 
 #: AboutDialog.cpp:182
-msgid "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>."
-msgstr "Ez egy stabil, befejezett verziója az Audacity-nek. Amennyiben mégis hibát találna vagy javaslata van, kérünk írjon a <b>feedback@audacityteam.org</b> címre. Az Audacity használstához a <a href=\"http://audacityteam.org/forum/\">Fórumban</a> találhat segítséget."
+msgid "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>."
+msgstr ""
 
 #. i18n-hint: The translation of "translator_credits" will appear
 #. in the credits in the About Audacity window.  Use this to add
@@ -85,7 +85,7 @@ msgid "Special thanks:"
 msgstr "Külön köszönet:"
 
 #: AboutDialog.cpp:250
-msgid "<b>Audacity&reg;</b> software is copyright &copy; 1999-2008 Audacity Team. <br>The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni."
+msgid "<b>Audacity&reg;</b> software is copyright &copy; 1999-2009 Audacity Team. <br>The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni."
 msgstr ""
 
 #: AboutDialog.cpp:258
@@ -226,10 +226,21 @@ msgstr "Bemeneti szint"
 msgid "Output Meter"
 msgstr "Kimeneti szint"
 
-#. i18n-hint: Mac OS X shortcut should be Ctrl+,
+#: Menus.cpp:196
+msgid "&New"
+msgstr "&Új"
+
+#: Menus.cpp:198
+msgid "&Open..."
+msgstr "&Megnyitás..."
+
+#: AudacityApp.cpp:805
+msgid "Open &Recent..."
+msgstr ""
+
 #: AudacityApp.cpp:809
-msgid "&Preferences...\tCtrl+,"
-msgstr "&Beállítások...\tCtrl+,"
+msgid "&Preferences..."
+msgstr "&Beállítások..."
 
 #: AudacityApp.cpp:901 AudacityApp.cpp:978
 #, c-format
@@ -351,17 +362,15 @@ msgstr "Hiba: "
 msgid "Error Initializing Audio"
 msgstr "Hiba az Audió inicializásakor"
 
+#: AudioIO.cpp:1225
+msgid "Latency Correction setting has caused the recorded audio to be hidden before zero.\n"
+"Audacity has brought it back to start at zero.\n"
+"You may have to use the Time Shift Tool (<---> or F5) to drag the track to the right place."
+msgstr ""
+
 #: AudioIO.cpp:1375
 msgid "Latency problem"
 msgstr "Késleltetési probléma"
-
-#: AudioIO.cpp:1375
-msgid "Latency setting has caused the recorded audio to be hidden before zero.\n"
-"Audacity has brought it back to start at zero.\n"
-"You may have to use the Time Shift Tool (<---> or F5) to drag the track to the right place."
-msgstr "A késleltetési beállítás miatt a rögzített hang eleje a nulla pont elé került.\n"
-"Az Audacity eltolta, hogy nullánál kezdődjön.\n"
-"Szüksége lehet az Időbeni eltolás eszközre (<---> vagy F5), hogy a sávot a megfelelő helyre igazítsa."
 
 #: AutoRecovery.cpp:54
 msgid "Automatic Crash Recovery"
@@ -585,8 +594,8 @@ msgstr "Lán&c (Dupla kattintás vagy szóköz a szerkesztéshez)"
 
 #. i18n-hint: This is the number of the command in the list
 #: BatchProcessDialog.cpp:453
-msgid "No"
-msgstr "Nem"
+msgid "Num"
+msgstr ""
 
 #: BatchProcessDialog.cpp:459
 msgid "&Insert"
@@ -718,7 +727,8 @@ msgstr "Függőség ellenőrzése"
 #: DirManager.cpp:137
 msgid "Warning: there is very little free disk space left on this volume.\n"
 "Please select another temporary directory in your preferences."
-msgstr "FIGYELEM: Ezen a meghajtón nagyon kevés a szabad hely. Kérlek, válassz ki egy másik ideiglenes könyvtárat a Beállítások pont alatt."
+msgstr "FIGYELEM: Ezen a meghajtón nagyon kevés a szabad hely.\n"
+"Kérem, válasszon ki egy másik ideiglenes könyvtárat a Beállítások pont alatt."
 
 #: DirManager.cpp:223 DirManager.cpp:254 DirManager.cpp:337
 msgid "Progress"
@@ -740,7 +750,8 @@ msgstr "Gyorsítótár ürítése"
 #, c-format
 msgid "Audacity found an orphaned blockfile %s! \n"
 "Please consider saving and reloading the project to perform a complete project check.\n"
-msgstr ""
+msgstr "Az Audacity egy árva blokkfájlt talált: %s! \n"
+"Ajánlott a projektet lementenie, majd visszatötenie, hogy egy teljes ellenőrzésre kerüljön sor.\n"
 
 #. i18n-hint: This is the pattern for filenames that are created
 #. when a file needs to be backed up to a different name.  For
@@ -772,55 +783,58 @@ msgstr "'%s' átnevezése '%s'-re sikertelen"
 #: DirManager.cpp:1183
 #, c-format
 msgid "Changed block %s to new alias name\n"
-msgstr ""
+msgstr "Blokk %s megváltoztatva új alias névre\n"
 
 #: DirManager.cpp:1224 DirManager.cpp:1515
 msgid "Inspecting project file data..."
-msgstr ""
+msgstr "A projekt fájl adatok vizsgálata..."
 
 #: DirManager.cpp:1240
 #, c-format
 msgid "Orphaned blockfile: (%s)"
-msgstr ""
+msgstr "Árva blokkfájl: (%s)"
 
 #: DirManager.cpp:1265
 #, c-format
 msgid "Missing alias file: (%s)"
-msgstr ""
+msgstr "Hiányzó alias fájl: (%s)"
 
 #: DirManager.cpp:1285
 #, c-format
 msgid "Missing summary file: (%s.auf)"
-msgstr ""
+msgstr "Hiányzó összegző fájl: (%s.auf)"
 
 #: DirManager.cpp:1305
 #, c-format
 msgid "Missing data file: (%s.au)"
-msgstr ""
+msgstr "Hiányzó adatfájl: (%s.au)"
 
 #: DirManager.cpp:1319
 msgid "Project check found inconsistencies inspecting the loaded project data;\n"
 "click 'Details' for a complete list of errors, or 'OK' to proceed to more options."
-msgstr ""
+msgstr "A projekt ellenőrzés inkonzisztenciát talált a betöltött projekt adataiban;\n"
+"a 'Részletek' gombbal nézheti meg az összes hibát, vagy az 'OK' gombbal folytathatja."
 
 #: DirManager.cpp:1331
 #, c-format
 msgid "Project check found %d orphaned blockfile[s]. These files are\n"
 "unused and probably left over from a crash or some other bug.\n"
 "They should be deleted to avoid disk contention."
-msgstr ""
+msgstr "A projekt ellenőrzés %d árva blokkfájlt talált. Ezek a fájlok\n"
+"nincsenek használva és valószínűleg egy programösszeomlás vagy hiba után\n"
+"maradtak hátra. Ajánlott törölni a lemezhasználat csökkentésének érdekében."
 
 #: DirManager.cpp:1336
 msgid "Delete orphaned files [safe and recommended]"
-msgstr ""
+msgstr "Árva fájlok törlése [biztonságos és ajánlott]"
 
 #: DirManager.cpp:1337
 msgid "Continue without deleting; silently work around the extra files"
-msgstr ""
+msgstr "Folytatás törlés nélkül; az extra fájlok figyelmen kívül hagyása"
 
 #: DirManager.cpp:1338
 msgid "Close project immediately with no changes"
-msgstr ""
+msgstr "A projekt azonnali bezárása változtatás nélkül"
 
 #: DirManager.cpp:1340 DirManager.cpp:1375 DirManager.cpp:1421
 #: DirManager.cpp:1463 export/Export.cpp:576 export/Export.cpp:597
@@ -836,34 +850,41 @@ msgid "Project check detected %d input file[s] being used in place\n"
 "permanently fill in silence for the missing files, temporarily\n"
 "fill in silence for this session only, or close the project now\n"
 "and try to restore the missing files by hand."
-msgstr ""
+msgstr "A projekt ellenőrzés észlelte, hogy %d helyben használt\n"
+"('alias') bemeneti fájl hiányzik. Az Audacity számára nem lehetséges,\n"
+"hogy ezeket automatikusan helyreállítsa; a hiányzó fájlokat\n"
+"helyettesítheti csenddel tartósan, vagy ideiglenesen, csak a\n"
+"jelenlegi munkamenetben, vagy bezárhatja a projektet azonnal\n"
+"és megpróbálhatja helyreállítani a hiányzó fájlokat kézzel."
 
 #: DirManager.cpp:1371
 msgid "Replace missing data with silence [permanent upon save]"
-msgstr ""
+msgstr "A hiányzó adatok helyettesítése csenddel [mentés után állandósul]"
 
 #: DirManager.cpp:1372 DirManager.cpp:1460
 msgid "Temporarily replace missing data with silence [this session only]"
-msgstr ""
+msgstr "A hiányzó adatok ideiglenes helyettesítése csenddel [csak ebben a munkamenetben]"
 
 #: DirManager.cpp:1373 DirManager.cpp:1419 DirManager.cpp:1461
 msgid "Close project immediately with no further changes"
-msgstr ""
+msgstr "A projekt azonnali bezárása változtatások nélkül"
 
 #: DirManager.cpp:1412
 #, c-format
 msgid "Project check detected %d missing summary file[s] (.auf).\n"
 "Audacity can fully regenerate these summary files from the\n"
 "original audio data in the project."
-msgstr ""
+msgstr "A projekt ellenőrzés %d hiányzó összegző fájlt (.auf) talált.\n"
+"Az Audacity teljesen helyre tudja állítani ezeket a fájlokat\n"
+"a projekt eredeti hanganyaga alapján."
 
 #: DirManager.cpp:1417
 msgid "Regenerate summary files [safe and recommended]"
-msgstr ""
+msgstr "Összegző fájlok helyreállítása [biztonságos és ajánlott]"
 
 #: DirManager.cpp:1418
 msgid "Fill in silence for missing display data [this session only]"
-msgstr ""
+msgstr "A hiányzó adatok helyettesítése csenddel [csak ebben a munkamenetben]"
 
 #: DirManager.cpp:1454
 #, c-format
@@ -874,15 +895,21 @@ msgid "Project check detected %d missing audio data blockfile[s] (.au), \n"
 "for the missing data, temporarily fill in silence for this\n"
 "session only, or close the project now and try to restore the\n"
 "missing data by hand."
-msgstr ""
+msgstr "A projekt ellenőrzés %d hiányzó hangadat blokkfájlt (.au) talált,\n"
+"valószínűleg programhiba, összeomlás vagy véletlen törlés miatt.\n"
+"Az Audacity számára nem lehetséges, hogy az elveszett adatokat\n"
+"automatikusan helyreállítsa; a hiányzó fájlokat helyettesítheti\n"
+"csenddel tartósan, vagy ideiglenesen, csak a jelenlegi\n"
+"munkamenetben, vagy bezárhatja a projektet azonnal és\n"
+"megpróbálhatja helyreállítani a hiányzó fájlokat kézzel."
 
 #: DirManager.cpp:1459
 msgid "Replace missing data with silence [permanent immediately]"
-msgstr ""
+msgstr "A hiányzó adatok helyettesítése csenddel [azonnal állandósul]"
 
 #: DirManager.cpp:1487
 msgid "Cleaning up unused directories in project data..."
-msgstr ""
+msgstr "A nem használt könyvtárak takarítása a projektben..."
 
 #: DirManager.cpp:1558
 msgid "Caching audio"
@@ -906,18 +933,18 @@ msgstr "Négyszögletű"
 
 #: FFmpeg.cpp:36
 msgid "FFmpeg support not compiled in"
-msgstr ""
+msgstr "FFmpeg támogatás nincs "
 
-#: FFmpeg.cpp:101
+#: FFmpeg.cpp:103
 msgid "FFmpeg was configured in Preferences and successfully loaded before,                       \n"
 "but this time Audacity failed to load it at startup.                       \n"
 "\n"
-"You may want to go back to Preferences > Import/Export and re-configure it."
+"You may want to go back to Preferences > Libraries and re-configure it."
 msgstr ""
 
 #: FFmpeg.cpp:104
 msgid "FFmpeg startup failed"
-msgstr ""
+msgstr "FFmpeg indítása sikertelen"
 
 #: FFmpeg.cpp:115
 msgid "FFmpeg library not found"
@@ -952,7 +979,7 @@ msgstr "Az FFmpeg ingyenes letöltéséhez kattintson ide -->"
 
 #: FFmpeg.cpp:215 export/ExportMP3.cpp:579
 msgid "Download"
-msgstr ""
+msgstr "Letöltés"
 
 #. i18n-hint: It's asking for the location of a file, for
 #. example, "Where is lame_enc.dll?" - you could translate
@@ -964,22 +991,23 @@ msgstr "Hol található meg ez: %s?"
 
 #: FFmpeg.cpp:407
 msgid "Failed to find compatible FFmpeg libraries"
-msgstr ""
+msgstr "Nem található FFmpeg komptibilis könyvtár"
 
 #: FFmpeg.h:95
 msgid "FFmpeg not found"
 msgstr "FFmpeg nem található"
 
-#: FFmpeg.h:101
-msgid "Audacity attempted to use FFmpeg libraries to import an audio file,\n"
-"but libraries were not found.\n"
-"If you want to use the FFmpeg import feature, please go to Preferences->Import/Export\n"
-"and tell Audacity where to look for the libraries."
+#: FFmpeg.h:111
+msgid "Audacity attempted to use FFmpeg to import an audio file,\n"
+"but the libraries were not found.\n"
+"\n"
+"To use FFmpeg import, go to Preferences > Libraries\n"
+"to download or locate the FFmpeg libraries."
 msgstr ""
 
 #: FFmpeg.h:109
 msgid "Do not show this warning again"
-msgstr ""
+msgstr "Ne mutassa ezt a figyelmeztetést ismét"
 
 #: FFmpeg.h:251
 msgid "Only avformat.dll|*avformat*.dll|Dynamically Linked Libraries (*.dll)|*.dll|All Files (*.*)|*"
@@ -987,11 +1015,11 @@ msgstr "Csak avformat.dll|*avformat*.dll|Dinamikusan linkelt könyvtárak (*.dll
 
 #: FFmpeg.h:268
 msgid "Dynamic Libraries (*.dylib)|*.dylib|All Files (*)|*"
-msgstr ""
+msgstr "Dinamikus könyvtárak (*.dylib)|*.dylib|Minden fájl (*)|*"
 
 #: FFmpeg.h:295
 msgid "Only libavformat.so|libavformat.so*|Dynamically Linked Libraries (*.so*)|*.so*|All Files (*)|*"
-msgstr ""
+msgstr "Csak libavformat.so|libavformat.so*|Dinamikusan linkelt könyvtárak (*.so*)|*.so*|Minden fájl (*.*)|*"
 
 #: FreqWindow.cpp:103
 msgid "Frequency Analysis"
@@ -1058,9 +1086,22 @@ msgstr "&Exportálás..."
 msgid "Export"
 msgstr "Exportálás"
 
+#: FreqWindow.cpp:240
+msgid "&Replot"
+msgstr ""
+
+#: FreqWindow.cpp:241
+msgid "Replot"
+msgstr ""
+
 #: FreqWindow.cpp:216 FreqWindow.cpp:217 widgets/ErrorDialog.cpp:161
 msgid "Close"
 msgstr "Bezárás"
+
+#: FreqWindow.cpp:247 FreqWindow.cpp:250 effects/Equalization.cpp:1303
+#: effects/Equalization.cpp:1306
+msgid "Grids"
+msgstr ""
 
 #: FreqWindow.cpp:280 FreqWindow.cpp:410 effects/AutoDuck.cpp:489
 #: effects/AutoDuck.cpp:523 effects/AutoDuck.cpp:792
@@ -1078,6 +1119,15 @@ msgstr "dB"
 #: effects/Equalization.cpp:1195 import/ImportRaw.cpp:399
 msgid "Hz"
 msgstr "Hz"
+
+#: Menus.cpp:3963
+msgid "To plot the spectrum, all selected tracks must be the same sample rate."
+msgstr "A spektrumtérkép készítéséhez minden sávnak azonos mintavételezési frekvenciával kell rendelkeznie."
+
+#: Menus.cpp:3989
+#, c-format
+msgid "Too much audio was selected.  Only the first %.1f seconds of audio will be analyzed."
+msgstr "Túl sok audió adat lett kijelölve. Csak az első %.1f másodperc lett analizálva."
 
 #: FreqWindow.cpp:394
 msgid "Not enough data selected."
@@ -1117,6 +1167,21 @@ msgstr "Frekvencia (Hz)\tSzint (dB)"
 #: FreqWindow.cpp:1098
 msgid "Lag (seconds)\tFrequency (Hz)\tLevel"
 msgstr "Lag (másodperc)\tFrekvencia (Hz)\tSzint"
+
+#: GStreamerLoader.cpp:195
+#, c-format
+msgid "GStreamer %s: %s"
+msgstr ""
+
+#: GStreamerLoader.cpp:212
+msgid "GStreamer was configured in preferences and successfully loaded before,\n"
+"                      but this time Audacity failed to load it at startup.\n"
+"                      You may want to go back to Preferences > Libraries and re-configure it."
+msgstr ""
+
+#: GStreamerLoader.cpp:215
+msgid "GStreamer startup failed"
+msgstr ""
 
 #: HelpText.cpp:85
 msgid "To [[welcome|Welcome screen]]"
@@ -1195,7 +1260,7 @@ msgid "<p><b>To record:</b> Set the recording device and input source, adjust th
 msgstr ""
 
 #: HelpText.cpp:221
-msgid "<p>The input device is the actual physical sound device you are recording from. This is chosen at \"Recording Device\" in the <i>Audio I/O tab of Preferences</i>, On Windows and Linux, Preferences are at the bottom of the <i>Edit</i> Menu. On a Mac, they in the <i>Audacity</i> Menu. You can also conveniently select Recording Device in the <i>Device Toolbar</i>, which can be enabled at <i>View &gt; Toolbars...</i>. </p><p> By default, Audacity uses the device currently being used by the system, (usually your inbuilt sound device), so it is often not necessary to change the input device. On Windows, this current system device can be selected as \"Microsoft Sound Mapper\". If you are recording from an external USB or Firewire device such as a USB turntable, select it explicitly by name as recording device after conecting it. </p><p> Back to [[record|Recording Audio]] <br></p>"
+msgid "<p>The input device is the actual physical sound device you are recording from. This is chosen at \"Recording Device\" in the <i>Audio I/O tab of Preferences</i>, On Windows and Linux, Preferences are at the bottom of the <i>Edit</i> Menu. On a Mac, they in the <i>Audacity</i> Menu. You can also conveniently select Recording Device in the <i>Device Toolbar</i>, which can be enabled at <i>View &gt; Toolbars...</i>. </p><p> By default, Audacity uses the device currently being used by the system, (usually your inbuilt sound device), so it is often not necessary to change the input device. On Windows, this current system device can be selected as \"Microsoft Sound Mapper\". If you are recording from an external USB or Firewire device such as a USB turntable, select it explicitly by name as recording device after connecting it. </p><p> Back to [[record|Recording Audio]] <br></p>"
 msgstr ""
 
 #: HelpText.cpp:244
@@ -1219,7 +1284,7 @@ msgid "To hear your work in other media programs, export it to an audio file suc
 msgstr ""
 
 #: HelpText.cpp:359
-msgid "<p>Audacity <b>cannot</b> [[play|play]] or [[export|export]] files in <b>WMA, RealAudio, Shorten (SHN)</b> or most other proprietary formats, due to licensing and patent restrictions.  On a Mac computer, unprotected <b>AAC</b> formats such as <b>M4A</b> can be imported. Some open formats are not yet supported, including <b>Ogg Speex</b> and <b>Musepack</b>. Files protected by any kind of Digital Rights Management (DRM), including most purchased online such as from iTunes or Napster, <b>cannot</b> be imported.</p><p> If you can't import your file into Audacity, then if it is not DRM-protected, use iTunes or <a href=\"http://www.erightsoft.com/SUPER.html#Dnload\">SUPER</a> to convert it to WAV or AIFF. If it is protected, burn it to an audio CD in the program licensed to play it, then extract the CD track to WAV or AIFF using ITunes or (on Windows) <a href=\"http://cdexos.sourceforge.net/?q=download\">CDex</a> or Windows Media Player 11. You could also <a href=\"http://audacity.sourceforge.net/help/faq?s=recording&amp;i=streaming\">record</a> the CD to your computer. <i>To export to an unsupported format, export to WAV or AIFF and convert it to the desired format in iTunes or <a href=\"http://www.erightsoft.com/SUPER.html#Dnload\">SUPER</a>. </i></p><p>"
+msgid "<p>Audacity <b>cannot</b> [[play|play]] or [[export|export]] files in <b>WMA, RealAudio, Shorten (SHN)</b> or most other proprietary formats, due to licensing and patent restrictions.  On a Mac computer, unprotected <b>AAC</b> formats such as <b>M4A</b> can be imported. Some open formats are not yet supported, including <b>Ogg Speex</b> and <b>Musepack</b>. Files protected by any kind of Digital Rights Management (DRM), including most purchased online such as from iTunes or Napster, <b>cannot</b> be imported.</p><p> If you can't import your file into Audacity, then if it is not DRM-protected, use iTunes or <a href=\"http://www.erightsoft.com/SUPER.html#Dnload\">SUPER</a> to convert it to WAV or AIFF. If it is protected, burn it to an audio CD in the program licensed to play it, then extract the CD track to WAV or AIFF using iTunes or (on Windows) <a href=\"http://cdexos.sourceforge.net/?q=download\">CDex</a> or Windows Media Player 11. You could also <a href=\"http://audacity.sourceforge.net/help/faq?s=recording&amp;i=streaming\">record</a> the CD to your computer. <i>To export to an unsupported format, export to WAV or AIFF and convert it to the desired format in iTunes or <a href=\"http://www.erightsoft.com/SUPER.html#Dnload\">SUPER</a>. </i></p><p>"
 msgstr ""
 
 #: HelpText.cpp:383
@@ -1279,6 +1344,14 @@ msgstr "MB"
 #: Internat.cpp:203
 msgid "GB"
 msgstr "GB"
+
+#: Internat.cpp:181
+msgid "The specified filename could not be converted due to Unicode character use."
+msgstr ""
+
+#: Internat.cpp:183
+msgid "Specify New Filename:"
+msgstr ""
 
 #: LabelDialog.cpp:54
 msgid "Track"
@@ -1390,21 +1463,13 @@ msgstr "Audacity Projekt megnyitása"
 msgid "&File"
 msgstr "&Fájl"
 
-#: Menus.cpp:196
-msgid "&New\tCtrl+N"
-msgstr "&Új\tCtrl+N"
-
-#: Menus.cpp:198
-msgid "&Open...\tCtrl+O"
-msgstr "&Megnyitás...\tCtrl+O"
-
 #: Menus.cpp:203
-msgid "&Close\tCtrl+W"
-msgstr "&Bezárás\tCtrl+W"
+msgid "&Close"
+msgstr "&Bezárás"
 
 #: Menus.cpp:206
-msgid "&Save Project\tCtrl+S"
-msgstr "&Projekt mentése\tCtrl+S"
+msgid "&Save Project"
+msgstr "&Projekt mentése"
 
 #: Menus.cpp:210 Project.cpp:2896
 msgid "Save Project &As..."
@@ -1427,8 +1492,8 @@ msgid "&Import"
 msgstr "&Importálás"
 
 #: Menus.cpp:231
-msgid "&Audio...\tCtrl+Shift+I"
-msgstr "&Audió...\tCtrl+Shift+I"
+msgid "&Audio..."
+msgstr "&Audió..."
 
 #: Menus.cpp:232
 msgid "&Labels..."
@@ -1458,9 +1523,9 @@ msgstr "&Köteg-Exportálás..."
 msgid "Export MIDI..."
 msgstr "MIDI exportálása..."
 
-#: Menus.cpp:290
-msgid "CleanSpeech C&hain..."
-msgstr "&CleanSpeech lánc..."
+#: Menus.cpp:303
+msgid "Appl&y Chain..."
+msgstr "Lánc &alkalmazása..."
 
 #: Menus.cpp:291 Menus.cpp:305
 msgid "Edit C&hains..."
@@ -1473,10 +1538,6 @@ msgstr "CleanSpeech beállítások e&xportálása..."
 #: Menus.cpp:293
 msgid "I&mport CleanSpeech Presets..."
 msgstr "CleanSpeech beállítások i&mportálása..."
-
-#: Menus.cpp:303
-msgid "Appl&y Chain..."
-msgstr "Lánc &alkalmazása..."
 
 #: Menus.cpp:310
 msgid "&Upload File..."
@@ -1491,15 +1552,15 @@ msgid "&Print..."
 msgstr "&Nyomtatás..."
 
 #: Menus.cpp:330
-msgid "E&xit\tCtrl+Q"
-msgstr "Kilé&pés\tCtrl+Q"
+msgid "E&xit"
+msgstr "Kilé&pés"
 
 #: Menus.cpp:338 toolbars/EditToolBar.cpp:76
 msgid "&Edit"
 msgstr "S&zerkesztés"
 
 #: Menus.cpp:342
-msgid "&Undo\tCtrl+Z"
+msgid "&Undo"
 msgstr "&Visszavonás"
 
 #: Menus.cpp:350 prefs/KeyConfigPrefs.cpp:371 toolbars/EditToolBar.cpp:146
@@ -1507,56 +1568,56 @@ msgid "&Redo"
 msgstr "&Újra"
 
 #: Menus.cpp:363
-msgid "Cu&t\tCtrl+X"
-msgstr "&Kivágás\tCtrl+X"
+msgid "Cu&t"
+msgstr "&Kivágás"
 
 #: Menus.cpp:367
-msgid "Spl&it Cut\tCtrl+Alt+X"
-msgstr "&Szétvágó kivágás\tCtrl+Alt+X"
+msgid "Spl&it Cut"
+msgstr "&Szétvágó kivágás"
 
 #: Menus.cpp:368
-msgid "&Copy\tCtrl+C"
-msgstr "&Másolás\tCtrl+C"
+msgid "&Copy"
+msgstr "&Másolás"
 
 #: Menus.cpp:372
-msgid "&Paste\tCtrl+V"
-msgstr "&Beillesztés\tCtrl+V"
+msgid "&Paste"
+msgstr "&Beillesztés"
 
 #: Menus.cpp:376
-msgid "Tri&m\tCtrl+T"
-msgstr "&Nyírás\tCtrl+T"
+msgid "Tri&m"
+msgstr "&Nyírás"
 
 #: Menus.cpp:378
-msgid "&Delete\tCtrl+K"
-msgstr "&Törlés\tCtrl+K"
+msgid "&Delete"
+msgstr "&Törlés"
 
 #: Menus.cpp:379
-msgid "Split D&elete\tCtrl+Alt+K"
-msgstr "Sz&étvágó törlés\tCtrl+Alt+K"
+msgid "Split D&elete"
+msgstr "Sz&étvágó törlés"
 
 #: Menus.cpp:380
-msgid "Silence Audi&o\tCtrl+L"
-msgstr "Hang elném&ítása\tCtrl+L"
+msgid "Silence Audi&o"
+msgstr "Hang elném&ítása"
 
 #: Menus.cpp:382
-msgid "Sp&lit\tCtrl+I"
-msgstr "Szétv&ágás\tCtrl+I"
+msgid "Sp&lit"
+msgstr "Szétv&ágás"
 
 #: Menus.cpp:387
-msgid "Split Ne&w\tCtrl+Alt+I"
-msgstr "Szétvágva ú&j\tCtrl+Alt+I"
+msgid "Split Ne&w"
+msgstr "Szétvágva ú&j"
 
 #: Menus.cpp:392
-msgid "&Join\tCtrl+J"
-msgstr "&Összevonás\tCtrl+J"
+msgid "&Join"
+msgstr "&Összevonás"
 
 #: Menus.cpp:393
-msgid "Detac&h at Silences\tCtrl+Alt+J"
-msgstr "Elválasztás a &csendeknél\tCtrl+Alt+J"
+msgid "Detac&h at Silences"
+msgstr "Elválasztás a &csendeknél"
 
 #: Menus.cpp:394
-msgid "Duplic&ate\tCtrl+D"
-msgstr "Kett&őzés\tCtrl+D"
+msgid "Duplic&ate"
+msgstr "Kett&őzés"
 
 #: Menus.cpp:400 Menus.cpp:639
 msgid "Stereo Trac&k to Mono"
@@ -1568,80 +1629,65 @@ msgstr "Címkézett &régiók"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:409
-msgid "&Cut\tAlt+X"
-msgstr "&Kivágás\tAlt+X"
+msgid "&Cut"
+msgstr "&Kivágás"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:414
-msgid "&Split Cut\tShift+Alt+X"
-msgstr "&Szétvágó kivágás\tShift+Alt+X"
+msgid "&Split Cut"
+msgstr "&Szétvágó kivágás"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:419
-msgid "Co&py\tShift+Alt+C"
-msgstr "&Másolás\tShift+Alt+C"
-
-#. i18n-hint: Labeled Regions submenu
-#: Menus.cpp:425
-msgid "&Delete\tAlt+K"
-msgstr "&Törlés\tAlt+K"
+msgid "Co&py"
+msgstr "&Másolás"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:430
-msgid "Sp&lit Delete\tShift+Alt+K"
-msgstr "Sz&étvágó törlés\tShift+Alt+K"
+msgid "Sp&lit Delete"
+msgstr "Sz&étvágó törlés"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:435
-msgid "Sile&nce\tAlt+L"
-msgstr "&Csend\tAlt+L"
+msgid "Sile&nce"
+msgstr "&Csend"
 
 #. i18n-hint: Labeled Regions submenu
 #: Menus.cpp:441
-msgid "Spli&t\tAlt+I"
-msgstr "Szétv&ágás\tAlt+I"
-
-#. i18n-hint: Labeled Regions submenu
-#: Menus.cpp:446
-msgid "&Join\tAlt+J"
-msgstr "&Összevonás\tAlt+J"
-
-#. i18n-hint: Labeled Regions submenu
-#: Menus.cpp:451
-msgid "Detac&h at Silences\tShift+Alt+J"
-msgstr "Elválasztás a &csendeknél\tShift+Alt+J"
+msgid "Spli&t"
+msgstr "Szétv&ágás"
 
 #: Menus.cpp:456
 msgid "&Select"
 msgstr "&Kijelölés"
 
 #: Menus.cpp:457
-msgid "&All\tCtrl+A"
-msgstr "&Összes\tCtrl+A"
+msgid "&All"
+msgstr "&Összes"
 
 #: Menus.cpp:458
-msgid "&None\tCtrl+Shift+A"
-msgstr "&Semmi\tCtrl+Shift+A"
+msgid "&None"
+msgstr "&Semmi"
 
 #: Menus.cpp:462
-msgid "&Left at Playback Position\t["
+msgid "&Left at Playback Position"
 msgstr "K&ezdet a lejátszás pozíciójában"
 
 #: Menus.cpp:463
-msgid "&Right at Playback Position\t]"
+msgid "&Right at Playback Position"
 msgstr "&Vég a lejátszás pozíciójában"
 
 #: Menus.cpp:467
-msgid "Track &Start to Cursor\tShift+J"
-msgstr "A sáv &kezdetétől a kurzorig\tShift+J"
+msgid "Track &Start to Cursor"
+msgstr "A sáv &kezdetétől a kurzorig"
 
 #: Menus.cpp:468
-msgid "Cursor to Track &End\tShift+K"
-msgstr "A kurzortól a sáv végéi&g\tShift+K"
+msgid "Cursor to Track &End"
+msgstr "A kurzortól a sáv végéi&g"
 
 #: Menus.cpp:474
-msgid "Find &Zero Crossings\tZ"
-msgstr "Nullpontok ke&resése\tZ"
+msgid "Find &Zero Crossings"
+msgstr "Nullpontok ke&resése"
 
 #: Menus.cpp:476
 msgid "Mo&ve Cursor"
@@ -1656,12 +1702,12 @@ msgid "to Selection En&d"
 msgstr "a kijelölés vé&géhez"
 
 #: Menus.cpp:483
-msgid "to Track &Start\tJ"
-msgstr "a sáv &kezdetéhez\tJ"
+msgid "to Track &Start"
+msgstr "a sáv &kezdetéhez"
 
 #: Menus.cpp:484
-msgid "to Track &End\tK"
-msgstr "a sáv &végéhez\tK"
+msgid "to Track &End"
+msgstr "a sáv &végéhez"
 
 #: Menus.cpp:491
 msgid "Re&gion Save"
@@ -1683,66 +1729,45 @@ msgstr "&Zárolás"
 msgid "&Unlock"
 msgstr "Zárolás &feloldása"
 
-#: Menus.cpp:511
-msgid "Turn Snap-To On"
-msgstr "Hozzáillesztés be"
-
-#: Menus.cpp:512
-msgid "Turn Snap-To Off"
-msgstr "Hozzáillesztés ki"
-
-#: Menus.cpp:513
-msgid "Turn Grid Snap On"
-msgstr "Rácshoz illesztés be"
-
-#: Menus.cpp:514
-msgid "Turn Grid Snap Off"
-msgstr "Rácshoz illesztés ki"
-
-#. i18n-hint: Mac OS X Preferences shortcut should be Ctrl+,
 #: Menus.cpp:519
-msgid "Pre&ferences...\tCtrl+,"
-msgstr "&Beállítások...\tCtrl+,"
-
-#: Menus.cpp:523
-msgid "Pre&ferences...\tCtrl+P"
-msgstr "&Beállítások...\tCtrl+P"
+msgid "Pre&ferences..."
+msgstr "&Beállítások..."
 
 #: Menus.cpp:533
 msgid "&View"
 msgstr "&Nézet"
 
 #: Menus.cpp:535
-msgid "Zoom &In\tCtrl+1"
-msgstr "&Nagyítás\tCtrl+1"
+msgid "Zoom &In"
+msgstr "&Nagyítás"
 
 #: Menus.cpp:538
-msgid "Zoom &Normal\tCtrl+2"
-msgstr "&Eredeti érték\tCtrl+2"
+msgid "Zoom &Normal"
+msgstr "&Eredeti érték"
 
 #: Menus.cpp:539
-msgid "Zoom &Out\tCtrl+3"
-msgstr "&Kicsinyítés\tCtrl+3"
+msgid "Zoom &Out"
+msgstr "&Kicsinyítés"
 
 #: Menus.cpp:542
-msgid "&Fit in Window\tCtrl+F"
+msgid "&Fit in Window"
 msgstr "&Méretezés az ablakhoz igazítva"
 
 #: Menus.cpp:543
-msgid "Fit &Vertically\tCtrl+Shift+F"
-msgstr "&Magassághoz igazítás\tCtrl+Shift+F"
+msgid "Fit &Vertically"
+msgstr "&Magassághoz igazítás"
 
 #: Menus.cpp:544
-msgid "&Zoom to Selection\tCtrl+E"
-msgstr "&Kijelölés nagyítása\tCtrl+E"
+msgid "&Zoom to Selection"
+msgstr "&Kijelölés nagyítása"
 
 #: Menus.cpp:547
-msgid "&Collapse All Tracks\tCtrl+Shift+C"
-msgstr "Minden sáv &összecsukása\tCtrl+Shift+C"
+msgid "&Collapse All Tracks"
+msgstr "Minden sáv &összecsukása"
 
 #: Menus.cpp:548
-msgid "E&xpand All Tracks\tCtrl+Shift+X"
-msgstr "Minden sáv ki&bontása\tCtrl+Shift+X"
+msgid "E&xpand All Tracks"
+msgstr "Minden sáv ki&bontása"
 
 #: Menus.cpp:551
 msgid "&Show Clipping"
@@ -1803,40 +1828,40 @@ msgid "T&ransport"
 msgstr "&Vezérlők"
 
 #: Menus.cpp:591
-msgid "Play\tSpace"
-msgstr ""
+msgid "Play"
+msgstr "Lejátszás"
 
 #: Menus.cpp:593
-msgid "&Loop Play\tShift+Space"
-msgstr ""
+msgid "&Loop Play"
+msgstr "&Ismétlődő lejátszás"
 
 #: Menus.cpp:593
-msgid "&Pause\tP"
-msgstr "Szü&net\tP"
+msgid "&Pause"
+msgstr "Szü&net"
 
 #: Menus.cpp:596
-msgid "&Stop\tSpace"
-msgstr ""
+msgid "&Stop"
+msgstr "Állj"
 
 #: Menus.cpp:595 Menus.cpp:1010
-msgid "Skip to Start\tHome"
-msgstr "Ugrás a kezdetére\tHome"
+msgid "Skip to Start"
+msgstr "Ugrás a kezdetére"
 
 #: Menus.cpp:597 Menus.cpp:1011
-msgid "Skip to End\tEnd"
-msgstr "Ugrás a végére\tEnd"
+msgid "Skip to End"
+msgstr "Ugrás a végére"
 
 #: Menus.cpp:600
-msgid "&Record\tR"
-msgstr "&Felvétel\tR"
+msgid "&Record"
+msgstr "&Felvétel"
 
 #: Menus.cpp:602
-msgid "&Timer Record...\tShift+T"
-msgstr "I&dőzített felvétel...\tShift+T"
+msgid "&Timer Record..."
+msgstr "I&dőzített felvétel..."
 
 #: Menus.cpp:604
-msgid "Append Record\tShift+R"
-msgstr "Hozáfűzött felvétel\tShift+R"
+msgid "Append Record"
+msgstr "Hozáfűzött felvétel"
 
 #: Menus.cpp:607
 msgid "Overdub (on/off)"
@@ -1863,8 +1888,8 @@ msgid "Add &New"
 msgstr "&Új hozzáadása"
 
 #: Menus.cpp:630
-msgid "&Audio Track\tCtrl+Shift+N"
-msgstr "&Audió sáv\tCtrl+Shift+N"
+msgid "&Audio Track"
+msgstr "&Audió sáv"
 
 #: Menus.cpp:631
 msgid "&Stereo Track"
@@ -1879,8 +1904,8 @@ msgid "Mi&x and Render"
 msgstr "Keverés és renderelés"
 
 #: Menus.cpp:647
-msgid "Mix and Render to New Track\tCtrl+Shift+M"
-msgstr "Keverés és renderelés új sávba\tCtrl+Shift+M"
+msgid "Mix and Render to New Track"
+msgstr "Keverés és renderelés új sávba"
 
 #: Menus.cpp:651
 msgid "&Resample..."
@@ -1891,12 +1916,12 @@ msgid "Remo&ve Tracks"
 msgstr "Sávok &eltávolítása"
 
 #: Menus.cpp:667
-msgid "&Mute All Tracks\tCtrl+U"
-msgstr "Minden sáv el&némítása\tCtrl+U"
+msgid "&Mute All Tracks"
+msgstr "Minden sáv el&némítása"
 
 #: Menus.cpp:668
-msgid "&UnMute All Tracks\tCtrl+Shift+U"
-msgstr "Minden sáv &hallhatóvá tétele\tCtrl+Shift+U"
+msgid "&UnMute All Tracks"
+msgstr "Minden sáv &hallhatóvá tétele"
 
 #: Menus.cpp:672
 msgid "Align with &Zero"
@@ -1942,17 +1967,18 @@ msgstr "&Kurzor igazítása és mozgatása"
 msgid "Synchronize MIDI with Audio"
 msgstr "A MIDI szinkronizálása a hanghoz"
 
-#: Menus.cpp:706
-msgid "Link Audio and Label Tracks"
+#: Menus.cpp:686
+#, fuzzy
+msgid "&Link Audio and Label Tracks"
 msgstr "Hang- és címkesávok összekapcsolása"
 
-#: Menus.cpp:709
-msgid "Add &Label At Selection\tCtrl+B"
-msgstr "Címke hozzárendelése a kijelölésnél\tCtrl+B"
+#: Menus.cpp:690
+msgid "Add Label At &Selection"
+msgstr ""
 
 #: Menus.cpp:710
-msgid "Add Label At &Playback Position\tCtrl+M"
-msgstr "Címke hozzáadása az aktuális pozícónál\tCtrl+M"
+msgid "Add Label At &Playback Position"
+msgstr "Címke hozzáadása az aktuális pozícónál"
 
 #: Menus.cpp:716
 msgid "S&ort tracks"
@@ -1978,13 +2004,13 @@ msgstr "Rendezetlen"
 msgid "Effe&ct"
 msgstr "&Effekt"
 
-#: Menus.cpp:799
-msgid "Repeat Last Effect\tCtrl+R"
-msgstr "Utolsó effekt megismétlése\tCtrl+R"
-
 #: Menus.cpp:877
 msgid "&Analyze"
 msgstr "&Analizálás"
+
+#: Menus.cpp:874
+msgid "Contrast..."
+msgstr ""
 
 #: Menus.cpp:879
 msgid "Plot Spectrum..."
@@ -2003,8 +2029,8 @@ msgid "&Show Welcome Message..."
 msgstr "&Üdvözlő üzenet mutatása..."
 
 #: Menus.cpp:958
-msgid "&Index..."
-msgstr "&Tartalomjegyzék..."
+msgid "&Help..."
+msgstr ""
 
 #: Menus.cpp:959
 msgid "Show &Log..."
@@ -2022,181 +2048,149 @@ msgstr "&Szintjel Futtatása..."
 msgid "&Audio Device Info..."
 msgstr "&Hangeszköz információ..."
 
-#: Menus.cpp:983
-msgid "Cycle backward through toolbars and Track View\tCtrl+Shift+F6"
+#: Menus.cpp:986
+msgid "Move backward from toolbars to tracks"
 msgstr ""
 
-#: Menus.cpp:984
-msgid "Cycle forward through toolbars and Track View\tCtrl+F6"
+#: Menus.cpp:987
+msgid "Move forward from toolbars to tracks"
 msgstr ""
 
 #: Menus.cpp:985
-msgid "Selection Tool\tF1"
-msgstr "Kijelölő eszköz\tF1"
+msgid "Selection Tool"
+msgstr "Kijelölő eszköz"
 
 #: Menus.cpp:986
-msgid "Envelope Tool\tF2"
-msgstr "Burkológörbe eszköz\tF2"
+msgid "Envelope Tool"
+msgstr "Burkológörbe eszköz"
 
 #: Menus.cpp:987
-msgid "Draw Tool\tF3"
-msgstr "Rajzoló eszköz\tF3"
+msgid "Draw Tool"
+msgstr "Rajzoló eszköz"
 
 #: Menus.cpp:988
-msgid "Zoom Tool\tF4"
-msgstr "Nagyító eszköz\tF4"
+msgid "Zoom Tool"
+msgstr "Nagyító eszköz"
 
 #: Menus.cpp:989
-msgid "Time Shift Tool\tF5"
-msgstr "Időbeni Eltolás eszköz\tF5"
+msgid "Time Shift Tool"
+msgstr "Időbeni Eltolás eszköz"
 
 #: Menus.cpp:990
-msgid "Multi Tool\tF6"
-msgstr "Multi Eszköz\tF6"
+msgid "Multi Tool"
+msgstr "Multi Eszköz"
 
 #: Menus.cpp:992
-msgid "Next Tool\tD"
-msgstr "Következő eszköz\tD"
+msgid "Next Tool"
+msgstr "Következő eszköz"
 
 #: Menus.cpp:993
-msgid "Previous Tool\tA"
-msgstr "Előző eszköz\tA"
+msgid "Previous Tool"
+msgstr "Előző eszköz"
 
 #: Menus.cpp:997
-msgid "Play/Stop\tSpace"
-msgstr ""
-
-#: Menus.cpp:996
-msgid "Stop\tS"
-msgstr "Állj\tS"
-
-#: Menus.cpp:997
-msgid "Pause\tP"
-msgstr "Szünet\tP"
-
-#: Menus.cpp:998
-msgid "Record\tR"
-msgstr "Felvétel\tR"
-
-#: Menus.cpp:999
-msgid "Record Append\tShift+R"
-msgstr "Felvétel hozzáfűzve\tShift+R"
+msgid "Play/Stop"
+msgstr "Lejátszás/Állj"
 
 #: Menus.cpp:1001
-msgid "Play/Stop and Set Cursor\tShift+A"
-msgstr "Lejátszás/Stop és kurzor beállítása\tShift+A"
+msgid "Play/Stop and Set Cursor"
+msgstr "Lejátszás/Stop és kurzor beállítása"
 
 #: Menus.cpp:1004
-msgid "Play One Second\t1"
-msgstr "Egymásodperces lejátszás\t1"
+msgid "Play One Second"
+msgstr "Egymásodperces lejátszás"
 
 #: Menus.cpp:1005
-msgid "Play To Selection\tB"
-msgstr "Lejátszás a kijelölésig\tB"
-
-#: Menus.cpp:1006
-msgid "Play Looped\tL"
-msgstr "Ismételt Lejátszás\tL"
-
-#: Menus.cpp:1009
-msgid "Play Looped\tShift+Space"
-msgstr ""
+msgid "Play To Selection"
+msgstr "Lejátszás a kijelölésig"
 
 #: Menus.cpp:1008
-msgid "Play Cut Preview\tC"
-msgstr "A kivágott rész lejátszása\tC"
+msgid "Play Cut Preview"
+msgstr "A kivágott rész lejátszása"
 
 #: Menus.cpp:1013
-msgid "Selection to Start\tShift+Home"
-msgstr "Kijelölés a kezdetéig\tShift+Home"
+msgid "Selection to Start"
+msgstr "Kijelölés a kezdetéig"
 
 #: Menus.cpp:1014
-msgid "Selection to End\tShift+End"
-msgstr "Kijelölés a végéig\tShift+End"
+msgid "Selection to End"
+msgstr "Kijelölés a végéig"
 
 #: Menus.cpp:1016
-msgid "DeleteKey\tBackspace"
-msgstr "TörlésGomb\tBackspace"
+msgid "DeleteKey"
+msgstr "TörlésGomb"
 
 #: Menus.cpp:1021
-msgid "DeleteKey2\tDelete"
-msgstr "TörlésGomb2\tDelete"
+msgid "DeleteKey2"
+msgstr "TörlésGomb2"
 
-#: Menus.cpp:1027
-msgid "Seek left short period during playback\tLeft"
-msgstr "Ugrás balra keveset lejátszás közben\tLeft"
-
-#: Menus.cpp:1028
-msgid "Seek right short period during playback\tRight"
-msgstr "Ugrás jobbra keveset lejátszás közben\tRight"
-
-#: Menus.cpp:1029
-msgid "Seek left long period during playback\tShift+Left"
-msgstr "Ugrás balra nagyot lejátszás közben\tShift+Left"
-
-#: Menus.cpp:1030
-msgid "Seek right long period during playback\tShift+Right"
-msgstr "Ugrás jobbra nagyot lejátszás közben\tShift+Right"
-
-#: Menus.cpp:1034
-msgid "Move Focus to Previous Track\tUp"
-msgstr "Fókusz mozgatása az előző sávra\tUp"
-
-#: Menus.cpp:1035
-msgid "Move Focus to Previous and Change Selection\tShift+Up"
-msgstr "Fókusz mozgatása az előzőre és kijelölés módosítása\tShift+Up"
-
-#: Menus.cpp:1036
-msgid "Move Focus to Next Track\tDown"
-msgstr "Fókusz mozgatása a következő sávra\tDown"
-
-#: Menus.cpp:1037
-msgid "Move Focus to Next and Change Selection\tShift+Down"
-msgstr "Fókusz mozgatása a következőre és kijelölés módosítása\tShift+Down"
-
-#: Menus.cpp:1038
-msgid "Toggle Focused Track\tReturn"
-msgstr "Fókuszált sáv be- és kikapcsolása\tReturn"
-
-#: Menus.cpp:1039
-msgid "Toggle Focused Track\tNUMPAD_ENTER"
-msgstr "Fókuszált sáv be- és kikapcsolása\tNUMPAD_ENTER"
-
-#: Menus.cpp:1042
-msgid "Toggle Focused Track\tCtrl+Space"
+#: Menus.cpp:1018
+msgid "Short seek left during playback"
 msgstr ""
 
+#: Menus.cpp:1019
+msgid "Short seek right during playback"
+msgstr ""
+
+#: Menus.cpp:1020
+msgid "Long seek left during playback"
+msgstr ""
+
+#: Menus.cpp:1021
+msgid "Long Seek right during playback"
+msgstr ""
+
+#: Menus.cpp:1034
+msgid "Move Focus to Previous Track"
+msgstr "Fókusz mozgatása az előző sávra"
+
+#: Menus.cpp:1027
+msgid "Move Focus to Previous and Select"
+msgstr ""
+
+#: Menus.cpp:1036
+msgid "Move Focus to Next Track"
+msgstr "Fókusz mozgatása a következő sávra"
+
+#: Menus.cpp:1029
+msgid "Move Focus to Next and Select"
+msgstr ""
+
+#: Menus.cpp:1038
+msgid "Toggle Focused Track"
+msgstr "Fókuszált sáv be- és kikapcsolása"
+
 #: Menus.cpp:1042
-msgid "Cursor Left\tLeft"
-msgstr "Kurzor balra\tLeft"
+msgid "Cursor Left"
+msgstr "Kurzor balra"
 
 #: Menus.cpp:1043
-msgid "Cursor Right\tRight"
-msgstr "Kurzor jobbra\tRight"
+msgid "Cursor Right"
+msgstr "Kurzor jobbra"
 
 #: Menus.cpp:1044
-msgid "Cursor Short Jump Left\t,"
-msgstr "Kurzor kis ugrás balra\t,"
+msgid "Cursor Short Jump Left"
+msgstr "Kurzor kis ugrás balra"
 
 #: Menus.cpp:1045
-msgid "Cursor Short Jump Right\t."
-msgstr "Kurzor kis ugrás jobbra\t."
+msgid "Cursor Short Jump Right"
+msgstr "Kurzor kis ugrás jobbra"
 
 #: Menus.cpp:1046
-msgid "Cursor Long Jump Left\tShift+,"
-msgstr "Kurzor nagy ugrás balra\tShift+,"
+msgid "Cursor Long Jump Left"
+msgstr "Kurzor nagy ugrás balra"
 
 #: Menus.cpp:1047
-msgid "Cursor Long Jump Right\tShift+."
-msgstr "Kurzor nagy ugrás jobbra\tShift+."
+msgid "Cursor Long Jump Right"
+msgstr "Kurzor nagy ugrás jobbra"
 
 #: Menus.cpp:1049
-msgid "Selection Extend Left\tShift+Left"
-msgstr "Kijelölés megnövelése balra\tShift+Left"
+msgid "Selection Extend Left"
+msgstr "Kijelölés megnövelése balra"
 
 #: Menus.cpp:1050
-msgid "Selection Extend Right\tShift+Right"
-msgstr "Kijelölés megnövelése jobbra\tShift+Right"
+msgid "Selection Extend Right"
+msgstr "Kijelölés megnövelése jobbra"
 
 #: Menus.cpp:1052
 msgid "Set (or Extend) Left Selection"
@@ -2207,52 +2201,52 @@ msgid "Set (or Extend) Right Selection"
 msgstr "Kijelölés vvégének beállítása (vagy kiterjesztése)"
 
 #: Menus.cpp:1055
-msgid "Selection Contract Left\tCtrl+Shift+Right"
-msgstr "Kijelölés kurtítása balról\tCtrl+Shift+Right"
+msgid "Selection Contract Left"
+msgstr "Kijelölés kurtítása balról"
 
 #: Menus.cpp:1056
-msgid "Selection Contract Right\tCtrl+Shift+Left"
-msgstr "Kijelölés kurtítása jobbról\tCtrl+Shift+Left"
+msgid "Selection Contract Right"
+msgstr "Kijelölés kurtítása jobbról"
 
 #: Menus.cpp:1058
-msgid "Change pan on focused track\tShift+P"
+msgid "Change pan on focused track"
 msgstr ""
 
 #: Menus.cpp:1059
-msgid "Pan left on focused track\tAlt+Shift+Left"
+msgid "Pan left on focused track"
 msgstr ""
 
 #: Menus.cpp:1060
-msgid "Pan right on focused track\tAlt+Shift+Right"
+msgid "Pan right on focused track"
 msgstr ""
 
 #: Menus.cpp:1061
-msgid "Change gain on focused track\tShift+G"
+msgid "Change gain on focused track"
 msgstr ""
 
 #: Menus.cpp:1062
-msgid "Increase gain on focused track\tAlt+Shift+Up"
+msgid "Increase gain on focused track"
 msgstr ""
 
 #: Menus.cpp:1063
-msgid "Decrease gain on focused track\tAlt+Shift+Down"
+msgid "Decrease gain on focused track"
 msgstr ""
 
 #: Menus.cpp:1064
-msgid "Open menu on focused track\tShift+M"
-msgstr "Menu megnyitása a fókuszált sávon\tShift+M"
+msgid "Open menu on focused track"
+msgstr "Menu megnyitása a fókuszált sávon"
 
 #: Menus.cpp:1065
-msgid "Mute/Unmute focused track\tShift+U"
-msgstr "Fókuszált sáv némítása/hangosítása\tShift+M"
+msgid "Mute/Unmute focused track"
+msgstr "Fókuszált sáv némítása/hangosítása"
 
 #: Menus.cpp:1066
-msgid "Solo/Unsolo focused track\tShift+S"
+msgid "Solo/Unsolo focused track"
 msgstr ""
 
 #: Menus.cpp:1067
-msgid "Close focused track\tShift+C"
-msgstr "Fókuszált sáv bezásása\tShift+C"
+msgid "Close focused track"
+msgstr "Fókuszált sáv bezásása"
 
 #: Menus.cpp:1069
 msgid "Snap To On"
@@ -2263,7 +2257,35 @@ msgid "Snap To Off"
 msgstr "Hozzáillesztés ki"
 
 #: Menus.cpp:1073
-msgid "Full screen on/off\tF11"
+msgid "Full screen on/off"
+msgstr ""
+
+#: Menus.cpp:1067
+msgid "Adjust output gain"
+msgstr ""
+
+#: Menus.cpp:1068
+msgid "Increase output gain"
+msgstr ""
+
+#: Menus.cpp:1069
+msgid "Decrease output gain"
+msgstr ""
+
+#: Menus.cpp:1070
+msgid "Adjust input gain"
+msgstr ""
+
+#: Menus.cpp:1071
+msgid "Increase input gain"
+msgstr ""
+
+#: Menus.cpp:1072
+msgid "Decrease input gain"
+msgstr ""
+
+#: Menus.cpp:1074
+msgid "Adjust input source"
 msgstr ""
 
 #. i18n-hint: This is the name of the menu item on Mac OS X only
@@ -2324,8 +2346,8 @@ msgstr "Először jelöljön ki egy sávot."
 
 #: Menus.cpp:2363
 #, c-format
-msgid "Repeat %s\tCtrl+R"
-msgstr "Ismétlés %s\tCtrl+R"
+msgid "Repeat %s"
+msgstr "Ismétlés %s"
 
 #: Menus.cpp:2506
 msgid "There are no label tracks to export."
@@ -2533,15 +2555,6 @@ msgstr ""
 #: Menus.cpp:3662
 msgid "Split at labels"
 msgstr "Szétvágás a címkénél"
-
-#: Menus.cpp:3963
-msgid "To plot the spectrum, all selected tracks must be the same sample rate."
-msgstr "A spektrumtérkép készítéséhez minden sávnak azonos mintavételezési frekvenciával kell rendelkeznie."
-
-#: Menus.cpp:3989
-#, c-format
-msgid "Too much audio was selected.  Only the first %.1f seconds of audio will be analyzed."
-msgstr "Túl sok audió adat lett kijelölve. Csak az első %.1f másodperc lett analizálva."
 
 #: Menus.cpp:4124
 #, c-format
@@ -2762,6 +2775,10 @@ msgstr "Probléma adódott nyomtatás közben."
 msgid "Print"
 msgstr "Nyomtatás"
 
+#: Project.cpp:669
+msgid "Repeat Last Effect"
+msgstr ""
+
 #: Project.cpp:673
 msgid "Main Mix"
 msgstr "Fő keverés"
@@ -2775,7 +2792,7 @@ msgstr "Üdvözli az Audacity %s verziója"
 msgid "(Recovered)"
 msgstr "(Helyreállított)"
 
-#: Project.cpp:1546 TrackPanel.cpp:796 toolbars/ControlToolBar.cpp:192
+#: Menus.cpp:998
 msgid "Record"
 msgstr "Felvétel"
 
@@ -2805,9 +2822,9 @@ msgstr "\n"
 msgid "Save changes?"
 msgstr "Mentsük a változtatásokat?"
 
-#: Project.cpp:1772
-msgid "All files|*.*|All supported files|"
-msgstr "Minden fájl|*.*|Minden támogatott fájl|"
+#: Project.cpp:1925
+msgid "All files|*|All supported files|"
+msgstr ""
 
 #: Project.cpp:1802
 msgid "Select one or more audio files..."
@@ -2835,6 +2852,17 @@ msgstr "1.0 vagy korábbi"
 #: Project.cpp:1889 Project.cpp:2316
 msgid "Opening old project file"
 msgstr "Régi projekt fájl megnyitása"
+
+#: Project.cpp:2073
+msgid "You are trying to open an automatically created backup file.\n"
+"Doing this may result in severe data loss.\n"
+"\n"
+"Please open the actual Audacity project file instead."
+msgstr ""
+
+#: Project.cpp:2074
+msgid "Backup file detected"
+msgstr ""
 
 #: Project.cpp:1915 Project.cpp:1923
 msgid "Error opening file"
@@ -2893,16 +2921,15 @@ msgstr "Ezt a fájlt az Audacity %s. verziója mentette.\n"
 msgid "Can't open project file"
 msgstr "Nem lehet megnyitni a projekt fájlt"
 
-#: Project.cpp:2311
+#: Project.cpp:2484
 #, c-format
 msgid "This file was saved by Audacity %s.\n"
-"You can open the file with this version of Audacity, but if you save it with this version you will no longer be able to open it in older versions.\n"
+"\n"
+"Audacity can open and save this file, but saving it in this version\n"
+"will then prevent any 1.2 or earlier version opening it.\n"
 "\n"
 "Open this file now?"
-msgstr "Ez a fájl az Audacity %s által lett mentve.\n"
-"Megnyithatja a fájlt az Audacity ezen verziójával, de ha ezzel a verzióval elmenti, a későbbiekben nem fogja tudni megnyitni a régebbi verziókkal.\n"
-"\n"
-"Megnyitja most a fájlt?"
+msgstr ""
 
 #: Project.cpp:2537
 msgid "Your project is now empty.\n"
@@ -2919,15 +2946,21 @@ msgstr ""
 msgid "Warning empty project"
 msgstr ""
 
-#: Project.cpp:2588
+#: Project.cpp:2792
 #, c-format
 msgid "Could not save project. Perhaps %s \n"
-"is not writeable or the disk is full."
+"is not writable or the disk is full."
 msgstr ""
 
 #: Project.cpp:2590 Project.cpp:2605
 msgid "Error saving project"
 msgstr "Hiba a projekt mentésekor"
+
+#: Project.cpp:2818 Project.cpp:3919 Tags.cpp:1203
+#: effects/Equalization.cpp:1098
+#, c-format
+msgid "Couldn't write to file \"%s\": %s"
+msgstr ""
 
 #: Project.cpp:2680
 #, c-format
@@ -3086,6 +3119,164 @@ msgstr "24 bites PCM"
 msgid "32-bit float"
 msgstr "32 bites lebegő"
 
+#: Screenshot.cpp:279
+msgid "Screen Capture Frame"
+msgstr ""
+
+#: Screenshot.cpp:316
+msgid "Choose location to save files"
+msgstr ""
+
+#: Screenshot.cpp:326
+msgid "Save images to:"
+msgstr ""
+
+#: export/ExportMultiple.cpp:245 prefs/DirectoriesPrefs.cpp:92
+msgid "Choose..."
+msgstr "Tallózás..."
+
+#: Screenshot.cpp:334
+msgid "Capture entire window or screen"
+msgstr ""
+
+#: Screenshot.cpp:338
+msgid "Resize Small"
+msgstr ""
+
+#: Screenshot.cpp:339
+msgid "Resize Large"
+msgstr ""
+
+#: Screenshot.cpp:342
+msgid "Blue Bkgnd"
+msgstr ""
+
+#: Screenshot.cpp:346
+msgid "White Bkgnd"
+msgstr ""
+
+#: Screenshot.cpp:353
+msgid "Capture Window Only"
+msgstr ""
+
+#: Screenshot.cpp:354
+msgid "Capture Full Window"
+msgstr ""
+
+#: Screenshot.cpp:355
+msgid "Capture Window Plus"
+msgstr ""
+
+#: Screenshot.cpp:361
+msgid "Capture Full Screen"
+msgstr ""
+
+#: Screenshot.cpp:368
+msgid "Wait 5 seconds and capture frontmost window/dialog"
+msgstr ""
+
+#: effects/Normalize.cpp:74 effects/Normalize.cpp:75
+msgid "false"
+msgstr "hamis"
+
+#: Screenshot.cpp:375
+msgid "Capture part of a project window"
+msgstr ""
+
+#: Screenshot.cpp:379
+msgid "All Toolbars"
+msgstr ""
+
+#: Screenshot.cpp:380
+msgid "SelectionBar"
+msgstr ""
+
+#: toolbars/ToolsToolBar.cpp:90
+msgid "Tools"
+msgstr "Eszközök"
+
+#: toolbars/ControlToolBar.cpp:83
+msgid "Control"
+msgstr ""
+
+#: effects/LoadEffects.cpp:111 toolbars/MixerToolBar.cpp:60
+msgid "Mixer"
+msgstr "Keverő"
+
+#: toolbars/MeterToolBar.cpp:50
+msgid "Meter"
+msgstr ""
+
+#: Screenshot.cpp:390 toolbars/EditToolBar.cpp:76 toolbars/EditToolBar.cpp:181
+msgid "Edit"
+msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:121 prefs/AudioIOPrefs.cpp:139
+#: prefs/MidiIOPrefs.cpp:118 prefs/MidiIOPrefs.cpp:136
+#: toolbars/DeviceToolBar.cpp:57
+msgid "Device"
+msgstr "Eszköz"
+
+#: toolbars/TranscriptionToolBar.cpp:84
+msgid "Transcription"
+msgstr "Áttétel"
+
+#: TrackPanel.cpp:457 TrackPanel.cpp:458
+msgid "Track Panel"
+msgstr "Sáv panel"
+
+#: Screenshot.cpp:399
+msgid "Ruler"
+msgstr ""
+
+#: export/ExportMultiple.cpp:288 export/ExportMultiple.cpp:290
+msgid "Tracks"
+msgstr "Sávok"
+
+#: Screenshot.cpp:401
+msgid "First Track"
+msgstr ""
+
+#: Screenshot.cpp:402
+msgid "Second Track"
+msgstr ""
+
+#: Screenshot.cpp:408
+msgid "Scale"
+msgstr ""
+
+#: Screenshot.cpp:412
+msgid "One Sec"
+msgstr ""
+
+#: Screenshot.cpp:413
+msgid "Ten Sec"
+msgstr ""
+
+#: Screenshot.cpp:414
+msgid "One Min"
+msgstr ""
+
+#: Screenshot.cpp:415
+msgid "Five Min"
+msgstr ""
+
+#: Screenshot.cpp:416
+msgid "One Hour"
+msgstr ""
+
+#: Screenshot.cpp:422
+msgid "Short Tracks"
+msgstr ""
+
+#: Screenshot.cpp:423
+msgid "Medium Tracks"
+msgstr ""
+
+#: Screenshot.cpp:424
+msgid "Tall Tracks"
+msgstr ""
+
 #: Screenshot.cpp:384
 msgid "Saved "
 msgstr "Mentve "
@@ -3093,6 +3284,10 @@ msgstr "Mentve "
 #: Screenshot.cpp:387
 msgid "Error trying to save file: "
 msgstr "Hiba a fájl mentése közben: "
+
+#: Screenshot.cpp:673
+msgid "Choose a location to save screenshot images"
+msgstr ""
 
 #: Sequence.cpp:745 Sequence.cpp:755 Sequence.cpp:762
 msgid "Gap detected in project file\n"
@@ -3231,6 +3426,10 @@ msgstr "Hiba a metaadat betöltésekor"
 msgid "Save Metadata As:"
 msgstr "Metaadat mentése mint:"
 
+#: Tags.cpp:1205
+msgid "Error saving tags file"
+msgstr ""
+
 #: Theme.cpp:638
 #, c-format
 msgid "Audacity could not write file:\n"
@@ -3316,6 +3515,14 @@ msgstr "Időtartam"
 msgid "Audacity Timer Record"
 msgstr "Audacity időzített felvétel"
 
+#: TimerRecordDialog.cpp:205
+msgid "Duration is zero. Nothing will be recorded."
+msgstr ""
+
+#: TimerRecordDialog.cpp:206
+msgid "Error in Duration"
+msgstr ""
+
 #: TimerRecordDialog.cpp:224
 msgid "Recording start"
 msgstr "Felvétel kezdete"
@@ -3354,10 +3561,6 @@ msgstr "Várakozás a felvétel megkezdésére eddig: %s.\n"
 #: TimerRecordDialog.cpp:382
 msgid "Audacity Timer Record - Waiting for Start"
 msgstr "Audacity időzített felvétel - Várakozás a kezdésre"
-
-#: TrackPanel.cpp:457 TrackPanel.cpp:458
-msgid "Track Panel"
-msgstr "Sáv panel"
 
 #: TrackPanel.cpp:541 prefs/QualityPrefs.cpp:97
 msgid "Other..."
@@ -3414,6 +3617,10 @@ msgstr "Sztereó sáv készítése"
 #: TrackPanel.cpp:564
 msgid "Split Stereo Track"
 msgstr "Sztereó sáv szétvágása"
+
+#: TrackPanel.cpp:621
+msgid "Split Stereo to Mono"
+msgstr ""
 
 #: TrackPanel.cpp:566
 msgid "Set Sample Format"
@@ -3614,14 +3821,6 @@ msgstr ""
 msgid "Adjusted gain"
 msgstr ""
 
-#: TrackPanel.cpp:5799
-msgid "Group with Wave Track"
-msgstr ""
-
-#: TrackPanel.cpp:5800
-msgid "Clear any grouping"
-msgstr ""
-
 #: TrackPanel.cpp:5923
 msgid "Can't delete track with active audio"
 msgstr "Nem törölhető sáv aktív hanggal"
@@ -3655,6 +3854,11 @@ msgstr "Csatorna"
 #, c-format
 msgid "Split stereo track '%s'"
 msgstr "'%s' sztereó sáv szétvágása"
+
+#: TrackPanel.cpp:6253
+#, c-format
+msgid "Split Stereo to Mono '%s'"
+msgstr ""
 
 #: TrackPanel.cpp:6169
 #, c-format
@@ -3730,6 +3934,10 @@ msgstr ""
 
 #: TrackPanel.cpp:6602 TrackPanel.cpp:6609
 msgid "Face size"
+msgstr ""
+
+#: TrackPanel.cpp:6941
+msgid "Stereo, 999999Hz"
 msgstr ""
 
 #: TrackPanel.cpp:7171
@@ -3810,10 +4018,10 @@ msgstr "Plugin-ek 1-től %i-ig"
 msgid "Plugins %i to %i"
 msgstr "Plugin-ek %i-től %i-ig"
 
-#: commands/CommandManager.cpp:857
-#, fuzzy
-msgid "Disallowed for some reason.  Try selecting some audio first?"
-msgstr "Letiltott valamilyen okból.  Próbált kijelölni némi hangot?"
+#: commands/CommandManager.cpp:923
+msgid "There was a problem with your last action. If you think\n"
+"this is a bug, please tell us exactly where it occurred."
+msgstr ""
 
 #: commands/CommandManager.cpp:892
 msgid "You can only do this when playing and recording are\n"
@@ -4257,9 +4465,9 @@ msgstr ""
 msgid "Decay Time"
 msgstr ""
 
-#: effects/Compressor.cpp:530
-msgid "Normalize to 0dB after compressing"
-msgstr "Normalizálás 0dB-re kompresszálás után"
+#: effects/Compressor.cpp:542
+msgid "Make-up gain for 0dB after compressing"
+msgstr ""
 
 #: effects/Compressor.cpp:563
 #, c-format
@@ -4314,6 +4522,10 @@ msgstr "Kompresszor"
 msgid "Applying Dynamic Range Compression..."
 msgstr "Dinamika tartomány kompressziójának végrehajtása..."
 
+#: effects/Contrast.cpp:64
+msgid "Contrast Analysis"
+msgstr ""
+
 #: effects/Contrast.cpp:79
 msgid "Contrast Tool Foreground"
 msgstr ""
@@ -4333,26 +4545,13 @@ msgid "Times are not reasonable!\n"
 "Please enter reasonable times."
 msgstr ""
 
-#: effects/Contrast.cpp:190
-msgid "Hello.\n"
-msgstr ""
-
-#: effects/Contrast.cpp:245
-msgid "WCAG2 Audio Contrast Analyzer"
-msgstr ""
-
-#: effects/Contrast.cpp:277 effects/Contrast.cpp:288 effects/Contrast.cpp:371
-#: effects/Contrast.cpp:415
-msgid "Measured"
-msgstr ""
-
 #: effects/Contrast.cpp:318
 msgid "Contrast Analyzer"
 msgstr ""
 
 #: effects/Contrast.cpp:321
 msgid "Parameters"
-msgstr ""
+msgstr "Paraméterek"
 
 #: effects/ToneGen.cpp:355 toolbars/ControlToolBar.cpp:186
 msgid "Start"
@@ -4370,7 +4569,7 @@ msgstr ""
 
 #: effects/Contrast.cpp:335
 msgid "Foreground:"
-msgstr ""
+msgstr "Előtér"
 
 #: effects/Contrast.cpp:347
 msgid "Foreground start time"
@@ -4380,13 +4579,18 @@ msgstr ""
 msgid "Foreground end time"
 msgstr ""
 
+#: effects/Contrast.cpp:277 effects/Contrast.cpp:288 effects/Contrast.cpp:371
+#: effects/Contrast.cpp:415
+msgid "Measured"
+msgstr ""
+
 #: effects/Contrast.cpp:373 effects/Contrast.cpp:417
 msgid "Use selection"
 msgstr ""
 
 #: effects/Contrast.cpp:378
 msgid "Background:"
-msgstr ""
+msgstr "Háttér:"
 
 #: effects/Contrast.cpp:391
 msgid "Background start time"
@@ -4398,7 +4602,7 @@ msgstr ""
 
 #: effects/Contrast.cpp:426
 msgid "Result"
-msgstr ""
+msgstr "Eredmény"
 
 #: effects/Contrast.cpp:430
 msgid "Contrast Result:"
@@ -4410,7 +4614,7 @@ msgstr "Alaphelyzet"
 
 #: effects/Contrast.cpp:434
 msgid "Difference:"
-msgstr ""
+msgstr "Különbség:"
 
 #: effects/Contrast.cpp:445
 msgid "Information"
@@ -4424,16 +4628,8 @@ msgstr ""
 msgid "Help for WCAG2 Audio Contrast Analyzer"
 msgstr ""
 
-#: toolbars/ControlToolBar.cpp:83
-msgid "Control"
-msgstr ""
-
-#: effects/Contrast.cpp:454
-msgid "Note: The 'OK' button resets time values."
-msgstr ""
-
-#: effects/Contrast.cpp:455
-msgid "Close but keep times"
+#: effects/Contrast.cpp:412
+msgid "Close (keeping times)"
 msgstr ""
 
 #: effects/Contrast.cpp:466 effects/Contrast.cpp:472 effects/Contrast.cpp:478
@@ -4494,11 +4690,11 @@ msgstr ""
 #: effects/Contrast.cpp:574
 #, c-format
 msgid "Filename = %s."
-msgstr ""
+msgstr "Fájlnév = %s."
 
 #: effects/Contrast.cpp:576
 msgid "Foreground"
-msgstr ""
+msgstr "Előtér"
 
 #: effects/Contrast.cpp:581 effects/Contrast.cpp:598
 #, c-format
@@ -4521,11 +4717,11 @@ msgstr ""
 
 #: effects/Contrast.cpp:593
 msgid "Background"
-msgstr ""
+msgstr "Háttér"
 
 #: effects/Contrast.cpp:609
 msgid "Results"
-msgstr ""
+msgstr "Eredmények"
 
 #: effects/Contrast.cpp:611
 #, c-format
@@ -4542,19 +4738,7 @@ msgstr ""
 
 #: effects/Contrast.cpp:618
 msgid "Data gathered"
-msgstr ""
-
-#: effects/Contrast.h:33
-msgid "Contrast...\tCtrl+Shift+T"
-msgstr ""
-
-#: effects/Contrast.h:52
-msgid "Measuring background"
-msgstr ""
-
-#: effects/Contrast.h:54
-msgid "Measuring foreground"
-msgstr ""
+msgstr "Gyűjtött adaat"
 
 #: effects/DtmfGen.cpp:56
 msgid "DTMF Tone Generator"
@@ -4682,6 +4866,10 @@ msgstr "EQ görbe betöltése sikertelen"
 #: effects/Equalization.cpp:1033
 msgid "custom"
 msgstr "egyéni"
+
+#: effects/Equalization.cpp:1100
+msgid "Error saving equalization curves"
+msgstr ""
 
 #. i18n-hint: && in here is an escape character to get a single &
 #. * on screen, so keep it as is
@@ -4885,10 +5073,6 @@ msgstr "Konvertáló"
 #: effects/LoadEffects.cpp:109
 msgid "Analyser"
 msgstr "Analizáló"
-
-#: effects/LoadEffects.cpp:111 toolbars/MixerToolBar.cpp:60
-msgid "Mixer"
-msgstr "Keverő"
 
 #: effects/LoadEffects.cpp:113
 msgid "Simulator"
@@ -5126,10 +5310,6 @@ msgstr "Zajszűrés"
 #, c-format
 msgid "Applied effect: %s remove dc offset = %s, normalize amplitude = %s"
 msgstr ""
-
-#: effects/Normalize.cpp:74 effects/Normalize.cpp:75
-msgid "false"
-msgstr "hamis"
 
 #. i18n-hint: true here means that the option was
 #. * selected. Opposite false if not selected
@@ -5483,9 +5663,13 @@ msgstr "Minden sávnak egyforma mintavételi rátával kell rendelkeznie"
 msgid "Truncate Silence"
 msgstr "Csend eltávolítása"
 
-#: effects/TruncSilence.cpp:345
-msgid "Max silence duration:"
-msgstr "A csend max hossza:"
+#: effects/TruncSilence.cpp:453
+msgid "by Lynn Allan && Philip Van Baren"
+msgstr ""
+
+#: effects/TruncSilence.cpp:467
+msgid "Min silence duration:"
+msgstr ""
 
 #: effects/TruncSilence.cpp:348 prefs/AudioIOPrefs.cpp:196
 #: prefs/AudioIOPrefs.cpp:199 prefs/MidiIOPrefs.cpp:174
@@ -5493,13 +5677,26 @@ msgstr "A csend max hossza:"
 msgid "milliseconds"
 msgstr "ezredmásodperc"
 
+#: effects/TruncSilence.cpp:345
+msgid "Max silence duration:"
+msgstr "A csend max hossza:"
+
+#: effects/TruncSilence.cpp:475
+msgid "Silence compression:"
+msgstr ""
+
+#: effects/TruncSilence.cpp:478
+msgid ":1"
+msgstr ""
+
 #: effects/TruncSilence.cpp:350
 msgid "Threshold for silence:"
 msgstr "Csend küszöbértéke:"
 
-#: effects/TruncSilence.cpp:374
-msgid "   Duration must be at least 1 millisecond"
-msgstr "   Az időtartamnak legalább egy ezredmásodpercnek kell lennie"
+#: effects/TruncSilence.cpp:506
+msgid "   Duration must be at least 1 millisecond\n"
+"   Compress ratio must be at least 1:1"
+msgstr ""
 
 #: effects/TruncSilence.h:28
 msgid "Truncate Silence..."
@@ -5509,17 +5706,55 @@ msgstr "Csend eltávolítása..."
 msgid "Truncating Silence..."
 msgstr "Csend eltávolítása..."
 
-#: effects/VST/VSTEffect.cpp:172
-msgid "Sorry, VST Effects cannot be performed on stereo tracks where the individual channels of the track do not match."
-msgstr "Sajnálom, de a VST Effekt nem működik az olyan sztereó sávokon, ahol a két csatorna tartalma nem egyezik."
+#: effects/ladspa/LadspaEffect.cpp:615 effects/lv2/LV2Effect.cpp:823
+msgid "Effect Settings"
+msgstr "Effekt beállítások"
 
-#: effects/VST/VSTEffect.cpp:187
-msgid "Can't process replacing"
-msgstr "Nem lehet végrehajtani a cserét"
+#: effects/ladspa/LadspaEffect.cpp:580 effects/ladspa/LadspaEffect.cpp:588
+#: prefs/GUIPrefs.cpp:51 prefs/QualityPrefs.cpp:72
+msgid "None"
+msgstr "Nincs"
 
-#: effects/VST/VSTEffect.cpp:410
-msgid "VST Plug-in parameters:"
-msgstr "VST plugin parméterek:"
+#: effects/VST/VSTEffect.cpp:343
+msgid "Presets:"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:355
+msgid "Load"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:358
+msgid "Save"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:458
+msgid "Load VST Program:"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:476
+msgid "Error loading program"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:492
+msgid "Save VST Program As:"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:626
+#, c-format
+msgid "This parameter file was saved from %s.  Continue?"
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:993
+msgid "Performing Effect: "
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:1016
+msgid "Both channels of a stereo track must be the same sample rate."
+msgstr ""
+
+#: effects/VST/VSTEffect.cpp:1021
+msgid "Both channels of a stereo track must be the same length."
+msgstr ""
 
 #: effects/Wahwah.cpp:61
 #, c-format
@@ -5568,19 +5803,10 @@ msgstr "%s effekt végrehajtása"
 msgid "Sorry, Plug-in Effects cannot be performed on stereo tracks where the individual channels of the track do not match."
 msgstr ""
 
-#: effects/ladspa/LadspaEffect.cpp:580 effects/ladspa/LadspaEffect.cpp:588
-#: prefs/GUIPrefs.cpp:51 prefs/QualityPrefs.cpp:72
-msgid "None"
-msgstr "Nincs"
-
 #: effects/ladspa/LadspaEffect.cpp:582 effects/lv2/LV2Effect.cpp:798
 #: effects/vamp/VampEffect.cpp:395
 msgid "Author: "
 msgstr "Szerző: "
-
-#: effects/ladspa/LadspaEffect.cpp:615 effects/lv2/LV2Effect.cpp:823
-msgid "Effect Settings"
-msgstr "Effekt beállítások"
 
 #: effects/ladspa/LadspaEffect.cpp:710 effects/ladspa/LadspaEffect.cpp:713
 #: effects/lv2/LV2Effect.cpp:834 effects/lv2/LV2Effect.cpp:837
@@ -5666,11 +5892,11 @@ msgstr "Program"
 
 #: export/Export.cpp:469
 msgid "All the selected audio is muted."
-msgstr ""
+msgstr "Minden kijelölt hang néma."
 
 #: export/Export.cpp:471
 msgid "All the audio is muted."
-msgstr ""
+msgstr "Minden hang néma."
 
 #: export/Export.cpp:522
 msgid "Export File"
@@ -5691,7 +5917,11 @@ msgid "You are about to save a %s file with the name \"%s\".\n"
 "Normally these files end in \".%s\", and some programs will not open files with nonstandard extensions.\n"
 "\n"
 "Are you sure you want to save the file under this name?"
-msgstr ""
+msgstr "Ön egy %s fájlt készül menteni az alábbi néven: \"%s\".\n"
+"\n"
+"Ezek a fájlok szabványosan \".%s\"-re végződnek, és egyes programok nem nyitják meg a fájlokat nem szabványos kiterjesztésekkel.\n"
+"\n"
+"Biztosan ezen a néven szeretné a fájt menteni?"
 
 #: export/Export.cpp:612
 #, c-format
@@ -5725,7 +5955,7 @@ msgstr " - Jobb"
 
 #: export/Export.cpp:1072
 msgid "Mixer Panel"
-msgstr ""
+msgstr "Keverő panel"
 
 #: export/Export.cpp:1078 export/Export.cpp:1125
 #, c-format
@@ -5738,7 +5968,7 @@ msgstr "Parancssoros kódoló megadása"
 
 #: export/ExportCL.cpp:70
 msgid "Command Line Export Setup"
-msgstr ""
+msgstr "Parancssori exportálás beállítása"
 
 #: export/ExportCL.cpp:75
 msgid "Command:"
@@ -5774,31 +6004,44 @@ msgstr "A teljes projekt exportálása parancssori enkóder segítségével"
 msgid "Command Output"
 msgstr "A parancs kimenete"
 
-#: export/ExportFFmpeg.cpp:59
+#: export/ExportFFmpeg.cpp:61
 msgid "Properly configured FFmpeg is required to proceed.\n"
-"You can configure it in Preferences->Import/Export."
+"You can configure it at Preferences > Libraries."
+msgstr ""
+
+#: export/ExportFFmpeg.cpp:232
+msgid "AMR support not distributable"
+msgstr ""
+
+#: export/ExportFFmpeg.cpp:232
+msgid "Properly configured FFmpeg is required to proceed.\n"
+"You can configure it at Preferences > Libraries.\n"
+"\n"
+"Note that AMR support is not available with our FFmpeg\n"
+"installer, but requires you compile FFmpeg yourself."
 msgstr ""
 
 #: export/ExportFFmpeg.cpp:394
 #, c-format
 msgid "FFmpeg cannot find audio codec 0x%x.\n"
 "Support for this codec is probably not compiled in."
-msgstr ""
+msgstr "Az FFmpeg nem talál audio kodeket 0x%x.\n"
+"Ennek a kodeknek a támogatása valószínűleg nincs a programba belefordítva."
 
 #: export/ExportFFmpeg.cpp:614
 #, c-format
 msgid "Attempted to export %d channels, but max. channels for selected output format is %d"
-msgstr ""
+msgstr "Ön %d csatornát próbált exportálni, de max. %d csatornát támogat a kiválasztott formátum"
 
 #: export/ExportFFmpeg.cpp:638
 #, c-format
 msgid "Exporting selected audio as %s"
-msgstr ""
+msgstr "Kijelölt hang exportálása mint %s"
 
 #: export/ExportFFmpeg.cpp:639
 #, c-format
 msgid "Exporting entire file as %s"
-msgstr ""
+msgstr "Teljes exportálás mint %s"
 
 #: export/ExportFFmpeg.cpp:702 export/ExportMP3.cpp:1920
 msgid "Invalid sample rate"
@@ -5808,13 +6051,15 @@ msgstr "Érvénytelen mintavételi ráta"
 #, c-format
 msgid "The project sample rate (%d) is not supported by the current output\n"
 "file format.  "
-msgstr ""
+msgstr "A projekt mintavételi rátáját (%d) a kiválasztott kimeneti formátum\n"
+"nem támogatja.  "
 
 #: export/ExportFFmpeg.cpp:718
 #, c-format
 msgid "The project sample rate (%d) and bit rate (%d kbps) combination is not\n"
 "supported by the current output file format.  "
-msgstr ""
+msgstr "A projekt mintavételi rátájának (%d) és bitrátájának (%d kbps) a\n"
+"kombinációját a kimeneti formátum nem támogatja.  "
 
 #: export/ExportFFmpeg.cpp:721 export/ExportMP3.cpp:1939
 msgid "You may resample to one of the rates below."
@@ -5826,11 +6071,11 @@ msgstr "Mintavételi ráták"
 
 #: export/ExportFFmpegDialogs.cpp:93
 msgid "Specify AC3 Options"
-msgstr ""
+msgstr "Adja meg az AC3 opciókat"
 
 #: export/ExportFFmpegDialogs.cpp:117
 msgid "AC3 Export Setup"
-msgstr ""
+msgstr "AC3 exportálás beállítása"
 
 #: export/ExportFFmpegDialogs.cpp:121 export/ExportFFmpegDialogs.cpp:245
 #: export/ExportFFmpegDialogs.cpp:314 export/ExportFFmpegDialogs.cpp:385
@@ -5840,35 +6085,39 @@ msgstr "Bitsűrűség:"
 
 #: export/ExportFFmpegDialogs.cpp:162
 msgid "Specify AAC Options"
-msgstr ""
+msgstr "Adja meg az AAC opciókat"
 
 #: export/ExportFFmpegDialogs.cpp:178
 msgid "AAC Export Setup"
-msgstr ""
+msgstr "AAC exportálás beállítása"
+
+#: export/ExportFFmpegDialogs.cpp:940 export/ExportOGG.cpp:86
+msgid "Quality:"
+msgstr "Minőség:"
 
 #: export/ExportFFmpegDialogs.cpp:217
 msgid "Specify AMR-NB Options"
-msgstr ""
+msgstr "Adja meg az AMR-NB opciókat"
 
 #: export/ExportFFmpegDialogs.cpp:241
 msgid "AMR-NB Export Setup"
-msgstr ""
+msgstr "AMR-NB exportálás beállítása"
 
 #: export/ExportFFmpegDialogs.cpp:286
 msgid "Specify AMR-WB Options"
-msgstr ""
+msgstr "Adja meg az AMR-WB opciókat"
 
 #: export/ExportFFmpegDialogs.cpp:310
 msgid "AMR-WB Export Setup"
-msgstr ""
+msgstr "AMR-WB exportálás beállítása"
 
 #: export/ExportFFmpegDialogs.cpp:357
 msgid "Specify WMA Options"
-msgstr ""
+msgstr "Adja meg a WMA opciókat"
 
 #: export/ExportFFmpegDialogs.cpp:381
 msgid "WMA Export Setup"
-msgstr ""
+msgstr "WMA exportálás beállítása"
 
 #: export/ExportFFmpegDialogs.cpp:509
 #, c-format
@@ -5926,7 +6175,7 @@ msgstr "Formátum:"
 
 #: export/ExportFFmpegDialogs.cpp:909
 msgid "Codec:"
-msgstr ""
+msgstr "Kodek:"
 
 #: export/ExportFFmpegDialogs.cpp:913
 msgid "Not all formats and codecs are compatible. Some parameters (such as bitrate and samplerate) combinations are not compatible with some codecs too."
@@ -5979,12 +6228,8 @@ msgid "Bit Rate (bits/second) - influences the resulting file size and quality\n
 "Recommended - 192000"
 msgstr ""
 
-#: export/ExportFFmpegDialogs.cpp:940 export/ExportOGG.cpp:86
-msgid "Quality:"
-msgstr "Minőség:"
-
-#: export/ExportFFmpegDialogs.cpp:941
-msgid "Overral quality, used differently by different codecs\n"
+#: export/ExportFFmpegDialogs.cpp:930
+msgid "Overall quality, used differently by different codecs\n"
 "Required for vorbis\n"
 "0 - automatic\n"
 "-1 - off (use bitrate instead)"
@@ -5992,7 +6237,7 @@ msgstr ""
 
 #: export/ExportFFmpegDialogs.cpp:943
 msgid "Sample Rate:"
-msgstr ""
+msgstr "Mintavételi ráta:"
 
 #: export/ExportFFmpegDialogs.cpp:944
 msgid "Sample rate (Hz)\n"
@@ -6003,15 +6248,15 @@ msgstr ""
 msgid "Cutoff Bandwidth:"
 msgstr ""
 
-#: export/ExportFFmpegDialogs.cpp:947
+#: export/ExportFFmpegDialogs.cpp:936
 msgid "Audio cutoff bandwidth (Hz)\n"
 "Optional\n"
-"0 - automatic\n"
+"0 - automatic"
 msgstr ""
 
 #: export/ExportFFmpegDialogs.cpp:949
 msgid "Profile:"
-msgstr ""
+msgstr "Profil:"
 
 #: export/ExportFFmpegDialogs.cpp:951
 msgid "AAC Profile\n"
@@ -6033,7 +6278,7 @@ msgstr ""
 
 #: export/ExportFFmpegDialogs.cpp:965
 msgid "Compression Level:"
-msgstr ""
+msgstr "Tömörítés mértéke:"
 
 #: export/ExportFFmpegDialogs.cpp:966
 msgid "Compression level\n"
@@ -6128,7 +6373,7 @@ msgstr ""
 
 #: export/ExportFFmpegDialogs.cpp:977
 msgid "Use LPC"
-msgstr ""
+msgstr "LPC használata"
 
 #: export/ExportFFmpegDialogs.cpp:984
 msgid "MPEG container options"
@@ -6181,67 +6426,67 @@ msgstr ""
 
 #: export/ExportFFmpegDialogs.cpp:1361
 msgid "Failed to guess format"
-msgstr ""
+msgstr "Nem sikerült kitalálni a formátumot"
 
 #: export/ExportFFmpegDialogs.cpp:1403
 msgid "Failed to find the codec"
-msgstr ""
+msgstr "Nem sikerült megtalálni a kodeket"
 
 #: export/ExportFFmpegDialogs.h:53
 msgid "M4A (AAC) Files (FFmpeg)"
-msgstr ""
+msgstr "M4A (AAC) fájlok (FFmpeg)"
 
 #: export/ExportFFmpegDialogs.h:54
 msgid "AC3 Files (FFmpeg)"
-msgstr ""
-
-#: export/ExportFFmpegDialogs.h:55
-msgid "AMR (narrow band) Files (FFmpeg)"
-msgstr ""
+msgstr "AC3 fájlok (FFmpeg)"
 
 #: export/ExportFFmpegDialogs.h:56
-msgid "AMR (wide band) Files (FFmpeg)"
+msgid "AMR (narrow band) Files (FFmpeg, undistributable)"
+msgstr ""
+
+#: export/ExportFFmpegDialogs.h:57
+msgid "AMR (wide band) Files (FFmpeg, undistributable)"
 msgstr ""
 
 #: export/ExportFFmpegDialogs.h:57
 msgid "WMA (version 2) Files (FFmpeg)"
-msgstr ""
+msgstr "WMA (2. verzió) fájlok (FFmpeg)"
 
 #: export/ExportFFmpegDialogs.h:58
 msgid "Custom FFmpeg Export"
-msgstr ""
+msgstr "Egyéni FFmpeg exportálás"
 
 #: export/ExportFFmpegDialogs.h:373
 msgid "LTP"
-msgstr ""
+msgstr "LTP"
 
 #: export/ExportFFmpegDialogs.h:373
 msgid "Low Complexity"
-msgstr ""
+msgstr "Alacsony komplexitás"
 
 #: export/ExportFFmpegDialogs.h:373
 msgid "Main profile"
-msgstr ""
+msgstr "Fő profil"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "2-level"
-msgstr ""
+msgstr "2-szintű"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "4-level"
-msgstr ""
+msgstr "4-szintű"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "8-level"
-msgstr ""
+msgstr "8-szintű"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "Estimate"
-msgstr ""
+msgstr "Becsült"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "Full search"
-msgstr ""
+msgstr "Teljes keresés"
 
 #: export/ExportFFmpegDialogs.h:676
 msgid "Log search"
@@ -6310,6 +6555,17 @@ msgstr "Bitmélység:"
 #: export/ExportFLAC.cpp:209
 msgid "FLAC Files"
 msgstr "FLAC fájlok"
+
+#: export/ExportFLAC.cpp:288
+#, c-format
+msgid "FLAC export couldn't open %s"
+msgstr ""
+
+#: export/ExportFLAC.cpp:297
+#, c-format
+msgid "FLAC encoder failed to initialize\n"
+"Status: %d"
+msgstr ""
 
 #: export/ExportFLAC.cpp:312
 msgid "Exporting the selected audio as FLAC"
@@ -6529,7 +6785,7 @@ msgstr "A projekt mintavételi rátájának (%d) és bitrátájának (%d kbps) k
 
 #: export/ExportMP3.cpp:1965
 msgid "MP3 export library not found"
-msgstr ""
+msgstr "MP3 exportálás könyvtára nem található"
 
 #: export/ExportMultiple.cpp:96 export/ExportMultiple.cpp:426
 #: export/ExportMultiple.cpp:667 export/ExportMultiple.cpp:834
@@ -6562,10 +6818,6 @@ msgstr "Beállítások..."
 msgid "Export location:"
 msgstr "Exportálási hely:"
 
-#: export/ExportMultiple.cpp:245 prefs/DirectoriesPrefs.cpp:92
-msgid "Choose..."
-msgstr "Tallózás..."
-
 #: export/ExportMultiple.cpp:246
 msgid "Create"
 msgstr "Létrehozás"
@@ -6588,11 +6840,7 @@ msgstr "Első fájl neve:"
 
 #: export/ExportMultiple.cpp:280
 msgid "First file name"
-msgstr ""
-
-#: export/ExportMultiple.cpp:288 export/ExportMultiple.cpp:290
-msgid "Tracks"
-msgstr "Sávok"
+msgstr "Első fájl neve"
 
 #: export/ExportMultiple.cpp:297
 msgid "Name files:"
@@ -6612,7 +6860,7 @@ msgstr "Fájlnév prefix:"
 
 #: export/ExportMultiple.cpp:327
 msgid "File name prefix"
-msgstr ""
+msgstr "Fájlnév prefix"
 
 #: export/ExportMultiple.cpp:341
 msgid "Overwrite existing files"
@@ -6627,6 +6875,35 @@ msgstr "\"%s\" sikeresen létrehozva."
 msgid "Choose a location to save the exported files"
 msgstr "Válassz egy útvonalat az exportálandó fájlok számára"
 
+#: export/ExportMultiple.cpp:524
+#, c-format
+msgid "Successfully exported the following %ld file(s)."
+msgstr ""
+
+#: export/ExportMultiple.cpp:525
+#, c-format
+msgid "Something went wrong after exporting the folliwing %ld file(s)."
+msgstr ""
+
+#: export/ExportMultiple.cpp:526
+#, c-format
+msgid "Export canceled after exporting the following %ld file(s)."
+msgstr ""
+
+#: export/ExportMultiple.cpp:527
+#, c-format
+msgid "Export stopped after exporting the following %ld file(s)."
+msgstr ""
+
+#: export/ExportMultiple.cpp:528
+#, c-format
+msgid "Something went really wrong after exporting the following %ld file(s)."
+msgstr ""
+
+#: export/ExportMultiple.cpp:535
+msgid "ExportMultiple"
+msgstr ""
+
 #: export/ExportMultiple.cpp:539
 #, c-format
 msgid "\"%s\" doesn't exist.\n"
@@ -6640,21 +6917,12 @@ msgstr "\"%s\" nem létezik.\n"
 msgid "Edit metadata"
 msgstr "Metaadat szerkesztése"
 
-#: export/ExportMultiple.cpp:664 export/ExportMultiple.cpp:831
-#, c-format
-msgid "Successfully exported %d file(s)."
-msgstr "%d fájl sikeresen exportálva."
-
-#: export/ExportMultiple.cpp:665 export/ExportMultiple.cpp:832
-#, c-format
-msgid "Something went wrong after exporting %d file(s)."
-msgstr "Valami elromlott %d fájl exportálása után."
-
 #: export/ExportMultiple.cpp:881
 #, c-format
 msgid "Label %s is not a legal file name. You cannot use any of:   %s\n"
 "Use..."
-msgstr ""
+msgstr "%s nem érvényes fájlnév. Nem használhatja a következőket:   %s\n"
+"Használjon..."
 
 #: export/ExportOGG.cpp:64
 msgid "Specify Ogg Vorbis Options"
@@ -6698,19 +6966,19 @@ msgstr "(A fejléceknek és kódolásoknak nem minden kombinációja lehetséges
 
 #: export/ExportPCM.cpp:366
 msgid "Other uncompressed files"
-msgstr ""
+msgstr "Egyéb tömörítetlen fájlok"
 
 #: export/ExportPCM.cpp:358
 msgid "AIFF (Apple) signed 16 bit PCM"
-msgstr ""
+msgstr "AIFF (Apple) előjeles 16 bit PCM"
 
 #: export/ExportPCM.cpp:348
 msgid "WAV (Microsoft) signed 16 bit PCM"
-msgstr ""
+msgstr "WAV (Microsoft) előjeles 16 bit PCM"
 
 #: export/ExportPCM.cpp:384
 msgid "GSM 6.10 WAV (mobile)"
-msgstr ""
+msgstr "GSM 6.10 WAV (mobil)"
 
 #: export/ExportPCM.cpp:446
 msgid "Cannot export audio in this format."
@@ -6734,7 +7002,7 @@ msgstr "Hiba (lehet hogy a fájl sem lett írva): %s"
 
 #: export/ExportPCM.cpp:723
 msgid "There are no options for this format.\n"
-msgstr ""
+msgstr "Nincs beállítás ehhez a formátumhoz.\n"
 
 #. i18n-hint: This is pointing users at another possible export format in
 #. * the list. So you should translate the quoted string
@@ -6742,19 +7010,19 @@ msgstr ""
 #. * when it comes up on it's own.
 #: export/ExportPCM.cpp:728
 msgid "If you need more control over the export format please use the 'Other uncompressed files' format."
-msgstr ""
+msgstr "Ha részletesebben szeretné beállítani az exportálás formátumát, használja az 'Egyéb tömörítetlen fájlok' formátumot."
 
 #: export/ExportPCM.cpp:733
 msgid "Your file will be exported as a 16-bit AIFF (Apple/SGI) file.\n"
-msgstr ""
+msgstr "A fájl 16-bit AIFF (Apple/SGI) fájlként lesz exportálva.\n"
 
 #: export/ExportPCM.cpp:738
 msgid "Your file will be exported as a 16-bit WAV (Microsoft) file.\n"
-msgstr ""
+msgstr "A fájl 16-bit WAV (Microsoft) fájlként lesz exportálva.\n"
 
 #: export/ExportPCM.cpp:743
 msgid "Your file will be exported as a GSM 6.10 WAV file.\n"
-msgstr ""
+msgstr "A fájl GSM 6.10 WAV fájlként lesz exportálva.\n"
 
 #: import/Import.cpp:156 import/ImportMP3.cpp:47
 msgid "MP3 files"
@@ -6882,7 +7150,7 @@ msgstr ""
 
 #: import/ImportFFmpeg.cpp:34
 msgid "FFmpeg-compatible files"
-msgstr ""
+msgstr "FFmpeg-kompatibilis fájlok"
 
 #: import/ImportFFmpeg.cpp:431
 #, c-format
@@ -6892,6 +7160,10 @@ msgstr ""
 #: import/ImportFLAC.cpp:43
 msgid "FLAC files"
 msgstr "FLAC fájlok"
+
+#: import/ImportGStreamer.cpp:33
+msgid "GStreamer-compatible files"
+msgstr ""
 
 #: import/ImportLOF.cpp:95
 msgid "List of Files in basic text format"
@@ -7050,115 +7322,6 @@ msgstr ""
 msgid "%s %2.0f%% complete.  Click to change task focal point."
 msgstr ""
 
-#: prefs/AudioIOPrefs.cpp:41 prefs/AudioIOPrefs.cpp:42
-#: prefs/MidiIOPrefs.cpp:44 prefs/MidiIOPrefs.cpp:45
-msgid "Audio I/O"
-msgstr "Audió I/O"
-
-#: prefs/AudioIOPrefs.cpp:102 prefs/MidiIOPrefs.cpp:99
-msgid "1 (Mono)"
-msgstr "1 (Monó)"
-
-#: prefs/AudioIOPrefs.cpp:103 prefs/MidiIOPrefs.cpp:100
-msgid "2 (Stereo)"
-msgstr "2 (Sztereó)"
-
-#: prefs/AudioIOPrefs.cpp:117 prefs/MidiIOPrefs.cpp:114
-msgid "Playback"
-msgstr "Visszajátszás"
-
-#: prefs/AudioIOPrefs.cpp:121 prefs/AudioIOPrefs.cpp:139
-#: prefs/MidiIOPrefs.cpp:118 prefs/MidiIOPrefs.cpp:136
-#: toolbars/DeviceToolBar.cpp:57
-msgid "Device"
-msgstr "Eszköz"
-
-#: prefs/AudioIOPrefs.cpp:124 prefs/MidiIOPrefs.cpp:121
-msgid "Using:"
-msgstr "Használva:"
-
-#: prefs/AudioIOPrefs.cpp:125 prefs/MidiIOPrefs.cpp:122
-msgid "Portaudio v"
-msgstr "Portaudio v"
-
-#: prefs/AudioIOPrefs.cpp:135 prefs/MidiIOPrefs.cpp:132
-msgid "Recording"
-msgstr "Felvétel"
-
-#: prefs/AudioIOPrefs.cpp:141 prefs/MidiIOPrefs.cpp:138
-msgid "Channels"
-msgstr "Csatornák"
-
-#: prefs/AudioIOPrefs.cpp:147 prefs/MidiIOPrefs.cpp:144
-msgid "Playthrough"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:149
-msgid "Overdub: &Play other tracks while recording new one"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:152
-msgid "&Hardware Playthrough: Play new track while recording it"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:154
-msgid "&Software Playthrough: Play new track while recording it"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:157
-msgid "&Software Playthrough: Play new track while recording or monitoring"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:160
-msgid "(uncheck when recording \"stereo mix\")"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:168 prefs/MidiIOPrefs.cpp:193
-msgid "Effects Preview"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:171
-msgid "Length of preview:"
-msgstr "Előnézet hossza:"
-
-#: prefs/AudioIOPrefs.cpp:176 prefs/MidiIOPrefs.cpp:157
-msgid "Cut Preview"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:179
-msgid "Preview before cut region:"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:181
-msgid "Preview after cut region:"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:189 prefs/MidiIOPrefs.cpp:167
-msgid "Latency"
-msgstr "Késleltetés"
-
-#: prefs/AudioIOPrefs.cpp:195
-msgid "Audio to buffer:\n"
-"(higher = more latency)"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:198
-msgid "Latency correction:\n"
-"(negative = backwards)"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:203
-msgid "Seek Time when playing"
-msgstr ""
-
-#: prefs/AudioIOPrefs.cpp:206 prefs/MidiIOPrefs.cpp:186
-msgid "Short period:"
-msgstr "Rövid periódus:"
-
-#: prefs/AudioIOPrefs.cpp:208 prefs/MidiIOPrefs.cpp:188
-msgid "Long period:"
-msgstr "Hosszú periódus:"
-
 #: prefs/BatchPrefs.cpp:55 prefs/BatchPrefs.cpp:56
 msgid "Batch"
 msgstr "Köteg"
@@ -7174,6 +7337,42 @@ msgstr ""
 #: prefs/BatchPrefs.cpp:83 prefs/GUIPrefs.cpp:132
 msgid "Cl&eanSpeech Mode (Customized GUI)"
 msgstr ""
+
+#: prefs/DevicePrefs.cpp:54
+msgid "Devices"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:34 prefs/GUIPrefs.cpp:35
+msgid "Interface"
+msgstr "Felület"
+
+#: prefs/DevicePrefs.cpp:113
+msgid "Host"
+msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:124 prefs/MidiIOPrefs.cpp:121
+msgid "Using:"
+msgstr "Használva:"
+
+#: prefs/AudioIOPrefs.cpp:117 prefs/MidiIOPrefs.cpp:114
+msgid "Playback"
+msgstr "Visszajátszás"
+
+#: prefs/AudioIOPrefs.cpp:135 prefs/MidiIOPrefs.cpp:132
+msgid "Recording"
+msgstr "Felvétel"
+
+#: prefs/AudioIOPrefs.cpp:141 prefs/MidiIOPrefs.cpp:138
+msgid "Channels"
+msgstr "Csatornák"
+
+#: prefs/AudioIOPrefs.cpp:102 prefs/MidiIOPrefs.cpp:99
+msgid "1 (Mono)"
+msgstr "1 (Monó)"
+
+#: prefs/AudioIOPrefs.cpp:103 prefs/MidiIOPrefs.cpp:100
+msgid "2 (Stereo)"
+msgstr "2 (Sztereó)"
 
 #: prefs/DirectoriesPrefs.cpp:55 prefs/DirectoriesPrefs.cpp:56
 #: prefs/PrefsDialog.cpp:267
@@ -7192,33 +7391,30 @@ msgstr "Hely:"
 msgid "Free Space:"
 msgstr "Szabad terület:"
 
-#: prefs/DirectoriesPrefs.cpp:99
-msgid "Auto save"
-msgstr "Automatikus mentés"
-
-#: prefs/DirectoriesPrefs.cpp:101
-msgid "Auto save a copy of the project in a separate folder"
-msgstr ""
-
-#: prefs/DirectoriesPrefs.cpp:104
-msgid "Auto save interval:"
-msgstr "Automatikus mentés időköze:"
-
-#: prefs/DirectoriesPrefs.cpp:105
-msgid "minutes"
-msgstr "perc"
-
 #: prefs/DirectoriesPrefs.cpp:110
 msgid "Audio cache"
 msgstr ""
 
-#: prefs/DirectoriesPrefs.cpp:112
-msgid "Play and/or record using RAM (useful for slow drives, but could crash with long files or recordings)"
+#: prefs/DirectoriesPrefs.cpp:105
+msgid "Play and/or record using RAM (useful for slow drives)"
+msgstr ""
+
+#: prefs/DirectoriesPrefs.cpp:111
+msgid "Minimum Free Memory (MB):"
+msgstr ""
+
+#: prefs/DirectoriesPrefs.cpp:118
+msgid "If the available system memory falls below this value, audio will no longer\n"
+"be cached in memory and will be written to disk."
 msgstr ""
 
 #: prefs/DirectoriesPrefs.cpp:121
 msgid "Choose a location to place the temporary directory"
 msgstr "Válassz egy útvonalat az ideiglenes könyvtár számára"
+
+#: prefs/DirectoriesPrefs.cpp:158
+msgid "unavailable - above location doesn't exist"
+msgstr ""
 
 #: prefs/DirectoriesPrefs.cpp:166
 #, c-format
@@ -7238,49 +7434,105 @@ msgstr "A(z) %s nevű könyvtár nem írható"
 msgid "Changes to temporary directory will not take effect until Audacity is restarted"
 msgstr "Az ideiglenes könyvtár új beállításai az Audacity újraindításakor lépnek érvénybe."
 
+#: prefs/GUIPrefs.cpp:42
+msgid "In Browser"
+msgstr "Böngészőben"
+
+#: prefs/GUIPrefs.cpp:43
+msgid "From Internet"
+msgstr "Internetről"
+
+#: prefs/GUIPrefs.cpp:54
+msgid "36"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:55
+msgid "48"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:56
+msgid "60"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:57
+msgid "96"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:58
+msgid "120"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:59
+msgid "145"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:141
+msgid "-36 dB (shallow range for high-amplitude editing)"
+msgstr "-36 dB (szűk tartomány a nagy-jelszintű szerkesztéshez)"
+
+#: prefs/GUIPrefs.cpp:142
+msgid "-48 dB (PCM range of 8 bit samples)"
+msgstr "-48 dB (a 8 bites PCM-kódolású hangminták dinamika-tartománya)"
+
+#: prefs/GUIPrefs.cpp:143
+msgid "-60 dB (PCM range of 10 bit samples)"
+msgstr "-60 dB (a 10 bites PCM-kódolású hangminták dinamika-tartománya)"
+
+#: prefs/GUIPrefs.cpp:144
+msgid "-96 dB (PCM range of 16 bit samples)"
+msgstr "-96 dB (a 16 bites PCM-kódolású hangminták dinamika-tartománya)"
+
+#: prefs/GUIPrefs.cpp:145
+msgid "-120 dB (approximate limit of human hearing)"
+msgstr "-120 dB (az emberi hallás becsült határa)"
+
+#: prefs/GUIPrefs.cpp:146
+msgid "-145 dB (PCM range of 24 bit samples)"
+msgstr "-145 dB (a 24 bites PCM-kódolású hangminták dinamika-tartománya)"
+
+#: prefs/SpectrumPrefs.cpp:140
+msgid "Display"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:100
+msgid "Er&gonomic order of audio I/O buttons"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:101
+msgid "Show &welcome message at program start up"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:109
+msgid "Meter/Waveform dB range:"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:167
+msgid "Help:"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:96
+msgid "Cl&osing last window quits Audacity"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:110
+msgid "&Beep on completion of longer activities"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:126
+msgid "Modes"
+msgstr "Módok"
+
+#: prefs/GUIPrefs.cpp:151
+msgid "Display VST effects in GUI mode"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:129
+msgid "Don't a&pply effects in batch mode"
+msgstr ""
+
 #: prefs/FileFormatPrefs.cpp:53 prefs/FileFormatPrefs.cpp:54
 msgid "Import / Export"
 msgstr "Importálás / Exportálás"
-
-#: prefs/FileFormatPrefs.cpp:84
-msgid "MP3 Export Library"
-msgstr "MP3 exportálás könyvtár"
-
-#: prefs/FileFormatPrefs.cpp:87
-msgid "MP3 Library Version:"
-msgstr "MP3 könyvtár verziója:"
-
-#: prefs/FileFormatPrefs.cpp:93
-msgid "MP3 Library:"
-msgstr "MP3 könyvtár:"
-
-#: prefs/FileFormatPrefs.cpp:96 prefs/FileFormatPrefs.cpp:120
-msgid "&Locate..."
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:98
-msgid "LAME MP3 Library:"
-msgstr "LAME MP3 könyvtár:"
-
-#: prefs/FileFormatPrefs.cpp:101 prefs/FileFormatPrefs.cpp:125
-msgid "&Download"
-msgstr "&Letöltés"
-
-#: prefs/FileFormatPrefs.cpp:106
-msgid "FFmpeg Import/Export Library"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:109
-msgid "FFmpeg Library Version:"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:118 prefs/FileFormatPrefs.cpp:122
-msgid "FFmpeg Library:"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:136
-msgid "Note: Export quality options can be chosen by clicking the Options button in the Export dialog.\n"
-msgstr ""
 
 #: prefs/FileFormatPrefs.cpp:137
 msgid "When importing audio files"
@@ -7296,22 +7548,6 @@ msgstr ""
 
 #: prefs/FileFormatPrefs.cpp:143
 msgid "&Normalize all tracks in project"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:148
-msgid "When saving a project that depends on other audio files"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:151
-msgid "Always &copy all audio into project (safest)"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:152
-msgid "&Do not copy any audio"
-msgstr ""
-
-#: prefs/FileFormatPrefs.cpp:153
-msgid "&Ask user"
 msgstr ""
 
 #: prefs/FileFormatPrefs.cpp:157
@@ -7330,128 +7566,9 @@ msgstr ""
 msgid "S&how Metadata Editor prior to export step"
 msgstr ""
 
-#: prefs/GUIPrefs.cpp:34 prefs/GUIPrefs.cpp:35
-msgid "Interface"
-msgstr "Felület"
-
-#: prefs/GUIPrefs.cpp:42
-msgid "In Browser"
-msgstr "Böngészőben"
-
-#: prefs/GUIPrefs.cpp:43
-msgid "From Internet"
-msgstr "Internetről"
-
-#: prefs/GUIPrefs.cpp:50
-msgid "Simple"
-msgstr "Egyszerű"
-
-#: prefs/GUIPrefs.cpp:94
-msgid "&Update display while playing"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:96
-msgid "Cl&osing last window quits Audacity"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:98
-msgid "Enable &dragging of left and right selection edges"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:100
-msgid "Er&gonomic order of audio I/O buttons"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:102
-msgid "Automatically &fit tracks vertically zoomed"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:104
-msgid "\"Move track focus\" c&ycles repeatedly through tracks"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:106
-msgid "Editing a &clip can move other clips"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:108
-msgid "&Select all audio in project, if none selected"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:110
-msgid "&Beep on completion of longer activities"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:114
-msgid "Show / Hide"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:116
-msgid "Enable cut &lines"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:118
-msgid "Show warnings about &temp files"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:120
-msgid "Show prompt to sa&ve, even if project is empty"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:122
-msgid "Show &Welcome Message at program start up"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:126
-msgid "Modes"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:129
-msgid "Don't a&pply effects in batch mode"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:138
-msgid "Display range minimum: meters and 'Waveform (dB)'"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:141
-msgid "-36 dB (shallow range for high-amplitude editing)"
-msgstr "-36 dB (szűk tartomány a nagy-jelszintű szerkesztéshez)"
-
-#: prefs/GUIPrefs.cpp:142
-msgid "-48 dB (PCM range of 8 bit samples)"
-msgstr "-48 dB (a 8 bites PCM-kódolású hangminták dinamika-tartománya)"
-
-#: prefs/GUIPrefs.cpp:143
-msgid "-60 dB (PCM range of 10 bit samples)"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:144
-msgid "-96 dB (PCM range of 16 bit samples)"
-msgstr "-96 dB (a 16 bites PCM-kódolású hangminták dinamika-tartománya)"
-
-#: prefs/GUIPrefs.cpp:145
-msgid "-120 dB (approximate limit of human hearing)"
-msgstr "-120 dB (az emberi hallás becsült határa)"
-
-#: prefs/GUIPrefs.cpp:146
-msgid "-145 dB (PCM range of 24 bit samples)"
-msgstr "-145 dB (a 24 bites PCM-kódolású hangminták dinamika-tartománya)"
-
-#: prefs/GUIPrefs.cpp:151
-msgid "Default View Mode"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:164
-msgid "Other interface choices"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:167
-msgid "Help:"
-msgstr ""
-
-#: prefs/GUIPrefs.cpp:168
-msgid "Solo Button:"
+#: prefs/ImportExportPrefs.cpp:84
+msgid "Note: Export quality options can be chosen by clicking the Options\n"
+"button in the Export dialog."
 msgstr ""
 
 #: prefs/KeyConfigPrefs.cpp:64 prefs/KeyConfigPrefs.cpp:65
@@ -7482,17 +7599,22 @@ msgstr "Megjegyzés: A Cmd+Q megnyomásával kilépsz. Minden más bilentyű eng
 msgid "&Defaults"
 msgstr "&Alapértékek"
 
+#: prefs/KeyConfigPrefs.cpp:171
+msgid "Command"
+msgstr ""
+
 #: prefs/KeyConfigPrefs.cpp:143
 msgid "Key Combination"
 msgstr "Billentyűkombináció"
 
-#: prefs/KeyConfigPrefs.cpp:163
-msgid "Export Keyboard Shortcuts As:"
-msgstr "Billentyűparancsok exportálása, mint: "
+#: prefs/KeyConfigPrefs.cpp:369 toolbars/EditToolBar.cpp:144
+msgid "Undo"
+msgstr "Visszavonás"
 
-#: prefs/KeyConfigPrefs.cpp:183
-msgid "Error saving keyboard shortcuts"
-msgstr "Hiba a billentyűparancsok mentésekor"
+#: prefs/KeyConfigPrefs.cpp:199 toolbars/EditToolBar.cpp:145
+#: toolbars/EditToolBar.cpp:196
+msgid "Redo"
+msgstr ""
 
 #: prefs/KeyConfigPrefs.cpp:198
 msgid "Select an XML file containing Audacity keyboard shortcuts..."
@@ -7502,6 +7624,14 @@ msgstr "Válassz ki egy XML fájlt, amelyik az Audacity billentyűparancsait tar
 msgid "Error loading keyboard shortcuts"
 msgstr "Hiba a billentyűparancsok betöltésekor"
 
+#: prefs/KeyConfigPrefs.cpp:163
+msgid "Export Keyboard Shortcuts As:"
+msgstr "Billentyűparancsok exportálása, mint: "
+
+#: prefs/KeyConfigPrefs.cpp:183
+msgid "Error saving keyboard shortcuts"
+msgstr "Hiba a billentyűparancsok mentésekor"
+
 #: prefs/KeyConfigPrefs.cpp:243
 #, c-format
 msgid "The keyboard shortcut '%s' is already assigned to:\n"
@@ -7509,9 +7639,62 @@ msgid "The keyboard shortcut '%s' is already assigned to:\n"
 "'%s'"
 msgstr ""
 
-#: prefs/KeyConfigPrefs.cpp:369 toolbars/EditToolBar.cpp:144
-msgid "Undo"
-msgstr "Visszavonás"
+#: prefs/LibraryPrefs.cpp:46
+msgid "Libraries"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:84
+msgid "MP3 Export Library"
+msgstr "MP3 exportálás könyvtár"
+
+#: prefs/FileFormatPrefs.cpp:87
+msgid "MP3 Library Version:"
+msgstr "MP3 könyvtár verziója:"
+
+#: prefs/FileFormatPrefs.cpp:93
+msgid "MP3 Library:"
+msgstr "MP3 könyvtár:"
+
+#: prefs/FileFormatPrefs.cpp:96 prefs/FileFormatPrefs.cpp:120
+msgid "&Locate..."
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:98
+msgid "LAME MP3 Library:"
+msgstr "LAME MP3 könyvtár:"
+
+#: prefs/FileFormatPrefs.cpp:101 prefs/FileFormatPrefs.cpp:125
+msgid "&Download"
+msgstr "&Letöltés"
+
+#: prefs/FileFormatPrefs.cpp:106
+msgid "FFmpeg Import/Export Library"
+msgstr "FFmpeg importálás/exportálás könyvtár"
+
+#: prefs/FileFormatPrefs.cpp:109
+msgid "FFmpeg Library Version:"
+msgstr "FFmpeg könyvtár verzió:"
+
+#: prefs/LibraryPrefs.cpp:112
+msgid "No compatible FFmpeg library was found"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:118 prefs/FileFormatPrefs.cpp:122
+msgid "FFmpeg Library:"
+msgstr "FFmpeg könyvtár:"
+
+#: prefs/AudioIOPrefs.cpp:41 prefs/AudioIOPrefs.cpp:42
+#: prefs/MidiIOPrefs.cpp:44 prefs/MidiIOPrefs.cpp:45
+msgid "Audio I/O"
+msgstr "Audió I/O"
+
+#: prefs/AudioIOPrefs.cpp:125 prefs/MidiIOPrefs.cpp:122
+msgid "Portaudio v"
+msgstr "Portaudio v"
+
+#: prefs/AudioIOPrefs.cpp:147 prefs/MidiIOPrefs.cpp:144
+msgid "Playthrough"
+msgstr ""
 
 #: prefs/MidiIOPrefs.cpp:146
 msgid "&Play other tracks while recording new one"
@@ -7525,6 +7708,10 @@ msgstr ""
 msgid "&Software Playthrough (Play new track while recording it)"
 msgstr ""
 
+#: prefs/AudioIOPrefs.cpp:176 prefs/MidiIOPrefs.cpp:157
+msgid "Cut Preview"
+msgstr "Kivágás előnézete"
+
 #: prefs/MidiIOPrefs.cpp:160
 msgid "Play before cut region:"
 msgstr ""
@@ -7532,6 +7719,10 @@ msgstr ""
 #: prefs/MidiIOPrefs.cpp:162
 msgid "Play after cut region:"
 msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:189 prefs/MidiIOPrefs.cpp:167
+msgid "Latency"
+msgstr "Késleltetés"
 
 #: prefs/MidiIOPrefs.cpp:173
 msgid "Audio to buffer:"
@@ -7544,6 +7735,18 @@ msgstr ""
 #: prefs/MidiIOPrefs.cpp:183
 msgid "Seek Time"
 msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:206 prefs/MidiIOPrefs.cpp:186
+msgid "Short period:"
+msgstr "Rövid periódus:"
+
+#: prefs/AudioIOPrefs.cpp:208 prefs/MidiIOPrefs.cpp:188
+msgid "Long period:"
+msgstr "Hosszú periódus:"
+
+#: prefs/AudioIOPrefs.cpp:168 prefs/MidiIOPrefs.cpp:193
+msgid "Effects Preview"
+msgstr "Effekt előnézet"
 
 #: prefs/MidiIOPrefs.cpp:196
 msgid "Play when previewing:"
@@ -7606,7 +7809,7 @@ msgstr "Dupla bal-kattintás"
 
 #: prefs/MousePrefs.cpp:101
 msgid "Select Clip or Entire Track"
-msgstr ""
+msgstr "Klip vagy az egész sáv kijelölése"
 
 #: prefs/MousePrefs.cpp:102
 msgid "Ctrl-Left-Click"
@@ -7614,7 +7817,7 @@ msgstr "Ctrl-Bal-kattintás"
 
 #: prefs/MousePrefs.cpp:102
 msgid "Set Selection Point and Play"
-msgstr ""
+msgstr "Kijelölés beállítása és lejátszás"
 
 #: prefs/MousePrefs.cpp:104 prefs/MousePrefs.cpp:105 prefs/MousePrefs.cpp:106
 #: prefs/MousePrefs.cpp:107 prefs/MousePrefs.cpp:108 prefs/MousePrefs.cpp:109
@@ -7631,7 +7834,7 @@ msgstr "Nagyítás az adott tartományra"
 
 #: prefs/MousePrefs.cpp:105
 msgid "same as right-drag"
-msgstr ""
+msgstr "mint jobb-vonszolás"
 
 #: prefs/MousePrefs.cpp:106 prefs/MousePrefs.cpp:124
 msgid "Right-Click"
@@ -7647,7 +7850,7 @@ msgstr "Jobb-vonszolás"
 
 #: prefs/MousePrefs.cpp:107
 msgid "same as left-drag"
-msgstr ""
+msgstr "mint bal-vonszolás"
 
 #: prefs/MousePrefs.cpp:108
 msgid "Shift-Drag"
@@ -7755,9 +7958,61 @@ msgstr "Ctrl-Görgőkerék-Forgatás"
 msgid "Zoom in or out"
 msgstr "Nagyítás vagy kicsinyítés"
 
+#: prefs/AudioIOPrefs.cpp:171
+msgid "Length of preview:"
+msgstr "Előnézet hossza:"
+
+#: prefs/AudioIOPrefs.cpp:179
+msgid "Preview before cut region:"
+msgstr "Előnézet a kivágott régió előtt:"
+
+#: prefs/AudioIOPrefs.cpp:181
+msgid "Preview after cut region:"
+msgstr "Előnézet a kivágott régió után:"
+
+#: prefs/AudioIOPrefs.cpp:203
+msgid "Seek Time when playing"
+msgstr ""
+
 #: prefs/PrefsDialog.cpp:94
 msgid "Audacity Preferences"
 msgstr "Audacity Beállítások"
+
+#: prefs/ProjectsPrefs.cpp:31
+msgid "Projects"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:148
+msgid "When saving a project that depends on other audio files"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:151
+msgid "Always &copy all audio into project (safest)"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:152
+msgid "&Do not copy any audio"
+msgstr ""
+
+#: prefs/FileFormatPrefs.cpp:153
+msgid "&Ask user"
+msgstr ""
+
+#: prefs/DirectoriesPrefs.cpp:99
+msgid "Auto save"
+msgstr "Automatikus mentés"
+
+#: prefs/DirectoriesPrefs.cpp:101
+msgid "Auto save a copy of the project in a separate folder"
+msgstr ""
+
+#: prefs/DirectoriesPrefs.cpp:104
+msgid "Auto save interval:"
+msgstr "Automatikus mentés időköze:"
+
+#: prefs/DirectoriesPrefs.cpp:105
+msgid "minutes"
+msgstr "perc"
 
 #: prefs/QualityPrefs.cpp:73
 msgid "Rectangle"
@@ -7783,69 +8038,106 @@ msgstr "Alapértelmezett Mintavételezési frekvencia"
 msgid "Default Sample Format:"
 msgstr "Alapértelmezett Hangminta formátum"
 
-#: prefs/QualityPrefs.cpp:136
-msgid "Real-time sample rate converter:"
-msgstr "Valós idejű mintavételezési frekvencia konverter:"
+#: prefs/QualityPrefs.cpp:165
+msgid "Real-time Conversion"
+msgstr ""
 
-#: prefs/QualityPrefs.cpp:139
-msgid "High-quality sample rate converter:"
-msgstr "Csúcsminőségű mintavételezési frekvencia konverter"
-
-#: prefs/QualityPrefs.cpp:142
-msgid "Real-time dither:"
-msgstr "Valós idejű finomítás:"
-
-#: prefs/QualityPrefs.cpp:145
-msgid "High-quality dither:"
-msgstr "Csúcsminőségű finomítás:"
-
-#: prefs/QualityPrefs.cpp:157
-msgid "Conversion"
-msgstr "Konverzió"
-
-#: prefs/QualityPrefs.cpp:163
-msgid "Sample Rate Converter"
+#: prefs/QualityPrefs.cpp:171 prefs/QualityPrefs.cpp:193
+#, fuzzy
+msgid "Sample Rate Converter:"
 msgstr "Mintavételi ráta konvertáló"
 
 #: prefs/QualityPrefs.cpp:164
 msgid "Dither"
 msgstr ""
 
-#: prefs/QualityPrefs.cpp:165
-msgid "Real-time:"
-msgstr "Valós idejű:"
+#: prefs/QualityPrefs.cpp:189
+msgid "High-quality Conversion"
+msgstr ""
 
-#: prefs/QualityPrefs.cpp:171
-msgid "High-quality:"
-msgstr "Csúcsminőség:"
+#: prefs/AudioIOPrefs.cpp:149
+msgid "Overdub: &Play other tracks while recording new one"
+msgstr ""
 
-#: prefs/SmartRecordPrefs.cpp:37 prefs/SmartRecordPrefs.cpp:38
-msgid "Smart Recording"
+#: prefs/AudioIOPrefs.cpp:152
+msgid "&Hardware Playthrough: Play new track while recording it"
+msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:157
+msgid "&Software Playthrough: Play new track while recording or monitoring"
+msgstr ""
+
+#: prefs/AudioIOPrefs.cpp:160
+msgid "(uncheck when recording \"stereo mix\")"
+msgstr ""
+
+#: prefs/RecordingPrefs.cpp:86
+msgid "milliseconds (higher = more latency)"
+msgstr ""
+
+#: prefs/RecordingPrefs.cpp:92
+msgid "milliseconds (negative = backwards)"
 msgstr ""
 
 #: prefs/SmartRecordPrefs.cpp:64 prefs/SmartRecordPrefs.cpp:66
 msgid "Sound Activated Recording"
-msgstr ""
+msgstr "Hang által aktivált felvétel"
 
 #: prefs/SmartRecordPrefs.cpp:71
 msgid "Sound Activation Level (dB):"
-msgstr ""
+msgstr "Hang aktiválási szintje (dB):"
 
 #: prefs/SpectrumPrefs.cpp:41 prefs/SpectrumPrefs.cpp:42
 msgid "Spectrograms"
 msgstr "Spektogramok"
 
-#: prefs/SpectrumPrefs.cpp:91
-msgid "FFT Size"
-msgstr "FFT mérete"
-
 #: prefs/SpectrumPrefs.cpp:94
 msgid "8 - most wideband"
 msgstr "8 - a leginkább szélessávú"
 
+#: prefs/SpectrumPrefs.cpp:42
+msgid "16"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:43
+msgid "32"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:44
+msgid "64"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:45
+msgid "128"
+msgstr ""
+
 #: prefs/SpectrumPrefs.cpp:99
 msgid "256 - default"
 msgstr "256 - alapérték"
+
+#: prefs/SpectrumPrefs.cpp:47
+msgid "512"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:48
+msgid "1024"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:49
+msgid "2048"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:51
+msgid "4096"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:52
+msgid "8192"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:53
+msgid "16384"
+msgstr ""
 
 #: prefs/SpectrumPrefs.cpp:107
 msgid "32768 - most narrowband"
@@ -7855,40 +8147,45 @@ msgstr "32768 - a leginkább keskenysávú"
 msgid "4096 - most narrowband"
 msgstr "4096 - a leginkább keskenysávú"
 
-#: prefs/SpectrumPrefs.cpp:116
-msgid "Window type:"
+#: prefs/SpectrumPrefs.cpp:82
+msgid "FFT Window"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:86
+msgid "Window size"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:93
+#, fuzzy
+msgid "Window type"
 msgstr "Ablak típusa:"
 
 #: prefs/SpectrumPrefs.cpp:125
 msgid "FFT Skip Points"
 msgstr ""
 
-#: prefs/SpectrumPrefs.cpp:140
-msgid "Display"
-msgstr ""
-
-#: prefs/SpectrumPrefs.cpp:144
-msgid "&Grayscale"
+#: prefs/SpectrumPrefs.cpp:117
+msgid "Skip Points"
 msgstr ""
 
 #: prefs/SpectrumPrefs.cpp:147
 msgid "Minimum Frequency (Hz):"
-msgstr ""
+msgstr "Minimum frekvencia (Hz):"
 
 #: prefs/SpectrumPrefs.cpp:152
 msgid "Maximum Frequency (Hz):"
 msgstr "Maximális frekvencia (Hz):"
 
-#: prefs/SpectrumPrefs.cpp:158
-msgid "&Y-Grid"
+#: prefs/SpectrumPrefs.cpp:147
+msgid "Show the spectrum using &grayscale colors"
 msgstr ""
 
-#: prefs/SpectrumPrefs.cpp:161
-msgid "&Find Notes"
+#: prefs/SpectrumPrefs.cpp:152
+msgid "Show a grid along the &Y-axis"
 msgstr ""
 
-#: prefs/SpectrumPrefs.cpp:162
-msgid "&Quantize Notes"
+#: prefs/SpectrumPrefs.cpp:160
+msgid "FFT Find Notes"
 msgstr ""
 
 #: prefs/SpectrumPrefs.cpp:165
@@ -7897,6 +8194,14 @@ msgstr "Legkisebb apmlitudó (dB):"
 
 #: prefs/SpectrumPrefs.cpp:170
 msgid "Max. Number of Notes (1..128):"
+msgstr "Jegyzetek max. száma (1..128)"
+
+#: prefs/SpectrumPrefs.cpp:161
+msgid "&Find Notes"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:162
+msgid "&Quantize Notes"
 msgstr ""
 
 #: prefs/SpectrumPrefs.cpp:197
@@ -7909,23 +8214,62 @@ msgstr "A maximális frekvencia 100 - 100,000 Hz között kell, hogy legyen"
 
 #: prefs/SpectrumPrefs.cpp:209
 msgid "The minimum frequency must be an integer"
-msgstr ""
+msgstr "A minimum frekvenciának egésznek kell lennie"
 
 #: prefs/SpectrumPrefs.cpp:213
 msgid "Minimum frequency must be at least 0 Hz"
+msgstr "A minimum frekvenciának legalább 0 Hz-nek kell lennie"
+
+#: prefs/SpectrumPrefs.cpp:213
+msgid "Minimum frequency must be less than maximum frequency"
 msgstr ""
 
 #: prefs/SpectrumPrefs.cpp:220
 msgid "The minimum amplitude (dB) must be an integer"
 msgstr ""
 
-#: prefs/SpectrumPrefs.cpp:226 prefs/SpectrumPrefs.cpp:230
-msgid "The Maximum Number of Notes must be an integer in the range 1..128"
+#: prefs/SpectrumPrefs.cpp:226
+msgid "The maximum number of notes must be an integer"
+msgstr ""
+
+#: prefs/SpectrumPrefs.cpp:230
+msgid "The maximum number of notes must be in the range 1..128"
 msgstr ""
 
 #: prefs/ThemePrefs.cpp:62 prefs/ThemePrefs.cpp:63
 msgid "Theme"
 msgstr "Téma"
+
+#: prefs/ThemePrefs.cpp:126
+msgid "Info"
+msgstr "Információ"
+
+#: prefs/ThemePrefs.cpp:91
+msgid "Themability is an experimental feature.\n"
+"\n"
+"To try it out, click \"Save Theme Cache\" then find and modify the images and colors in\n"
+"ImageCacheVxx.png using an image editor such as the Gimp.\n"
+"\n"
+"Click \"Load Theme Cache\" to load the changed images and colors back into Audacity.\n"
+"\n"
+"[Only the control toolbar and the colors on the wavetrack are currently affected, even\n"
+"though the image file shows other icons too.]"
+msgstr ""
+
+#: prefs/ThemePrefs.cpp:96
+msgid "You have compiled Audacity with an extra button, 'Output Sourcery'.  This will save a\n"
+"C version of the image cache that can be compiled in as a default."
+msgstr ""
+
+#: prefs/ThemePrefs.cpp:101
+msgid "If 'Load Theme Cache At Startup' is checked, then the Theme Cache will be loaded\n"
+"when the program starts up."
+msgstr ""
+
+#: prefs/ThemePrefs.cpp:104
+msgid "Saving and loading individual theme files uses a separate file for each image, but is\n"
+"otherwise the same idea."
+msgstr ""
 
 #. i18n-hint: && in here is an escape character to get a single & on screen,
 #. * so keep it as is
@@ -7957,77 +8301,93 @@ msgstr "Fájlok mentése"
 msgid "Load Files"
 msgstr "Fájlok betöltése"
 
-#: prefs/ThemePrefs.cpp:126
-msgid "Info"
-msgstr "Információ"
+#: prefs/GUIPrefs.cpp:50
+msgid "Simple"
+msgstr "Egyszerű"
 
-#: prefs/ThemePrefs.cpp:129
-msgid "Themability is an experimental feature.\n"
-"\n"
-"To try it out, click \"Save Theme Cache\" then\n"
-"find and modify the images and colors in \n"
-"ImageCacheVxx.png using an image editor such \n"
-"as the Gimp.\n"
-"\n"
-"Click \"Load Theme Cache\" to load the changed images\n"
-"and colors back into Audacity.\n"
-"\n"
-"[Only the control toolbar and the colors on the \n"
-"wavetrack are currently affected, even though the\n"
-"image file shows other icons too.]\n"
+#: prefs/GUIPrefs.cpp:94
+msgid "&Update display while playing"
 msgstr ""
 
-#: prefs/ThemePrefs.cpp:134
-msgid "You have compiled Audacity with an extra button, \n"
-"'Output Sourcery'.  This will save a C version of \n"
-"the image cache that can be compiled in as a default.\n"
+#: prefs/GUIPrefs.cpp:102
+msgid "Automatically &fit tracks vertically zoomed"
 msgstr ""
 
-#: prefs/ThemePrefs.cpp:139
-msgid "If 'Load Theme Cache At Startup' is checked, then \n"
-"the Theme Cache will be loaded when the program \n"
-"starts up.\n"
-"\n"
+#: prefs/TracksPrefs.cpp:88
+msgid "Default View Mode:"
 msgstr ""
 
-#: prefs/ThemePrefs.cpp:142
-msgid "Saving and loading individual theme files uses a \n"
-"separate file for each image, but is otherwise the \n"
-"same idea.\n"
-"\n"
+#: prefs/GUIPrefs.cpp:108
+msgid "&Select all audio in project, if none selected"
 msgstr ""
 
-#: toolbars/ControlToolBar.cpp:175
+#: prefs/GUIPrefs.cpp:116
+msgid "Enable cut &lines"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:98
+msgid "Enable &dragging of left and right selection edges"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:104
+msgid "\"Move track focus\" c&ycles repeatedly through tracks"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:106
+msgid "Editing a &clip can move other clips"
+msgstr ""
+
+#: prefs/GUIPrefs.cpp:168
+msgid "Solo Button:"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:31
+msgid "Warnings"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:55
+msgid "Show Warnings/Prompts"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:57
+msgid "When saving &projects"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:60
+msgid "When saving &empty project"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:63
+msgid "When &disk space is getting low"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:66
+msgid "When mixing down to &stereo during export"
+msgstr ""
+
+#: prefs/WarningsPrefs.cpp:69
+msgid "When mixing down to &mono during export"
+msgstr ""
+
+#: Menus.cpp:997
 msgid "Pause"
 msgstr "Szünet"
 
-#: toolbars/ControlToolBar.cpp:178
-msgid "Play"
-msgstr "Lejátszás"
-
-#: toolbars/ControlToolBar.cpp:178
-msgid "Play (Shift for Loop Play)"
-msgstr "Lejátszás (Shift-tel ismételt lejátszás)"
-
-#: toolbars/ControlToolBar.cpp:183
+#: Menus.cpp:996
 msgid "Stop"
 msgstr "Állj"
-
-#: toolbars/ControlToolBar.cpp:186
-msgid "Skip to Start"
-msgstr "Ugrás a kezdetére"
-
-#: toolbars/ControlToolBar.cpp:189
-msgid "Skip to End"
-msgstr "Ugrás a végére"
-
-#: toolbars/ControlToolBar.cpp:192
-msgid "Record (Shift for Append Record)"
-msgstr "Felvétel (Shift-tel hozzáfűzve felvétel)"
 
 #: toolbars/ControlToolBar.cpp:195
 msgid "Clean Speech"
 msgstr ""
+
+#: toolbars/ControlToolBar.cpp:178
+msgid "Play (Shift for Loop Play)"
+msgstr "Lejátszás (Shift-tel ismétlődő lejátszás)"
+
+#: toolbars/ControlToolBar.cpp:192
+msgid "Record (Shift for Append Record)"
+msgstr "Felvétel (Shift-tel hozzáfűzve felvétel)"
 
 #: toolbars/ControlToolBar.cpp:540 toolbars/ControlToolBar.cpp:869
 msgid "Error while opening sound device. "
@@ -8059,7 +8419,7 @@ msgstr "Kijelölés átalakítása csenddé"
 
 #: toolbars/EditToolBar.cpp:150
 msgid "Link Tracks"
-msgstr ""
+msgstr "Sávok összekapcsolása"
 
 #: toolbars/EditToolBar.cpp:155
 msgid "Zoom In"
@@ -8069,29 +8429,21 @@ msgstr "Nagyítás"
 msgid "Zoom Out"
 msgstr "Kicsinyítés"
 
-#: toolbars/EditToolBar.cpp:161
-msgid "Zoom Toggle"
-msgstr "Nagyítás/kicsinyítés kapcsoló"
-
-#: toolbars/EditToolBar.cpp:165
-msgid "Fit Selection"
-msgstr "Méretezés a kijelöléshez"
-
 #: toolbars/EditToolBar.cpp:165
 msgid "Fit selection in window"
 msgstr "Kijelölés méretezése az ablakhoz igazítva"
 
 #: toolbars/EditToolBar.cpp:167
-msgid "Fit Project"
-msgstr "Méretezés a projekthez"
-
-#: toolbars/EditToolBar.cpp:167
 msgid "Fit project in window"
 msgstr "Projekt méretezése az ablakhoz igazítva"
 
-#: toolbars/MeterToolBar.cpp:50
-msgid "Meter"
-msgstr ""
+#: toolbars/EditToolBar.cpp:165
+msgid "Fit Selection"
+msgstr "Méretezés a kijelöléshez"
+
+#: toolbars/EditToolBar.cpp:167
+msgid "Fit Project"
+msgstr "Méretezés a projekthez"
 
 #: toolbars/MeterToolBar.cpp:80
 msgid "Play Meter"
@@ -8136,6 +8488,14 @@ msgstr ""
 #: toolbars/MixerToolBar.cpp:134
 msgid "Input Source"
 msgstr "Bemenet forrása"
+
+#: toolbars/MixerToolBar.cpp:299
+msgid "Input source information is not available."
+msgstr ""
+
+#: toolbars/MixerToolBar.cpp:306
+msgid "Select Input Source"
+msgstr ""
 
 #: toolbars/SelectionBar.cpp:86
 msgid "Selection"
@@ -8215,30 +8575,6 @@ msgstr "Balra=Nagyítás, Jobbra=Kicsinyítés, Középen=Normális"
 msgid "Click and drag to move a track in time"
 msgstr "Kattints és mozgasd a kurzort a sáv időbeli elhelyézéhez"
 
-#: toolbars/ToolsToolBar.cpp:90
-msgid "Tools"
-msgstr "Eszközök"
-
-#: toolbars/ToolsToolBar.cpp:147 toolbars/ToolsToolBar.cpp:182
-msgid "Selection Tool"
-msgstr "Kijelölő eszköz"
-
-#: toolbars/ToolsToolBar.cpp:148
-msgid "Envelope Tool"
-msgstr "Burkológörbe eszköz"
-
-#: toolbars/ToolsToolBar.cpp:149 toolbars/ToolsToolBar.cpp:183
-msgid "Time Shift Tool"
-msgstr "Időbeni Eltolás eszköz"
-
-#: toolbars/ToolsToolBar.cpp:150 toolbars/ToolsToolBar.cpp:185
-msgid "Zoom Tool"
-msgstr "Nagyító eszköz"
-
-#: toolbars/ToolsToolBar.cpp:151 toolbars/ToolsToolBar.cpp:184
-msgid "Draw Tool"
-msgstr "Rajzoló eszköz"
-
 #: toolbars/ToolsToolBar.cpp:152
 msgid "Multi-Tool Mode"
 msgstr "Multi-Eszköz mód"
@@ -8247,21 +8583,9 @@ msgstr "Multi-Eszköz mód"
 msgid "Slide Tool"
 msgstr "Csúsztató eszköz"
 
-#: toolbars/ToolsToolBar.cpp:187
-msgid "Multi Tool"
-msgstr "Multi-Eszköz"
-
-#: toolbars/TranscriptionToolBar.cpp:84
-msgid "Transcription"
-msgstr "Áttétel"
-
 #: toolbars/TranscriptionToolBar.cpp:171
 msgid "Play at selected speed"
 msgstr "Lejátszás a kiválasztott sebességgel"
-
-#: toolbars/TranscriptionToolBar.cpp:172
-msgid "Play-at-speed"
-msgstr "Lejátszás adott sebességgel"
 
 #: toolbars/TranscriptionToolBar.cpp:178 toolbars/TranscriptionToolBar.cpp:183
 msgid "Playback Speed"
@@ -8271,73 +8595,37 @@ msgstr "Lejátszás sebessége"
 msgid "Adjust left selection to next onset"
 msgstr ""
 
-#: toolbars/TranscriptionToolBar.cpp:197
-msgid "Left-to-On"
-msgstr ""
-
 #: toolbars/TranscriptionToolBar.cpp:199
 msgid "Adjust right selection to previous offset"
-msgstr ""
-
-#: toolbars/TranscriptionToolBar.cpp:200
-msgid "Right-to-Off"
 msgstr ""
 
 #: toolbars/TranscriptionToolBar.cpp:202
 msgid "Adjust left selection to next offset"
 msgstr ""
 
-#: toolbars/TranscriptionToolBar.cpp:203
-msgid "Left-to-Off"
-msgstr ""
-
 #: toolbars/TranscriptionToolBar.cpp:205
 msgid "Adjust right selection to previous onset"
-msgstr ""
-
-#: toolbars/TranscriptionToolBar.cpp:206
-msgid "Right-to-On"
 msgstr ""
 
 #: toolbars/TranscriptionToolBar.cpp:208
 msgid "Select region of sound around cursor"
 msgstr ""
 
-#: toolbars/TranscriptionToolBar.cpp:209
-msgid "Select-Sound"
-msgstr ""
-
 #: toolbars/TranscriptionToolBar.cpp:211
 msgid "Select region of silence around cursor"
-msgstr ""
-
-#: toolbars/TranscriptionToolBar.cpp:212
-msgid "Select-Silence"
 msgstr ""
 
 #: toolbars/TranscriptionToolBar.cpp:214
 msgid "Automatically make labels from words"
 msgstr "Címkék automatikus létrehozása szavakból"
 
-#: toolbars/TranscriptionToolBar.cpp:215
-msgid "Make Labels"
-msgstr "Címkék létrehozása"
-
 #: toolbars/TranscriptionToolBar.cpp:217
 msgid "Add label at selection"
 msgstr "Címke hozzáadása a kijelölésnél"
 
-#: toolbars/TranscriptionToolBar.cpp:218
-msgid "Add Label"
-msgstr "Címke hozzáadása"
-
 #: toolbars/TranscriptionToolBar.cpp:220
 msgid "Calibrate voicekey"
 msgstr ""
-
-#: toolbars/TranscriptionToolBar.cpp:221
-msgid "Calibrate"
-msgstr "Kalibrálás"
 
 #: toolbars/TranscriptionToolBar.cpp:225
 msgid "Adjust Sensitivity"
@@ -8370,6 +8658,46 @@ msgstr ""
 #: toolbars/TranscriptionToolBar.cpp:247
 msgid "Key type"
 msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:172
+msgid "Play-at-speed"
+msgstr "Lejátszás adott sebességgel"
+
+#: toolbars/TranscriptionToolBar.cpp:197
+msgid "Left-to-On"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:200
+msgid "Right-to-Off"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:203
+msgid "Left-to-Off"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:206
+msgid "Right-to-On"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:209
+msgid "Select-Sound"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:212
+msgid "Select-Silence"
+msgstr ""
+
+#: toolbars/TranscriptionToolBar.cpp:215
+msgid "Make Labels"
+msgstr "Címkék létrehozása"
+
+#: toolbars/TranscriptionToolBar.cpp:218
+msgid "Add Label"
+msgstr "Címke hozzáadása"
+
+#: toolbars/TranscriptionToolBar.cpp:221
+msgid "Calibrate"
+msgstr "Kalibrálás"
 
 #: widgets/AButton.cpp:303
 msgid " (disabled)"
@@ -8490,7 +8818,7 @@ msgstr ""
 
 #: widgets/Meter.cpp:1146
 msgid "Meter refresh rate per second [1-100]: "
-msgstr ""
+msgstr "Mérő frissítése másodpercenként [1-100]"
 
 #: widgets/Meter.cpp:1147
 msgid "Meter Preferences"
@@ -8502,19 +8830,19 @@ msgstr " Kérem válasszon egy akciót "
 
 #: widgets/MultiDialog.cpp:86
 msgid "Please select an action"
-msgstr ""
+msgstr "Kérem válasszon egy akciót"
 
 #: widgets/ProgressDialog.cpp:97
 msgid "Elapsed Time:"
-msgstr ""
+msgstr "Eltelt idő:"
 
 #: widgets/ProgressDialog.cpp:117
 msgid "Remaining Time:"
-msgstr ""
+msgstr "Hátraévő idő:"
 
 #: widgets/ProgressDialog.cpp:134
 msgid "Cancel"
-msgstr ""
+msgstr "Mégse"
 
 #: widgets/Ruler.cpp:1445 widgets/Ruler.cpp:1446
 msgid "Vertical Ruler"
@@ -8555,7 +8883,7 @@ msgstr "0100 nap 024 ó 060 p 060 mp"
 #. * minutes, seconds and hundreths of a second (1/100 second)
 #: widgets/TimeTextCtrl.cpp:288
 msgid "hh:mm:ss + hundredths"
-msgstr ""
+msgstr "óó:pp:mm + századmásodperc"
 
 #. i18n-hint: Format string for displaying time in hours, minutes, seconds
 #. * and hundredths of a second. Change the 'h' to the abbreviation for hours,
@@ -8564,7 +8892,7 @@ msgstr ""
 #. * unless there aren't 60 minutes in an hour in your locale
 #: widgets/TimeTextCtrl.cpp:294
 msgid "0100 h 060 m 060.0100 s"
-msgstr ""
+msgstr "0100 ó 060 p 060.0100 mp"
 
 #. i18n-hint: Name of time display format that shows time in hours,
 #. * minutes, seconds and milliseconds (1/1000 second)
@@ -8759,4 +9087,16 @@ msgstr "Hiba: %hs a %lu. sorban"
 #, c-format
 msgid "Could not load file: \"%s\""
 msgstr "Nem lehet betölteni ezt a fájlt: \"%s\""
+
+#: xml/XMLWriter.cpp:325
+msgid "Error flushing file"
+msgstr ""
+
+#: xml/XMLWriter.cpp:330
+msgid "Error closing file"
+msgstr ""
+
+#: xml/XMLWriter.cpp:340
+msgid "Error writing to file"
+msgstr ""
 

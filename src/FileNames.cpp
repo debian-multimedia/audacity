@@ -118,14 +118,19 @@ wxString FileNames::DataDir()
 
 wxString FileNames::HtmlHelpDir()
 {
-   // FIX-ME uses DataDir().  Should use directory where we expect help to be.
-   // Perhaps it's same directory as Audacity.exe?
-   return FileNames::MkDir( wxFileName( DataDir(), wxT("Help") ).GetFullPath() );
+   // Use the Audacity.exe directory as a base (on Windows, others elsewhere)
+   wxString exeDir = wxStandardPaths::Get().GetDataDir();
+   return FileNames::MkDir( wxFileName( exeDir+wxT("/help/manual"), wxEmptyString ).GetFullPath() );
 }
 
-wxString FileNames::HtmlHelpIndexFile()
+wxString FileNames::HtmlHelpIndexFile(bool quick)
 {
-   return wxFileName( HtmlHelpDir(), wxT("index.htm") ).GetFullPath();
+   wxString htmlHelpIndex;
+   if(quick)
+      htmlHelpIndex = wxFileName( HtmlHelpDir(), wxT("quick_help.html") ).GetFullPath();
+   else
+      htmlHelpIndex = wxFileName( HtmlHelpDir(), wxT("index.html") ).GetFullPath();
+   return htmlHelpIndex;
 }
 
 wxString FileNames::ChainDir()

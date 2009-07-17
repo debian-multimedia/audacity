@@ -29,10 +29,10 @@
 bool EffectSimpleMono::Process()
 {
    //Iterate over each track
-   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+   this->CopyInputTracks(); // Set up mOutputTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(mOutputWaveTracks);
+   SelectedTrackListOfKindIterator iter(Track::Wave, mOutputTracks);
    WaveTrack* pOutWaveTrack = (WaveTrack*)(iter.First());
    mCurTrackNum = 0;
    while (pOutWaveTrack != NULL)
@@ -71,7 +71,7 @@ bool EffectSimpleMono::Process()
       mCurTrackNum++;
    }
 
-   this->ReplaceProcessedWaveTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult); 
    return bGoodResult;
 }
 
@@ -121,8 +121,10 @@ bool EffectSimpleMono::ProcessOne(WaveTrack * track,
       s += block;
 
       //Update the Progress meter
-      if (TrackProgress(mCurTrackNum, (s - start) / len))
+      if (TrackProgress(mCurTrackNum, (s - start) / len)) {
+         delete[]buffer;
          return false;
+      }
    }
 
    //Clean up the buffer

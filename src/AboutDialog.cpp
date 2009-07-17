@@ -140,7 +140,7 @@ END_EVENT_TABLE()
 IMPLEMENT_CLASS(AboutDialog, wxDialog)
 
 AboutDialog::AboutDialog(wxWindow * parent)
-   :  wxDialog(parent, -1, _NoAcc("&About Audacity..."),
+   :  wxDialog(parent, -1, _("About Audacity..."),
                wxDefaultPosition, wxDefaultSize)
 {
    this->SetBackgroundColour(theTheme.Colour( clrAboutBoxBackground ));
@@ -176,10 +176,10 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 
    #if 1 // Is this beta or not?
    wxString par2Str = _(
-	 "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
+     "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
    #else
    wxString par2Str = _(
-     "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to <b>feedback@audacityteam.org</b>. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
+     "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help using Audacity, please visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
    #endif
 
    wxString translatorCredits;
@@ -247,7 +247,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
       GetCreditsByRole(roleThanks) +
       wxT("<p><br></center>") +
 	  
-	  _("<b>Audacity&reg;</b> software is copyright &copy; 1999-2008 Audacity Team. <br>The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
+	  _("<b>Audacity&reg;</b> software is copyright &copy; 1999-2009 Audacity Team. <br>The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
 	  wxT("</font></body></html>");
 
    
@@ -396,14 +396,9 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
          _("Sample rate conversion"), disabled);
    #endif
-   
-   #if USE_PORTAUDIO_V19
+
    AddBuildinfoRow(&informationStr, wxT("PortAudio"),
          _("Audio playback and recording"), wxString(wxT("v19")));
-   #else
-   AddBuildinfoRow(&informationStr, wxT("PortAudio"),
-         _("Audio playback and recording"), wxString(wxT("v18")));
-   #endif
 
    informationStr += wxT("<tr><td>");  // start new row
    // wxWindows version:
@@ -820,7 +815,7 @@ wxString AboutDialog::GetCreditsByRole(AboutDialog::Role role)
 {
    wxString s;
    
-   for (AboutDialogCreditItemsList::Node* p=creditItems.GetFirst(); p; p = p->GetNext())
+   for (AboutDialogCreditItemsList::compatibility_iterator p=creditItems.GetFirst(); p; p = p->GetNext())
    {
       AboutDialogCreditItem* item = p->GetData();
       if (item->role == role)

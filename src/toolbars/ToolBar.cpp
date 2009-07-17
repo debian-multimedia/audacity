@@ -95,7 +95,6 @@ ToolBar::ToolBar( int type,
    mType = type;
    mLabel = label;
    mSection = section;
-   mTitle.Printf( _("Audacity %s ToolBar"), mLabel.c_str() );
    mResizable = resizable;
 
    // Initialize everything
@@ -118,7 +117,7 @@ ToolBar::~ToolBar()
 //
 wxString ToolBar::GetTitle()
 {
-   return mTitle;
+   return wxString::Format( _("Audacity %s ToolBar"), GetLabel().c_str() );
 }
 
 //
@@ -143,6 +142,14 @@ wxString ToolBar::GetSection()
 int ToolBar::GetType()
 {
    return mType;
+}
+
+//
+// Set the toolbar label
+//
+void ToolBar::SetLabel(const wxString & label)
+{
+   mLabel = label;
 }
 
 //
@@ -204,8 +211,8 @@ void ToolBar::Create( wxWindow *parent )
                     wxDefaultPosition,
                     wxDefaultSize,
                     wxNO_BORDER | wxTAB_TRAVERSAL,
-                    mTitle );
-   SetLabel( mLabel );
+                    GetTitle() );
+   wxPanel::SetLabel( GetLabel() );
 
    // Go do the rest of the creation
    ReCreateButtons();
@@ -262,10 +269,25 @@ void ToolBar::ReCreateButtons()
    Layout();
 }
 
+// The application preferences have changed, so update any elements that may
+// depend on them.
+void ToolBar::UpdatePrefs()
+{
+#if wxUSE_TOOLTIPS
+   // Change the tooltip of the grabber
+   mGrabber->SetToolTip( GetTitle() );
+#endif
+
+   return;
+}
+
+//
+// Return the pointer to the ToolBock where this bar lives
+//
 ToolDock *ToolBar::GetDock()
 {
    return mDock;
-};
+}
 
 //
 // Toggle the docked/floating state
@@ -392,10 +414,15 @@ void ToolBar::MakeRecoloredImage( teBmps eBmpOut, teBmps eBmpIn )
 {
    wxImage * pPattern;
    wxImage * pSrc = &theTheme.Image( eBmpIn );
-   wxColour newColour = wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE);
-   wxColour baseColour = wxColour(204, 204, 204);
+#if defined( __WXGTK__ )
+   wxColour newColour = wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND );
+#else
+   wxColour newColour = wxSystemSettings::GetColour( wxSYS_COLOUR_3DFACE );
+#endif
+   wxColour baseColour = wxColour( 204, 204, 204 );
 
-   pPattern = ChangeImageColour( pSrc,     baseColour, newColour );
+   pPattern = ChangeImageColour( pSrc, baseColour, newColour );
+
    theTheme.ReplaceImage( eBmpOut, pPattern);
    delete pPattern;
 }
@@ -498,11 +525,13 @@ void ToolBar::OnPaint( wxPaintEvent & event )
 
    // Start with a clean background
    //
-   // Under GTK, clearing will cause the background to be white and
-   // rather than setting a background color, just bypass the clear.
-#if !defined(__WXGTK__)
-   dc.Clear();
+   // Under GTK, we specifically set the toolbar background to the background
+   // colour in the system theme.
+#if defined( __WXGTK__ )
+   dc.SetBackground( wxBrush( wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND ) ) );
 #endif
+
+   dc.Clear();
 
 // EXPERIMENTAL_THEMING is set to not apply the gradient
 // on wxMAC builds.  on wxMAC we have the AQUA_THEME.
@@ -540,7 +569,7 @@ void ToolBar::OnPaint( wxPaintEvent & event )
          }
          wxPen Pen( col );
          dc.SetPen(Pen );
-         dc.DrawLine( 0, y, sz.x, y );
+         AColor::Line(dc, 0, y, sz.x, y );
       }
    }
 #endif
@@ -551,8 +580,8 @@ void ToolBar::OnPaint( wxPaintEvent & event )
       wxSize sz = GetSize();
 
       AColor::Dark( &dc, false );
-      dc.DrawLine( sz.x - 4,  0, sz.x - 4, sz.y );
-      dc.DrawLine( sz.x - 1,  0, sz.x - 1, sz.y );
+      AColor::Line(dc, sz.x - 4,  0, sz.x - 4, sz.y );
+      AColor::Line(dc, sz.x - 1,  0, sz.x - 1, sz.y );
    }
 }
 

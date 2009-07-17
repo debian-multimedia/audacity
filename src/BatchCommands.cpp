@@ -251,7 +251,7 @@ void BatchCommands::SetWavToMp3Chain()
 // Gets all commands that are valid for this mode.
 wxArrayString BatchCommands::GetAllCommands()
 {
-   wxArrayString commands(true);
+   wxArrayString commands;
    wxString command;
    commands.Clear();
 
@@ -315,7 +315,6 @@ bool BatchCommands::PromptForParamsFor(wxString command)
    //mFactory = factory;
    //mProjectRate = projectRate;
    f->mParent = NULL;
-   f->mWaveTracks = NULL;
    //mTracks = list;
    return f->PromptUser();
 }
@@ -514,13 +513,10 @@ bool BatchCommands::SetCurrentParametersFor( Effect * f, const wxString command,
 
 bool BatchCommands::ApplyEffectCommand(   Effect * f, const wxString command, const wxString params)
 {
-   if( !SetCurrentParametersFor( f, command, params ))
-      return false;
    //Possibly end processing here, if in batch-debug
    if( ReportAndSkip(command, params))
       return true;
 
-   //Parmeters are set, nearly ready to apply the effect...
    AudacityProject *project = GetActiveProject();
 
    //FIX-ME: for later versions may want to not select-all in batch mode.
@@ -529,7 +525,7 @@ bool BatchCommands::ApplyEffectCommand(   Effect * f, const wxString command, co
    project->SelectAllIfNone();
 
    // NOW actually apply the effect.
-   return project->OnEffect(ALL_EFFECTS | CONFIGURED_EFFECT , f);
+   return project->OnEffect(ALL_EFFECTS | CONFIGURED_EFFECT , f, params, false);
 }
 
 bool BatchCommands::ApplyMenuCommand(const wxString command, const wxString params)
@@ -596,8 +592,34 @@ bool BatchCommands::ApplyChain(const wxString & filename)
    }
 
    mFileName.Empty();
+   AudacityProject *proj = GetActiveProject();
 
-   return res;
+   if (!res)
+   {
+      // Chain failed or was cancelled; revert to the previous state
+      UndoManager *um = proj->GetUndoManager();
+      proj->SetStateTo(um->GetCurrentState());
+      return false;
+   }
+
+   // Chain was successfully applied; save the new project state
+   wxString longDesc, shortDesc;
+   wxString name = gPrefs->Read(wxT("/Batch/ActiveChain"), wxEmptyString);
+   if (name.IsEmpty())
+   {
+      longDesc = wxT("Applied batch chain");
+      shortDesc = wxT("Apply chain");
+   }
+   else
+   {
+      longDesc = wxString::Format(wxT("Applied batch chain '%s'"), name.c_str());
+      shortDesc = wxString::Format(wxT("Apply '%s'"), name.c_str());
+   }
+
+   if (!proj)
+      return false;
+   proj->PushState(longDesc, shortDesc);
+   return true;
 }
 
 // AbortBatch() allows a premature terminatation of a batch.

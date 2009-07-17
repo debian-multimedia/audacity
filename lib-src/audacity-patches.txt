@@ -91,35 +91,36 @@ libsamplerate
 Erik de Castro Lopo's high quality sample rate conversion library. Not used
 in release builds, could probably be removed altogther except for comparision
 purposes.
-Version in Audacity CVS: 0.1.2
-Patches: ??
+Version in Audacity CVS: 0.1.7
+Patches: endian.m4, lrint.m4, llrint.m4, lrintf.m4, clip_mode.m4 copied from
+			libsndfile's M4/.
+		 signal.m4 created out of the tail of acinclude.m4 with the remaining
+		 	necessary macro
 AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
 by default
-Upstream Version: 0.1.2
+Upstream Version: 0.1.7
 
 libsndfile
 ----------
 Erik de Castro Lopo's uncompressed audio file I/O library. Core and essential
 to audacity.
-Version in Audacity CVS: 1.0.17
-Patches:  wav-bext.patch: backport patch from 1.0.18 of a patch to fix reading
-bext chunks in WAV files
-		  update-autotools.patch: backport patch from 1.0.18pre25 to use an M4
-		  directory for m4 macro files, and other changes so that the source
-		  tree will take libtoolise --copy --force; aclocal -I M4 --install;
-		  autoreconf and generate a working build system on any reasonably
-		  sensible host.
+Version in Audacity CVS: 1.0.18
+Patches: macro-quoting.patch: quote arguments to AC_DEFUN such that
+			autoreconf works with autorecnf 2.63. Has been accepted upstream
+		 portability.patch: add portability macros / pre-processor to 
+			enable build on non-standard platforms. Not yet accepted upstream.
 AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
 by default
-Upstream Version: 1.0.17
-TODO: upgrade to 1.0.18 when it comes out in order to drop the bext patch
+Upstream Version: 1.0.18
 
 libvamp
 -------
 Library to load and use VAMP plug-ins. http://www.vamp-plugins.org/
 Version in Audacity CVS: 2.0
 Patches: optional-progs.patch: Make building the Vamp host (and so the
-dependecy on libsndfile) optional rather than mandatory
+dependecy on libsndfile) optional rather than mandatory. Accepted upstream.
+		 distclean.patch: ensure that distclean actually works and takes away
+		 auto* droppings. Accepted upstream.
 Upstream Version: 2.0
 
 libvorbis
@@ -158,11 +159,17 @@ portaudio-v19
 -------------
 http://portaudio.com/
 cross-platform audio I/O library version 19, used for 1.3.2 onwards releases
-Version in audacity cvs: 31st December 2008 SVN snapshot (r1396)
+Version in audacity cvs: 1st July 2009 SVN snapshot (r1416)
 Patches:
 ../portmixer/portaudio.patch	add features needed to make portmixer work.
 		Integration by upstream in progress. Will need updating as upstream
 		portaudio moves
+
+portaudio/libtool22.patch	Patch from Gentoo to ensure that static libraries
+are always built, not shared ones, otherwise the assumptions elsewhere in the
+build system break. Not suitable for upstream, what is needed is more
+powerfull autoconf features to pass the right options to portaudio's configure
+script, which suffers from the broken-ness of autoconf's subdirectory support
 
 portsmf
 -------
@@ -175,8 +182,12 @@ portsmf-includes.patch	add include of <cstring> needed to compile with recent
 portsmf-string-const.patch	Add string const qualifiers as needed
 local-macros.patch		Add all the necessary 3rd party m4 macros into autotools
 						/m4/ and supporting changes.
+unsigned-const-casts.patch	Build fix for Solaris compiler, adds casts to
+						unsigned integer literals.
 AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
 by default
+All patches have been added to upstream patch tracker at
+https://sourceforge.net/tracker2/?group_id=196750&atid=958711
 
 
 portburn
@@ -215,6 +226,11 @@ Misc fixes to configure.in/Makefile.am for autoconf macros and libtool. More
 files added to m4/ directory by libtoolizing commited to CVS.
 AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
 by default
+dont-mangle-cflags.patch	patch to stop sed-ing the CXXFLAGS and achieve the
+same ends by better means, replacing a hacked version from Gentoo. Patch
+linked to from upstream tracker at
+https://sourceforge.net/tracker/index.php?func=detail&aid=2561247&group_id=177794&atid=882654
+because attachements there don't seem to work.
 
 slv2
 -------
@@ -242,6 +258,21 @@ directly. In upstream SVN
 Argument ([-Wall foreign]) added to AM_INIT_AUTOMAKE because autoreconf fails
 otherwise
 Upstream Version: 1.3.1
+
+taglib
+------
+http://developer.kde.org/~wheeler/taglib.html
+svn co svn://anonsvn.kde.org/home/kde/trunk/kdesupport/taglib
+Audio Meta-Data Library
+Version in audacity cvs: svn revision 924567 (post 1.5)
+Patches: none
+
+If replacing via svn, you need to do the following to generate the configure
+scripts (from within the base taglib directory):
+   sh admin/cvs.sh dist
+
+And remove the .svn directories (from within the base taglib direcotry):
+   find -d . -path \*/.svn\* -exec rm -rf \{\} \;
 
 twolame
 -------
@@ -280,7 +311,9 @@ run  find . -name '*.orig' -delete and  find . -name '*~' -delete. To remove
 find . -wholename '*/.svn/*' -delete and then find . -name '.svn' -delete
 
 * run autoreconf if we have modified configure.in or configure.ac
-* run libtoolize --copy --force to update ltmain.sh, config.sub, config.guess
+* If the package uses libtool, run libtoolize --copy --force to update 
+	ltmain.sh, config.sub, config.guess. If not, update config.sub,
+	config.guess from /usr/share/gnuconfig/
 
 By doing it this way we have already updated the mtime on all files, so we
 don't need to do a recusive touch.

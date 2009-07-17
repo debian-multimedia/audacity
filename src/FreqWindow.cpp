@@ -68,6 +68,9 @@ the mouse around.
 #include "FFT.h"
 #include "Internat.h"
 #include "PitchName.h"
+#include "Prefs.h"
+#include "Project.h"
+#include "WaveClip.h"
 #include "Theme.h"
 #include "AllThemeResources.h"
 
@@ -80,10 +83,10 @@ enum {
    FreqAlgChoiceID,
    FreqSizeChoiceID,
    FreqFuncChoiceID,
-   FreqAxisChoiceID
+   FreqAxisChoiceID,
+   ReplotButtonID,
+   GridOnOffID
 };
-
-FreqWindow *gFreqWindow = NULL;
 
 // These specify the minimum plot window width
 
@@ -92,15 +95,24 @@ FreqWindow *gFreqWindow = NULL;
 
 void InitFreqWindow(wxWindow * parent)
 {
-   if (gFreqWindow)
+   AudacityProject* p = GetActiveProject();
+   if (!p)
       return;
 
-   wxPoint where;
+   if(!p->mFreqWindow)
+   {
+      wxPoint where;
 
-   where.x = 150;
-   where.y = 150;
+      where.x = 150;
+      where.y = 150;
 
-   gFreqWindow = new FreqWindow(parent, -1, _("Frequency Analysis"), where);
+      p->mFreqWindow = new FreqWindow(parent, -1, _("Frequency Analysis"), where);
+   }
+   wxCommandEvent dummy;
+   p->mFreqWindow->OnReplot(dummy);
+   p->mFreqWindow->Show(true);
+   p->mFreqWindow->Raise();
+   p->mFreqWindow->SetFocus();
 }
 
 // FreqWindow
@@ -114,6 +126,8 @@ BEGIN_EVENT_TABLE(FreqWindow, wxDialog)
     EVT_CHOICE(FreqSizeChoiceID, FreqWindow::OnSizeChoice)
     EVT_CHOICE(FreqFuncChoiceID, FreqWindow::OnFuncChoice)
     EVT_CHOICE(FreqAxisChoiceID, FreqWindow::OnAxisChoice)
+    EVT_BUTTON(ReplotButtonID, FreqWindow::OnReplot)
+    EVT_CHECKBOX(GridOnOffID, FreqWindow::OnGridOnOff)
 END_EVENT_TABLE()
 
 FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
@@ -125,6 +139,9 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 {
    mMouseX = 0;
    mMouseY = 0;
+   mRate = 0;
+   mDataLen = 0;
+   mBuffer = NULL;
 
    mFreqFont = wxFont(fontSize, wxSWISS, wxNORMAL, wxNORMAL);
    mArrowCursor = new wxCursor(wxCURSOR_ARROW);
@@ -132,6 +149,15 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 
    mLeftMargin = 40;
    mBottomMargin = 20;
+
+   gPrefs->Read(wxT("/FreqWindow/DrawGrid"), &mDrawGrid, true);
+   gPrefs->Read(wxT("/FreqWindow/SizeChoice"), &mSize, 2);
+   gPrefs->Read(wxT("/FreqWindow/AlgChoice"), &mAlg, 0);
+   gPrefs->Read(wxT("/FreqWindow/FuncChoice"), &mFunc, 3);
+   gPrefs->Read(wxT("/FreqWindow/AxisChoice"), &mAxis, 0);
+   gPrefs->Read(wxT("/GUI/EnvdBRange"), &dBRange, ENV_DB_RANGE);
+   if(dBRange < 90.)
+      dBRange = 90.;
 
    mFreqPlot = new FreqPlot(this, 0,
                             wxDefaultPosition, wxDefaultSize);
@@ -153,7 +179,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
                              5, algChoiceStrings);
    mAlgChoice->SetName(_("Algorithm"));
 
-   mAlgChoice->SetSelection(0);
+   mAlgChoice->SetSelection(mAlg);
 
    wxString sizeChoiceStrings[8] = { wxT("128"),
       wxT("256"),
@@ -172,7 +198,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
                               8, sizeChoiceStrings);
    mSizeChoice->SetName(_("Size"));
 
-   mSizeChoice->SetSelection(2);
+   mSizeChoice->SetSelection(mSize);
 
    int f = NumWindowFuncs();
 
@@ -190,7 +216,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
                               f, funcChoiceStrings);
    mFuncChoice->SetName(_("Function"));
 
-   mFuncChoice->SetSelection(3);
+   mFuncChoice->SetSelection(mFunc);
    delete[]funcChoiceStrings;
 
    wxString axisChoiceStrings[2] = { _("Linear frequency"),
@@ -204,17 +230,27 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
                               2, axisChoiceStrings);
    mAxisChoice->SetName(_("Axis"));
 
-   mAxisChoice->SetSelection(0);
+   mAxisChoice->SetSelection(mAxis);
 
-   mLogAxis = false;
+   mLogAxis = mAxis?true:false;
 
    mExportButton = new wxButton(this, FreqExportButtonID,
                                 _("&Export..."));
    mExportButton->SetName(_("Export"));
 
+   mReplotButton = new wxButton(this, ReplotButtonID,
+                                _("&Replot"));
+   mReplotButton->SetName(_("Replot"));
+
    mCloseButton = new wxButton(this, wxID_CANCEL,
                                _("Close"));
    mCloseButton->SetName(_("Close"));
+
+   mGridOnOff = new wxCheckBox(this, GridOnOffID, _("Grids"),
+                            wxDefaultPosition, wxDefaultSize,
+                            wxALIGN_RIGHT);
+   mGridOnOff->SetName(_("Grids"));
+   mGridOnOff->SetValue(mDrawGrid);
 
 #ifndef TARGET_CARBON
    mCloseButton->SetDefault();
@@ -275,10 +311,11 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    vRuler = new RulerPanel(this, wxID_ANY);
    vRuler->ruler.SetBounds(0, 0, 100, 100); // Ruler can't handle small sizes
    vRuler->ruler.SetOrientation(wxVERTICAL);
-   vRuler->ruler.SetRange(10.0, -90.0);
+   vRuler->ruler.SetRange(10.0, -dBRange);
    vRuler->ruler.SetFormat(Ruler::LinearDBFormat);
    vRuler->ruler.SetUnits(_("dB"));
-   vRuler->ruler.SetLabelEdges(true);
+   vRuler->ruler.SetLabelEdges(false);
+
    int w, h;
    vRuler->ruler.GetMaxSize(&w, NULL);
    vRuler->SetSize(wxSize(w, 150));  // height needed for wxGTK
@@ -306,6 +343,8 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 
    vs->Add( 1, 5, 0 );
 
+   wxFlexGridSizer *gs = new wxFlexGridSizer( 2 );
+
    hs = new wxBoxSizer( wxHORIZONTAL );
    hs->Add( algLabel, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, 5 );
    hs->Add( mAlgChoice, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, 5 );
@@ -313,7 +352,8 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    hs->Add( mSizeChoice, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, 5 );
    hs->Add( 10, 1, 0 );
    hs->Add( mExportButton, 0, wxALIGN_CENTER | wxALIGN_RIGHT | wxLEFT | wxRIGHT, 5 );
-   vs->Add( hs, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT | wxBOTTOM, 5 );
+   gs->Add( hs, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT , 5 );
+   gs->Add( mReplotButton, 0, wxALIGN_CENTER | wxALIGN_RIGHT | wxLEFT | wxRIGHT | wxBOTTOM, 5 );
 
    hs = new wxBoxSizer( wxHORIZONTAL );
    hs->Add( funcLabel, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, 5 );
@@ -322,7 +362,9 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    hs->Add( mAxisChoice, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, 5 );
    hs->Add( 10, 1, 0 );
    hs->Add( mCloseButton, 0, wxALIGN_CENTER | wxALIGN_RIGHT | wxLEFT | wxRIGHT, 5 );
-   vs->Add( hs, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT | wxBOTTOM, 5 );
+   gs->Add( hs, 0, wxALIGN_CENTER_HORIZONTAL | wxLEFT | wxRIGHT | wxBOTTOM, 5 );
+   gs->Add( mGridOnOff, 0, wxALIGN_CENTER | wxALIGN_RIGHT | wxLEFT | wxRIGHT, 5 );
+   vs->Add( gs, 0, wxEXPAND | wxBOTTOM, 0 );
 
    vs->Add( mInfo, 0, wxEXPAND | wxBOTTOM, 0 );
 
@@ -343,7 +385,73 @@ FreqWindow::~FreqWindow()
    delete mArrowCursor;
    delete mCrossCursor;
    if (mData)
-      delete[]mData;
+      delete[] mData;
+   if (mBuffer)
+      delete[] mBuffer;
+   if (mProcessed)
+      delete[] mProcessed;
+}
+
+void FreqWindow::GetAudio()
+{
+   int selcount = 0;
+   int i;
+   bool warning = false;
+   AudacityProject *p = GetActiveProject();
+   TrackListIterator iter(p->GetTracks());
+   Track *t = iter.First();
+   while (t) {
+      if (t->GetSelected() && t->GetKind() == Track::Wave) {
+         WaveTrack *track = (WaveTrack *)t;
+         if (selcount==0) {
+            mRate = track->GetRate();
+            sampleCount start, end;
+            start = track->TimeToLongSamples(p->mViewInfo.sel0);
+            end = track->TimeToLongSamples(p->mViewInfo.sel1);
+            mDataLen = (sampleCount)(end - start);
+            if (mDataLen > 10485760) {
+               warning = true;
+               mDataLen = 10485760;
+            }
+            if (mBuffer) {
+               delete [] mBuffer;
+            }
+            mBuffer = new float[mDataLen];
+            track->Get((samplePtr)mBuffer, floatSample, start, mDataLen);
+         }
+         else {
+            if (track->GetRate() != mRate) {
+               wxMessageBox(_("To plot the spectrum, all selected tracks must be the same sample rate."));
+               delete[] mBuffer;
+               mBuffer = NULL;
+               return;
+            }
+            sampleCount start;
+            start = track->TimeToLongSamples(p->mViewInfo.sel0);
+            float *buffer2 = new float[mDataLen];
+            track->Get((samplePtr)buffer2, floatSample, start, mDataLen);
+            for(i=0; i<mDataLen; i++)
+               mBuffer[i] += buffer2[i];
+            delete[] buffer2;
+         }
+         selcount++;
+      }
+      t = iter.Next();
+   }
+   
+   if (selcount == 0)
+      return;
+   
+   if (selcount > 1)
+      for(i=0; i<mDataLen; i++)
+         mBuffer[i] /= selcount;
+   
+   if (warning) {
+      wxString msg;
+      msg.Printf(_("Too much audio was selected.  Only the first %.1f seconds of audio will be analyzed."),
+                          (mDataLen / mRate));
+      wxMessageBox(msg);
+   }
 }
 
 void FreqWindow::OnSize(wxSizeEvent & event)
@@ -485,7 +593,7 @@ void FreqWindow::DrawPlot()
          lineheight = r.height - 2;
 
       if (ynorm > 0.0)
-         memDC.DrawLine(r.x + 1 + i, r.y + r.height - 1 - lineheight,
+         AColor::Line(memDC, r.x + 1 + i, r.y + r.height - 1 - lineheight,
                         r.x + 1 + i, r.y + r.height - 1);
 
       if (mLogAxis)
@@ -499,10 +607,15 @@ void FreqWindow::DrawPlot()
    memDC.SetBrush(*wxTRANSPARENT_BRUSH);
    memDC.DrawRectangle(r);
 
+   if(mDrawGrid)
+   {
+      hRuler->ruler.DrawGrid(memDC, r.height, true, true, 1, 1);
+      vRuler->ruler.DrawGrid(memDC, r.width, true, true, 1, 1);
+   }
+
    memDC.SelectObject( wxNullBitmap );
 
    mBitmap->SetMask( new wxMask( *mBitmap, wxColour(254, 254, 254) ) );
-
 }
 
 
@@ -758,7 +871,7 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
          px = int ((bestpeak - xMin) * width / (xMax - xMin));
 
       dc.SetPen(wxPen(wxColour(160,160,160), 1, wxSOLID));
-      dc.DrawLine(r.x + 1 + px, r.y, r.x + 1 + px, r.y + r.height);
+      AColor::Line(dc, r.x + 1 + px, r.y, r.x + 1 + px, r.y + r.height);
 
        // print out info about the cursor location
 
@@ -779,8 +892,8 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
       const wxChar *pp;
 
       if (alg == 0) {
-         xpitch = PitchName_Absolute(Freq2Pitch(xPos));
-         peakpitch = PitchName_Absolute(Freq2Pitch(bestpeak));
+         xpitch = PitchName_Absolute(FreqToMIDInoteNumber(xPos));
+         peakpitch = PitchName_Absolute(FreqToMIDInoteNumber(bestpeak));
          xp = xpitch.c_str();
          pp = peakpitch.c_str();
 
@@ -789,8 +902,8 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
                int (value + 0.5), int (bestpeak + 0.5),
                pp, bestValue);
       } else if (xPos > 0.0 && bestpeak > 0.0) {
-         xpitch = PitchName_Absolute(Freq2Pitch(1.0 / xPos));
-         peakpitch = PitchName_Absolute(Freq2Pitch(1.0 / bestpeak));
+         xpitch = PitchName_Absolute(FreqToMIDInoteNumber(1.0 / xPos));
+         peakpitch = PitchName_Absolute(FreqToMIDInoteNumber(1.0 / bestpeak));
          xp = xpitch.c_str();
          pp = peakpitch.c_str();
          info.Printf(_("Cursor: %.4f sec (%d Hz) (%s) = %f,    Peak: %.4f sec (%d Hz) (%s) = %.3f"),
@@ -817,19 +930,28 @@ void FreqWindow::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
 
 void FreqWindow::OnCloseButton(wxCommandEvent & WXUNUSED(event))
 {
+   gPrefs->Write(wxT("/FreqWindow/DrawGrid"), mDrawGrid);
+   gPrefs->Write(wxT("/FreqWindow/SizeChoice"), mSizeChoice->GetSelection());
+   gPrefs->Write(wxT("/FreqWindow/AlgChoice"), mAlgChoice->GetSelection());
+   gPrefs->Write(wxT("/FreqWindow/FuncChoice"), mFuncChoice->GetSelection());
+   gPrefs->Write(wxT("/FreqWindow/AxisChoice"), mAxisChoice->GetSelection());
    this->Show(FALSE);
 }
 
-void FreqWindow::Plot(int len, float *data, double rate)
+void FreqWindow::Plot()
 {
-   mRate = rate;
-   mDataLen = len;
-   if (mData)
+   if (mData) {
       delete[]mData;
-   mData = new float[len];
-   for (int i = 0; i < len; i++)
-      mData[i] = data[i];
+      mData = NULL;
+   }
+
+   if (mBuffer) {
+      mData = new float[mDataLen];
+      for (int i = 0; i < mDataLen; i++)
+         mData[i] = mBuffer[i];
+   }
    Recalc();
+
    wxSizeEvent dummy;
    OnSize( dummy );
 }
@@ -882,6 +1004,15 @@ void FreqWindow::Recalc()
    for(int i=0; i<mWindowSize; i++)
       win[i] = 1.0;
    WindowFunc(windowFunc, mWindowSize, win);
+   // Scale window such that an amplitude of 1.0 in the time domain
+   // shows an amplitude of 0dB in the frequency domain
+   double wss = 0;
+   for(int i=0; i<mWindowSize; i++)
+      wss += win[i];
+   if(wss > 0)
+      wss = 4.0 / (wss*wss);
+   else
+      wss = 1.0;
 
    int start = 0;
    int windows = 0;
@@ -902,8 +1033,11 @@ void FreqWindow::Recalc()
       case 3:   // Autocorrelation, Cuberoot AC or Enhanced AC
 
          // Take FFT
+#ifdef EXPERIMENTAL_USE_REALFFTF
+         RealFFT(mWindowSize, in, out, out2);
+#else
          FFT(mWindowSize, false, in, NULL, out, out2);
-
+#endif
          // Compute power
          for (i = 0; i < mWindowSize; i++)
             in[i] = (out[i] * out[i]) + (out2[i] * out2[i]);
@@ -920,7 +1054,11 @@ void FreqWindow::Recalc()
                in[i] = pow(in[i], 1.0f / 3.0f);
          }
          // Take FFT
+#ifdef EXPERIMENTAL_USE_REALFFTF
+         RealFFT(mWindowSize, in, out, out2);
+#else
          FFT(mWindowSize, false, in, NULL, out, out2);
+#endif
 
          // Take real part of result
          for (i = 0; i < half; i++)
@@ -928,20 +1066,30 @@ void FreqWindow::Recalc()
          break;
 
       case 4:                  // Cepstrum
+#ifdef EXPERIMENTAL_USE_REALFFTF
+         RealFFT(mWindowSize, in, out, out2);
+#else
          FFT(mWindowSize, false, in, NULL, out, out2);
+#endif
 
          // Compute log power
+         // Set a sane lower limit assuming maximum time amplitude of 1.0
          float power;
+         float minpower = 1e-20*mWindowSize*mWindowSize;
          for (i = 0; i < mWindowSize; i++)
          {
             power = (out[i] * out[i]) + (out2[i] * out2[i]);
-            if(power <= 0.)
-               in[i] = -100000.;
+            if(power < minpower)
+               in[i] = log(minpower);
             else
-               in[i] = log((out[i] * out[i]) + (out2[i] * out2[i]));
+               in[i] = log(power);
          }
          // Take IFFT
+#ifdef EXPERIMENTAL_USE_REALFFTF
+         InverseRealFFT(mWindowSize, in, NULL, out);
+#else
          FFT(mWindowSize, true, in, NULL, out, out2);
+#endif
 
          // Take real part of result
          for (i = 0; i < half; i++)
@@ -955,21 +1103,26 @@ void FreqWindow::Recalc()
    }
 
    switch (alg) {
+   double scale;
    case 0:                     // Spectrum
       // Convert to decibels
       mYMin = 1000000.;
       mYMax = -1000000.;
+      scale = wss / (double)windows;
       for (i = 0; i < half; i++)
       {
-         mProcessed[i] = 10 * log10(mProcessed[i] / mWindowSize / windows);
+         mProcessed[i] = 10 * log10(mProcessed[i] * scale);
          if(mProcessed[i] > mYMax)
             mYMax = mProcessed[i];
          else if(mProcessed[i] < mYMin)
             mYMin = mProcessed[i];
       }
-      if(mYMin < -90.)
-         mYMin = -90.;
-      mYMax += .5;
+      if(mYMin < -dBRange)
+         mYMin = -dBRange;
+      if(mYMax <= -dBRange)
+         mYMax = -dBRange + 10.; // it's all out of range, but show a scale.
+      else
+         mYMax += .5;
 
       mProcessedSize = half;
       mYStep = 10;
@@ -1109,10 +1262,40 @@ void FreqWindow::OnExport(wxCommandEvent & WXUNUSED(event))
    f.Close();
 }
 
+void FreqWindow::OnReplot(wxCommandEvent & WXUNUSED(event))
+{
+   gPrefs->Read(wxT("/GUI/EnvdBRange"), &dBRange, ENV_DB_RANGE);
+   if(dBRange < 90.)
+      dBRange = 90.;
+   GetAudio();
+   
+   AudacityProject* p = GetActiveProject();
+   if (!p)
+      return;
+
+   if(p->mFreqWindow)
+      p->mFreqWindow->Plot();
+}
+
+void FreqWindow::OnGridOnOff(wxCommandEvent & WXUNUSED(event))
+{
+   if( mGridOnOff->IsChecked() )
+      mDrawGrid = true;
+   else
+      mDrawGrid = false;
+
+   AudacityProject* p = GetActiveProject();
+   if (!p)
+      return;
+
+   if(p->mFreqWindow)
+      p->mFreqWindow->Plot();
+}
 
 BEGIN_EVENT_TABLE(FreqPlot, wxWindow)
-    EVT_PAINT(FreqPlot::OnPaint)
-    EVT_MOUSE_EVENTS(FreqPlot::OnMouseEvent)
+   EVT_ERASE_BACKGROUND(FreqPlot::OnErase)
+   EVT_PAINT(FreqPlot::OnPaint)
+   EVT_MOUSE_EVENTS(FreqPlot::OnMouseEvent)
 END_EVENT_TABLE()
 
 FreqPlot::FreqPlot(wxWindow * parent, wxWindowID id,
@@ -1120,6 +1303,11 @@ FreqPlot::FreqPlot(wxWindow * parent, wxWindowID id,
                        const wxSize & size):wxWindow(parent, id, pos, size)
 {
    freqWindow = (FreqWindow *) parent;
+}
+
+void FreqPlot::OnErase(wxEraseEvent &evt)
+{
+   // Ignore it to prevent flashing
 }
 
 void FreqPlot::OnPaint(wxPaintEvent & evt)

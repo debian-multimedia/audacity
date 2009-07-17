@@ -1,4 +1,4 @@
-/**********************************************************************
+	/**********************************************************************
 
   Audacity: A Digital Audio Editor
 
@@ -21,6 +21,7 @@
 #include <wx/timer.h>
 
 #include "../SampleFormat.h"
+#include "../Sequence.h"
 #include "Ruler.h"
 
 // Increase this when we add support for multichannel meters
@@ -84,15 +85,6 @@ class Meter : public wxPanel
    DECLARE_DYNAMIC_CLASS(Meter)
 
  public:
-   Meter(wxWindow* parent, wxWindowID id,
-         bool isInput,
-         const wxPoint& pos = wxDefaultPosition,
-         const wxSize& size = wxDefaultSize);
-
-   ~Meter();
-
-   void UpdatePrefs();
-
    // These should be kept in the same order as they appear
    // in the menu
    enum Style {
@@ -100,8 +92,21 @@ class Meter : public wxPanel
       VerticalStereo,
       VerticalMulti,
       Equalizer,
-      Waveform
+      Waveform, 
+      MixerTrackCluster // Doesn't show menu, icon, or L/R labels, but otherwise like VerticalStereo.
    };
+
+
+   Meter(wxWindow* parent, wxWindowID id,
+         bool isInput,
+         const wxPoint& pos = wxDefaultPosition,
+         const wxSize& size = wxDefaultSize, 
+         Style style = HorizontalStereo, 
+         float fDecayRate = 60.0f);
+
+   ~Meter();
+
+   void UpdatePrefs();
 
    Style GetStyle() { return mStyle; }
    void SetStyle(Style newStyle);
@@ -112,6 +117,7 @@ class Meter : public wxPanel
     * different thread (like from an audio I/O callback).
     */
    void Reset(double sampleRate, bool resetClipping);
+
    /** \brief Update the meters with a block of audio data
     *
     * Process the supplied block of audio data, extracting the peak and RMS
@@ -119,6 +125,8 @@ class Meter : public wxPanel
     * clipping that lies on block boundaries.
     * This method is thread-safe!  Feel free to call from a different thread
     * (like from an audio I/O callback).
+    *
+    * First overload:
     * \param numChannels The number of channels of audio being played back or
     * recorded.
     * \param numFrames The number of frames (samples) in this data block. It is
@@ -129,9 +137,17 @@ class Meter : public wxPanel
     * then the second sample of channel 1, second sample of channel 2, and so
     * to the second sample of channel (numChannels). The last sample in the
     * array will be the (numFrames) sample for channel (numChannels).
+    *
+    * The second overload is for ease of use in MixerBoard.
     */
    void UpdateDisplay(int numChannels,
                       int numFrames, float *sampleData);
+   void UpdateDisplay(int numChannels, int numFrames, 
+                        // Need to make these double-indexed max and min arrays if we handle more than 2 channels.
+                        float* maxLeft, float* rmsLeft, 
+                        float* maxRight, float* rmsRight, 
+                        const sampleCount kSampleCount);
+
    /** \brief Find out if the level meter is disabled or not.
     *
     * This method is thread-safe!  Feel free to call from a

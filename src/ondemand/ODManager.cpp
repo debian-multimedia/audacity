@@ -37,7 +37,6 @@ int CompareODFileName(const wxString& first, const wxString& second)
    bool firstIsOD = false;
    bool secondIsOD = false;
 
-#ifdef EXPERIMENTAL_ONDEMAND         
    if(first.EndsWith(wxT("wav"))||first.EndsWith(wxT("WAV"))||
       first.EndsWith(wxT("wave"))||first.EndsWith(wxT("WAVE"))||
       first.EndsWith(wxT("Wav"))||first.EndsWith(wxT("Wave"))||
@@ -56,8 +55,6 @@ int CompareODFileName(const wxString& first, const wxString& second)
     {
       secondIsOD=true;
     }
-        
-#endif
     
     if(firstIsOD && !secondIsOD)
       return 1;
@@ -73,7 +70,6 @@ int CompareODFirstFileName(const wxString& first, const wxString& second)
    bool firstIsOD = false;
    bool secondIsOD = false;
    
-#ifdef EXPERIMENTAL_ONDEMAND      
    if(first.EndsWith(wxT("wav"))||first.EndsWith(wxT("WAV"))||
       first.EndsWith(wxT("wave"))||first.EndsWith(wxT("WAVE"))||
       first.EndsWith(wxT("Wav"))||first.EndsWith(wxT("Wave"))||
@@ -92,8 +88,6 @@ int CompareODFirstFileName(const wxString& first, const wxString& second)
     {
       secondIsOD=true;
     }
-        
-#endif    
     
     if(firstIsOD && !secondIsOD)
       return -1;
@@ -254,8 +248,6 @@ void ODManager::DecrementCurrentThreads()
 ///Main loop for managing threads and tasks.
 void ODManager::Start()
 {   
-
-   ODTask* task;
    ODTaskThread* thread;
    bool tasksInArray;
    
@@ -287,21 +279,22 @@ void ODManager::Start()
          mCurrentThreadsMutex.Unlock();
          //remove the head
          mTasksMutex.Lock();
-         task = mTasks[0];
+         //task = mTasks[0];
          
          //the thread will add it back to the array if the job is not yet done at the end of the thread's run.  
-         mTasks.erase(mTasks.begin());  
+         //mTasks.erase(mTasks.begin());  
          mTasksMutex.Unlock();
          
          //detach a new thread.
-         thread = new ODTaskThread(task);
+         thread = new ODTaskThread(mTasks[0]);//task);
          
 //         thread->SetPriority(10);//default is 50.
          thread->Create();
          thread->Run();
          
-         mTasksMutex.Lock();
+         mTasks.erase(mTasks.begin()); 
          tasksInArray = mTasks.size()>0;
+         
          mTasksMutex.Unlock();
          
          mCurrentThreadsMutex.Lock();

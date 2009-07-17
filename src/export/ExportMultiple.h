@@ -51,7 +51,7 @@ private:
     * labels that define them (true), or just numbered (false).
     * @param prefix The string used to prefix the file number if files are being
     * numbered rather than named */
-   bool ExportMultipleByLabel(bool byName, wxString prefix);
+   int ExportMultipleByLabel(bool byName, wxString prefix);
 
    /** \brief Export each track in the project to a separate file
     *
@@ -59,19 +59,19 @@ private:
     * (true), or just numbered (false).
     * @param prefix The string used to prefix the file number if files are being
     * numbered rather than named */
-   bool ExportMultipleByTrack(bool byName, wxString prefix);
+   int ExportMultipleByTrack(bool byName, wxString prefix);
 
    /** Export one file of an export multiple set
     *
     * Called once for each file in the list to do a (non-interactive) export
     * @param channels Number of channels to export
     * @param name The file name (and path) to export to
-    * @param selectecOnly Should we  export the selected tracks only?
+    * @param selectedOnly Should we  export the selected tracks only?
     * @param t0 Start time for export
     * @param t1 End time for export
     * @param tags Metadata to include in the file (if possible).
     */
-   bool DoExport(int channels,
+   int DoExport(int channels,
                  wxFileName name,
                  bool selectedOnly,
                  double t0,
@@ -121,6 +121,9 @@ private:
    int mSubFormatIndex;       /**< The selected subformat number within the
                                 selected export plug-in set by mPluginIndex */
    bool mInitialized;
+
+   // List of file actually exported 
+   wxArrayString mExported;
 
    /** Array of characters not allowed to be in file names on this platform */
    wxArrayString exclude;

@@ -48,6 +48,7 @@ class wxTextCtrl;
 class Grid;
 class ShuttleGui;
 class TagsEditor;
+class ComboEditor;
 
 WX_DECLARE_STRING_HASH_MAP(wxString, TagMap);
 
@@ -152,6 +153,8 @@ class TagsEditor: public wxDialog
 
    void OnOk(wxCommandEvent & event);
    void OnCancel(wxCommandEvent & event);
+   
+   bool IsWindowRectValid(const wxRect *windowRect) const;
 
  private:
    Tags *mTags;
@@ -161,6 +164,8 @@ class TagsEditor: public wxDialog
    Tags mLocal;
 
    Grid *mGrid;
+   ComboEditor *mComboEditor;
+   wxGridCellStringRenderer *mStringRenderer;
 
    DECLARE_EVENT_TABLE()
 };

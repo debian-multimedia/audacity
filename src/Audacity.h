@@ -12,17 +12,20 @@
 \file Audacity.h
 
   This is the main include file for Audacity.  All files which need
-  any Audacity-specific #defines or need to access any of Audacity's
-  global functions should #include this file.
+  any Audacity-specific \#defines or need to access any of Audacity's
+  global functions should \#include this file.
 
 *//********************************************************************/
+
+// Set to 0 for a release version and 1 for a beta version
+#define IS_BETA 1
 
 // Increment as appropriate every time you release a new version
 #define AUDACITY_VERSION   1
 #define AUDACITY_RELEASE   3
-#define AUDACITY_REVISION  7
+#define AUDACITY_REVISION  8
 #define AUDACITY_MODLEVEL  0
-#define AUDACITY_SUFFIX    wxT("") // wxT("-alpha_") __TDATE__
+#define AUDACITY_SUFFIX    wxT("") 
 
 #define AUDACITY_MAKESTR( x ) #x
 #define AUDACITY_QUOTE( x ) AUDACITY_MAKESTR( x )

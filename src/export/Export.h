@@ -40,7 +40,7 @@ class FormatInfo
       bool mCanMetaData;
 };
 
-WX_DECLARE_OBJARRAY(FormatInfo *, FormatInfoArray);
+WX_DECLARE_OBJARRAY(FormatInfo, FormatInfoArray);
 
 //----------------------------------------------------------------------------
 // ExportPlugin
@@ -95,7 +95,7 @@ public:
     * libsndfile export plug-in, but with subformat set to 0, 1, and 2
     * respectively.
     */
-   virtual bool Export(AudacityProject *project,
+   virtual int Export(AudacityProject *project,
                        int channels,
                        wxString fName,
                        bool selectedOnly,
@@ -105,7 +105,7 @@ public:
                        Tags *metadata = NULL,
                        int subformat = 0);
 
-   virtual bool DoExport(AudacityProject *project,
+   virtual int DoExport(AudacityProject *project,
                          int channels,
                          wxString fName,
                          bool selectedOnly,
@@ -114,7 +114,7 @@ public:
                          MixerSpec *mixerSpec,
                          int subformat);
 
-protected:
+private:
 
    FormatInfoArray mFormatInfos;
 };

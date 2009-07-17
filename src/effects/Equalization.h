@@ -29,9 +29,6 @@
 #include <wx/checkbox.h>
 
 #if wxUSE_ACCESSIBILITY
-#if defined(__WXMSW__)
-#include <oleacc.h>
-#endif
 #include <wx/access.h>
 #endif
 
@@ -40,6 +37,7 @@
 #include "../WaveTrack.h"
 #include "../xml/XMLTagHandler.h"
 #include "../widgets/Ruler.h"
+#include "../RealFFTf.h"
 
 class EqualizationDialog;
 
@@ -99,7 +97,6 @@ public:
    }
 
    virtual bool Init();
-   virtual void End();
    virtual bool PromptUser();
    virtual bool DontPromptUser();
    virtual bool TransferParameters( Shuttle & shuttle );
@@ -120,6 +117,8 @@ private:
    void Filter(sampleCount len,
                float *buffer);
 
+   HFFT hFFT;
+   float *mFFTBuffer;
    float *mFilterFuncR;
    float *mFilterFuncI;
    int mM;
@@ -130,6 +129,7 @@ private:
    bool mDrawMode;
    int mInterp;
    bool mPrompting;
+   bool mDrawGrid;
 
 public:
    enum curveType {
@@ -216,6 +216,7 @@ public:
                const wxPoint& pos = wxDefaultPosition,
                const wxSize& size = wxDefaultSize,
                long style = wxDEFAULT_DIALOG_STYLE );
+   ~EqualizationDialog();
 
    // WDR: method declarations for EqualizationDialog
    virtual bool Validate();
@@ -239,6 +240,9 @@ public:
    int bandsInUse;
    bool drawMode;
    int interp;
+   bool drawGrid;
+   RulerPanel *dBRuler;
+   RulerPanel *freqRuler;
 
 private:
    void MakeEqualizationDialog();
@@ -277,6 +281,7 @@ private:
       sliderRadioID,
       ID_INTERP,
       ID_LIN_FREQ,
+      GridOnOffID,
       ID_SLIDER   // needs to come last
    };
 
@@ -304,7 +309,7 @@ private:
    void OnPreview(wxCommandEvent &event);
    void OnOk( wxCommandEvent &event );
    void OnCancel( wxCommandEvent &event );
-
+   void OnGridOnOff( wxCommandEvent &event );
 private:
    EffectEqualization * m_pEffect;
 
@@ -330,8 +335,6 @@ private:
    wxSlider *MSlider;
    wxSlider *dBMinSlider;
    wxSlider *dBMaxSlider;
-   RulerPanel *dBRuler;
-   RulerPanel *freqRuler;
    wxBoxSizer *szrC;
    wxBoxSizer *szrG;
    wxBoxSizer *szrV;
@@ -343,6 +346,7 @@ private:
    wxBoxSizer *szr2;
    wxFlexGridSizer *szr1;
    wxSize size;
+   wxCheckBox *mGridOnOff;
 
    EQCurveArray mCurves;
 

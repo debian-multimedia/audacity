@@ -50,6 +50,7 @@ class SelectionBar:public ToolBar {
    virtual void Populate();
    virtual void Repaint(wxDC *dc) {};
    virtual void EnableDisableButtons() {};
+   virtual void UpdatePrefs();
 
    void SetTimes(double start, double end, double audio);
    double GetLeftTime();
@@ -58,15 +59,6 @@ class SelectionBar:public ToolBar {
    void SetSnapTo(bool state);
    void SetRate(double rate);
    void SetListener(SelectionBarListener *l);
-
-   // msmeyer: Call this to enable/disable menu items
-   // in the "rate" menu, f.e. if sound card selection
-   // has changed.
-   void UpdateRates();
-
-   // lll: Call this when something more drastic has changed
-   // in the display, f.e. when the language has changed.
-   void UpdateDisplay();
 
  private:
 
@@ -89,6 +81,8 @@ class SelectionBar:public ToolBar {
 
    void ModifySelection();
 
+   void UpdateRates();
+
    SelectionBarListener * mListener;
    double mRate;
    double mStart, mEnd, mAudio;
@@ -101,6 +95,8 @@ class SelectionBar:public ToolBar {
 
    wxComboBox     *mRateBox;
    wxCheckBox     *mSnapTo;
+
+   wxWindow       *mRateText;
 
  public:
    TimeTextCtrl   *mLeftTime;

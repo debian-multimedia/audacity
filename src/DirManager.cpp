@@ -122,20 +122,18 @@ DirManager::DirManager()
       for(i=0; i< 256; i++) dirTopPool[i]=0;
    }
 
+   //create a temporary null log to capture the log dialog
+   //that wxGetDiskSpace creates.  It gets destroyed when
+   //it goes out of context.
+   //JKC: Please explain why.
+   wxLogNull logNo;
+
    // Make sure there is plenty of space for temp files
    wxLongLong freeSpace = 0;
-
-   {
-      //create a temporary null log to capture the log dialog
-      //that wxGetDiskSpace creates.  It gets destroyed when
-      //it goes out of context.
-		//JKC: Please explain why.
-      wxLogNull logNo;
-      if (wxGetDiskSpace(globaltemp, NULL, &freeSpace)) {
-         if (freeSpace < 1048576) {
-            ShowWarningDialog(NULL, wxT("DiskSpaceWarning"),
-                              _("Warning: there is very little free disk space left on this volume.\nPlease select another temporary directory in your preferences."));
-         }
+   if (wxGetDiskSpace(globaltemp, NULL, &freeSpace)) {
+      if (freeSpace < wxLongLong(wxLL(100 * 1048576))) {
+         ShowWarningDialog(NULL, wxT("DiskSpaceWarning"),
+                           _("There is very little free disk space left on this volume.\nPlease select another temporary directory in Preferences."));
       }
    }
 }
@@ -806,6 +804,10 @@ BlockFile *DirManager::CopyBlockFile(BlockFile *b)
 {
    if (!b->IsLocked()) {
       b->Ref();
+		//mchinen:July 13 2009 - not sure about this, but it needs to be added to the hash to be able to save if not locked.
+		//note that this shouldn't hurt blockFileHash's that already contain the filename, since it should just overwrite.
+		//but it's something to watch out for.
+		blockFileHash[b->GetFileName().GetName()]=b;
       return b;
    }
 
@@ -1565,6 +1567,12 @@ void DirManager::FillBlockfilesCache()
    if (!cacheBlockFiles)
       return; // user opted not to cache block files
 
+   int lowMem = gPrefs->Read(wxT("/Directories/CacheLowMem"), 16l);
+   if (lowMem < 16) {
+      lowMem = 16;
+   }
+   lowMem <<= 20;
+
    BlockHash::iterator i;
    int numNeed = 0;
 
@@ -1588,8 +1596,10 @@ void DirManager::FillBlockfilesCache()
    while (i != blockFileHash.end())
    {
       BlockFile *b = i->second;
-      if (b->GetNeedFillCache())
+      if (b->GetNeedFillCache() && (wxGetFreeMemory() > lowMem)) {
          b->FillCache();
+      }
+
       if (!progress.Update(current, numNeed))
          break; // user cancelled progress dialog, stop caching
       i++;

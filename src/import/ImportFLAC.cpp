@@ -40,6 +40,8 @@
 
 #include "../Tags.h"
 
+#define FLAC_HEADER "fLaC"
+
 #define DESC _("FLAC files")
 
 static const wxChar *exts[] =
@@ -75,6 +77,12 @@ void GetFLACImportPlugin(ImportPluginList *importPluginList,
 #include "../Prefs.h"
 #include "../WaveTrack.h"
 #include "ImportPlugin.h"
+
+#ifdef USE_LIBID3TAG 
+extern "C" {
+#include <id3tag.h>
+}
+#endif
 
 /* FLACPP_API_VERSION_CURRENT is 6 for libFLAC++ from flac-1.1.3 (see <FLAC++/export.h>) */
 #if !defined FLACPP_API_VERSION_CURRENT || FLACPP_API_VERSION_CURRENT < 6
@@ -151,13 +159,14 @@ public:
 private:
    sampleFormat          mFormat;
    MyFLACFile           *mFile;
+   wxFFile               mHandle;
    unsigned long         mSampleRate;
    unsigned long         mNumChannels;
    unsigned long         mBitsPerSample;
    FLAC__uint64          mNumSamples;
    FLAC__uint64          mSamplesDone;
    bool                  mStreamInfoDone;
-   bool                  mCancelled;
+   int                   mUpdateResult;
    WaveTrack           **mChannels;
 };
 
@@ -250,8 +259,9 @@ FLAC__StreamDecoderWriteStatus MyFLACFile::write_callback(const FLAC__Frame *fra
 
    mFile->mSamplesDone += frame->header.blocksize;
 
-   if (!mFile->mProgress->Update((wxULongLong_t) mFile->mSamplesDone, mFile->mNumSamples != 0 ? (wxULongLong_t)mFile->mNumSamples : 1)) {
-      mFile->mCancelled = true;
+   mFile->mUpdateResult = mFile->mProgress->Update((wxULongLong_t) mFile->mSamplesDone, mFile->mNumSamples != 0 ? (wxULongLong_t)mFile->mNumSamples : 1);
+   if (mFile->mUpdateResult != eProgressSuccess)
+   {
       return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
    }
 
@@ -275,12 +285,29 @@ wxString FLACImportPlugin::GetPluginFormatDescription()
 ImportFileHandle *FLACImportPlugin::Open(wxString filename)
 {
    // First check if it really is a FLAC file
-   
-   wxFile binaryFile;
-   if (!binaryFile.Open(filename))
-      return false; // File not found
 
+   int cnt;
+   wxFile binaryFile;
+   if (!binaryFile.Open(filename)) {
+      return false; // File not found
+   }
+
+#ifdef USE_LIBID3TAG
+   // Skip any ID3 tags that might be present
+   id3_byte_t query[ID3_TAG_QUERYSIZE];
+   cnt = binaryFile.Read(query, sizeof(query));
+   cnt = id3_tag_query(query, cnt);
+   binaryFile.Seek(cnt);
+#endif   
+
+   char buf[5];
+   cnt = binaryFile.Read(buf, 4);
    binaryFile.Close();
+
+   if (cnt == wxInvalidOffset || strncmp(buf, FLAC_HEADER, 4) != 0) {
+      // File is not a FLAC file
+      return false; 
+   }
    
    // Open the file for import
    FLACImportFileHandle *handle = new FLACImportFileHandle(filename);
@@ -299,7 +326,7 @@ FLACImportFileHandle::FLACImportFileHandle(const wxString & name)
 :  ImportFileHandle(name),
    mSamplesDone(0),
    mStreamInfoDone(false),
-   mCancelled(false)
+   mUpdateResult(eProgressSuccess)
 {
    mFormat = (sampleFormat)
       gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleFormat"), floatSample);
@@ -309,7 +336,7 @@ FLACImportFileHandle::FLACImportFileHandle(const wxString & name)
 bool FLACImportFileHandle::Init()
 {
 #ifdef LEGACY_FLAC
-   bool success = mFile->set_filename(OSFILENAME(mFilename));
+   bool success = mFile->set_filename(OSINPUT(mFilename));
    if (!success) {
       return false;
    }
@@ -320,7 +347,20 @@ bool FLACImportFileHandle::Init()
       return false;
    }
 #else
-   if (mFile->init(OSFILENAME(mFilename)) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+   if (!mHandle.Open(mFilename, wxT("rb"))) {
+      return false;
+   }
+
+   // Even though there is an init() method that takes a filename, use the one that
+   // takes a file handle because wxWidgets can open a file with a Unicode name and
+   // libflac can't (under Windows).
+   //
+   // Responsibility for closing the file is passed to libflac.
+   // (it happens when mFile->finish() is called)
+   bool result = mFile->init(mHandle.fp())?true:false;
+   mHandle.Detach();
+
+   if (result != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
       return false;
    }
 #endif
@@ -381,7 +421,6 @@ int FLACImportFileHandle::Import(TrackFactory *trackFactory,
             break;
          case 1:
             mChannels[c]->SetChannel(Track::RightChannel);
-            mChannels[c]->SetTeamed(true);
             break;
          }
       }
@@ -396,13 +435,13 @@ int FLACImportFileHandle::Import(TrackFactory *trackFactory,
    bool res = (mFile->process_until_end_of_stream() != 0);
 #endif
 
-   if (!res) {
+   if (mUpdateResult == eProgressFailed || mUpdateResult == eProgressCancelled) {
       for(c = 0; c < mNumChannels; c++) {
          delete mChannels[c];
       }
       delete[] mChannels;
 
-      return (mCancelled ? eImportCancelled : eImportFailed);
+      return mUpdateResult;
    }
    
    *outNumTracks = mNumChannels;
@@ -427,7 +466,7 @@ int FLACImportFileHandle::Import(TrackFactory *trackFactory,
       tags->SetTag(name, value);
    }
 
-   return eImportSuccess;
+   return mUpdateResult;
 }
 
 

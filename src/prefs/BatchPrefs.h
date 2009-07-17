@@ -13,12 +13,12 @@
 #define __AUDACITY_BATCH_PREFS__
 
 #include <wx/defs.h>
-#include <wx/string.h>
-#include <wx/button.h>
+
+#include <wx/window.h>
+
+#include "../ShuttleGui.h"
 
 #include "PrefsPanel.h"
-
-class ShuttleGui;
 
 class BatchPrefs : public PrefsPanel 
 {
@@ -29,7 +29,7 @@ public:
 
 private:
    void Populate();
-   void PopulateOrExchange( ShuttleGui & S );
+   void PopulateOrExchange(ShuttleGui & S);
 
    DECLARE_EVENT_TABLE();
 };
@@ -46,4 +46,3 @@ private:
 //
 // vim: et sts=3 sw=3
 // arch-tag: 57018e2b-d264-4f93-bfa7-06752ebf631e
-

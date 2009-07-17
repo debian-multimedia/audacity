@@ -41,7 +41,7 @@ TimeTrack::TimeTrack(DirManager *projDirManager):
    mEnvelope->SetInterpolateDB(false);
    mEnvelope->Flatten(0.5);
    mEnvelope->Mirror(false);
-   SetDefaultName(_NoAcc("&Time Track"));
+   SetDefaultName(_("Time Track"));
    SetName(GetDefaultName());
 
    mRuler = new Ruler();
@@ -139,7 +139,12 @@ bool TimeTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
                return false;
             mChannel = nValue;
          }
-
+         else if (!wxStrcmp(attr, wxT("height")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mHeight = nValue;
+         else if (!wxStrcmp(attr, wxT("minimized")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mMinimized = (nValue != 0);
          
       } // while
       return true;
@@ -163,13 +168,15 @@ void TimeTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("name"), mName);
    xmlFile.WriteAttr(wxT("channel"), mChannel);
    xmlFile.WriteAttr(wxT("offset"), mOffset, 8);
+   xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
+   xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
 
    mEnvelope->WriteXML(xmlFile);
 
    xmlFile.EndTag(wxT("timetrack"));
 }
 
-void TimeTrack::Draw(wxDC & dc, wxRect & r, double h, double pps)
+void TimeTrack::Draw(wxDC & dc, const wxRect & r, double h, double pps)
 {
    double tstep = 1.0 / pps;                     // Seconds per point
    double t0 = h;
@@ -220,7 +227,7 @@ void TimeTrack::Draw(wxDC & dc, wxRect & r, double h, double pps)
    for (x = 0; x < mid.width; x++)
       {
          int thisy = r.y + heights[x];
-         dc.DrawLine(mid.x + x, thisy, mid.x + x, thisy+3);
+         AColor::Line(dc, mid.x + x, thisy, mid.x + x, thisy+3);
       }
 
    if (heights)

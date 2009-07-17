@@ -1291,7 +1291,8 @@ void MP3Exporter::PutInfoTag(wxFFile & f, wxFileOffset off)
 #if defined(__WXMSW__)
       else if (beWriteInfoTag) {
          f.Flush();
-         beWriteInfoTag(mGF, OSFILENAME(f.GetName()));
+         beWriteInfoTag(mGF, OSOUTPUT(f.GetName()));
+         mGF = NULL;
       }
 #endif
       else if (lame_mp3_tags_fid) {   
@@ -1468,7 +1469,7 @@ public:
    // Required
 
    bool DisplayOptions(wxWindow *parent, int format = 0);
-   bool Export(AudacityProject *project,
+   int Export(AudacityProject *project,
                int channels,
                wxString fName,
                bool selectedOnly,
@@ -1504,7 +1505,7 @@ void ExportMP3::Destroy()
    delete this;
 }
 
-bool ExportMP3::Export(AudacityProject *project,
+int ExportMP3::Export(AudacityProject *project,
                        int channels,
                        wxString fName,
                        bool selectionOnly,
@@ -1628,7 +1629,7 @@ bool ExportMP3::Export(AudacityProject *project,
    }
 
    wxFileOffset pos = outFile.Tell();
-   bool cancelling = false;
+   int updateResult = eProgressSuccess;
    long bytes;
 
    int bufferSize = exporter.GetOutBufferSize();
@@ -1643,6 +1644,7 @@ bool ExportMP3::Export(AudacityProject *project,
                             t0, t1,
                             channels, inSamples, true,
                             rate, int16Sample, true, mixerSpec);
+   delete [] waveTracks;
 
    wxString title;
    if (rmode == MODE_SET) {
@@ -1666,7 +1668,7 @@ bool ExportMP3::Export(AudacityProject *project,
 
    ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(), title);
 
-   while (!cancelling) {
+   while (updateResult == eProgressSuccess) {
       sampleCount blockLen = mixer->Process(inSamples);
 
       if (blockLen == 0) {
@@ -1701,7 +1703,7 @@ bool ExportMP3::Export(AudacityProject *project,
 
       outFile.Write(buffer, bytes);
 
-      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
+      updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
    delete progress;
@@ -1726,6 +1728,9 @@ bool ExportMP3::Export(AudacityProject *project,
    // Always write the info (Xing/Lame) tag.  Until we stop supporting Lame
    // versions before 3.98, we must do this after the MP3 file has been
    // closed.
+   //
+   // Also, if beWriteInfoTag() is used, mGF will no longer be valid after
+   // this call, so do not use it.
    exporter.PutInfoTag(outFile, pos);
 
    // Close the file
@@ -1733,7 +1738,7 @@ bool ExportMP3::Export(AudacityProject *project,
 
    delete [] buffer;
    
-   return !cancelling;
+   return updateResult;
 }
 
 bool ExportMP3::DisplayOptions(wxWindow *parent, int format)

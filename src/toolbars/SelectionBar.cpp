@@ -201,7 +201,7 @@ void SelectionBar::Populate()
    // We need to capture the SetFocus and KillFocus events to set up
    // for keyboard capture.  On Windows and GTK it's easy since the
    // combobox is presented as one control to hook into.
-   wxWindow *ctrl = mRateBox;
+   mRateText = mRateBox;
 
 #if defined(__WXMAC__)
    // The Mac uses a standard wxTextCtrl for the edit portion and that's
@@ -211,20 +211,20 @@ void SelectionBar::Populate()
    for (unsigned int i = 0; i < kids.GetCount(); i++) {
       wxClassInfo *ci = kids[i]->GetClassInfo();
       if (ci->IsKindOf(CLASSINFO(wxTextCtrl))) {
-         ctrl = kids[i];
+         mRateText = kids[i];
          break;
       }
    }
 #endif
 
-   ctrl->Connect(wxEVT_SET_FOCUS,
-                 wxFocusEventHandler(SelectionBar::OnFocus),
-                 NULL,
-                 this);
-   ctrl->Connect(wxEVT_KILL_FOCUS,
-                 wxFocusEventHandler(SelectionBar::OnFocus),
-                 NULL,
-                 this);
+   mRateText->Connect(wxEVT_SET_FOCUS,
+                      wxFocusEventHandler(SelectionBar::OnFocus),
+                      NULL,
+                      this);
+   mRateText->Connect(wxEVT_KILL_FOCUS,
+                      wxFocusEventHandler(SelectionBar::OnFocus),
+                      NULL,
+                      this);
 
    mainSizer->Add(mRateBox, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
 
@@ -278,6 +278,21 @@ void SelectionBar::Populate()
    Layout();
 
    SetMinSize( GetSizer()->GetMinSize() );
+}
+
+void SelectionBar::UpdatePrefs()
+{
+   mRate = (double) gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleRate"), AudioIO::GetOptimalSupportedSampleRate());
+
+   wxCommandEvent e;
+   e.SetInt(mLeftTime->GetFormatIndex());
+   OnUpdate(e);
+
+   // Set label to pull in language change
+   SetLabel(_("Selection"));
+
+   // Give base class a chance
+   ToolBar::UpdatePrefs();
 }
 
 void SelectionBar::SetListener(SelectionBarListener *l)
@@ -349,7 +364,6 @@ void SelectionBar::OnUpdate(wxCommandEvent &evt)
     * which as they have no effect on the object state, so we just use the first
     * one to hand */
    wxString formatName =  mLeftTime->GetBuiltinName(index);
-   wxString formatString = mLeftTime->GetBuiltinFormat(index);
 
    gPrefs->Write(wxT("/SelectionFormat"), formatName);
 
@@ -363,11 +377,13 @@ void SelectionBar::OnUpdate(wxCommandEvent &evt)
    mRightLengthButton = NULL;
 
    mRateBox = NULL;
+   mRateText = NULL;
 
    ToolBar::ReCreateButtons();
 
    ValuesToControls();
 
+   wxString formatString = mLeftTime->GetBuiltinFormat(index);
    mLeftTime->SetFormatString(formatString);
    mRightTime->SetFormatString(formatString);
    mAudioTime->SetFormatString(formatString);
@@ -383,13 +399,6 @@ void SelectionBar::OnUpdate(wxCommandEvent &evt)
    }
 
    Updated();
-}
-
-void SelectionBar::UpdateDisplay()
-{
-   wxCommandEvent e;
-   e.SetInt(mLeftTime->GetFormatIndex());
-   OnUpdate(e);
 }
 
 void SelectionBar::ValuesToControls()
@@ -457,7 +466,7 @@ void SelectionBar::SetRate(double rate)
 
 void SelectionBar::OnRate(wxCommandEvent &evt)
 {
-   if (evt.GetString().ToDouble(&mRate) && // is a numeric value
+   if (mRateBox->GetValue().ToDouble(&mRate) && // is a numeric value
          (mRate != 0.0))
    {
       if (mLeftTime) mLeftTime->SetSampleRate(mRate);
@@ -512,8 +521,8 @@ void SelectionBar::OnCaptureKey(wxCommandEvent &event)
       return;
    }
 
-   // UP/DOWN/LEFT/RIGHT for mRateBox
-   if (w == mRateBox) {
+   // UP/DOWN/LEFT/RIGHT for mRateText
+   if (w == mRateText) {
       switch (keyCode)
       {
          case WXK_LEFT:

@@ -74,14 +74,18 @@ OBJS = \
 	LangChoice.o \
 	Legacy.o \
 	LoadModules.o \
+	Lyrics.o \
+	LyricsWindow.o \
 	Matrix.o \
 	Menus.o \
 	Mix.o \
+	MixerBoard.o \
 	PitchName.o \
 	PlatformCompatibility.o \
 	Printing.o \
 	Profiler.o \
 	Project.o \
+	RealFFTf.o \
 	Resample.o \
 	RingBuffer.o \
 	Screenshot.o \
@@ -107,9 +111,16 @@ OBJS = \
 	WaveClip.o \
 	WaveTrack.o \
 	WrappedType.o \
+	commands/AppCommandEvent.o \
+	commands/CommandBuilder.o \
+	commands/CommandHandler.o \
 	commands/CommandManager.o \
 	commands/Keyboard.o \
+	commands/ResponseQueue.o \
+	commands/ScreenshotCommand.o \
+	commands/ScriptCommandRelay.o \
 	effects/Effect.o \
+	effects/Generator.o \
 	effects/EffectCategory.o \
 	effects/EffectManager.o \
 	effects/SimpleMono.o \
@@ -171,18 +182,24 @@ OBJS = \
 	ondemand/ODTask.o \
 	ondemand/ODTaskThread.o \
 	ondemand/ODWaveTrackTaskQueue.o \
-	prefs/AudioIOPrefs.o \
-	prefs/BatchPrefs.o \
-	prefs/DirectoriesPrefs.o \
-	prefs/FileFormatPrefs.o \
-	prefs/GUIPrefs.o \
-	prefs/KeyConfigPrefs.o \
-	prefs/MousePrefs.o \
-	prefs/PrefsDialog.o \
-	prefs/QualityPrefs.o \
-	prefs/SmartRecordPrefs.o \
-	prefs/SpectrumPrefs.o \
-	prefs/ThemePrefs.o \
+   prefs/BatchPrefs.o \
+   prefs/DevicePrefs.o \
+   prefs/DirectoriesPrefs.o \
+   prefs/GUIPrefs.o \
+   prefs/ImportExportPrefs.o \
+   prefs/KeyConfigPrefs.o \
+   prefs/LibraryPrefs.o \
+   prefs/MidiIOPrefs.o \
+   prefs/MousePrefs.o \
+   prefs/PlaybackPrefs.o \
+   prefs/PrefsDialog.o \
+   prefs/ProjectsPrefs.o \
+   prefs/QualityPrefs.o \
+   prefs/RecordingPrefs.o \
+   prefs/SpectrumPrefs.o \
+   prefs/ThemePrefs.o \
+   prefs/TracksPrefs.o \
+   prefs/WarningsPrefs.o \
 	toolbars/ControlToolBar.o \
 	toolbars/DeviceToolBar.o \
 	toolbars/EditToolBar.o \
@@ -199,6 +216,7 @@ OBJS = \
 	widgets/AttachableScrollBar.o \
 	widgets/ErrorDialog.o \
 	widgets/ExpandingToolBar.o \
+	widgets/FileHistory.o \
 	widgets/Grabber.o \
 	widgets/Grid.o \
 	widgets/HtmlWindow.o \

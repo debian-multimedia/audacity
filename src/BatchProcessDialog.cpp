@@ -40,6 +40,7 @@
 #include "effects/Effect.h"
 #include "../images/Arrow.xpm"
 #include "BatchCommands.h"
+#include "UndoManager.h"
 
 #include "Theme.h"
 #include "AllThemeResources.h"
@@ -178,8 +179,6 @@ void BatchProcessDialog::OnApplyToProject(wxCommandEvent &event)
    if (!mBatchCommands.ApplyChain()) {
       return;
    }
-
-   EndModal(true);
 }
 
 void BatchProcessDialog::OnApplyToFiles(wxCommandEvent &event)
@@ -293,10 +292,10 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent &event)
       if (!d.IsShown() || mAbort) {
          break;
       }
+      UndoManager *um = project->GetUndoManager();
+      um->ClearStates();
    }
    project->OnRemoveTracks();
-
-   EndModal(true);
 }
 
 void BatchProcessDialog::OnCancel(wxCommandEvent &event)
@@ -450,9 +449,9 @@ void EditChainsDialog::PopulateOrExchange(ShuttleGui & S)
          //can't be right aligned.
          mList->InsertColumn(BlankColumn, wxT(""), wxLIST_FORMAT_LEFT);
          /* i18n-hint: This is the number of the command in the list */
-         mList->InsertColumn(ItemNumberColumn, _("No"), wxLIST_FORMAT_RIGHT);
-         mList->InsertColumn(ActionColumn, _NoAcc("&Command"), wxLIST_FORMAT_RIGHT);
-         mList->InsertColumn(ParamsColumn, _NoAcc("&Parameters"), wxLIST_FORMAT_LEFT);
+         mList->InsertColumn(ItemNumberColumn, _("Num"), wxLIST_FORMAT_RIGHT);
+         mList->InsertColumn(ActionColumn, _("Command"), wxLIST_FORMAT_RIGHT);
+         mList->InsertColumn(ParamsColumn, _("Parameters"), wxLIST_FORMAT_LEFT);
 
          S.StartHorizontalLay(wxCENTER, false);
          {

@@ -19,18 +19,19 @@
 #include "ondemand/ODTaskThread.h"
 #include "xml/XMLTagHandler.h"
 
+#include "Experimental.h"
+#ifdef EXPERIMENTAL_USE_REALFFTF
+#include "RealFFTf.h"
+#endif
+
 #include <wx/gdicmn.h>
 #include <wx/longlong.h>
 #include <wx/list.h>
 #include <wx/msgdlg.h>
 
-typedef wxLongLong_t sampleCount; /* 64-bit int */
-
 class Envelope;
 class WaveCache;
 class SpecCache;
-class AUDACITY_DLL_API WaveClip;
-class AUDACITY_DLL_API WaveClipList;
 
 class SpecPxCache {
 public:
@@ -51,8 +52,10 @@ public:
    bool         valid;
 };
 
-WX_DECLARE_LIST(WaveClip, WaveClipList);
-WX_DEFINE_ARRAY_PTR(WaveClip*, WaveClipArray);
+class WaveClip;
+
+WX_DECLARE_USER_EXPORTED_LIST(WaveClip, WaveClipList, AUDACITY_DLL_API);
+WX_DEFINE_USER_EXPORTED_ARRAY_PTR(WaveClip*, WaveClipArray, class AUDACITY_DLL_API);
 
 class AUDACITY_DLL_API WaveClip: public XMLTagHandler
 {
@@ -220,7 +223,13 @@ protected:
    WaveCache    *mWaveCache;
    ODLock       mWaveCacheMutex;
    SpecCache    *mSpecCache;
-
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   // Variables used for computing the spectrum
+   HFFT          hFFT;
+   float         *mWindow;
+   int           mWindowType;
+   int           mWindowSize;
+#endif
    samplePtr     mAppendBuffer;
    sampleCount   mAppendBufferLen;
 

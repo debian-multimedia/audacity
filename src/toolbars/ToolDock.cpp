@@ -32,6 +32,7 @@
 #include <wx/gdicmn.h>
 #include <wx/intl.h>
 #include <wx/panel.h>
+#include <wx/settings.h>
 #include <wx/window.h>
 #endif  /*  */
 
@@ -515,11 +516,12 @@ void ToolDock::OnPaint( wxPaintEvent & event )
 
    // Start with a clean background
    //
-   // Under GTK, clearing will cause the background to be white and
-   // rather than setting a background color, just bypass the clear.
-#if !defined(__WXGTK__)
-   dc.Clear();
+   // Under GTK, we specifically set the toolbar background to the background
+   // colour in the system theme.
+#if defined( __WXGTK__ )
+   dc.SetBackground( wxBrush( wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND ) ) );
 #endif
+   dc.Clear();
 
    // Set the gap color
    AColor::Dark( &dc, false );
@@ -527,8 +529,8 @@ void ToolDock::OnPaint( wxPaintEvent & event )
    // Draw the initial horizontal and vertical gaps
    wxSize sz = GetClientSize();
 
-   dc.DrawLine( 0, 0, sz.GetWidth(), 0 );
-   dc.DrawLine( 0, 0, 0, sz.GetHeight() );
+   AColor::Line(dc, 0, 0, sz.GetWidth(), 0 );
+   AColor::Line(dc, 0, 0, 0, sz.GetHeight() );
 
    // Draw the gap between each bar
    int ndx, cnt = mDockedBars.GetCount();
@@ -536,10 +538,11 @@ void ToolDock::OnPaint( wxPaintEvent & event )
    {
       wxRect r = ( (ToolBar *)mDockedBars[ ndx ] )->GetRect();
 
-      dc.DrawLine( r.GetLeft(),
-                   r.GetBottom() + 1,
-                   sz.GetWidth(),
-                   r.GetBottom() + 1 );
+      AColor::Line( dc,
+                    r.GetLeft(),
+                    r.GetBottom() + 1,
+                    sz.GetWidth(),
+                    r.GetBottom() + 1 );
 
       // For all bars but the last...
       if( ndx < cnt - 1 )
@@ -548,7 +551,8 @@ void ToolDock::OnPaint( wxPaintEvent & event )
          // horizontal gap line
          if( r.y == ( (ToolBar *)mDockedBars[ ndx + 1 ] )->GetRect().y )
          {
-            dc.DrawLine( r.GetRight() + 1,
+            AColor::Line(dc,
+                         r.GetRight() + 1,
                          r.GetTop(),
                          r.GetRight() + 1,
                          r.GetBottom() + 1 );

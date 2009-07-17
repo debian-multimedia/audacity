@@ -105,6 +105,7 @@ CommandManager.  It holds the callback for one command.
 #define MAX_SUBMENU_LEN 1000
 #endif
 
+#define COMMAND _("Command")
 ///
 ///  Standard Constructor
 ///
@@ -112,6 +113,7 @@ CommandManager::CommandManager():
    mCurrentID(0),
    mHiddenID(0),
    mCurrentMenu(NULL),
+   mCurrentMenuName(COMMAND),
    mOpenMenu(NULL),
    mDefaultFlags(0),
    mDefaultMask(0)
@@ -161,6 +163,7 @@ void CommandManager::PurgeData()
    mCommandIDHash.clear();
 
    mCurrentMenu = NULL;
+   mCurrentMenuName = COMMAND;
    mCurrentID = 0;
 }
 
@@ -234,6 +237,7 @@ void CommandManager::BeginMenu(wxString tNameIn)
    wxMenu *tmpMenu = new wxMenu();
 
    mCurrentMenu = tmpMenu;
+   mCurrentMenuName = tName;
 
    CurrentMenuBar()->Append(mCurrentMenu, tName);
 }
@@ -248,8 +252,8 @@ void CommandManager::EndMenu()
       mHidingLevel--;
 
    mCurrentMenu = NULL;
+   mCurrentMenuName = COMMAND;
 }
-
 
 
 ///
@@ -359,8 +363,10 @@ void CommandManager::InsertItem(wxString name, wxString label_in,
 {
    wxString label = label_in;
 
-   if (ItemShouldBeHidden(label))
+   if (ItemShouldBeHidden(label)) {
+      delete callback;
       return;
+   }
 
    wxMenuBar *bar = GetActiveProject()->GetMenuBar();
    wxArrayString names = ::wxStringTokenize(after, wxT(":"));
@@ -437,18 +443,45 @@ void CommandManager::InsertItem(wxString name, wxString label_in,
    mbSeparatorAllowed = true;
 }
 
-///
-/// Add a menu item to the current menu.  When the user selects it, the
-/// given functor will be called
-void CommandManager::AddItem(wxString name, wxString label_in,
-                             CommandFunctor *callback, int checkmark)
+void CommandManager::AddCheck(const wxChar *name,
+                              const wxChar *label,
+                              CommandFunctor *callback,
+                              int checkmark)
 {
-   wxString label = label_in;
+   AddItem(name, label, callback, wxT(""), NoFlagsSpecifed, NoFlagsSpecifed, checkmark);
+}
 
-   if( ItemShouldBeHidden( label ) )
+void CommandManager::AddItem(const wxChar *name,
+                             const wxChar *label,
+                             CommandFunctor *callback,
+                             int flags,
+                             int mask)
+{
+   AddItem(name, label, callback, wxT(""), flags, mask);
+}                  
+
+void CommandManager::AddItem(const wxChar *name,
+                             const wxChar *label_in,
+                             CommandFunctor *callback,
+                             const wxChar *accel,
+                             int flags,
+                             int mask,
+                             int checkmark)
+{
+   wxString label(label_in);
+   label += wxT("\t");
+   label += accel;
+
+   if (ItemShouldBeHidden(label)) {
+      delete callback;
       return;
+   }
 
    int ID = NewIdentifier(name, label, CurrentMenu(), callback, false, 0, 0);
+
+   if (flags != NoFlagsSpecifed || mask != NoFlagsSpecifed) {
+      SetCommandFlags(name, flags, mask);
+   }
 
    // Replace the accel key with the one from the preferences
    label = label.BeforeFirst(wxT('\t'));
@@ -460,20 +493,18 @@ void CommandManager::AddItem(wxString name, wxString label_in,
    // made-up name (just an ID number string) but with the accelerator
    // we want, then immediately change the label to the correct string.
    // -DMM
-   mHiddenID++;
-   wxString dummy, newLabel;
-   dummy.Printf(wxT("%s%08d"), label.c_str(), mHiddenID);
-   newLabel = label;
+   wxString newLabel;
+   newLabel.Printf(wxT("%s%08d"), label.c_str(), ++mHiddenID);
 
    if (checkmark >= 0) {
-      CurrentMenu()->AppendCheckItem(ID, dummy);
-      CurrentMenu()->Check(ID, checkmark !=0);
+      CurrentMenu()->AppendCheckItem(ID, newLabel);
+      CurrentMenu()->Check(ID, checkmark != 0);
    }
    else {
-      CurrentMenu()->Append(ID, dummy);
+      CurrentMenu()->Append(ID, newLabel);
    }
 
-   CurrentMenu()->SetLabel(ID, newLabel);
+   CurrentMenu()->SetLabel(ID, label);
    mbSeparatorAllowed = true;
 }
 
@@ -538,10 +569,31 @@ void CommandManager::AddItemList(wxString name, wxArrayString labels,
 ///
 /// Add a command that doesn't appear in a menu.  When the key is pressed, the
 /// given function pointer will be called (via the CommandManagerListener)
-void CommandManager::AddCommand(wxString name, wxString label,
-                                CommandFunctor *callback)
+void CommandManager::AddCommand(const wxChar *name,
+                                const wxChar *label,
+                                CommandFunctor *callback,
+                                int flags,
+                                int mask)
 {
+   AddCommand(name, label, callback, wxT(""), flags, mask);
+}                  
+
+void CommandManager::AddCommand(const wxChar *name,
+                                const wxChar *label_in,
+                                CommandFunctor *callback,
+                                const wxChar *accel,
+                                int flags,
+                                int mask)
+{
+   wxString label(label_in);
+   label += wxT("\t");
+   label += accel;
+
    NewIdentifier(name, label, NULL, callback, false, 0, 0);
+
+   if (flags != NoFlagsSpecifed || mask != NoFlagsSpecifed) {
+      SetCommandFlags(name, flags, mask);
+   }
 }
 
 void CommandManager::AddSeparator()
@@ -576,9 +628,10 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
    CommandListEntry *tmpEntry = new CommandListEntry;
    
    wxString labelPrefix;
-   if( !mSubMenuList.IsEmpty() )
-      labelPrefix = mSubMenuList[ mSubMenuList.GetCount() - 1 ]->name;
-   
+   if (!mSubMenuList.IsEmpty()) {
+      labelPrefix = mSubMenuList[mSubMenuList.GetCount() - 1]->name;
+   }
+
    // wxMac 2.5 and higher will do special things with the
    // Preferences, Exit (Quit), and About menu items,
    // if we give them the right IDs.
@@ -590,7 +643,7 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
 
    mCurrentID = NextIdentifier(mCurrentID);
    tmpEntry->id = mCurrentID;
-   tmpEntry->key = KeyStringNormalize(GetKey(label));
+   tmpEntry->key = GetKey(label);
 
 #if defined(__WXMAC__)
    if (name == wxT("Preferences"))
@@ -605,6 +658,7 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
    tmpEntry->name = name;
    tmpEntry->label = label;
    tmpEntry->labelPrefix = labelPrefix;
+   tmpEntry->labelTop = wxMenuItem::GetLabelFromText(mCurrentMenuName);
    tmpEntry->menu = menu;
    tmpEntry->callback = callback;
    tmpEntry->multi = multi;
@@ -624,27 +678,35 @@ int CommandManager::NewIdentifier(wxString name, wxString label, wxMenu *menu,
    mCommandList.Add(tmpEntry);
    mCommandIDHash[tmpEntry->id] = tmpEntry;   
 
-   if (index==0 || !multi)
+   if (index == 0 || !multi) {
+#if defined(__WXDEBUG__)
+      CommandListEntry *prev = mCommandNameHash[name];
+      if (prev) {
+         wxLogDebug(wxT("Command '%s' defined by '%s' and '%s'"),
+                   name.c_str(),
+                   prev->label.BeforeFirst(wxT('\t')).c_str(),
+                   tmpEntry->label.BeforeFirst(wxT('\t')).c_str());
+         wxASSERT(!prev);
+      }
+#endif
       mCommandNameHash[name] = tmpEntry;
+   }
 
-   if (tmpEntry->key != wxT(""))
+   if (tmpEntry->key != wxT("")) {
       mCommandKeyHash[tmpEntry->key] = tmpEntry;
+   }
 
    return tmpEntry->id;
 }
 
 wxString CommandManager::GetKey(wxString label)
 {
-   int loc = -1;
+   wxString key = label.AfterFirst(wxT('\t')).BeforeFirst(wxT('\t'));
+   if (key.IsEmpty()) {
+      return key;
+   }
 
-   loc = label.Find(wxT('\t'));
-   if (loc == -1)
-      loc = label.Find(wxT("\\t"));
-
-   if (loc == -1)
-      return wxT("");
-
-   return label.Right(label.Length() - (loc+1));
+   return KeyStringNormalize(key);
 }
 
 ///Enables or disables a menu item based on its name (not the
@@ -667,6 +729,7 @@ void CommandManager::Enable(CommandListEntry *entry, bool enabled)
    // Only enabled if needed
    if (entry->enabled != enabled) {
       entry->menu->Enable(entry->id, enabled);
+      entry->enabled = entry->menu->IsEnabled(entry->id);
    }
 
    if (entry->multi) {
@@ -745,6 +808,14 @@ void CommandManager::Modify(wxString name, wxString newLabel)
          newLabel = newLabel + wxT("\t") + entry->key;
       entry->label = newLabel;
       entry->menu->SetLabel(entry->id, newLabel);
+   }
+}
+
+void CommandManager::SetKeyFromName(wxString name, wxString key)
+{
+   CommandListEntry *entry = mCommandNameHash[name];
+   if (entry) {
+      entry->key = KeyStringNormalize(key);
    }
 }
 
@@ -854,7 +925,7 @@ void CommandManager::TellUserWhyDisallowed( wxUint32 flagsGot, wxUint32 flagsReq
 {
    // The default string for 'reason' is a catch all.  I hope it won't ever be seen
    // and that we will get something more specific.
-   wxString reason = _("Disallowed for some reason.  Try selecting some audio first?");
+   wxString reason = _("There was a problem with your last action. If you think\nthis is a bug, please tell us exactly where it occurred.");
 
    wxUint32 missingFlags = flagsRequired & (~flagsGot );
    if( missingFlags & AudioIONotBusyFlag )
@@ -878,7 +949,7 @@ void CommandManager::TellUserWhyDisallowed( wxUint32 flagsGot, wxUint32 flagsReq
 ///with the command's flags.
 bool CommandManager::HandleCommandEntry(CommandListEntry * entry, wxUint32 flags, wxUint32 mask)
 {
-   if (!entry)
+   if (!entry || !entry->enabled)
       return false;
 
    wxUint32 combinedMask = (mask & entry->mask);
@@ -967,6 +1038,39 @@ bool CommandManager::HandleTextualCommand(wxString & Str, wxUint32 flags, wxUint
    return false;
 }
 
+void CommandManager::GetCategories(wxArrayString &cats)
+{
+   cats.Clear();
+
+   size_t cnt = mCommandList.GetCount();
+
+   for (size_t i = 0; i < cnt; i++) {
+      wxString cat = mCommandList[i]->labelTop;
+      if (cats.Index(cat) == wxNOT_FOUND) {
+         cats.Add(cat);
+      }
+   }
+#if 0
+   mCommandList.GetCount(); i++) {
+      if (includeMultis || !mCommandList[i]->multi)
+         names.Add(mCommandList[i]->name);
+   }
+
+   AudacityProject *p = GetActiveProject();
+   if (p == NULL) {
+      return;
+   }
+
+   wxMenuBar *bar = p->GetMenuBar();
+   size_t cnt = bar->GetMenuCount();
+   for (size_t i = 0; i < cnt; i++) {
+      cats.Add(bar->GetMenuLabelText(i));
+   }
+
+   cats.Add(COMMAND);
+#endif
+}
+
 void CommandManager::GetAllCommandNames(wxArrayString &names,
                                         bool includeMultis)
 {
@@ -993,7 +1097,16 @@ wxString CommandManager::GetPrefixedLabelFromName(wxString name)
    if (!entry)
       return wxT("");
 
-   return entry->labelPrefix + wxT(" ") + entry->label;
+   return wxString(entry->labelPrefix + wxT(" ") + entry->label).Trim(false).Trim(true);
+}
+
+wxString CommandManager::GetCategoryFromName(wxString name)
+{
+   CommandListEntry *entry = mCommandNameHash[name];
+   if (!entry)
+      return wxT("");
+
+   return entry->labelTop;
 }
 
 wxString CommandManager::GetKeyFromName(wxString name)
@@ -1001,7 +1114,7 @@ wxString CommandManager::GetKeyFromName(wxString name)
    CommandListEntry *entry = mCommandNameHash[name];
    if (!entry)
       return wxT("");
- 
+
    return entry->key;
 }
 
@@ -1010,7 +1123,7 @@ wxString CommandManager::GetDefaultKeyFromName(wxString name)
    CommandListEntry *entry = mCommandNameHash[name];
    if (!entry)
       return wxT("");
- 
+
    return entry->defaultKey;
 }
 
@@ -1030,11 +1143,11 @@ bool CommandManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          
          if (!value)
             break;
-         
+
          if (!wxStrcmp(attr, wxT("name")) && XMLValueChecker::IsGoodString(value))
             name = value;
          if (!wxStrcmp(attr, wxT("key")) && XMLValueChecker::IsGoodString(value))
-            key = value;
+            key = KeyStringNormalize(value);
       }
 
       if (mCommandNameHash[name]) {
@@ -1125,6 +1238,37 @@ void CommandManager::SetCommandFlags(wxUint32 flags, wxUint32 mask, ...)
    }
    va_end(list);
 }
+
+#if defined(__WXDEBUG__)
+void CommandManager::CheckDups()
+{
+   int cnt = mCommandList.GetCount();
+   for (size_t j = 0;  (int)j < cnt; j++) {
+      if (mCommandList[j]->key.IsEmpty()) {
+         continue;
+      }
+
+      if (mCommandList[j]->label.AfterLast(wxT('\t')) == wxT("allowdup")) {
+         continue;
+      }
+
+      for (size_t i = 0; (int)i < cnt; i++) {
+         if (i == j) {
+            continue;
+         }
+
+         if (mCommandList[i]->key == mCommandList[j]->key) {
+            wxString msg;
+            msg.Printf(wxT("key combo '%s' assigned to '%s' and '%s'"),
+                       mCommandList[i]->key.c_str(),
+                       mCommandList[i]->label.BeforeFirst(wxT('\t')).c_str(),
+                       mCommandList[j]->label.BeforeFirst(wxT('\t')).c_str());
+            wxASSERT_MSG(mCommandList[i]->key != mCommandList[j]->key, msg);
+         }
+      }
+   }
+}
+#endif
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.
