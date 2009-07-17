@@ -110,7 +110,7 @@ bool TrackPanelAx::IsFocused( Track *track )
    }
 
    if( ( track == mFocusedTrack ) ||
-       ( track == mTrackPanel->mTracks->GetLink( mFocusedTrack ) ) )
+       ( track == mFocusedTrack->GetLink() ) )
    {
       return true;
    }
@@ -158,6 +158,18 @@ Track *TrackPanelAx::FindTrack( int num )
    return t;
 }
 
+void TrackPanelAx::Updated()
+{
+#if wxUSE_ACCESSIBILITY
+   Track *t = GetFocus();
+   NotifyEvent(wxACC_EVENT_OBJECT_NAMECHANGE,
+               mTrackPanel,
+               wxOBJID_CLIENT,
+               TrackNum(t));
+   SetFocus(t);
+#endif
+}
+
 #if wxUSE_ACCESSIBILITY
 
 // Retrieves the address of an IDispatch interface for the specified child.
@@ -187,7 +199,7 @@ wxAccStatus TrackPanelAx::GetChildCount( int* childCount )
    {
       cnt++;
 
-      if( mTrackPanel->mTracks->GetLink( t ) != NULL )
+      if( t->GetLink() != NULL )
       {
          t = iter.Next();
       }

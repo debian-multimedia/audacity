@@ -98,7 +98,7 @@ struct private_data {
    WaveTrack **channels;
    ProgressDialog *progress;
    int numChannels;
-   bool cancelled;
+   int updateResult;
    bool id3checked;
 };
 
@@ -214,7 +214,7 @@ int MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    mPrivateData.inputBuffer = new unsigned char [INPUT_BUFFER_SIZE];
    mPrivateData.progress    = mProgress;
    mPrivateData.channels    = NULL;
-   mPrivateData.cancelled   = false;
+   mPrivateData.updateResult= eProgressSuccess;
    mPrivateData.id3checked  = false;
    mPrivateData.numChannels = 0;
    mPrivateData.trackFactory= trackFactory;
@@ -225,7 +225,8 @@ int MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
 
    bool res = (mad_decoder_run(&mDecoder, MAD_DECODER_MODE_SYNC) == 0) &&
               (mPrivateData.numChannels > 0) &&
-              (!mPrivateData.cancelled);
+              !(mPrivateData.updateResult == eProgressCancelled) &&
+              !(mPrivateData.updateResult == eProgressFailed);
 
    mad_decoder_finish(&mDecoder);
 
@@ -241,7 +242,7 @@ int MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       }
       delete[] mPrivateData.channels;
 
-      return (mPrivateData.cancelled ? eImportCancelled : eImportFailed);
+      return (mPrivateData.updateResult);
    }
 
    /* success */
@@ -260,7 +261,7 @@ int MP3ImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    /* Read in any metadata */
    ImportID3(tags);
 
-      return eImportSuccess;
+      return mPrivateData.updateResult;
    }
 
 MP3ImportFileHandle::~MP3ImportFileHandle()
@@ -275,11 +276,23 @@ MP3ImportFileHandle::~MP3ImportFileHandle()
 
 void MP3ImportFileHandle::ImportID3(Tags *tags)
 {
-#ifdef USE_LIBID3TAG 
-   struct id3_file *fp = id3_file_open(OSFILENAME(mFilename), ID3_FILE_MODE_READONLY);
+#ifdef USE_LIBID3TAG
+   wxFile f;   // will be closed when it goes out of scope
+   struct id3_file *fp = NULL;
+
+   if (f.Open(mFilename)) {
+      // Use id3_file_fdopen() instead of id3_file_open since wxWidgets can open a
+      // file with a Unicode name and id3_file_open() can't (under Windows).
+      fp = id3_file_fdopen(f.fd(), ID3_FILE_MODE_READONLY);
+   }
+      
    if (!fp) {
       return;
    }
+
+   // The file descriptor is now owned by "fp", so we must tell "f" to forget
+   // about it.
+   f.Detach();
 
    struct id3_tag *tp = id3_file_tag(fp);
    if (!tp) {
@@ -391,13 +404,12 @@ enum mad_flow input_cb(void *_data, struct mad_stream *stream)
 {
    struct private_data *data = (struct private_data *)_data;
 
-   data->cancelled = !data->progress->Update((wxULongLong_t)data->file->Tell(),
+   data->updateResult = data->progress->Update((wxULongLong_t)data->file->Tell(),
                                              (wxULongLong_t)data->file->Length());
-   if(data->cancelled)
+   if(data->updateResult != eProgressSuccess)
       return MAD_FLOW_STOP;
 
    if(data->file->Eof()) {
-      data->cancelled = false;
       return MAD_FLOW_STOP;
    }
 
@@ -406,7 +418,7 @@ enum mad_flow input_cb(void *_data, struct mad_stream *stream)
       data->file->Read(data->inputBuffer, ID3_TAG_QUERYSIZE);
       int len = id3_tag_query(data->inputBuffer, ID3_TAG_QUERYSIZE);
       if (len > 0) {
-         data->file->Seek(len, wxFromCurrent);
+         data->file->Seek(len, wxFromStart);
       }
       else {
          data->file->Seek(0);
@@ -477,7 +489,6 @@ enum mad_flow output_cb(void *_data,
          data->channels[0]->SetChannel(Track::LeftChannel);
          data->channels[1]->SetChannel(Track::RightChannel);
          data->channels[0]->SetLinked(true);
-         data->channels[1]->SetTeamed(true);
       }
       data->numChannels = channels;
    }

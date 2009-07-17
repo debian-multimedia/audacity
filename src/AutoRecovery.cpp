@@ -158,7 +158,7 @@ static bool RemoveAllAutoSaveFiles()
 {
    wxArrayString files;
    wxDir::GetAllFiles(FileNames::AutoSaveDir(), &files,
-                      _T("*.autosave"), wxDIR_FILES);
+                      wxT("*.autosave"), wxDIR_FILES);
 
    for (unsigned int i = 0; i < files.GetCount(); i++)
    {
@@ -191,7 +191,7 @@ static bool RecoverAllProjects(AudacityProject** pproj)
    
    wxArrayString files;
    wxDir::GetAllFiles(FileNames::AutoSaveDir(), &files,
-                      _T("*.autosave"), wxDIR_FILES);
+                      wxT("*.autosave"), wxDIR_FILES);
 
    for (unsigned int i = 0; i < files.GetCount(); i++)
    {
@@ -209,7 +209,7 @@ static bool RecoverAllProjects(AudacityProject** pproj)
       // Open project. When an auto-save file has been opened successfully,
       // the opened auto-save file is automatically deleted and a new one
       // is created.
-      proj->OpenFile(files[i]);
+      proj->OpenFile(files[i], false);
    }
    
    return true;

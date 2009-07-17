@@ -42,14 +42,15 @@ VampEffect::VampEffect(Vamp::HostExt::PluginLoader::PluginKey key,
    mName(name),
    mRate(0),
    mCategory(category),
-   mPlugin(0)
+   mPlugin(NULL)
 {
+   SetEffectFlags(PLUGIN_EFFECT | ANALYZE_EFFECT);
 }
 
 VampEffect::~VampEffect()
 {
    delete mPlugin;
-   mPlugin = 0;
+   mPlugin = NULL;
 }
 
 wxString VampEffect::GetEffectName()
@@ -81,11 +82,6 @@ wxString VampEffect::GetEffectAction()
                            GetEffectName().c_str());
 }
 
-int VampEffect::GetEffectFlags()
-{
-   return PLUGIN_EFFECT | ANALYZE_EFFECT;
-}
-
 bool VampEffect::Init()
 {
    Vamp::HostExt::PluginLoader *loader =
@@ -94,7 +90,7 @@ bool VampEffect::Init()
    delete mPlugin;
    mPlugin = 0;
 
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
    WaveTrack *left = (WaveTrack *)iter.First();
 
    mRate = 0.0;
@@ -143,31 +139,11 @@ bool VampEffect::PromptUser()
    return true;
 }
 
-void VampEffect::GetSamples(WaveTrack *track,
-                            sampleCount *start,
-                            sampleCount *len)
-{
-   double trackStart = track->GetStartTime();
-   double trackEnd = track->GetEndTime();
-   double t0 = mT0 < trackStart ? trackStart : mT0;
-   double t1 = mT1 > trackEnd ? trackEnd : mT1;
-
-   if (t1 > t0) {
-      *start = track->TimeToLongSamples(t0);
-      sampleCount end = track->TimeToLongSamples(t1);
-      *len = (sampleCount)(end - *start);
-   }
-   else {
-      *start = 0;
-      *len  = 0;
-   }
-}
-
 bool VampEffect::Process()
 {
    if (!mPlugin) return false;
 
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
 
    int count = 0;
 
@@ -176,9 +152,7 @@ bool VampEffect::Process()
    bool multiple = false;
    int prevTrackChannels = 0;
 
-   TrackListIterator scooter(iter);
-   if (left->GetLinked()) scooter.Next();      
-   if (scooter.Next()) {
+   if (GetNumWaveGroups() > 1) {
       // if there is another track beyond this one and any linked one,
       // then we're processing more than one track.  That means we
       // should use the originating track name in each new label
@@ -188,7 +162,7 @@ bool VampEffect::Process()
 
    while (left) {
 
-      sampleCount lstart, rstart;
+      sampleCount lstart, rstart = 0;
       sampleCount len;
       GetSamples(left, &lstart, &len);
       

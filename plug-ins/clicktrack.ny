@@ -1,42 +1,85 @@
 ;nyquist plug-in
-
 ;version 3
-
 ;type generate
-
 ;categories "http://lv2plug.in/ns/lv2core#GeneratorPlugin"
-
 ;name "Click Track..."
-
 ;action "Generating Click Track..."
+;info "by Dominic Mazzoni, modified by David R. Sky\nReleased under terms of the GNU General Public License version 2\nFor help, select one of two help screens in 'Action choice' below."
 
-;info "Written by Dominic Mazzoni, modified by David R. Sky\nReleased under terms of the GNU General Public License version 2\nGenerates a click track at the given tempo and beats per measure, using the\nclick sound type you choose below. To start the click track after time zero,\nenter the starting point in start-time-offset.\nTo create metronome-like click track, set beats-per-measure value to 1 or 2. \nPitches are set using MIDI numbers for example:\nC notes: 48, 60 [middle C], 72, 84, 96."
-
-
-
-;control tempo "Tempo [beats per minute]" int "" 120 30 300
-;control sig "Beats per measure [bar]" int "" 4 1 20
-;control measures "Number of measures [bars]" int "" 16 1 1000
-;control offset "Start time offset [seconds]" real "" 0 0 30
-;control click-type "Click sound type" choice "ping,noise,tick" 0
-;control q "Noise click resonance [q] [higher gives more defined pitch]" int "" 1 1 20
-;control high "MIDI pitch of strong click" int "" 92 18 116
-;control low "MIDI pitch of weak click" int "" 80 18 116
+;control action "Action choice" choice "Generate track, help screen 1, help screen 2" 0
+;control tempo "Tempo [beats per minute]" int "30 - 300 beats/minute" 120 30 300
+;control sig "Beats per measure [bar]" int "1 - 20 beats/measure" 4 1 20
+;control measures "Number of measures [bars]" int "1 - 1000 bars" 16 1 1000
+;control click-track-dur "Optional click track duration [minutes seconds]" string "" ""  
+;control ticklen "Individual click duration [milliseconds]" int "1 - 100 ms" 10 1 100
+;control offset "Start time offset [seconds]" real "0 - 30 seconds" 0 0 30
+;control click-type "Click sound" choice "ping,noise,tick" 0
+;control q "Noise click resonance - discernable pitch [q]" int "1 - 20" 1 1 20
+;control high "MIDI pitch of strong click" int "18 - 116" 92 18 116
+;control low "MIDI pitch of weak click" int "18 - 116" 80 18 116
 
 ; original clicktrack.ny by Dominic Mazzoni,
-; modified by David R. Sky September 2007
+; modified by David R. Sky: 
+; added click pitch [user request] and sound types fields September 2007
+; added optional total click track duration field [requested by Mike Mullins] 
+; June 2009
+; added individual click duration field [requested by Quinto Milana]
+; June 2009]
 ; original code kept 'as is'.
 ; now includes:
 ; choice between click sounds [ping {sinewave}, noise or tick],
 ; user-set MIDI pitch values for strong and weak clicks,
 ; resonance of noise clicks 
-; [higher resonance gives noise clicks more discernable pitch],
+; [higher resonance gives them more discernable pitch],
 ; time offset for start of click track,
 ; and error-checking code to generate error message
 ; for such things as negative value inputs
 ; Drip sound generator by Paul Beach,
 ; used with permission.
+;
+; Thanks very much to Gale Andrews, who gave extensive visual feedback
+; and suggestions!
 
+
+; view 1 of 2 help screens, or generate click track
+(cond ; 'master' cond
+((= action 1) ; display help screen 1
+(format nil
+"Click Track Generator help - screen 1 of 2
+
+Generates a click track at the selected tempo, beats per\nmeasure, and either number of measures or track duration,\nusing selected click sound.
+
+'Tempo': number of beats (clicks) per minute.
+
+'Beats per measure (bar)': For example, 3/4 time means one\nstrong click then two others to form one bar, repeated\ndepending on 'number of measures' or 'click track duration'.
+
+'Optional click track duration': if you enter a value into this\nfield [minutes seconds (separated by a space)] or [seconds],\nthe generated click track will be at or near this duration,\nbased on this rule: only when time gives an exact number\nof measures will this number of measures be generated,\notherwise one additional measure will be generated.
+
+If you enter a value into this field, the 'number of measures'\nvalue will be ignored.
+
+      To generate click track or view help screen 2,\n      restart Click Track and select from 'Action choice'.") ; end format
+) ; end display help screen 1
+
+((= action 2) ; display help screen 2
+(format nil
+"Click Track Generator help - screen 2 of 2
+
+'Individual click duration': the duration of each individual\nclick, minimum of 1 millisecond (ms) to maximum of 100 ms.
+
+'Start time offset': makes the click track start at a later\ntime than the very beginning (zero seconds), maximum\nof 30 seconds.
+
+'Click sound': choose between ping, noise or tick sound\nfor clicks.
+
+'Noise click resonance': the higher this value, the more\nclearly noise clicks have a tone.
+
+'MIDI pitch of strong/weak click': MIDI values indicate\nwhat pitch to use. C-notes are:
+
+24, 36, 48, 60 (middle C), 72, 84, 96, 108.\nC# (C-sharp) above middle C is 61.
+
+      To generate click track or view help screen 1,\n      restart Click Track and select from 'Action choice'.") ; end format
+) ; end display help screen 2
+
+(t ; perform clicktrack.ny
 (setf click-type (+ click-type 1))
 
 
@@ -111,7 +154,8 @@ error-msg
 
 ; no error so generate click track
 (t
-(setf ticklen 0.01) ; duration of 1 click
+; duration of 1 click, originally statically 0.01 s
+(setf ticklen (* (max 1 (min 100 ticklen)) 0.001))
 (setf beatlen (/ 60.0 tempo))
 
 
@@ -169,6 +213,42 @@ error-msg
 (setf measure (sim measure
                    (stretch-abs (* sig beatlen) (const 0.0))))
 
+
+; function to convert a string into a list
+(defun string-to-list (string)
+(read (make-string-input-stream (format nil "(~a)" string))))
+
+
+; convert minutes-seconds string to a list
+; for example, "4 30" becomes (4 30)
+(setf m-s (string-to-list click-track-dur)) 
+
+
+; convert click-track-dur to number of measures,
+; otherwise use user's measures value 
+(setf measures (if (null m-s)
+measures
+(/
+(if ;2
+(= (length m-s) 1)
+(first m-s) ; just seconds
+(+ (* 60 (first m-s)) (second m-s) ; minutes and seconds
+) ; end +
+) ; end if2
+(* sig beatlen)) ; end /
+) ; end if
+) ; end setf measures
+
+
+; round up to next whole number of measures only if 
+; measures > (truncate measures)
+(setf measures (if 
+(> measures (truncate measures))
+(truncate (1+ measures))
+(truncate measures)
+)) ; end if, setf measures
+
+
 ; loop measure n [measures-1] times
 (setf result measure)
 (dotimes (x (- measures 1))
@@ -183,6 +263,9 @@ result
 
 ) ; end t
 ) ; end cond
+
+) ; end t perform clicktrack.ny
+) ; end 'master' cond
 
 ; from previous commit:
 ; arch-tag: 73fbc0e9-548b-4143-b8ac-13437b9154a7

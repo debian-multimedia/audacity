@@ -56,6 +56,10 @@ class XMLWriter {
 
    virtual void Write(const wxString &data) = 0;
 
+   // Escape a string, replacing certain characters with their
+   // XML encoding, i.e. '<' becomes '&lt;'
+   wxString XMLEsc(const wxString & s);
+
  protected:
 
    bool mInTag;
@@ -75,13 +79,34 @@ class XMLFileWriter:public wxFFile, public XMLWriter {
    XMLFileWriter();
    virtual ~XMLFileWriter();
 
-   bool Open(const wxString &name, const wxString &mode);
-   bool Close();
+   /// Open the file. Might throw XMLFileWriterException.
+   void Open(const wxString &name, const wxString &mode);
+   
+   /// Close file. Might throw XMLFileWriterException.
+   void Close();
 
+   /// Close file without automatically ending tags.
+   /// Might throw XMLFileWriterException.
+   void CloseWithoutEndingTags(); // for auto-save files
+
+   /// Write to file. Might throw XMLFileWriterException.
    void Write(const wxString &data);
 
  private:
 
+};
+
+///
+/// Exception thrown by various XMLFileWriter methods
+///
+class XMLFileWriterException
+{
+public:
+   XMLFileWriterException(const wxString& message) { mMessage = message; }
+   wxString GetMessage() const { return mMessage; }
+
+protected:
+   wxString mMessage;
 };
 
 ///

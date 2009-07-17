@@ -82,22 +82,23 @@ LabelTrack *TrackFactory::NewLabelTrack()
 
 LabelTrack::LabelTrack(DirManager * projDirManager):
    Track(projDirManager),
+   mbHitCenter(false),
+   mOldEdge(-1),
+   mSelIndex(-1),
    mMouseOverLabelLeft(-1),
    mMouseOverLabelRight(-1),
    mIsAdjustingLabel(false)
 {
-   SetDefaultName(_NoAcc("&Label Track"));
+   SetDefaultName(_("Label Track"));
    SetName(GetDefaultName());
-
-   ResetFont();
 
    // Label tracks are narrow
    // Default is to allow two rows so that new users get the
    // idea that labels can 'stack' when they would overlap.
-   mHeight = 73;     
+   SetHeight(73);
+
+   ResetFont();
    CreateCustomGlyphs();
-   mSelIndex = -1;
-   mStickyTrack = NULL;
 
    // reset flags
    ResetFlags();
@@ -105,6 +106,9 @@ LabelTrack::LabelTrack(DirManager * projDirManager):
 
 LabelTrack::LabelTrack(const LabelTrack &orig) :
    Track(orig),
+   mbHitCenter(false),
+   mOldEdge(-1),
+   mSelIndex(-1),
    mMouseOverLabelLeft(-1),
    mMouseOverLabelRight(-1),
    mIsAdjustingLabel(false)
@@ -119,7 +123,6 @@ LabelTrack::LabelTrack(const LabelTrack &orig) :
       mLabels.Add(l);
    }
    mSelIndex = orig.mSelIndex;
-   mStickyTrack = NULL;
    
    // reset flags
    ResetFlags();
@@ -131,9 +134,6 @@ LabelTrack::~LabelTrack()
 
    for (int i = 0; i < len; i++)
       delete mLabels[i];
-#ifdef EXPERIMENTAL_STICKY_TRACKS      
-   if (mStickyTrack) mStickyTrack->SetStickyTrack(NULL);
-#endif
 }
 
 void LabelTrack::SetOffset(double dOffset)
@@ -149,6 +149,8 @@ void LabelTrack::SetOffset(double dOffset)
 void LabelTrack::ShiftLabelsOnClear(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++){
+      double x = mLabels[i]->t;
+      double y = mLabels[i]->t1;
       if (mLabels[i]->t >= e){//label is after deletion region
          mLabels[i]->t  = mLabels[i]->t  - (e-b);
          mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
@@ -172,48 +174,62 @@ void LabelTrack::ShiftLabelsOnClear(double b, double e)
 void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 {
    for (unsigned int i=0;i<mLabels.GetCount();i++){
-      if (mLabels[i]->t > pt && mLabels[i]->t1 > pt) {
+      // label is after the insert point
+      if (mLabels[i]->t > pt) {
          mLabels[i]->t = mLabels[i]->t + length;
          mLabels[i]->t1 = mLabels[i]->t1 + length;
+      // label is before the insert point
       }else if (mLabels[i]->t1 < pt) {
          //nothing
+      // insert point is inside the label
       }else if (mLabels[i]->t < pt && mLabels[i]->t1 > pt){
          mLabels[i]->t1 = mLabels[i]->t1 + length;
       }
    }
 }
 
-void LabelTrack::ShiftLabelsOnChangeSpeed(double b, double e, double change)
+void LabelTrack::ChangeLabelsOnReverse(double b, double e)
 {
-   for (unsigned int i=0;i<mLabels.GetCount();i++){
-      mLabels[i]->t = AdjustTimeStampForSpeedChange(mLabels[i]->t, b, e, change);
-      mLabels[i]->t1 = AdjustTimeStampForSpeedChange(mLabels[i]->t1, b, e, change);
+   for (size_t i=0; i<mLabels.GetCount(); i++) {
+      if (mLabels[i]->t >= b && mLabels[i]->t1 <= e) {//deletion region encloses label
+         double aux     = b + (e - mLabels[i]->t1);
+         mLabels[i]->t1 = e - (mLabels[i]->t - b);
+         mLabels[i]->t  = aux;
+      }
    }
 }
 
-double LabelTrack::AdjustTimeStampForSpeedChange(double t, double b, double e, double change)
+void LabelTrack::ScaleLabels(double b, double e, double change)
+{
+   for (unsigned int i=0;i<mLabels.GetCount();i++){
+      mLabels[i]->t = AdjustTimeStampOnScale(mLabels[i]->t, b, e, change);
+      mLabels[i]->t1 = AdjustTimeStampOnScale(mLabels[i]->t1, b, e, change);
+   }
+}
+
+double LabelTrack::AdjustTimeStampOnScale(double t, double b, double e, double change)
 {
 //t is the time stamp we'll be changing
 //b and e are the selection start and end
-
-   double percentChange = (100 + change)/100;
-   //printf("t: %f\nb: %f\ne: %f\nchange: %f\n", t, b, e, change);
-   
+  
    if (t < b){
       return t;
    }else if (t > e){
-      double shift = (e-b) - ((e-b)/percentChange);  
-      return (t - shift);
+      double shift = (e-b)*change - (e-b);  
+      return t + shift;
    }else{
-      double shift = (t-b) - ((t-b)/percentChange);
-      return (t - shift);
+      double shift = (t-b)*change - (t-b);
+      return t + shift;
    }
 }
 
 void LabelTrack::ResetFlags()
 {
    mMouseXPos = -1;
+   mXPos1 = -1;
+   mXPos2 = -1;
    mDragXPos = -1;
+   mInitialCursorPos = 1;
    mCurrentCursorPos = 1;
    mResetCursorPos = false;
    mRightDragging = false;
@@ -249,7 +265,7 @@ void LabelTrack::ResetFont()
 /// take priority over the ones earlier, so because centering 
 /// is the first thing we do, it's the first thing we lose if 
 /// we can't do everything we want to.
-void LabelTrack::ComputeTextPosition(wxRect & r, int index)
+void LabelTrack::ComputeTextPosition(const wxRect & r, int index)
 {
    // xExtra is extra space 
    // between the text and the endpoints.
@@ -391,7 +407,7 @@ void LabelTrack::ComputeTextPosition(wxRect & r, int index)
 /// ComputeLayout determines which row each label
 /// should be placed on, and reserves space for it.
 /// Function assumes that the labels are sorted.
-void LabelTrack::ComputeLayout( wxRect & r, double h, double pps)
+void LabelTrack::ComputeLayout(const wxRect & r, double h, double pps)
 {
    int i;
    int iRow;
@@ -454,52 +470,69 @@ void LabelTrack::ComputeLayout( wxRect & r, double h, double pps)
    }
 }
 
-LabelStruct::LabelStruct() {
+LabelStruct::LabelStruct()
+{
    changeInitialMouseXPos = true;
    highlighted = false;
    updated = false;
+   t = 0.0;
+   t1 = 0.0;
+   width = 0;
+   x = 0;
+   x1 = 0;
+   xText = 0;
+   y = 0;
 }
 
 /// Draw vertical lines that go exactly through the position
 /// of the start or end of a label.
 ///   @param  dc the device context
 ///   @param  r  the LabelTrack rectangle.
-void LabelStruct::DrawLines( wxDC & dc, wxRect & r)
+void LabelStruct::DrawLines(wxDC & dc, const wxRect & r)
 {
    // How far out from the centre line should the vertical lines
    // start, i.e. what is the y position of the icon?
-   // We addjust this slightly so that the line encroaches on 
-   // the icon slightly (there is white space in the design).
+   // We adjust this so that the line encroaches on the icon
+   // slightly (there is white space in the design).
    const int yIconStart = y - (LabelTrack::mIconHeight /2)+1+(LabelTrack::mTextHeight+3)/2;
    const int yIconEnd   = yIconStart + LabelTrack::mIconHeight-2;
 
-   if (y<0) 
-      return;
    // If y is positive then it is the center line for the 
    // Label.
-   if((x  >= r.x) && (x  <= (r.x+r.width)))
+   if( y >= 0 )
    {
-      // Draw line above and below left dragging widget.
-      dc.DrawLine(x, r.y,  x, yIconStart);
-      dc.DrawLine(x, yIconEnd, x, r.y + r.height);
+      if((x  >= r.x) && (x  <= (r.x+r.width)))
+      {
+         // Draw line above and below left dragging widget.
+         AColor::Line(dc, x, r.y,  x, yIconStart - 1);
+         AColor::Line(dc, x, yIconEnd, x, r.y + r.height);
+      }
+      if((x1 >= r.x) && (x1 <= (r.x+r.width)))
+      {
+         // Draw line above and below right dragging widget.
+         AColor::Line(dc, x1, r.y,  x1, yIconStart - 1);
+         AColor::Line(dc, x1, yIconEnd, x1, r.y + r.height);
+      }
    }
-   if((x1 >= r.x) && (x1 <= (r.x+r.width)))
+   else
    {
-      // Draw line above and below right dragging widget.
-      dc.DrawLine(x1, r.y,  x1, yIconStart);
-      dc.DrawLine(x1, yIconEnd, x1, r.y + r.height);
+      // Draw the line, even though the widget is off screen
+      AColor::Line(dc, x, r.y,  x, r.y + r.height);
+      AColor::Line(dc, x1, r.y,  x1, r.y + r.height);
    }
 }
 
 /// DrawGlyphs draws the wxIcons at the start and end of a label.
 ///   @param  dc the device context
 ///   @param  r  the LabelTrack rectangle.
-void LabelStruct::DrawGlyphs( wxDC & dc, wxRect & r, int GlyphLeft, int GlyphRight)
+void LabelStruct::DrawGlyphs(wxDC & dc, const wxRect & r, int GlyphLeft, int GlyphRight)
 {
-   if (y<0) 
-      return;
    const int xHalfWidth=LabelTrack::mIconWidth/2;
    const int yStart=y-LabelTrack::mIconHeight/2+(LabelTrack::mTextHeight+3)/2;
+
+   // If y == -1, nothing to draw
+   if( y == -1 )
+      return;
 
    if((x  >= r.x) && (x  <= (r.x+r.width)))
       dc.DrawBitmap(LabelTrack::GetGlyph(GlyphLeft), x-xHalfWidth,yStart, true);
@@ -515,12 +548,14 @@ void LabelStruct::DrawGlyphs( wxDC & dc, wxRect & r, int GlyphLeft, int GlyphRig
 /// behind the text itself.
 ///   @param  dc the device context
 ///   @param  r  the LabelTrack rectangle.
-void LabelStruct::DrawText( wxDC & dc, wxRect & r)
+void LabelStruct::DrawText(wxDC & dc, const wxRect & r)
 {
-   if (y<0) 
-      return;
    //If y is positive then it is the center line for the 
    //text we are about to draw.
+   //if it isn't, nothing to draw.
+
+   if( y == -1 )
+      return;
 
    // Draw frame for the text...
    // We draw it half an icon width left of the text itself.
@@ -535,17 +570,18 @@ void LabelStruct::DrawText( wxDC & dc, wxRect & r)
          dc.DrawText(title, xText, y-LabelTrack::mTextHeight/2);
       }
    }
+
 }
 
-void LabelStruct::DrawTextBox( wxDC & dc, wxRect & r) 
+void LabelStruct::DrawTextBox(wxDC & dc, const wxRect & r) 
 {
-   if (y<0) 
-      return;
    //If y is positive then it is the center line for the 
    //text we are about to draw.
    const int yBarHeight=3;
    const int yFrameHeight = LabelTrack::mTextHeight+3;
    const int xBarShorten  = LabelTrack::mIconWidth+4;
+   if( y == -1 )
+      return;
 
    {
       const int xStart=wxMax(r.x,x+xBarShorten/2);
@@ -634,7 +670,7 @@ bool LabelTrack::CalcCursorX(wxWindow * parent, int * x)
 /// Draw calls other functions to draw the LabelTrack.
 ///   @param  dc the device context
 ///   @param  r  the LabelTrack rectangle.
-void LabelTrack::Draw(wxDC & dc, wxRect & r, double h, double pps,
+void LabelTrack::Draw(wxDC & dc, const wxRect & r, double h, double pps,
                       double sel0, double sel1)
 {
    if(msFont.Ok())
@@ -799,7 +835,9 @@ void LabelTrack::Draw(wxDC & dc, wxRect & r, double h, double pps,
       const int CursorWidth=2;
       if (mDrawCursor) {
          currentPen.SetWidth(CursorWidth);
-         dc.DrawLine(xPos-1, mLabels[i]->y - mFontHeight/2 + 1, xPos-1, mLabels[i]->y + mFontHeight/2);
+         AColor::Line(dc,
+                      xPos-1, mLabels[i]->y - mFontHeight/2 + 1,
+                      xPos-1, mLabels[i]->y + mFontHeight/2 - 1);
          currentPen.SetWidth(1);
       }
    }
@@ -1346,6 +1384,7 @@ bool LabelTrack::CaptureKey(wxKeyEvent & event)
          case WXK_LEFT:
          case WXK_RIGHT:
          case WXK_RETURN:
+         case WXK_NUMPAD_ENTER:
          case WXK_ESCAPE:
          case WXK_TAB:
             return true;
@@ -1518,6 +1557,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
          break;
 
       case WXK_RETURN:
+      case WXK_NUMPAD_ENTER:
 
       case WXK_ESCAPE:
          if (mLabels[mSelIndex]->title == wxT("")) {
@@ -1863,6 +1903,12 @@ bool LabelTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
             mLabels.Clear();
             mLabels.Alloc(nValue);
          }
+         else if (!wxStrcmp(attr, wxT("height")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            SetHeight(nValue);
+         else if (!wxStrcmp(attr, wxT("minimized")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            SetMinimized(nValue != 0);
       }
 
       return true;
@@ -1887,6 +1933,8 @@ void LabelTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.StartTag(wxT("labeltrack"));
    xmlFile.WriteAttr(wxT("name"), mName);
    xmlFile.WriteAttr(wxT("numlabels"), len);
+   xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
+   xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
 
    for (i = 0; i < len; i++) {
       xmlFile.StartTag(wxT("label"));
@@ -2021,58 +2069,23 @@ bool LabelTrack::Paste(double t, Track * src)
 
 bool LabelTrack::Clear(double t0, double t1)
 {
-#ifdef EXPERIMENTAL_FULL_LINKING
    AudacityProject *p = GetActiveProject();   
    if (p && p->IsSticky()){
-      bool onlyLabelTrackSel = true;
-      TrackListIterator iter(p->GetTracks());
-      Track *t = iter.First();
-      while (t){
-         if (t!=this && t->GetSelected()){
-            onlyLabelTrackSel = false;
-            break;
-         }
-         t=iter.Next();
+      Track* t = NULL;
+      if (mNode) {
+         TrackListNode* n = mNode->prev;
+         if (n)
+            t = n->t;
       }
-      if (onlyLabelTrackSel){
-         int editGroup = 0;
-         t=iter.First();
-         Track *n=t;
-         
-         while (t && t!= this){//find edit group number
-            n=iter.Next();
-            if (n && n->GetKind()==Track::Wave && t->GetKind()==Track::Label) 
-               editGroup++;
-            t=n;
-         }
-
-         t=iter.First();
-         for (int i=0; i<editGroup; i++){//go to first in edit group
-            while (t && t->GetKind()==Track::Wave) t=iter.Next();
-            while (t && t->GetKind()==Track::Label) t=iter.Next();
-         }
-
-         if (t && t->GetKind()==Track::Wave)
-            ((WaveTrack*)t)->HandleGroupClear(t0, t1, false, false);
-      }
-   }else{
+      // if it is part of a group
+      if (t && t->GetKind() != Track::Time && t->GetKind() != Track::Label)
+         t->Clear(t0, t1);
+      else
+         ShiftLabelsOnClear(t0, t1);
+   }
+   else
       ShiftLabelsOnClear(t0, t1);
-   }
-#else
-   int len = mLabels.Count();
 
-   for (int i = 0; i < len; i++) {
-      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1) {
-         mLabels.RemoveAt(i);
-         len--;
-         i--;
-      }
-      else if (mLabels[i]->t > t1) {
-         mLabels[i]->t -= (t1 - t0);
-         mLabels[i]->t1 -= (t1 - t0);
-      }
-   }
-#endif
    return true;
 }
 

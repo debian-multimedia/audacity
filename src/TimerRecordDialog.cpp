@@ -4,7 +4,7 @@
 
   TimerRecordDialog.cpp
 
-  Copyright 2006 by Vaughan Johnson
+  Copyright 2006-2009 by Vaughan Johnson
   
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 *******************************************************************//**
 
 \class TimerRecordDialog
-\brief Dialog for Timer Record, i.e., timed or long recording, limited GUI.
+\brief Dialog for Timer Record, i.e., timed or long recording.
 
 *//*******************************************************************/
 
@@ -27,6 +27,7 @@
 #include <wx/sizer.h>
 #include <wx/string.h>
 #include <wx/timer.h>
+#include <wx/dynlib.h> //<! For windows.h
 
 #include "TimerRecordDialog.h"
 #include "Project.h"
@@ -67,7 +68,6 @@ END_EVENT_TABLE()
 TimerRecordDialog::TimerRecordDialog(wxWindow* parent)
 : wxDialog(parent, -1, _("Audacity Timer Record"), wxDefaultPosition, 
            wxDefaultSize, wxCAPTION)
-//           wxDefaultSize, wxCAPTION | wxTHICK_FRAME)
 {
    m_DateTime_Start = wxDateTime::UNow(); 
    m_TimeSpan_Duration = wxTimeSpan::Minutes(5); // default 5 minute duration
@@ -199,64 +199,63 @@ void TimerRecordDialog::OnTimeText_Duration(wxCommandEvent& event)
 
 void TimerRecordDialog::OnOK(wxCommandEvent& event)
 {
+   this->TransferDataFromWindow();
+   if (!m_TimeSpan_Duration.IsPositive())
+   {
+      wxMessageBox(_("Duration is zero. Nothing will be recorded."), 
+                     _("Error in Duration"), wxICON_EXCLAMATION | wxOK);
+      return;
+   }
+
    m_timer.Stop(); // Don't need to keep updating m_DateTime_Start to prevent backdating.
 
-   this->TransferDataFromWindow();
-
-   bool bDidCancel = false;
+   int updateResult = eProgressSuccess;
    if (m_DateTime_Start > wxDateTime::UNow()) 
-      bDidCancel = !this->WaitForStart(); 
+      updateResult = this->WaitForStart(); 
 
-   if (!bDidCancel)  
+   if (updateResult != eProgressSuccess) 
+   {
+      // Don't proceed, but don't treat it as canceled recording. User just canceled waiting. 
+      this->EndModal(wxID_CANCEL);
+      return;
+   }
+   else 
    {
       // Record for specified time.
    	AudacityProject* pProject = GetActiveProject();
       pProject->OnRecord();
-
       bool bIsRecording = true;
-
-      /* Although inaccurate, use the wxProgressDialog wxPD_ELAPSED_TIME | wxPD_REMAINING_TIME 
-         instead of calculating and presenting it.
-            wxTimeSpan remaining_TimeSpan;
-            wxString strNewMsg;
-         */
 
       wxString strMsg = 
          _("Recording start") + (wxString)wxT(":\t\t")
-		 + GetDisplayDate(m_DateTime_Start) + wxT("\n") + _("Recording end")
-       + wxT(":\t\t") + GetDisplayDate(m_DateTime_End) + wxT("\n")
-		 + _("Duration") + wxT(":\t\t") + m_TimeSpan_Duration.Format(); 
+         + GetDisplayDate(m_DateTime_Start) + wxT("\n") + _("Recording end")
+         + wxT(":\t\t") + GetDisplayDate(m_DateTime_End) + wxT("\n")
+         + _("Duration") + wxT(":\t\t") + m_TimeSpan_Duration.Format(); 
 
-      ProgressDialog progress(
-               _("Audacity Timer Record Progress"), // const wxString& title,
-               strMsg); // const wxString& message
+      TimerProgressDialog 
+         progress(m_TimeSpan_Duration.GetMilliseconds().GetValue(), 
+                  _("Audacity Timer Record Progress"), 
+                  strMsg); 
 
       // Make sure that start and end time are updated, so we always get the full 
       // duration, even if there's some delay getting here.
       wxTimerEvent dummyTimerEvent;
       this->OnTimer(dummyTimerEvent);
 
-      wxDateTime dateTime_UNow;
-      wxTimeSpan done_TimeSpan;
-      while (bIsRecording && !bDidCancel) {
-		 // sit in this loop during the recording phase, i.e. from rec start to
-		 // recording end
+      // Loop for progress display during recording.
+      while (bIsRecording && updateResult == eProgressSuccess) 
+      {
          wxMilliSleep(kTimerInterval);
-         
-         dateTime_UNow = wxDateTime::UNow();	// get time now
-         done_TimeSpan = dateTime_UNow - m_DateTime_Start;
-		 // work out how long we have been recording for
-         // remaining_TimeSpan = m_DateTime_End - dateTime_UNow;
-
-         // strNewMsg = strMsg + _("\nDone: ") + done_TimeSpan.Format() + _("     Remaining: ") + remaining_TimeSpan.Format();
-         bDidCancel = !progress.Update(done_TimeSpan.GetSeconds(),
-                                       m_TimeSpan_Duration.GetSeconds()); // , strNewMsg);
-         bIsRecording = (wxDateTime::UNow() <= m_DateTime_End);
+         updateResult = progress.Update();
+         bIsRecording = (wxDateTime::UNow() <= m_DateTime_End); // Call UNow() again for extra accuracy...
       }
       pProject->OnStop();
    }
-
-   this->EndModal(wxID_OK);
+   // Let the caller handle cancellation or failure from recording progress. 
+   if (updateResult == eProgressCancelled || updateResult == eProgressFailed)
+      this->EndModal(updateResult);
+   else
+      this->EndModal(wxID_OK);
 }
 
 wxString TimerRecordDialog::GetDisplayDate( wxDateTime & dt )
@@ -358,7 +357,7 @@ void TimerRecordDialog::PopulateOrExchange(ShuttleGui& S)
          m_pTimeTextCtrl_Duration = new TimeTextCtrl(this, ID_TIMETEXT_DURATION, strFormat1);
          m_pTimeTextCtrl_Duration->SetName(_("Duration"));
          m_pTimeTextCtrl_Duration->SetTimeValue(
-            Internat::CompatibleToDouble(m_TimeSpan_Duration.GetSeconds().ToString())); //v milliseconds?
+            Internat::CompatibleToDouble(m_TimeSpan_Duration.GetSeconds().ToString())); 
          S.AddWindow(m_pTimeTextCtrl_Duration);
          m_pTimeTextCtrl_Duration->EnableMenu(false);
       }
@@ -409,7 +408,7 @@ void TimerRecordDialog::UpdateDuration()
 {
    m_TimeSpan_Duration = m_DateTime_End - m_DateTime_Start;
    m_pTimeTextCtrl_Duration->SetTimeValue(
-      Internat::CompatibleToDouble(m_TimeSpan_Duration.GetSeconds().ToString())); //v milliseconds?
+      Internat::CompatibleToDouble(m_TimeSpan_Duration.GetSeconds().ToString())); 
 }
 
 // Update m_DateTime_End and ctrls based on m_DateTime_Start and m_TimeSpan_Duration.
@@ -423,28 +422,28 @@ void TimerRecordDialog::UpdateEnd()
    m_pTimeTextCtrl_End->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_End));
 }
 
-bool TimerRecordDialog::WaitForStart()
+int TimerRecordDialog::WaitForStart()
 {
    wxString strMsg;
    /* i18n-hint: A time specification like "Sunday 28th October 2007 15:16:17 GMT"
 	* but hopefully translated by wxwidgets will be inserted into this */
-   strMsg.Printf(_("Waiting to start recording at %s.\n"), GetDisplayDate(m_DateTime_Start).c_str()); 
-   ProgressDialog progress(_("Audacity Timer Record - Waiting for Start"),
-                           strMsg);
+   strMsg.Printf(_("Waiting to start recording at %s.\n"), 
+                  GetDisplayDate(m_DateTime_Start).c_str()); 
    wxDateTime startWait_DateTime = wxDateTime::UNow();
    wxTimeSpan waitDuration = m_DateTime_Start - startWait_DateTime;
+   TimerProgressDialog 
+      progress(waitDuration.GetMilliseconds().GetValue(), 
+               _("Audacity Timer Record - Waiting for Start"),
+               strMsg, 
+               pdlgHideStopButton);
 
-   bool bDidCancel = false;
+   int updateResult = eProgressSuccess;
    bool bIsRecording = false;
-   wxTimeSpan done_TimeSpan;
-   while (!bDidCancel && !bIsRecording) {
+   while (updateResult == eProgressSuccess && !bIsRecording) 
+   {
       wxMilliSleep(10);
-
-      done_TimeSpan = wxDateTime::UNow() - startWait_DateTime;
-      bDidCancel = !progress.Update(done_TimeSpan.GetSeconds(),
-                                    waitDuration.GetSeconds());
-
+      updateResult = progress.Update();
       bIsRecording = (m_DateTime_Start <= wxDateTime::UNow());
    }
-   return !bDidCancel;
+   return updateResult;
 }

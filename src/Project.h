@@ -29,6 +29,7 @@
 #include "effects/EffectManager.h"
 #include "xml/XMLTagHandler.h"
 #include "toolbars/SelectionBar.h"
+#include "FreqWindow.h"
 
 #include <wx/defs.h>
 #include <wx/event.h>
@@ -38,8 +39,6 @@
 #include <wx/frame.h>
 #include <wx/intl.h>
 #include <wx/dcclient.h>
-
-class wxFileHistory;
 
 const int AudacityProjectTimerID = 5200;
 
@@ -64,6 +63,13 @@ class TranscriptionToolBar;
 class TrackList;
 class Tags;
 class HistoryWindow;
+#ifdef EXPERIMENTAL_LYRICS_WINDOW
+   class LyricsWindow;
+#endif
+#ifdef EXPERIMENTAL_MIXER_BOARD
+   class MixerBoard;
+   class MixerBoardFrame;
+#endif
 class Importer;
 class AdornedRulerPanel;
 
@@ -131,6 +137,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    double GetSel0() { return mViewInfo.sel0; }
    double GetSel1() { return mViewInfo.sel1; }
 
+   Track *GetFirstVisible();
+   void UpdateFirstVisible();
+
    void GetPlayRegion(double* playRegionStart, double *playRegionEnd);
    bool IsPlayRegionLocked() { return mLockPlayRegion; }
    
@@ -154,9 +163,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    static wxArrayString ShowOpenDialog(wxString extra = wxEmptyString);
    static void OpenFiles(AudacityProject *proj);
-   void OpenFile(wxString fileName);
+   void OpenFile(wxString fileName, bool addtohistory = true);
    bool WarnOfLegacyFile( );
-   void Import(wxString fileName);
+
+   // If pNewTrackList is passed in non-NULL, it gets filled with the pointers to new tracks.
+   void Import(wxString fileName, WaveTrackArray *pTrackArray = NULL); 
+
    void AddImportedTracks(wxString fileName,
                           Track **newTracks, int numTracks);
    bool Save(bool overwrite = true, bool fromSaveAs = false, bool bWantSaveCompressed = false);
@@ -171,7 +183,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void SetProjectTitle();
 
    bool GetIsEmpty() { return mTracks->IsEmpty(); }
-   wxFileHistory *GetRecentFiles() { return mRecentFiles; }
 
    bool GetTracksFitVerticallyZoomed() { return mTracksFitVerticallyZoomed; } //lda
    void SetTracksFitVerticallyZoomed(bool flag) { mTracksFitVerticallyZoomed = flag; } //lda
@@ -199,7 +210,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    void OnMenuEvent(wxMenuEvent & event);
    void OnMenu(wxCommandEvent & event);
-   void OnUpdateMenus(wxUpdateUIEvent & event);
+   void OnUpdateUI(wxUpdateUIEvent & event);
 
    void OnActivate(wxActivateEvent & event);
    void OnMouseEvent(wxMouseEvent & event);
@@ -214,6 +225,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void OnReleaseKeyboard(wxCommandEvent & event);
    void OnODTaskUpdate(wxCommandEvent & event);
    void OnODTaskComplete(wxCommandEvent & event);
+   void OnTrackListUpdated(wxCommandEvent & event);
    bool HandleKeyDown(wxKeyEvent & event);
    bool HandleChar(wxKeyEvent & event);
    bool HandleKeyUp(wxKeyEvent & event);
@@ -240,7 +252,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void EditByLabel( WaveTrack::EditFunction action ); 
    void EditClipboardByLabel( WaveTrack::EditDestFunction action );
    bool IsSticky();
-   bool GetStickyFlag() { return mStickyFlag; }
+   bool GetStickyFlag() { return mStickyFlag; };
+   void SetStickyFlag(bool flag) { mStickyFlag = flag; };
 
    // Snap To
 
@@ -260,6 +273,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // TrackPanel callback methods
 
+   virtual wxSize TP_GetTracksUsableArea();
    virtual void TP_DisplayStatusMessage(wxString msg);
    virtual void TP_DisplaySelection();
    virtual int TP_GetCurrentTool();
@@ -286,6 +300,13 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    SelectionBar *GetSelectionBar();
    ToolsToolBar *GetToolsToolBar();
    TranscriptionToolBar *GetTranscriptionToolBar();
+
+   #ifdef EXPERIMENTAL_LYRICS_WINDOW
+      LyricsWindow* GetLyricsWindow() { return mLyricsWindow; };
+   #endif
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      MixerBoard* GetMixerBoard() { return mMixerBoard; };
+   #endif
 
  public:
 
@@ -326,17 +347,25 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static void AllProjectsDeleteLock();
    static void AllProjectsDeleteUnlock();
    
+   void PushState(wxString desc, wxString shortDesc,
+                  bool consolidate = false);
+
+   FreqWindow *mFreqWindow;
+
  private:
-
-
-   // Private Methods
 
    void ClearClipboard();
    void InitialState();
-   void PushState(wxString desc, wxString shortDesc,
-                  bool consolidate = false);
    void ModifyState();
    void PopState(TrackList * l);
+   
+   #ifdef EXPERIMENTAL_LYRICS_WINDOW
+      void UpdateLyrics();
+   #endif
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      void UpdateMixerBoard();
+   #endif
+   
    void GetRegionsByLabel( Regions &regions );
    
    void AutoSaveIfNeeded();
@@ -347,35 +376,34 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static bool GetCacheBlockFiles();
 
    // The project's name and file info
-
    wxString mFileName;
    DirManager *mDirManager; // MM: DirManager now created dynamically
+
    double mRate;
    sampleFormat mDefaultFormat;
 
-   // Tags (artist name, song properties, MP3 ID3 info, etc.)
+   // Recent files
+   wxMenu *mRecentFilesMenu;
 
+   // Tags (artist name, song properties, MP3 ID3 info, etc.)
    Tags *mTags;
 
    // List of tracks and display info
-
    TrackList *mTracks;
-//   ViewInfo mViewInfo;
 
    bool mSnapTo;
 
    TrackList *mLastSavedTracks;
 
    // Clipboard (static because it is shared by all projects)
-
    static TrackList *msClipboard;
    static AudacityProject *msClipProject;
    static double msClipLen;
 
    //shared by all projects
    static ODLock *msAllProjectDeleteMutex;
-   // History/Undo manager
 
+   // History/Undo manager
    UndoManager mUndoManager;
    bool mDirty;
 
@@ -384,9 +412,10 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    CommandManager mCommandManager;
 
    wxUint32 mLastFlags;
-   int mLastToolBarCheckSum;   //This finds the state of the toolbars:
-                               //Base three for each toolbar
-                               //0: unloaded, 1: docked, 2: floating
+
+   // see AudacityProject::OnUpdateUI() for explanation of next two
+   bool mInIdle;
+   wxUint32 mTextClipFlag;
 
    // Window elements
 
@@ -404,7 +433,16 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mAutoScrolling;
    bool mActive;
    bool mIconized;
+
    HistoryWindow *mHistoryWindow;
+   #ifdef EXPERIMENTAL_LYRICS_WINDOW
+      LyricsWindow* mLyricsWindow;
+   #endif
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      MixerBoard* mMixerBoard;
+      MixerBoardFrame* mMixerBoardFrame;
+   #endif
+
 
  public:
    ToolManager *mToolManager;
@@ -426,11 +464,11 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    bool mLockPlayRegion;
 
+   // See AudacityProject::OnActivate() for an explanation of this.
+   wxWindow *mLastFocusedWindow;
+
    wxWindow *mKeyboardCaptured;
 
-   // Recent File and Project History
-   wxFileHistory *mRecentFiles;
-   
    ImportXMLTagHandler* mImportXMLTagHandler;
 
    // Last auto-save file name and path (empty if none)
@@ -458,11 +496,15 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mWantSaveCompressed;
    wxArrayString mStrOtherNamesArray; // used to make sure compressed file names are unique
    
+   // Last effect applied to this project
+   Effect *mLastEffect;
+   int mLastEffectType;
+   wxString mLastEffectDesc;
 
  private:
 
    // The screenshot class needs to access internals
-   friend class ScreenFrame;
+   friend class ScreenshotCommand;
 
  public:
     DECLARE_EVENT_TABLE()

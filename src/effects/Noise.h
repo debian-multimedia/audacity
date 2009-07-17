@@ -16,7 +16,7 @@
 #include <wx/defs.h>
 #include <wx/intl.h>
 
-#include "Effect.h"
+#include "Generator.h"
 #include "../widgets/TimeTextCtrl.h"
 
 class wxString;
@@ -29,12 +29,13 @@ class ShuttleGui;
 class WaveTrack;
 
 
-class EffectNoise:public Effect {
+class EffectNoise : public BlockGenerator {
 
  public:
    EffectNoise() {
-       noiseType=0;
-       noiseAmplitude=1.0;
+      SetEffectFlags(BUILTIN_EFFECT | INSERT_EFFECT);
+      noiseType = 0;
+      noiseAmplitude = 1.0;
    }
 
    virtual wxString GetEffectName() {
@@ -52,24 +53,21 @@ class EffectNoise:public Effect {
    }
 
    virtual wxString GetEffectDescription() {
-      return wxString::Format(_("Applied effect: Generate Noise, %.6lf seconds"), noiseDuration);
+      return wxString::Format(_("Applied effect: Generate Noise, %.6lf seconds"), mDuration);
    }
 
    virtual wxString GetEffectAction() {
       return wxString(_("Generating Noise"));
    }
 
-   virtual int GetEffectFlags() {
-      return BUILTIN_EFFECT | INSERT_EFFECT;
-   }
-
    virtual bool PromptUser();
-   virtual bool Process();
    virtual bool TransferParameters( Shuttle & shuttle );
+
+   void GenerateBlock(float *data, const WaveTrack &track, sampleCount block);
+   void Success();
 
  private:
    sampleCount numSamples;
-   double noiseDuration;
    int noiseType;
    double noiseAmplitude;
 

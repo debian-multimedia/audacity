@@ -103,7 +103,7 @@ void XMLWriter::WriteAttr(const wxString &name, const wxString &value)
 {
    Write(wxString::Format(wxT(" %s=\"%s\""),
       name.c_str(),
-      XMLTagHandler::XMLEsc(value).c_str()));
+      XMLEsc(value).c_str()));
 }
 
 void XMLWriter::WriteAttr(const wxChar *name, const wxChar *value)
@@ -213,7 +213,7 @@ void XMLWriter::WriteData(const wxString &value)
       Write(wxT("\t"));
    }
 
-   Write(XMLTagHandler::XMLEsc(value));
+   Write(XMLEsc(value));
 }
 
 void XMLWriter::WriteData(const wxChar *value)
@@ -242,6 +242,50 @@ void XMLWriter::Write(const wxChar *value)
    Write(wxString(value));
 }
 
+// See http://www.w3.org/TR/REC-xml for reference
+wxString XMLWriter::XMLEsc(const wxString & s)
+{
+   wxString result;
+   int len = s.Length();
+
+   for(int i=0; i<len; i++) {
+      wxUChar c = s.GetChar(i);
+
+      switch (c) {
+         case wxT('\''):
+            result += wxT("&apos;");
+         break;
+
+         case wxT('"'):
+            result += wxT("&quot;");
+         break;
+
+         case wxT('&'):
+            result += wxT("&amp;");
+         break;
+
+         case wxT('<'):
+            result += wxT("&lt;");
+         break;
+
+         case wxT('>'):
+            result += wxT("&gt;");
+         break;
+
+         default:
+            if (!wxIsprint(c)) {
+               result += wxString::Format(wxT("&#x%04x;"), c);
+            }
+            else {
+               result += c;
+            }
+         break;
+      }
+   }
+
+   return result;
+}
+
 ///
 /// XMLFileWriter class
 ///
@@ -256,23 +300,45 @@ XMLFileWriter::~XMLFileWriter()
    }
 }
 
-bool XMLFileWriter::Open(const wxString &name, const wxString &mode)
+void XMLFileWriter::Open(const wxString &name, const wxString &mode)
 {
-   return wxFFile::Open(name, mode);
+   if (!wxFFile::Open(name, mode))
+      throw new XMLFileWriterException(_("Error opening file"));
 }
 
-bool XMLFileWriter::Close()
+void XMLFileWriter::Close()
 {
    while (mTagstack.GetCount()) {
       EndTag(mTagstack[0]);
    }
 
-   return wxFFile::Close();
+   CloseWithoutEndingTags();
+}
+
+void XMLFileWriter::CloseWithoutEndingTags()
+{
+   // Before closing, we first flush it, because if Flush() fails because of a
+   // "disk full" condition, we can still at least try to close the file.
+   if (!wxFFile::Flush())
+   {
+      wxFFile::Close();
+      throw new XMLFileWriterException(_("Error flushing file"));
+   }
+
+   // Note that this should never fail if flushing worked.
+   if (!wxFFile::Close())
+      throw new XMLFileWriterException(_("Error closing file"));
 }
 
 void XMLFileWriter::Write(const wxString &data)
 {
-   wxFFile::Write(data);
+   if (!wxFFile::Write(data, wxConvUTF8))
+   {
+      // When writing fails, we try to close the file before throwing the
+      // exception, so it can at least be deleted.
+      wxFFile::Close();
+      throw new XMLFileWriterException(_("Error writing to file"));
+   }
 }
 
 ///

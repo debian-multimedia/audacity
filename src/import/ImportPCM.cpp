@@ -118,11 +118,24 @@ wxString PCMImportPlugin::GetPluginFormatDescription()
 ImportFileHandle *PCMImportPlugin::Open(wxString filename)
 {
    SF_INFO info;
-   SNDFILE *file;
+   SNDFILE *file = NULL;
 
    memset(&info, 0, sizeof(info));
 
-   file = sf_open(OSFILENAME(filename), SFM_READ, &info);
+   wxFile f;   // will be closed when it goes out of scope
+
+   if (f.Open(filename)) {
+      // Even though there is an sf_open() that takes a filename, use the one that
+      // takes a file descriptor since wxWidgets can open a file with a Unicode name and
+      // libsndfile can't (under Windows).
+      file = sf_open_fd(f.fd(), SFM_READ, &info, TRUE);
+   }
+
+   // The file descriptor is now owned by "file", so we must tell "f" to leave
+   // it alone.  The file descriptor is closed by sf_open_fd() even if an error
+   // occurs.
+   f.Detach();
+
    if (!file) {
       // TODO: Handle error
       //char str[1000];
@@ -196,12 +209,11 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
 
    if (mInfo.channels == 2) {
       channels[0]->SetLinked(true);
-      channels[1]->SetTeamed(true);
    }
 
    sampleCount fileTotalFrames = (sampleCount)mInfo.frames;
    sampleCount maxBlockSize = channels[0]->GetMaxBlockSize();
-   bool cancelled = false;
+   int updateResult = false;
    
    wxString copyEdit =
        gPrefs->Read(wxT("/FileFormats/CopyOrEditUncompressedData"), wxT("edit"));
@@ -246,12 +258,11 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
          for (c = 0; c < mInfo.channels; c++)
             channels[c]->AppendAlias(mFilename, i, blockLen, c,useOD);
 
-         cancelled = !mProgress->Update(i, fileTotalFrames);
-         if (cancelled)
+         updateResult = mProgress->Update(i, fileTotalFrames);
+         if (updateResult != eProgressSuccess)
             break;
       }
       
-#ifdef EXPERIMENTAL_ONDEMAND
       //now go over the wavetrack/waveclip/sequence and load all the blockfiles into a ComputeSummaryTask.  
       //Add this task to the ODManager and the Track itself.      
        wxLogDebug(wxT("Importing PCM \n"));
@@ -274,8 +285,6 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
          if(!moreThanStereo)
             ODManager::Instance()->AddNewTask(computeTask);
       }
-#endif      
-      
    }
    else {
       // Otherwise, we're in the "copy" mode, where we read in the actual
@@ -315,20 +324,23 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
             framescompleted += block;
          }
 
-         cancelled = !mProgress->Update((long long unsigned)framescompleted,
+         updateResult = mProgress->Update((long long unsigned)framescompleted,
                                         (long long unsigned)fileTotalFrames);
-         if (cancelled)
+         if (updateResult != eProgressSuccess)
             break;
 
       } while (block > 0);
+
+      DeleteSamples(buffer);
+      DeleteSamples(srcbuffer);
    }
 
-   if (cancelled) {
+   if (updateResult == eProgressFailed || updateResult == eProgressCancelled) {
       for (c = 0; c < mInfo.channels; c++)
          delete channels[c];
       delete[] channels;
 
-      return eImportCancelled;
+      return updateResult;
    }
 
    *outNumTracks = mInfo.channels;
@@ -382,8 +394,11 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
 
          f.Seek(12);        // Skip filetype, length, and formtype
 
-         while (!f.Eof()) {
+         while (!f.Error()) {
             f.Read(id, 4);    // Get chunk type
+            if (f.Eof()) {
+               break;
+            }
             f.Read(&len, 4);
             len = wxUINT32_SWAP_ON_LE(len);
 
@@ -506,7 +521,7 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
    //comment out to undo profiling.
    //END_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) open an 80 mb wav stereo file");
 
-   return eImportSuccess;
+   return updateResult;
 }
 
 PCMImportFileHandle::~PCMImportFileHandle()

@@ -45,6 +45,7 @@
 EffectAmplify::EffectAmplify()
 {
    ratio = float(1.0);
+   peak = float(0.0);
 }
 
 wxString EffectAmplify::GetEffectDescription() { 
@@ -57,23 +58,19 @@ bool EffectAmplify::Init()
 {
    peak = float(0.0);
 
-   TrackListIterator iter(mWaveTracks);
-   Track *t = iter.First();
-   int count = 0;
-   while(t) {
+   SelectedTrackListOfKindIterator iter(Track::Wave, mTracks);
+
+   for (Track *t = iter.First(); t; t = iter.Next()) {
       float min, max;
       ((WaveTrack *)t)->GetMinMax(&min, &max, mT0, mT1);
       float newpeak = (fabs(min) > fabs(max) ? fabs(min) : fabs(max));
       
-      if (newpeak > peak)
+      if (newpeak > peak) {
          peak = newpeak;
-   
-      t = iter.Next();
-      count++;
+      }
    }
-   
-   return true;
 
+   return true;
 }
 
 bool EffectAmplify::TransferParameters( Shuttle & shuttle )

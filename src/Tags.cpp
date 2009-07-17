@@ -71,6 +71,7 @@
 #include <wx/textctrl.h>
 #include <wx/textfile.h>
 #include <wx/combobox.h>
+#include <wx/display.h>
 
 #ifdef _DEBUG
     #ifdef _MSC_VER
@@ -748,7 +749,11 @@ TagsEditor::TagsEditor(wxWindow * parent,
    gPrefs->Read(wxT("/TagsEditor/y"), &r.y, r.y);
    gPrefs->Read(wxT("/TagsEditor/width"), &r.width, r.width);
    gPrefs->Read(wxT("/TagsEditor/height"), &r.height, r.height);
-   Move(r.GetPosition());
+   //On multi-monitor systems, there's a chance the last saved window position is
+   //on a monitor that has been removed or is unavailable.
+   if (IsWindowRectValid(&r))
+      Move(r.GetPosition());
+   
 //   SetSize(r.GetSize());
 
    // Resize value column width based on width of columns and the vertical scrollbar
@@ -766,6 +771,12 @@ TagsEditor::TagsEditor(wxWindow * parent,
 
 TagsEditor::~TagsEditor()
 {
+   delete mGrid;
+// TODO:  Need to figure out if these should be deleted.  Looks like the wxGrid
+//        code takes ownership and uses reference counting, but there's been
+//        cases where they show up as memory leaks.
+//   delete mStringRenderer;
+//   delete mComboEditor;
 }
 
 void TagsEditor::PopulateOrExchange(ShuttleGui & S)
@@ -785,9 +796,10 @@ void TagsEditor::PopulateOrExchange(ShuttleGui & S)
                           wxDefaultSize,
                           wxSUNKEN_BORDER);
 
-         mGrid->RegisterDataType(wxT("Combo"),
-                                 new wxGridCellStringRenderer,
-                                 new ComboEditor(wxArrayString(), true));
+         mStringRenderer = new wxGridCellStringRenderer;
+         mComboEditor = new ComboEditor(wxArrayString(), true);
+
+         mGrid->RegisterDataType(wxT("Combo"), mStringRenderer, mComboEditor);
 
          mGrid->SetColLabelSize(mGrid->GetDefaultRowSize());
 
@@ -797,8 +809,8 @@ void TagsEditor::PopulateOrExchange(ShuttleGui & S)
          mGrid->CreateGrid(0, 2); 
          mGrid->SetRowLabelSize(0);
          mGrid->SetDefaultCellAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
-         mGrid->SetColLabelValue(0, _("Tag Name"));
-         mGrid->SetColLabelValue(1, _("Tag Value"));
+         mGrid->SetColLabelValue(0, _("Tag"));
+         mGrid->SetColLabelValue(1, _("Value"));
 
          // Resize the name column and set default row height.
          wxComboBox tc(this, wxID_ANY, wxT(""), wxDefaultPosition, wxDefaultSize, cs);
@@ -813,7 +825,7 @@ void TagsEditor::PopulateOrExchange(ShuttleGui & S)
          S.Id(AddID).AddButton(_("&Add"));
          S.Id(RemoveID).AddButton(_("&Remove"));
          S.AddTitle(wxT(" "));
-         S.Id(ClearID).AddButton(_("&Clear"));
+         S.Id(ClearID).AddButton(_("Cl&ear"));
       }
       S.EndMultiColumn();
 
@@ -836,7 +848,7 @@ void TagsEditor::PopulateOrExchange(ShuttleGui & S)
                S.Id(LoadID).AddButton(_("&Load..."));
                S.Id(SaveID).AddButton(_("&Save..."));
                S.AddTitle(wxT(" "));
-               S.Id(SaveDefaultsID).AddButton(_("S&et Default"));
+               S.Id(SaveDefaultsID).AddButton(_("Set De&fault"));
             }
             S.EndMultiColumn();
          }
@@ -1150,46 +1162,50 @@ void TagsEditor::OnSave(wxCommandEvent & event)
 
    // Create/Open the file
    XMLFileWriter writer;
-   writer.Open(fn, wxT("wb"));
 
-   // Complain if open failed
-   if (!writer.IsOpened())
+   try
    {
-      // Constructor will emit message
-      return;
+      writer.Open(fn, wxT("wb"));
+
+      // Remember title and track in case they're read only
+      wxString title = mLocal.GetTag(TAG_TITLE);
+      wxString track = mLocal.GetTag(TAG_TRACK);
+
+      // Clear title
+      if (!mEditTitle) {
+         mLocal.SetTag(TAG_TITLE, wxEmptyString);
+      }
+
+      // Clear track
+      if (!mEditTrack) {
+         mLocal.SetTag(TAG_TRACK, wxEmptyString);
+      }
+
+      // Write the metadata
+      mLocal.WriteXML(writer);
+
+      // Restore title
+      if (!mEditTitle) {
+         mLocal.SetTag(TAG_TITLE, title);
+      }
+
+      // Restore track
+      if (!mEditTrack) {
+         mLocal.SetTag(TAG_TRACK, track);
+      }
+
+      // Close the file
+      writer.Close();
    }
+   catch (XMLFileWriterException* pException)
+   {
+      wxMessageBox(wxString::Format(
+         _("Couldn't write to file \"%s\": %s"),
+         fn.c_str(), pException->GetMessage().c_str()),
+         _("Error saving tags file"), wxICON_ERROR, this);
 
-   // Remember title and track in case they're read only
-   wxString title = mLocal.GetTag(TAG_TITLE);
-   wxString track = mLocal.GetTag(TAG_TRACK);
-
-   // Clear title
-   if (!mEditTitle) {
-      mLocal.SetTag(TAG_TITLE, wxEmptyString);
+      delete pException;
    }
-
-   // Clear track
-   if (!mEditTrack) {
-      mLocal.SetTag(TAG_TRACK, wxEmptyString);
-   }
-
-   // Write the metadata
-   mLocal.WriteXML(writer);
-
-   // Restore title
-   if (!mEditTitle) {
-      mLocal.SetTag(TAG_TITLE, title);
-   }
-
-   // Restore track
-   if (!mEditTrack) {
-      mLocal.SetTag(TAG_TRACK, track);
-   }
-
-   // Close the file
-   writer.Close();
-
-   return;
 }
 
 void TagsEditor::OnSaveDefaults(wxCommandEvent & event)
@@ -1322,6 +1338,26 @@ void TagsEditor::PopulateGenres()
 
    mGrid->GetDefaultEditorForType(wxT("Combo"))->SetParameters(parm);
 }
+
+bool TagsEditor::IsWindowRectValid(const wxRect *windowRect) const
+{
+   wxDisplay display;
+   wxPoint topLeft(windowRect->GetTopLeft().x, windowRect->GetTopLeft().y);
+   wxPoint topRight(windowRect->GetTopRight().x, windowRect->GetTopRight().y);
+   wxPoint bottomLeft(windowRect->GetBottomLeft().x, windowRect->GetBottomLeft().y);
+   wxPoint bottomRight(windowRect->GetBottomRight().x, windowRect->GetBottomRight().y);
+   display.GetFromPoint(topLeft);
+   if (display.GetFromPoint(topLeft) == -1 &&
+       display.GetFromPoint(topRight) == -1 &&
+       display.GetFromPoint(bottomLeft) == -1 &&
+       display.GetFromPoint(bottomRight) == -1) {
+      return false;
+   }
+
+   return true;
+}
+
+
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

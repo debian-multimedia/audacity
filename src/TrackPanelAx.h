@@ -15,9 +15,6 @@
 #include <wx/panel.h>
 
 #if wxUSE_ACCESSIBILITY
-#if defined(__WXMSW__)
-#include <oleacc.h>
-#endif
 #include <wx/access.h>
 #endif
 
@@ -40,6 +37,9 @@ public:
 
    // Returns TRUE if passed track has the focus
    bool IsFocused( Track *track );
+
+   // Called to signal changes to a track
+   void Updated();
 
 #if wxUSE_ACCESSIBILITY
    // Retrieves the address of an IDispatch interface for the specified child.

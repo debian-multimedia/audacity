@@ -14,6 +14,7 @@
 #include <wx/string.h>
 
 class wxFileName;
+class wxArrayString;
 
 // Uh, this is really a namespace rather than a class,
 // since all the functions are static.
@@ -34,7 +35,7 @@ public:
    static wxString DataDir();
    static wxString AutoSaveDir();
    static wxString HtmlHelpDir();
-   static wxString HtmlHelpIndexFile();
+   static wxString HtmlHelpIndexFile(bool quick);
    static wxString ChainDir();
    static wxString NRPDir();
    static wxString NRPFile();

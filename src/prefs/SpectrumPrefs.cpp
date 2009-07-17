@@ -26,51 +26,46 @@
 #include "SpectrumPrefs.h"
 #include "../FFT.h"
 
-enum {
-   ID_MINFREQUENCY = 8000,
-   ID_MAXFREQUENCY,
-#ifdef EXPERIMENTAL_FIND_NOTES
-   ID_FIND_NOTES_MIN_A,
-   ID_FIND_NOTES_N,
-   ID_FIND_NOTES_QUANTIZE,
-#endif //EXPERIMENTAL_FIND_NOTES
-};
-
-SpectrumPrefs::SpectrumPrefs(wxWindow * parent):
-   PrefsPanel(parent)
+SpectrumPrefs::SpectrumPrefs(wxWindow * parent)
+:  PrefsPanel(parent, _("Spectrograms"))
 {
-   SetLabel(_("Spectrograms"));         // Provide visual label
-   SetName(_("Spectrograms"));          // Provide audible label
-   Populate( );
+   Populate();
 }
 
-void SpectrumPrefs::Populate( )
+SpectrumPrefs::~SpectrumPrefs()
 {
-   int minFreq;
-   int maxFreq;
+}
 
-   // First any pre-processing for constructing the GUI.
-   // Unusual handling of maxFreqStr because it is a validated input.
-   gPrefs->Read(wxT("/Spectrum/MaxFreq"), &maxFreq, 8000L);
-   gPrefs->Read(wxT("/Spectrum/MinFreq"), &minFreq, 0L);
-   gPrefs->Read(wxT("/Spectrum/WindowType"), &windowType, 3L);
-#ifdef EXPERIMENTAL_FFT_SKIP_POINTS
-   gPrefs->Read(wxT("/Spectrum/FFTSkipPoints"), &fftSkipPoints, 0L);
-#endif //EXPERIMENTAL_FFT_SKIP_POINTS
-#ifdef EXPERIMENTAL_FFT_Y_GRID
-   gPrefs->Read(wxT("/Spectrum/FFTYGrid"), &fftYGrid, false);
-#endif //EXPERIMENTAL_FFT_Y_GRID
+void SpectrumPrefs::Populate()
+{
+   mSizeChoices.Add(_("8 - most wideband"));
+   mSizeChoices.Add(_("16"));
+   mSizeChoices.Add(_("32"));
+   mSizeChoices.Add(_("64"));
+   mSizeChoices.Add(_("128"));
+   mSizeChoices.Add(_("256 - default"));
+   mSizeChoices.Add(_("512"));
+   mSizeChoices.Add(_("1024"));
+   mSizeChoices.Add(_("2048"));
 #ifdef EXPERIMENTAL_FIND_NOTES
-   gPrefs->Read(wxT("/Spectrum/FFTFindNotes"), &fftFindNotes, false);
-   gPrefs->Read(wxT("/Spectrum/FindNotesMinA"), &findNotesMinA, -30L);
-   findNotesMinAStr.Printf(wxT("%d"), findNotesMinA);
-   gPrefs->Read(wxT("/Spectrum/FindNotesN"), &findNotesN, 5L);
-   findNotesNStr.Printf(wxT("%d"), findNotesN);
-   gPrefs->Read(wxT("/Spectrum/FindNotes"), &findNotesQuantize, false);
-#endif //EXPERIMENTAL_FIND_NOTES
+   mSizeChoices.Add(_("4096"));
+   mSizeChoices.Add(_("8192"));
+   mSizeChoices.Add(_("16384"));
+   mSizeChoices.Add(_("32768 - most narrowband"));
+#else
+   mSizeChoices.Add(_("4096 - most narrowband"));
+#endif //LOGARITHMIC_SPECTRUM
 
-   minFreqStr.Printf(wxT("%d"), minFreq);
-   maxFreqStr.Printf(wxT("%d"), maxFreq);
+   for (size_t i = 0; i < mSizeChoices.GetCount(); i++) {
+      mSizeCodes.Add(1 << (i + 3));
+   }
+
+   for (int i = 0; i < NumWindowFuncs(); i++) {
+      mTypeChoices.Add(WindowFuncName(i));
+      mTypeCodes.Add(i);
+   }
+
+
    //------------------------- Main section --------------------
    // Now construct the GUI itself.
    // Use 'eIsCreatingFromPrefs' so that the GUI is
@@ -80,121 +75,140 @@ void SpectrumPrefs::Populate( )
    // ----------------------- End of main section --------------
 }
 
-void SpectrumPrefs::PopulateOrExchange( ShuttleGui & S )
+void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
 {
-   wxArrayString windowTypeList;
+   S.SetBorder(2);
 
-   for(int i=0; i<NumWindowFuncs(); i++)
-      windowTypeList.Add(WindowFuncName(i));
-
-   S.SetBorder( 2 );
-   S.StartHorizontalLay(wxEXPAND, 0 );
-   S.StartStatic( _("FFT Size"), 0 );
+   S.StartStatic(_("FFT Window"));
    {
-      S.StartRadioButtonGroup( wxT("/Spectrum/FFTSize"), 256 );
-      S.TieRadioButton( _("8 - most wideband"),     8);
-      S.TieRadioButton( wxT("16"),                  16);
-      S.TieRadioButton( wxT("32"),                  32);
-      S.TieRadioButton( wxT("64"),                  64);
-      S.TieRadioButton( wxT("128"),                 128);
-      S.TieRadioButton( _("256 - default"),         256);
-      S.TieRadioButton( wxT("512"),                 512);
-      S.TieRadioButton( wxT("1024"),                1024);
-      S.TieRadioButton( wxT("2048"),                2048);
-#ifdef EXPERIMENTAL_FIND_NOTES
-      S.TieRadioButton( wxT("4096"),                4096);
-      S.TieRadioButton( wxT("8192"),                8192);
-      S.TieRadioButton( wxT("16384"),               16384);
-      S.TieRadioButton( _("32768 - most narrowband"),32768);
-#else
-      S.TieRadioButton( _("4096 - most narrowband"),4096);
-#endif //LOGARITHMIC_SPECTRUM
-      S.EndRadioButtonGroup();
-
-      // add choice for windowtype
-      S.StartMultiColumn(2, wxCENTER);
+      S.StartMultiColumn(2);
       {
-         S.TieChoice( _("Window type:"), windowType,  &windowTypeList);
-         S.SetSizeHints(-1,-1);
+         S.TieChoice(_("Window size") + wxString(wxT(":")),
+                     wxT("/Spectrum/FFTSize"), 
+                     256,
+                     mSizeChoices,
+                     mSizeCodes);
+         S.SetSizeHints(mSizeChoices);
+
+         S.TieChoice(_("Window type") + wxString(wxT(":")),
+                     wxT("/Spectrum/WindowType"), 
+                     3,
+                     mTypeChoices,
+                     mTypeCodes);
+         S.SetSizeHints(mTypeChoices);
       }
       S.EndMultiColumn();
    }
    S.EndStatic();
 
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
-   S.StartHorizontalLay(wxEXPAND, 0 );
-   S.StartStatic( _("FFT Skip Points"), 0 );
+   wxArrayString wskipn;
+   wxArrayInt wskipv;
+
+   for (size_t i = 0; i < 7; i++) {
+      wskipn.Add(wxString::Format(wxT("%d"), (1 << i) - 1));
+      wskipv.Add((1 << i) - 1);
+   }
+
+   S.StartStatic(_("FFT Skip Points"));
    {
-      S.StartRadioButtonGroup(wxT("/Spectrum/FFTSkipPoints"), 0);
-      S.TieRadioButton(wxT("0"), 0);
-      S.TieRadioButton(wxT("1"), 1);
-      S.TieRadioButton(wxT("3"), 3);
-      S.TieRadioButton(wxT("7"), 7);
-      S.TieRadioButton(wxT("15"), 15);
-      S.TieRadioButton(wxT("31"), 31);
-      S.TieRadioButton(wxT("63"), 63);
-      S.EndRadioButtonGroup();
+      S.StartMultiColumn(2);
+      {
+         S.TieChoice(_("Skip Points") + wxString(wxT(":")),
+                     wxT("/Spectrum/FFTSkipPoints"),
+                     0,
+                     wskipn,
+                     wskipv);
+         S.SetSizeHints(wskipn);
+      }
+      S.EndMultiColumn();
    }
    S.EndStatic();
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
 
-   S.StartStatic( _("Display"),1 );
+   S.StartStatic(_("Display"));
    {
-      // JC: For layout of mixtures of controls I prefer checkboxes on the right,
-      // with everything in two columns over what we have here.
-      S.TieCheckBox( _("&Grayscale"), wxT("/Spectrum/Grayscale"), false);
-      S.StartTwoColumn(); // 2 cols because we have a control with a separate label.
-      S.Id(ID_MINFREQUENCY).TieTextBox(
-         _("Minimum Frequency (Hz):"), // prompt
-         minFreqStr, // String to exchange with
-         12 // max number of characters (used to size the control).
-         );
-      S.Id(ID_MAXFREQUENCY).TieTextBox(
-         _("Maximum Frequency (Hz):"), // prompt
-         maxFreqStr, // String to exchange with
-         12 // max number of characters (used to size the control).
-         );
+      S.StartTwoColumn();
+      {
+         mMinFreq =
+            S.TieTextBox(_("Minimum Frequency (Hz):"),
+                         wxT("/Spectrum/MinFreq"),
+                         0,
+                         12);
+
+         mMaxFreq =
+            S.TieTextBox(_("Maximum Frequency (Hz):"),
+                         wxT("/Spectrum/MaxFreq"),
+                         8000,
+                         12);
+
+         mGain =
+            S.TieTextBox(_("Gain (dB):"),
+                         wxT("/Spectrum/Gain"),
+                         20,
+                         8);
+
+         mRange =
+            S.TieTextBox(_("Range (dB):"),
+                         wxT("/Spectrum/Range"),
+                         80,
+                         8);
+
+         mFrequencyGain =
+            S.TieTextBox(_("Frequency gain: (dB/dec)"),
+                    wxT("/Spectrum/FrequencyGain"),
+                    0,
+                    4);
+      }
       S.EndTwoColumn();
+
+      S.TieCheckBox(_("Show the spectrum using &grayscale colors"),
+                    wxT("/Spectrum/Grayscale"),
+                    false);
+
 #ifdef EXPERIMENTAL_FFT_Y_GRID
-      S.TieCheckBox( _("&Y-Grid"), wxT("/Spectrum/FFTYGrid"), false);
+      S.TieCheckBox(_("Show a grid along the &Y-axis"),
+                    wxT("/Spectrum/FFTYGrid"),
+                    false);
 #endif //EXPERIMENTAL_FFT_Y_GRID
-#ifdef EXPERIMENTAL_FIND_NOTES
-      S.TieCheckBox( _("&Find Notes"), wxT("/Spectrum/FFTFindNotes"), false);
-      S.TieCheckBox( _("&Quantize Notes"), wxT("/Spectrum/FindNotesQuantize"), false);
-      S.StartTwoColumn(); // 2 cols because we have a control with a separate label.
-      S.Id(ID_FIND_NOTES_MIN_A).TieTextBox(
-         _("Minimum Amplitude (dB):"), // prompt
-         findNotesMinAStr, // String to exchange with
-         8 // max number of characters (used to size the control).
-         );
-      S.Id(ID_FIND_NOTES_N).TieTextBox(
-         _("Max. Number of Notes (1..128):"), // prompt
-         findNotesNStr, // String to exchange with
-         8 // max number of characters (used to size the control).
-         );
-      S.EndTwoColumn();
-#endif //EXPERIMENTAL_FIND_NOTES
    }
    S.EndStatic();
-   S.EndHorizontalLay();
+
+#ifdef EXPERIMENTAL_FIND_NOTES
+   S.StartStatic(_("FFT Find Notes"));
+   {
+      S.StartTwoColumn();
+      {
+         mFindNotesMinA =
+            S.TieTextBox(_("Minimum Amplitude (dB):"),
+                         wxT("/Spectrum/FindNotesMinA"),
+                         -30L,
+                         8);
+
+         mFindNotesN =
+            S.TieTextBox(_("Max. Number of Notes (1..128):"),
+                         wxT("/Spectrum/FindNotesN"),
+                         5L,
+                         8);
+      }
+      S.EndTwoColumn();
+
+      S.TieCheckBox(_("&Find Notes"),
+                    wxT("/Spectrum/FFTFindNotes"),
+                    false);
+
+      S.TieCheckBox(_("&Quantize Notes"),
+                    wxT("/Spectrum/FindNotesQuantize"),
+                    false);
+   }
+   S.EndStatic();
+#endif //EXPERIMENTAL_FIND_NOTES
 }
 
-
-bool SpectrumPrefs::Apply()
+bool SpectrumPrefs::Validate()
 {
-   ShuttleGui S( this, eIsSavingToPrefs );
-   PopulateOrExchange( S );
-
-   // max/minFreqStr are input fields that have validation.
-   // We've handled them slightly differently to all the
-   // other fields, which just go straight through to gPrefs.
-   // Instead ShuttleGui has been told to only do a one step
-   // exchange with them, not including gPrefs..  so we now
-   // need to validate them and possibly write them back to gPrefs.
-
-   //---- Validation of maxFreqStr
    long maxFreq;
-   if (!maxFreqStr.ToLong(&maxFreq)) {
+   if (!mMaxFreq->GetValue().ToLong(&maxFreq)) {
       wxMessageBox(_("The maximum frequency must be an integer"));
       return false;
    }
@@ -202,11 +216,9 @@ bool SpectrumPrefs::Apply()
       wxMessageBox(_("Maximum frequency must be in the range 100 Hz - 100,000 Hz"));
       return false;
    }
-   //---- End of validation of maxFreqStr.
 
-   //---- Validation of minFreqStr
    long minFreq;
-   if (!minFreqStr.ToLong(&minFreq)) {
+   if (!mMinFreq->GetValue().ToLong(&minFreq)) {
       wxMessageBox(_("The minimum frequency must be an integer"));
       return false;
    }
@@ -214,42 +226,67 @@ bool SpectrumPrefs::Apply()
       wxMessageBox(_("Minimum frequency must be at least 0 Hz"));
       return false;
    }
-   //---- End of validation of maxFreqStr.
+
+   if (maxFreq < minFreq) {
+      wxMessageBox(_("Minimum frequency must be less than maximum frequency"));
+      return false;
+   }
+
+   long gain;
+   if (!mGain->GetValue().ToLong(&gain)) {
+      wxMessageBox(_("The gain must be an integer"));
+      return false;
+   }
+   long range;
+   if (!mRange->GetValue().ToLong(&range)) {
+      wxMessageBox(_("The range must be a positive integer"));
+      return false;
+   }
+   if (range <= 0) {
+      wxMessageBox(_("The range must be at least 1 dB"));
+      return false;
+   }
+
+   long frequencygain;
+   if (!mFrequencyGain->GetValue().ToLong(&frequencygain)) {
+      wxMessageBox(_("The frequency gain must be an integer"));
+      return false;
+   }
+   if (frequencygain < 0) {
+      wxMessageBox(_("The frequency gain cannot be negative"));
+      return false;
+   }
+   if (frequencygain > 60) {
+      wxMessageBox(_("The frequency gain must be no more than 60 dB/dec"));
+      return false;
+   }
 #ifdef EXPERIMENTAL_FIND_NOTES
    long findNotesMinA;
-   if (!findNotesMinAStr.ToLong(&findNotesMinA)) {
+   if (!mFindNotesMinA->GetValue().ToLong(&findNotesMinA)) {
       wxMessageBox(_("The minimum amplitude (dB) must be an integer"));
       return false;
    }
-   gPrefs->Write(wxT("/Spectrum/FindNotesMinA"), findNotesMinA);
+
    long findNotesN;
-   if (!findNotesNStr.ToLong(&findNotesN)) {
-      wxMessageBox(_("The Maximum Number of Notes must be an integer in the range 1..128"));
+   if (!mFindNotesN->GetValue().ToLong(&findNotesN)) {
+      wxMessageBox(_("The maximum number of notes must be an integer"));
       return false;
    }
    if (findNotesN < 1 || findNotesN > 128) {
-      wxMessageBox(_("The Maximum Number of Notes must be an integer in the range 1..128"));
+      wxMessageBox(_("The maximum number of notes must be in the range 1..128"));
       return false;
    }
-   gPrefs->Write(wxT("/Spectrum/FindNotesN"), findNotesN);
 #endif //EXPERIMENTAL_FIND_NOTES
-
-   gPrefs->Write(wxT("/Spectrum/MinFreq"), minFreq);
-   gPrefs->Write(wxT("/Spectrum/MaxFreq"), maxFreq);
-   gPrefs->Write(wxT("/Spectrum/WindowType"), windowType);
-
-   // TODO: Force all projects to repaint themselves
-   //v? Or just the active project, voila?
-   // Update the TrackPanel correspondingly. 
-   // Calling RedrawProject is inefficient relative to sending a msg to TrackPanel 
-   // for a particular track and control, but not a real performance hit.
-   GetActiveProject()->RedrawProject(true);
 
    return true;
 }
 
-SpectrumPrefs::~SpectrumPrefs()
+bool SpectrumPrefs::Apply()
 {
+   ShuttleGui S(this, eIsSavingToPrefs);
+   PopulateOrExchange(S);
+
+   return true;
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

@@ -26,18 +26,17 @@
 class wxMenu;
 class wxRect;
 
-class TrackList;
-class Track;
 class TrackPanel;
 class TrackArtist;
-class WaveTrack;
-class LabelTrack;
 class Ruler;
 class SnapManager;
 class AdornedRulerPanel;
 class LWSlider;
 class ControlToolBar; //Needed because state of controls can affect what gets drawn.
 class ToolsToolBar; //Needed because state of controls can affect what gets drawn.
+#ifdef EXPERIMENTAL_MIXER_BOARD
+   class MixerBoard;
+#endif
 class AudacityProject;
 
 class TrackPanelAx;
@@ -92,13 +91,14 @@ private:
    void MakeMoreSliders();
    void EnsureSufficientSliders(int index);
 
+   void SetTrackInfoFont(wxDC *dc);
    void DrawBackground(wxDC * dc, const wxRect r, bool bSelected, bool bHasMuteSolo, const int labelw, const int vrul);
    void DrawBordersWithin(wxDC * dc, const wxRect r, bool bHasMuteSolo );
    void DrawCloseBox(wxDC * dc, const wxRect r, bool down);
    void DrawTitleBar(wxDC * dc, const wxRect r, Track * t, bool down);
    void DrawMuteSolo(wxDC * dc, const wxRect r, Track * t, bool down, bool solo, bool bHasSoloButton);
    void DrawVRuler(wxDC * dc, const wxRect r, Track * t);
-   void DrawSliders(wxDC *dc, WaveTrack *t, wxRect r, int index);
+   void DrawSliders(wxDC * dc, WaveTrack *t, wxRect r);
    void DrawMinimize(wxDC * dc, const wxRect r, Track * t, bool down, bool minimized);
 
    void GetTrackControlsRect(const wxRect r, wxRect &dest) const;
@@ -113,6 +113,7 @@ public:
    LWSliderArray mGains;
    LWSliderArray mPans;
    wxWindow * pParent;
+   wxFont mFont;
 
    friend class TrackPanel;
 };
@@ -138,6 +139,8 @@ class TrackPanel:public wxPanel {
    virtual ~ TrackPanel();
 
    void BuildMenus(void);
+   void DeleteMenus(void);
+
    void UpdatePrefs();
 
    void OnSize(wxSizeEvent & event);
@@ -154,6 +157,9 @@ class TrackPanel:public wxPanel {
 
    void OnContextMenu(wxContextMenuEvent & event);
 
+   void OnTrackListResized(wxCommandEvent & event);
+   void OnTrackListUpdated(wxCommandEvent & event);
+
    double GetMostRecentXPos();
 
    void OnTimer();
@@ -166,9 +172,9 @@ class TrackPanel:public wxPanel {
 
    void SetStop(bool bStopped);
 
-   virtual void Refresh(bool eraseBackground = TRUE,
+   virtual void Refresh(bool eraseBackground = true,
                         const wxRect *rect = (const wxRect *) NULL);
-   void RefreshTrack(Track *trk, bool refreshbacking = false);
+   void RefreshTrack(Track *trk, bool refreshbacking = true);
 
    void DisplaySelection();
 
@@ -206,14 +212,18 @@ class TrackPanel:public wxPanel {
 
    Track *GetFocusedTrack();
    void SetFocusedTrack(Track *t);
-   
-   void OnTrackSticky(wxCommandEvent & event);
 
    void HandleCursorForLastMouseEvent();
-   void UpdateVRulerRect();
+
+   void UpdateVRulers();
+   void UpdateVRuler(Track *t);
+   void UpdateTrackVRuler(Track *t);
+   void UpdateVRulerSize();
 
  private:
-
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      MixerBoard* GetMixerBoard();
+   #endif
    bool IsUnsafe();
    bool HandleLabelTrackMouseEvent(LabelTrack * lTrack, wxRect &r, wxMouseEvent & event);
    bool HandleTrackLocationMouseEvent(WaveTrack * track, wxRect &r, wxMouseEvent &event);
@@ -235,7 +245,7 @@ class TrackPanel:public wxPanel {
    void HandleSelect(wxMouseEvent & event);
    void SelectionHandleDrag(wxMouseEvent &event, Track *pTrack);
    void SelectionHandleClick(wxMouseEvent &event, 
-			     Track* pTrack, wxRect r, int num);
+			     Track* pTrack, wxRect r);
    void StartSelection (int mouseXCoordinate, int trackLeftEdge);
    void ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
                         Track *pTrack);
@@ -306,9 +316,9 @@ class TrackPanel:public wxPanel {
    bool CloseFunc(Track * t, wxRect r, int x, int y);
    bool PopupFunc(Track * t, wxRect r, int x, int y);
    bool GainFunc(Track * t, wxRect r, wxMouseEvent &event,
-                 int index, int x, int y);
+                 int x, int y);
    bool PanFunc(Track * t, wxRect r, wxMouseEvent &event,
-                int index, int x, int y);
+                int x, int y);
    void MakeParentRedrawScrollbars();
    
    // AS: Pushing the state preserves state for Undo operations.
@@ -336,6 +346,8 @@ class TrackPanel:public wxPanel {
    void OnFormatChange(wxCommandEvent &event);
 
    void OnSplitStereo(wxCommandEvent &event);
+   void OnSplitStereoMono(wxCommandEvent &event);
+   void SplitStereo(bool stereo);
    void OnMergeStereo(wxCommandEvent &event);
    void OnCutSelectedText(wxCommandEvent &event);
    void OnCopySelectedText(wxCommandEvent &event);
@@ -348,9 +360,8 @@ class TrackPanel:public wxPanel {
 
    // Find track info by coordinate
    Track *FindTrack(int mouseX, int mouseY, bool label, bool link,
-                     wxRect * trackRect = NULL, int *trackNum = NULL);
+                     wxRect * trackRect = NULL);
 
-   int FindTrackNum(Track * target);
    wxRect FindTrackRect(Track * target, bool label);
 
 //   int GetTitleWidth() const { return 100; }
@@ -364,11 +375,10 @@ class TrackPanel:public wxPanel {
 private:
    void DrawTracks(wxDC * dc);
 
-   void DrawEverythingElse(wxDC *dc, const wxRect panelRect, const wxRect clip);
-   void DrawEverythingElse(Track *t, wxDC *dc, wxRect &r, wxRect &wxTrackRect,
-                           int index);
-   void DrawOutside(Track *t, wxDC *dc, const wxRect rec, const int labelw, 
-                    const int vrul, const wxRect trackRect, int index);
+   void DrawEverythingElse(wxDC *dc, const wxRegion region,
+                           const wxRect panelRect, const wxRect clip);
+   void DrawOutside(Track *t, wxDC *dc, const wxRect rec,
+                    const wxRect trackRect);
    void DrawZooming(wxDC* dc, const wxRect clip);
 
    void HighlightFocusedTrack (wxDC* dc, const wxRect r);
@@ -437,7 +447,6 @@ private:
    WaveTrack::Location mCapturedTrackLocation;
    wxRect mCapturedTrackLocationRect;
    wxRect mCapturedRect;
-   int mCapturedNum;
 
    // When sliding horizontally, the moving clip may automatically
    // snap to the beginning and ending of other clips, or to label
@@ -487,7 +496,6 @@ private:
    float mDrawingStartSampleValue;    // value of last click-down
    sampleCount mDrawingLastDragSample; // sample of last drag-over
    float mDrawingLastDragSampleValue;  // value of last drag-over
-   wxRect mLastDrawnTrackRect;
  
    double PositionToTime(wxInt64 mouseXCoordinate,
                          wxInt64 trackLeftEdge) const;
@@ -557,7 +565,6 @@ private:
    wxMenu *mLabelTrackMenu;
    wxMenu *mRateMenu;
    wxMenu *mFormatMenu;
-   wxMenu *mStickyLabelMenu;
    wxMenu *mLabelTrackInfoMenu;
 
    Track *mPopupMenuTarget;
@@ -571,7 +578,7 @@ private:
  private:
 
    // The screenshot class needs to access internals
-   friend class ScreenFrame;
+   friend class ScreenshotCommand;
 
  public:
    wxSize vrulerSize;

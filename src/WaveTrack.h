@@ -126,7 +126,13 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    virtual bool Cut  (double t0, double t1, Track **dest);
    virtual bool Copy (double t0, double t1, Track **dest);
    virtual bool Clear(double t0, double t1);
-   virtual bool Paste(double t, Track *src);
+   virtual bool Paste(double t0, Track *src);
+   virtual bool ClearAndPaste(double t0, double t1,
+                              Track *src,
+                              bool preserve = true,
+                              bool merge = true,
+                              TrackList* tracks = NULL,
+                              bool relativeLabels = false);
 
    virtual bool Silence(double t0, double t1);
    virtual bool InsertSilence(double t, double len);
@@ -146,11 +152,12 @@ class AUDACITY_DLL_API WaveTrack: public Track {
 
    virtual bool Trim (double t0, double t1);
 
-   bool HandleGroupClear(double t0, double t1, bool addCutLines, bool split);
-   bool HandleClear(double t0, double t1,
-                    bool addCutLines, bool split);
-                    
-   bool HandleGroupPaste(double t0, Track *src);
+   bool Clear(double t0, double t1, TrackList* tracks);
+   bool HandleGroupClear(double t0, double t1, bool addCutLines, bool split, TrackList* tracks = NULL);
+   bool HandleClear(double t0, double t1, bool addCutLines, bool split);
+
+   bool Paste(double t0, Track *src, TrackList* tracks, bool relativeLabels = false);
+   bool HandleGroupPaste(double t0, Track *src, TrackList* tracks, bool relativeLabels);
    bool HandlePaste(double t0, Track *src);
 
    // Returns true if there are no WaveClips in that region
@@ -236,13 +243,13 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    // Utility functions to convert between times in seconds
    // and sample positions
 
-   sampleCount TimeToLongSamples(double t0);
+   sampleCount TimeToLongSamples(double t0) const;
    double LongSamplesToTime(sampleCount pos);
 
    // Get access to the clips in the tracks. This is used by
    // track artists and also by TrackPanel when sliding...it would
    // be cleaner if this could be removed, though...
-   WaveClipList::Node* GetClipIterator() { return mClips.GetFirst(); }
+   WaveClipList::compatibility_iterator GetClipIterator() { return mClips.GetFirst(); }
 
    // Create new clip and add it to this track. Returns a pointer
    // to the newly created clip.
@@ -289,11 +296,6 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    // clipidx1 and clipidx2 are indices into the clip list.
    bool MergeClips(int clipidx1, int clipidx2);
 
-   // Set/get rectangle that this WaveClip fills on screen. This is
-   // called by TrackArtist while actually drawing the tracks and clips.
-   void SetDisplayRect(const wxRect& r) { mDisplayRect = r; }
-   void GetDisplayRect(wxRect* r) { *r = mDisplayRect; }
-
    // Cache special locations (e.g. cut lines) for later speedy access
    void UpdateLocationsCache();
 
@@ -313,9 +315,6 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    
    // Resample track (i.e. all clips in the track)
    bool Resample(int rate, ProgressDialog *progress = NULL);
-
-   void SetStickyTrack(LabelTrack *lt) { mStickyLabelTrack = lt; }
-   LabelTrack* GetStickyTrack() { return mStickyLabelTrack; }
 
    //
    // The following code will eventually become part of a GUIWaveTrack
@@ -344,7 +343,6 @@ class AUDACITY_DLL_API WaveTrack: public Track {
 
    WaveClipList mClips;
 
-   wxRect        mDisplayRect;
    sampleFormat  mFormat;
    int           mRate;
    float         mGain;
@@ -375,7 +373,6 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    wxCriticalSection mFlushCriticalSection;
    wxCriticalSection mAppendCriticalSection;
    double mLegacyProjectFileOffset;
-   LabelTrack *mStickyLabelTrack;
 
 };
 

@@ -173,7 +173,7 @@ public:
    // Required
 
    bool DisplayOptions(wxWindow *parent, int format = 0);
-   bool Export(AudacityProject *project,
+   int Export(AudacityProject *project,
                int channels,
                wxString fName,
                bool selectedOnly,
@@ -205,7 +205,7 @@ void ExportMP2::Destroy()
    delete this;
 }
 
-bool ExportMP2::Export(AudacityProject *project,
+int ExportMP2::Export(AudacityProject *project,
                int channels, wxString fName,
                bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata,
                int subformat)
@@ -266,14 +266,15 @@ bool ExportMP2::Export(AudacityProject *project,
                             t0, t1,
                             stereo? 2: 1, pcmBufferSize, true,
                             rate, int16Sample, true, mixerSpec);
+   delete [] waveTracks;
 
    ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
       selectionOnly ?
       wxString::Format(_("Exporting selected audio at %d kbps"), bitrate) :
       wxString::Format(_("Exporting entire file at %d kbps"), bitrate));
 
-   bool cancelling = false;
-   while(!cancelling) {
+   int updateResult = eProgressSuccess;
+   while(updateResult == eProgressSuccess) {
       sampleCount pcmNumSamples = mixer->Process(pcmBufferSize);
 
       if (pcmNumSamples == 0)
@@ -290,7 +291,7 @@ bool ExportMP2::Export(AudacityProject *project,
 
       outFile.Write(mp2Buffer, mp2BufferNumBytes);
 
-      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
+      updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
 
    delete progress;
@@ -322,7 +323,7 @@ bool ExportMP2::Export(AudacityProject *project,
    
    outFile.Close();
 
-   return !cancelling;
+   return updateResult;
 }
 
 bool ExportMP2::DisplayOptions(wxWindow *parent, int format)

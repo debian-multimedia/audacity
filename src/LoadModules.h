@@ -15,7 +15,11 @@
 #include <wx/dynlib.h>
 #include <wx/module.h>
 
-void LoadModules();
+class CommandHandler;
+
+void LoadModules(CommandHandler &cmdHandler);
+void LoadModule(wxString fname);
+
 wxWindow *  MakeHijackPanel();
 
 //
@@ -30,10 +34,13 @@ typedef enum
    ModuleInitialize,
    ModuleTerminate,
    AppInitialized,
-   ProjectInitialized
+   AppQuiting,
+   ProjectInitialized,
+   ProjectClosing,
+   MenusRebuilt
 } ModuleDispatchTypes;
 
-typedef int AUDACITY_DLL_API (*fnModuleDispatch)(ModuleDispatchTypes type);
+typedef int (*fnModuleDispatch)(ModuleDispatchTypes type);
 
 class Module
 {

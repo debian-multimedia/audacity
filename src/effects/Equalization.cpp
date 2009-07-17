@@ -10,7 +10,7 @@
 
 *******************************************************************//**
 
-\file EffectEqualization.cpp
+\file Equalization.cpp
 \brief Implements EffectEqualiztaion, EqualizationDialog,
 EqualizationPanel, EQCurve and EQPoint.
 
@@ -61,6 +61,7 @@ various graphing code, such as provided by FreqWindow and FilterPanel.
 
 #include "../Audacity.h"
 #include "Equalization.h"
+#include "../AColor.h"
 #include "../ShuttleGui.h"
 #include "../PlatformCompatibility.h"
 #include "../FileNames.h"
@@ -212,7 +213,12 @@ const float EffectEqualization::curvey[][nCurvePoints] =
 #pragma warning( default: 4305 )
 #endif
 
-#ifdef __WXGTK__
+// LLL:  This seem to have a strange interaction with wxWidgets 2.8.9.  It's
+//       possible that the wxSlider was fixed as it seems to work ok for me
+//       under Ubuntu 8.10 with self build wxWidgets 2.8.9.
+//
+//       Leaving here for now...just disabling
+#ifdef __WXGTK__disabled
 /*
  * wxSlider exhibits strange behaviour on wxGTK when wxSL_INVERSE and/or
  * negative scale values are used. This affects at least SUSE 9.3 with
@@ -301,6 +307,8 @@ static wxString interpChoiceStrings[NUM_INTERP_CHOICES];
 
 EffectEqualization::EffectEqualization()
 {
+   hFFT = InitializeFFT(windowSize);
+   mFFTBuffer = new float[windowSize];
    mFilterFuncR = new float[windowSize];
    mFilterFuncI = new float[windowSize];
    gPrefs->Read(wxT("/CsPresets/EQFilterLength"),
@@ -323,6 +331,7 @@ EffectEqualization::EffectEqualization()
    }
    gPrefs->Read(wxT("/CsPresets/EQDrawMode"), &mDrawMode, true);
    gPrefs->Read(wxT("/CsPresets/EQInterp"), &mInterp, 0);
+   gPrefs->Read(wxT("/CsPresets/EQDrawGrid"), &mDrawGrid, true);
 
    mPrompting = false;
 
@@ -334,6 +343,12 @@ EffectEqualization::EffectEqualization()
 
 EffectEqualization::~EffectEqualization()
 {
+   if(hFFT) 
+      EndFFT(hFFT);
+   hFFT = NULL;
+   if(mFFTBuffer)
+      delete[] mFFTBuffer;
+   mFFTBuffer = NULL;
    if(mFilterFuncR)
       delete[] mFilterFuncR;
    if(mFilterFuncI)
@@ -342,19 +357,16 @@ EffectEqualization::~EffectEqualization()
    mFilterFuncI = NULL;
 }
 
-void EffectEqualization::End()
-{
-   mPrompting = false;
-}
-
 bool EffectEqualization::Init()
 {
-   return(mPrompting = true);
+   if(!mPrompting)
+      DontPromptUser();   // not previewing, ie batch mode or initial setup
+   return(true);
 }
 
 bool EffectEqualization::PromptUser()
 {
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
    WaveTrack *t = (WaveTrack *) iter.First();
    float hiFreq;
    if (t)
@@ -373,12 +385,12 @@ bool EffectEqualization::PromptUser()
    dlog.dBMax = mdBMax;
    dlog.drawMode = mDrawMode;
    dlog.interp = mInterp;
-   // not required here - called automatically
-   // dlog.TransferDataToWindow();
+   dlog.drawGrid = mDrawGrid;
    dlog.CentreOnParent();
 
-   mPrompting = true;
+   mPrompting = true;   // true when previewing, false in batch
    dlog.ShowModal();
+   mPrompting = false;
 
    if (!dlog.GetReturnCode())
       return false;
@@ -390,6 +402,7 @@ bool EffectEqualization::PromptUser()
    mdBMax = dlog.dBMax;
    mDrawMode = dlog.drawMode;
    mInterp = dlog.interp;
+   mDrawGrid = dlog.drawGrid;
 
    gPrefs->Write(wxT("/CsPresets/EQFilterLength"),mM);
    gPrefs->Write(wxT("/CsPresets/EQCurveName"),mCurveName);
@@ -398,13 +411,14 @@ bool EffectEqualization::PromptUser()
    gPrefs->Write(wxT("/CsPresets/EQdBMax"),mdBMax);
    gPrefs->Write(wxT("/CsPresets/EQDrawMode"),mDrawMode);
    gPrefs->Write(wxT("/CsPresets/EQInterp"), mInterp);
+   gPrefs->Write(wxT("/CsPresets/EQDrawGrid"), mDrawGrid);
 
    return true;
 }
 
 bool EffectEqualization::DontPromptUser()
 {
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
    WaveTrack *t = (WaveTrack *) iter.First();
    float hiFreq;
    if (t)
@@ -421,7 +435,7 @@ bool EffectEqualization::DontPromptUser()
    dlog.interp = mInterp;
    // IS required here - no call to ShowModal!
    dlog.TransferDataToWindow();
-   dlog.CalcFilter();
+   dlog.CalcFilter();   // is needed here - the one done due to TransferDataToWindow->OnLinFreq isn't reliable
 
    return true;
 }
@@ -438,13 +452,10 @@ bool EffectEqualization::TransferParameters( Shuttle & shuttle )
 
 bool EffectEqualization::Process()
 {
-   if (!mPrompting) {
-      DontPromptUser();
-   }
-   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
+   this->CopyInputTracks(); // Set up mOutputTracks.
    bool bGoodResult = true;
 
-   TrackListIterator iter(mOutputWaveTracks);
+   SelectedTrackListOfKindIterator iter(Track::Wave, mOutputTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    int count = 0;
    while (track) {
@@ -469,7 +480,7 @@ bool EffectEqualization::Process()
       count++;
    }
 
-   this->ReplaceProcessedWaveTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult); 
    return bGoodResult;
 }
 
@@ -496,7 +507,7 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
 
    sampleCount originalLen = len;
 
-   int i;
+   int i,j;
    for(i=0; i<windowSize; i++)
       lastWindow[i] = 0;
 
@@ -513,8 +524,6 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
 
       t->Get((samplePtr)buffer, floatSample, s, block);
 
-      int j = 0;
-
       for(i=0; i<block; i+=L)   //go through block in lumps of length L
       {
          wcopy = L;
@@ -528,7 +537,7 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
          Filter(windowSize, thisWindow);
 
          // Overlap - Add
-         for(j=0; j<mM-1; j++)
+         for(j=0; (j<mM-1) && (j<wcopy); j++)
             buffer[i+j] = thisWindow[j] + lastWindow[L + j];
          for(j=mM-1; j<wcopy; j++)
             buffer[i+j] = thisWindow[j];
@@ -552,8 +561,19 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
    if(bLoopSuccess)
    {
       // mM-1 samples of 'tail' left in lastWindow, get them now
-      for(int j=0; j<mM-1; j++)
-         buffer[j] = lastWindow[wcopy + j];
+      if(wcopy < (mM-1)) {
+         // Still have some overlap left to process
+         // (note that lastWindow and thisWindow have been exchanged at this point
+         //  so that 'thisWindow' is really the window prior to 'lastWindow')
+         for(j=0; j<mM-1-wcopy; j++)
+            buffer[j] = lastWindow[wcopy + j] + thisWindow[L + wcopy + j];
+         // And fill in the remainder after the overlap
+         for( ; j<mM-1; j++)
+            buffer[j] = lastWindow[wcopy + j];
+      } else {
+         for(j=0; j<mM-1; j++)
+            buffer[j] = lastWindow[wcopy + j];
+      }
       output->Append((samplePtr)buffer, floatSample, mM-1);
       output->Flush();
 
@@ -568,6 +588,7 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
    delete[] buffer;
    delete[] window1;
    delete[] window2;
+   delete output;
 
    return bLoopSuccess;
 }
@@ -575,39 +596,28 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
 void EffectEqualization::Filter(sampleCount len,
          float *buffer)
 {
-   float *inr = new float[len];
-   float *ini = new float[len];
-   float *outr = new float[len];
-   float *outi = new float[len];
-
    int i;
-   float temp;
-
-   for(i=0; i<len; i++)
-      inr[i] = buffer[i];
-
+   float re,im;
    // Apply FFT
-   FFT(len, false, inr, NULL, outr, outi);
+   RealFFTf(buffer, hFFT);
+   //FFT(len, false, inr, NULL, outr, outi);
 
    // Apply filter
-   for(i=0; i<len; i++)
+   // DC component is purely real
+   mFFTBuffer[0] = buffer[0] * mFilterFuncR[0];
+   for(i=1; i<(len/2); i++)
    {
-      temp = outr[i]*mFilterFuncR[i] - outi[i]*mFilterFuncI[i];
-      outi[i] = outr[i]*mFilterFuncI[i] + outi[i]*mFilterFuncR[i];
-      outr[i] = temp;
+      re=buffer[hFFT->BitReversed[i]  ];
+      im=buffer[hFFT->BitReversed[i]+1];
+      mFFTBuffer[2*i  ] = re*mFilterFuncR[i] - im*mFilterFuncI[i];
+      mFFTBuffer[2*i+1] = re*mFilterFuncI[i] + im*mFilterFuncR[i];
    }
-
+   // Fs/2 component is purely real
+   mFFTBuffer[1] = buffer[1] * mFilterFuncR[len/2];
 
    // Inverse FFT and normalization
-   FFT(len, true, outr, outi, inr, ini);
-
-   for(i=0; i<len; i++)
-      buffer[i] = float(inr[i]);
-
-   delete[] inr;
-   delete[] ini;
-   delete[] outr;
-   delete[] outi;
+   InverseRealFFTf(mFFTBuffer, hFFT);
+   ReorderToTime(hFFT, mFFTBuffer, buffer);
 }
 
 
@@ -672,7 +682,11 @@ void EqualizationPanel::Recalc()
    mOuti = new float[mWindowSize];
 
    mParent->CalcFilter();   //to calculate the actual response
-   FFT(mWindowSize,true,mFilterFuncR,mFilterFuncI,mOutr,mOuti);   //work out FIR response
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   InverseRealFFT(mWindowSize, mFilterFuncR, mFilterFuncI, mOutr);
+#else
+   FFT(mWindowSize,true,mFilterFuncR,mFilterFuncI,mOutr,mOuti);   //work out FIR response - note mOuti will be all zeros
+#endif // EXPERIMENTAL_USE_REALFFTF
 }
 
 void EqualizationPanel::OnSize(wxSizeEvent & evt)
@@ -728,13 +742,14 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
    memDC.DrawRectangle(border);
 
    mEnvRect = border;
-   mEnvRect.Deflate( 2, 2 );
+   mEnvRect.Deflate(2, 2);
 
    // Pure blue x-axis line
    memDC.SetPen(wxPen(theTheme.Colour( clrGraphLines ), 1, wxSOLID));
    int center = (int) (mEnvRect.height * dBMax/(dBMax-dBMin) + .5);
-   memDC.DrawLine(mEnvRect.x, mEnvRect.y + center,
-                  mEnvRect.x + mEnvRect.width, mEnvRect.y + center);
+   AColor::Line(memDC,
+                mEnvRect.GetLeft(), mEnvRect.y + center,
+                mEnvRect.GetRight(), mEnvRect.y + center);
 
    // Med-blue envelope line
    memDC.SetPen(wxPen(theTheme.Colour( clrGraphLines ), 3, wxSOLID));
@@ -748,9 +763,9 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
    {
       x = mEnvRect.x + i;
       y = lrint(mEnvRect.height*((dBMax-values[i])/(dBMax-dBMin)) + .25 ); //needs more optimising, along with'what you get'?
-      if( y > mEnvRect.height)
+      if( y >= mEnvRect.height)
       {
-         y = mEnvRect.height;
+         y = mEnvRect.height - 1;
          off = true;
       }
       else
@@ -760,8 +775,8 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
       }
       if ( (i != 0) & (!off1) )
       {
-         memDC.DrawLine(xlast, ylast,
-                        x, mEnvRect.y + y);
+         AColor::Line(memDC, xlast, ylast,
+                      x, mEnvRect.y + y);
       }
       off1 = off;
       xlast = x;
@@ -815,14 +830,14 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
          yF = dBMin;
       yF = center-scale*yF;
       if(yF>mEnvRect.height)
-         yF = mEnvRect.height;
+         yF = mEnvRect.height - 1;
       if(yF<0.)
          yF=0.;
       y = (int)(yF+.5);
 
       if (i != 0)
       {
-         memDC.DrawLine(xlast, ylast, x, mEnvRect.y + y);
+         AColor::Line(memDC, xlast, ylast, x, mEnvRect.y + y);
       }
       xlast = x;
       ylast = mEnvRect.y + y;
@@ -831,6 +846,12 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
    memDC.SetPen(*wxBLACK_PEN);
    if( mParent->mFaderOrDraw[0]->GetValue() )
       mEnvelope->Draw(memDC, mEnvRect, 0.0, mEnvRect.width, false, dBMin, dBMax);
+
+   if( mParent->drawGrid )
+   {
+      mParent->freqRuler->ruler.DrawGrid(memDC, mEnvRect.height+2, true, true, 0, 1);
+      mParent->dBRuler->ruler.DrawGrid(memDC, mEnvRect.width+2, true, true, 1, 2);
+   }
 
    dc.Blit(0, 0, mWidth, mHeight,
            &memDC, 0, 0, wxCOPY, FALSE);
@@ -899,6 +920,7 @@ BEGIN_EVENT_TABLE(EqualizationDialog,wxDialog)
    EVT_RADIOBUTTON(drawRadioID, EqualizationDialog::OnDrawRadio)
    EVT_RADIOBUTTON(sliderRadioID, EqualizationDialog::OnSliderRadio)
    EVT_CHECKBOX(ID_LIN_FREQ, EqualizationDialog::OnLinFreq)
+   EVT_CHECKBOX(GridOnOffID, EqualizationDialog::OnGridOnOff)
 END_EVENT_TABLE()
 
 EqualizationDialog::EqualizationDialog(EffectEqualization * effect,
@@ -959,6 +981,12 @@ EqualizationDialog::EqualizationDialog(EffectEqualization * effect,
    whens[NUM_PTS-1] = 1.;
    whenSliders[NUMBER_OF_BANDS] = 1.;
    m_EQVals[NUMBER_OF_BANDS] = 0.;
+}
+
+EqualizationDialog::~EqualizationDialog()
+{
+   delete mLogEnvelope;
+   delete mLinEnvelope;
 }
 
 //
@@ -1063,22 +1091,26 @@ void EqualizationDialog::SaveCurves()
 
    // Create/Open the file
    XMLFileWriter eqFile;
-   eqFile.Open( fn.GetFullPath(), wxT("wb") );
 
-   // Complain if open failed
-   if( !eqFile.IsOpened() )
+   try
    {
-      // Constructor will emit message
-      return;
+      eqFile.Open( fn.GetFullPath(), wxT("wb") );
+
+      // Write the curves
+      WriteXML( eqFile );
+
+      // Close the file
+      eqFile.Close();
    }
+   catch (XMLFileWriterException* pException)
+   {
+      wxMessageBox(wxString::Format(
+         _("Couldn't write to file \"%s\": %s"),
+         fn.GetFullPath().c_str(), pException->GetMessage().c_str()),
+         _("Error saving equalization curves"), wxICON_ERROR, this);
 
-   // Write the curves
-   WriteXML( eqFile );
-
-   // Close the file
-   eqFile.Close();
-
-   return;
+      delete pException;
+   }
 }
 
 //
@@ -1278,6 +1310,11 @@ void EqualizationDialog::MakeEqualizationDialog()
 
    btn = new wxButton( this, ID_CLEAR, _("Flat"));
    szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
+   mGridOnOff = new wxCheckBox(this, GridOnOffID, _("Grids"),
+                            wxDefaultPosition, wxDefaultSize,
+                            wxALIGN_RIGHT);
+   mGridOnOff->SetName(_("Grids"));
+   szrC->Add( mGridOnOff, 0, wxALIGN_CENTRE | wxALL, 4 );
 
    szrV->Add( szrC, 0, wxALIGN_CENTER | wxALL, 0 );
 
@@ -1360,7 +1397,9 @@ bool EqualizationDialog::TransferDataToWindow()
    // Set log or lin freq scale (affects interpolation as well)
    mLinFreq->SetValue( linCheck );
    wxCommandEvent dummyEvent;
-   OnLinFreq(dummyEvent);
+   OnLinFreq(dummyEvent);  // causes a CalcFilter
+
+   mGridOnOff->SetValue( drawGrid ); // checks/unchecks the box on the interface
 
    MSlider->SetValue((M-1)/2);
    M = 0;                        // force refresh in TransferDataFromWindow()
@@ -1517,7 +1556,11 @@ bool EqualizationDialog::CalcFilter()
    //transfer to time domain to do the padding and windowing
    float *outr = new float[mWindowSize];
    float *outi = new float[mWindowSize];
+#ifdef EXPERIMENTAL_USE_REALFFTF
+   InverseRealFFT(mWindowSize, mFilterFuncR, NULL, outr); // To time domain
+#else
    FFT(mWindowSize,true,mFilterFuncR,NULL,outr,outi);   //To time domain
+#endif
 
    for(i=0;i<=(M-1)/2;i++)
    {   //Windowing - could give a choice, fixed for now - MJS
@@ -1552,7 +1595,7 @@ bool EqualizationDialog::CalcFilter()
    }
 
    //Back to the frequency domain so we can use it
-   FFT(mWindowSize,false,outr,NULL,mFilterFuncR,mFilterFuncI);
+   RealFFT(mWindowSize,outr,mFilterFuncR,mFilterFuncI);
 
    delete[] outr;
    delete[] outi;
@@ -1572,7 +1615,7 @@ void EqualizationDialog::setCurve(int currentCurve)
    wxASSERT( currentCurve < (int) mCurves.GetCount() );
    bool changed = false;
 
-   if( mFaderOrDraw[0]->GetValue() & mLinFreq->IsChecked() )   // linear freq mode?
+   if( mLinFreq->IsChecked() )   // linear freq mode?
    {
       Envelope *env = mLinEnvelope;
       env->Flatten(0.);
@@ -2114,7 +2157,7 @@ void EqualizationDialog::GraphicEQ(Envelope *env)
 
       case 2:  // Cubic Spline
       {
-         double y2[NUMBER_OF_BANDS];
+         double y2[NUMBER_OF_BANDS+1];
          m_EQVals[bandsInUse] = m_EQVals[bandsInUse-1];
          spline(whenSliders, m_EQVals, bandsInUse+1, y2);
          for(double xf=0; xf<1.; xf+=1./NUM_PTS)
@@ -2132,7 +2175,7 @@ void EqualizationDialog::GraphicEQ(Envelope *env)
 void EqualizationDialog::spline(double x[], double y[], int n, double y2[])
 {
    int i;
-   double p, sig, u[NUMBER_OF_BANDS];
+   double p, sig, *u = new double[n];
 
    y2[0] = 0.;  //
    u[0] = 0.;   //'natural' boundary conditions
@@ -2147,6 +2190,8 @@ void EqualizationDialog::spline(double x[], double y[], int n, double y2[])
    y2[n-1] = 0.;
    for(i=n-2;i>=0;i--)
       y2[i] = y2[i]*y2[i+1] + u[i];
+
+   delete [] u;
 }
 
 double EqualizationDialog::splint(double x[], double y[], int n, double y2[], double xr)
@@ -2202,6 +2247,8 @@ void EqualizationDialog::OnDrawRadio(wxCommandEvent &evt)
          }
       }
    }
+   delete [] when;
+   delete [] value;
 
    if(mLinFreq->IsChecked())
    {
@@ -2323,61 +2370,71 @@ void EqualizationDialog::OnLinFreq(wxCommandEvent &evt)
 
 void EqualizationDialog::EnvLogToLin(void)
 {
-      int numPoints = mLogEnvelope->GetNumberOfPoints();
-      double *when = new double[ numPoints ];
-      double *value = new double[ numPoints ];
+   int numPoints = mLogEnvelope->GetNumberOfPoints();
+   if( numPoints == 0 )
+   {
+      return;
+   }
 
-      mLinEnvelope->Flatten(0.);
-      mLinEnvelope->SetTrackLen(1.0);
-      mLogEnvelope->GetPoints( when, value, numPoints );
-      mLinEnvelope->Move(0., value[0]);
-      double loLog = log10(20.);
-      double hiLog = log10(mHiFreq);
-      double denom = hiLog - loLog;
+   double *when = new double[ numPoints ];
+   double *value = new double[ numPoints ];
 
-      for( int i=0; i < numPoints; i++)
-         mLinEnvelope->Insert(pow( 10., ((when[i] * denom) + loLog))/mHiFreq , value[i]);
-      mLinEnvelope->Move(1., value[numPoints-1]);
+   mLinEnvelope->Flatten(0.);
+   mLinEnvelope->SetTrackLen(1.0);
+   mLogEnvelope->GetPoints( when, value, numPoints );
+   mLinEnvelope->Move(0., value[0]);
+   double loLog = log10(20.);
+   double hiLog = log10(mHiFreq);
+   double denom = hiLog - loLog;
 
-      delete [] when;
-      delete [] value;
+   for( int i=0; i < numPoints; i++)
+      mLinEnvelope->Insert(pow( 10., ((when[i] * denom) + loLog))/mHiFreq , value[i]);
+   mLinEnvelope->Move(1., value[numPoints-1]);
+
+   delete [] when;
+   delete [] value;
 }
 
 void EqualizationDialog::EnvLinToLog(void)
 {
-      int numPoints = mLinEnvelope->GetNumberOfPoints();
-      double *when = new double[ numPoints ];
-      double *value = new double[ numPoints ];
+   int numPoints = mLinEnvelope->GetNumberOfPoints();
+   if( numPoints == 0 )
+   {
+      return;
+   }
+   
+   double *when = new double[ numPoints ];
+   double *value = new double[ numPoints ];
 
-      mLogEnvelope->Flatten(0.);
-      mLogEnvelope->SetTrackLen(1.0);
-      mLinEnvelope->GetPoints( when, value, numPoints );
-      mLogEnvelope->Move(0., value[0]);
-      double loLog = log10(20.);
-      double hiLog = log10(mHiFreq);
-      double denom = hiLog - loLog;
-      bool changed = false;
+   mLogEnvelope->Flatten(0.);
+   mLogEnvelope->SetTrackLen(1.0);
+   mLinEnvelope->GetPoints( when, value, numPoints );
+   mLogEnvelope->Move(0., value[0]);
+   double loLog = log10(20.);
+   double hiLog = log10(mHiFreq);
+   double denom = hiLog - loLog;
+   bool changed = false;
 
-      for( int i=0; i < numPoints; i++)
+   for( int i=0; i < numPoints; i++)
+   {
+      if( when[i]*mHiFreq >= 20 )
       {
-         if( when[i]*mHiFreq >= 20 )
-         {
-            mLogEnvelope->Insert((log10(when[i]*mHiFreq)-loLog)/denom , value[i]);
-         }
-         else
-         {  //get the first point as close as we can to the last point requested
-            changed = true;
-            double v = value[i];
-            mLogEnvelope->Insert(0., v);
-         }
+         mLogEnvelope->Insert((log10(when[i]*mHiFreq)-loLog)/denom , value[i]);
       }
-      mLogEnvelope->Move(1., value[numPoints-1]);
+      else
+      {  //get the first point as close as we can to the last point requested
+         changed = true;
+         double v = value[i];
+         mLogEnvelope->Insert(0., v);
+      }
+   }
+   mLogEnvelope->Move(1., value[numPoints-1]);
 
-      delete [] when;
-      delete [] value;
+   delete [] when;
+   delete [] value;
 
-      if(changed)
-         EnvelopeUpdated(mLogEnvelope, false);
+   if(changed)
+      EnvelopeUpdated(mLogEnvelope, false);
 }
 
 void EqualizationDialog::ErrMin(void)
@@ -2684,7 +2741,19 @@ void EqualizationDialog::OnPreview(wxCommandEvent &event)
 {
    TransferDataFromWindow();
    m_pEffect->Preview();
+   mPanel->RecalcRequired = true;
+   wxPaintEvent dummyEvent;
+   OnPaint(dummyEvent);
    //v Restore previous values?
+}
+
+void EqualizationDialog::OnGridOnOff(wxCommandEvent & WXUNUSED(event))
+{
+   if( mGridOnOff->IsChecked() )
+      drawGrid = true;
+   else
+      drawGrid = false;
+   mPanel->Refresh(false);
 }
 
 void EqualizationDialog::OnCancel(wxCommandEvent &event)

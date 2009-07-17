@@ -13,6 +13,9 @@
 
 **********************************************************************/
 
+// For compilers that support precompilation, includes "wx/wx.h".
+#include <wx/wxprec.h>
+
 #include "../Audacity.h"
 
 #include <wx/mimetype.h>
@@ -75,25 +78,8 @@ void BrowserFrame::UpdateButtons()
 
 void OpenInDefaultBrowser(const wxHtmlLinkInfo& link)
 {
-   #ifdef __WXMAC__
-      wxString openCmd = wxT("open ") + link.GetHref();
-      ::wxExecute(openCmd);
-   #else
-      #ifdef __WXMSW__
-         wxFileType* pFileType = wxTheMimeTypesManager->GetFileTypeFromExtension(wxT(".htm"));
-         if (pFileType == NULL) 
-            return;
-         wxString openCmd = pFileType->GetOpenCommand(link.GetHref());
-         if (openCmd.Lower().Contains(wxT("iexplore.exe")))
-            // GetOpenCommand is not quite right for Internet Explorer.
-            openCmd.Replace(wxT("WWW_OpenURL#\"file://"), wxT("WWW_OpenURL#\""));
-         ::wxExecute(openCmd);
-         delete pFileType;
-      #else
-         wxLaunchDefaultBrowser(link.GetHref());
-      #endif
-   #endif
-};
+   wxLaunchDefaultBrowser(link.GetHref());
+}
 
 LinkingHtmlWindow::LinkingHtmlWindow(wxWindow *parent, wxWindowID id /*= -1*/, 
                                        const wxPoint& pos /*= wxDefaultPosition*/, 
@@ -120,6 +106,11 @@ void LinkingHtmlWindow::OnLinkClicked(const wxHtmlLinkInfo& link)
          SetPage( HelpText( href.Mid( 10 )));
          wxGetTopLevelParent(this)->SetLabel( TitleText( href.Mid( 10 )));
       }
+   }
+   else if( href.StartsWith(wxT("mailto:")) || href.StartsWith(wxT("file:")) )
+   {
+      OpenInDefaultBrowser( link );
+      return;
    }
    else if( !href.StartsWith( wxT("http:")))
    {

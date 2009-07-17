@@ -52,7 +52,7 @@ void GetAllSeqBlocks(AudacityProject *project,
    while (t) {
       if (t->GetKind() == Track::Wave) {
          WaveTrack *waveTrack = (WaveTrack *)t;
-         WaveClipList::Node* node = waveTrack->GetClipIterator();
+         WaveClipList::compatibility_iterator node = waveTrack->GetClipIterator();
          while(node) {
             WaveClip *clip = node->GetData();
             Sequence *sequence = clip->GetSequence();
@@ -156,6 +156,7 @@ bool RemoveDependencies(AudacityProject *project,
    BlockArray blocks;
    GetAllSeqBlocks(project, &blocks);
 
+   int updateResult = eProgressSuccess;
    for(i=0; i<blocks.GetCount(); i++) {
       BlockFile *f = blocks[i]->f;
       if (f->IsAlias() && !blockFileHash[f]) {
@@ -185,7 +186,9 @@ bool RemoveDependencies(AudacityProject *project,
          cancelled = !mProgress->Update(i, fileTotalFrames);
          if (cancelled)
             break;*/
-         progress->Update(completedBytes, totalBytesToProcess);
+         updateResult = progress->Update(completedBytes, totalBytesToProcess);
+         if (updateResult != eProgressSuccess)
+           break;
       }
    }
 

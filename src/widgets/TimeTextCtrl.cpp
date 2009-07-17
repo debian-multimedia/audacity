@@ -209,6 +209,7 @@ public:
    int digits;
    int pos;   // Index of this field in the ValueString
    int fieldX; // x-position of the field on-screen
+   int fieldW; // width of the field on-screen
    int labelX; // x-position of the label on-screen
    bool zeropad;
    wxString label;
@@ -257,7 +258,8 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
    mDigitFont(NULL),
    mLabelFont(NULL),
    mFocusedDigit(0),
-   mLastField(-1)
+   mLastField(1),
+   mAutoPos(autoPos)
 {
    /* i18n-hint: Name of time display format that shows time in seconds */
    BuiltinFormatStrings[0].name = _("seconds");
@@ -284,7 +286,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
     * 24 hours in a day in your locale */
    BuiltinFormatStrings[2].formatStr = _("0100 days 024 h 060 m 060 s");
    /* i18n-hint: Name of time display format that shows time in hours,
-    * minutes, seconds and hundreths of a second (1/100 second) */
+    * minutes, seconds and hundredths of a second (1/100 second) */
    BuiltinFormatStrings[3].name = _("hh:mm:ss + hundredths");
    /* i18n-hint: Format string for displaying time in hours, minutes, seconds
     * and hundredths of a second. Change the 'h' to the abbreviation for hours,
@@ -335,7 +337,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
    BuiltinFormatStrings[8].formatStr = _("01000,01000 frames|24");
    /* i18n-hint: Name of time display format that shows time in hours, minutes,
     * seconds and frames at NTSC TV drop-frame rate (used for American /
-    * Japananese TV, and very odd) */
+    * Japanese TV, and very odd) */
    BuiltinFormatStrings[9].name = _("hh:mm:ss + NTSC drop frames");
    /* i18n-hint: Format string for displaying time in hours, minutes, seconds
     * and frames with NTSC drop frames. Change the 'h' to the abbreviation
@@ -344,7 +346,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
    BuiltinFormatStrings[9].formatStr = _("0100 h 060 m 060 s+.30 frames|N");
    /* i18n-hint: Name of time display format that shows time in hours, minutes,
     * seconds and frames at NTSC TV non-drop-frame rate (used for American /
-    * Japananese TV, and doesn't quite match wall time */
+    * Japanese TV, and doesn't quite match wall time */
    BuiltinFormatStrings[10].name = _("hh:mm:ss + NTSC non-drop frames");
    /* i18n-hint: Format string for displaying time in hours, minutes, seconds
     * and frames with NTSC drop frames. Change the 'h' to the abbreviation
@@ -353,7 +355,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
     * the whole things really is slightly off-speed! */
    BuiltinFormatStrings[10].formatStr = _("0100 h 060 m 060 s+.030 frames| .999000999");
    /* i18n-hint: Name of time display format that shows time in frames at NTSC
-    * TV frame rate (used for American / Japananese TV */
+    * TV frame rate (used for American / Japanese TV */
    BuiltinFormatStrings[11].name = _("NTSC frames");
    /* i18n-hint: Format string for displaying time in frames with NTSC frames.
     * Translate 'frames' and leave the rest alone. That really is the frame
@@ -398,17 +400,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
    Layout();
    Fit();
    ValueToControls();
-
-   if (autoPos) {
-      mFocusedDigit = 0;
-      while (mFocusedDigit < ((int)mDigits.GetCount() - 1)) {
-         wxChar dgt = mValueString[mDigits[mFocusedDigit].pos];
-         if (dgt != '0') {
-            break;
-         }
-         mFocusedDigit++;
-      }
-   }
+   ControlsToValue();
 
 #if wxUSE_ACCESSIBILITY
    SetLabel(wxT(""));
@@ -431,6 +423,23 @@ TimeTextCtrl::~TimeTextCtrl()
       delete mLabelFont;
 }
 
+// Set the focus to the first (left-most) non-zero digit
+// If all digits are zero, the right-most position is focused
+void TimeTextCtrl::UpdateAutoFocus()
+{
+   if (!mAutoPos)
+      return;
+
+   mFocusedDigit = 0;
+   while (mFocusedDigit < ((int)mDigits.GetCount() - 1)) {
+      wxChar dgt = mValueString[mDigits[mFocusedDigit].pos];
+      if (dgt != '0') {
+         break;
+      }
+      mFocusedDigit++;
+   }
+}
+
 void TimeTextCtrl::SetFormatString(wxString formatString)
 {
    mFormatString = formatString;
@@ -438,6 +447,8 @@ void TimeTextCtrl::SetFormatString(wxString formatString)
    Layout();
    Fit();
    ValueToControls();
+   ControlsToValue();
+   UpdateAutoFocus();
 }
 
 void TimeTextCtrl::SetSampleRate(double sampleRate)
@@ -447,12 +458,14 @@ void TimeTextCtrl::SetSampleRate(double sampleRate)
    Layout();
    Fit();
    ValueToControls();
+   ControlsToValue();
 }
 
 void TimeTextCtrl::SetTimeValue(double newTime)
 {
    mTimeValue = newTime;
    ValueToControls();
+   ControlsToValue();
 }
 
 void TimeTextCtrl::EnableMenu(bool enable)
@@ -786,6 +799,7 @@ bool TimeTextCtrl::Layout()
       memDC.GetTextExtent(mFields[i].label, &strW, &strH);
       pos += mFields[i].label.Length();
       x += strW;
+      mFields[i].fieldW = x;
    }
 
    mWidth = x + mBorderRight;
@@ -827,13 +841,12 @@ bool TimeTextCtrl::Layout()
    if (mMenuEnabled) {
       wxRect r(mWidth, 0, mButtonWidth - 1, mHeight - 1);
       AColor::Bevel(memDC, true, r);
+      memDC.SetBrush(*wxBLACK_BRUSH);
       memDC.SetPen(*wxBLACK_PEN);
-      int triWid = mButtonWidth - 2;
-      int xStart = mWidth + 1;
-      int yStart = (mHeight / 2) - 2;
-      for (i = 0; i <= (unsigned int)(triWid / 2); i++) {
-         memDC.DrawLine(xStart + i, yStart + i, xStart + triWid - i, yStart + i);
-      }
+      AColor::Arrow(memDC,
+                    mWidth + 1,
+                    (mHeight / 2) - 2,
+                    mButtonWidth - 2);
    }
    return true;
 }
@@ -1029,6 +1042,7 @@ void TimeTextCtrl::OnCaptureKey(wxCommandEvent &event)
 
 void TimeTextCtrl::OnKeyDown(wxKeyEvent &event)
 {
+   event.Skip(false);
    int keyCode = event.GetKeyCode();
    int digit = mFocusedDigit;
 
@@ -1127,25 +1141,24 @@ void TimeTextCtrl::OnKeyDown(wxKeyEvent &event)
 void TimeTextCtrl::SetFieldFocus(int digit)
 {
 #if wxUSE_ACCESSIBILITY
-   if (mLastField != -1) {
-      GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_SELECTIONREMOVE,
-                   this,
-                   wxOBJID_CLIENT,
-                   mLastField);
-   }
-
    mFocusedDigit = digit;
    mLastField = mDigits[mFocusedDigit].field + 1;
 
+   // This looks strange (and it is), but it was the only way I could come
+   // up with that allowed Jaws, Window-Eyes, and NVDA to read the control
+   // somewhat the same.  See TimeTextCtrlAx below for even more odd looking
+   // hackery.
+   //
+   // If you change SetFieldFocus(), Updated(), or TimeTextCtrlAx, make sure
+   // you test with Jaws, Window-Eyes, and NVDA.
    GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_FOCUS,
-                this,
-                wxOBJID_CLIENT,
-                mLastField);
-
-   GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_SELECTION,
-                this,
-                wxOBJID_CLIENT,
-                mLastField);
+                                this,
+                                wxOBJID_CLIENT,
+                                0);
+   GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_FOCUS,
+                                this,
+                                wxOBJID_CLIENT,
+                                mFocusedDigit + 1);
 #endif
 }
 
@@ -1154,11 +1167,13 @@ void TimeTextCtrl::Updated()
    wxCommandEvent event(wxEVT_COMMAND_TEXT_UPDATED, GetId());
    event.SetEventObject(this);
    GetEventHandler()->ProcessEvent(event);
+
 #if wxUSE_ACCESSIBILITY
-   GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_VALUECHANGE,
+   GetAccessible()->NotifyEvent(wxACC_EVENT_OBJECT_NAMECHANGE,
                                 this,
                                 wxOBJID_CLIENT,
-                                mDigits[ mFocusedDigit ].field + 1);
+                                mFocusedDigit + 1);
+   SetFieldFocus(mFocusedDigit);
 #endif
 }
 
@@ -1201,6 +1216,8 @@ void TimeTextCtrl::Increase(int steps)
       }
       steps--;
    }
+
+   ControlsToValue();
 }
 
 void TimeTextCtrl::Decrease(int steps)
@@ -1242,6 +1259,8 @@ void TimeTextCtrl::Decrease(int steps)
       }
       steps--;
    }
+
+   ControlsToValue();
 }
 
 void TimeTextCtrl::ValueToControls()
@@ -1352,10 +1371,12 @@ void TimeTextCtrl::ControlsToValue()
 
 #if wxUSE_ACCESSIBILITY
 
-TimeTextCtrlAx::TimeTextCtrlAx( wxWindow *window ):
-   wxWindowAccessible( window )
+TimeTextCtrlAx::TimeTextCtrlAx(TimeTextCtrl *ctrl)
+:  wxWindowAccessible(ctrl)
 {
-   mCtrl = wxDynamicCast( window, TimeTextCtrl );
+   mCtrl = ctrl;
+   mLastField = -1;
+   mLastDigit = -1;
 }
 
 TimeTextCtrlAx::~TimeTextCtrlAx()
@@ -1373,14 +1394,12 @@ wxAccStatus TimeTextCtrlAx::DoDefaultAction(int childId)
 
 // Retrieves the address of an IDispatch interface for the specified child.
 // All objects must support this property.
-wxAccStatus TimeTextCtrlAx::GetChild( int childId, wxAccessible** child )
+wxAccStatus TimeTextCtrlAx::GetChild(int childId, wxAccessible **child)
 {
-   if( childId == wxACC_SELF )
-   {
+   if (childId == wxACC_SELF) {
       *child = this;
    }
-   else
-   {
+   else {
       *child = NULL;
    }
 
@@ -1388,9 +1407,9 @@ wxAccStatus TimeTextCtrlAx::GetChild( int childId, wxAccessible** child )
 }
 
 // Gets the number of children.
-wxAccStatus TimeTextCtrlAx::GetChildCount(int* childCount)
+wxAccStatus TimeTextCtrlAx::GetChildCount(int *childCount)
 {
-   *childCount = mCtrl->mFields.GetCount();
+   *childCount = mCtrl->mDigits.GetCount();
 
    return wxACC_OK;
 }
@@ -1402,15 +1421,15 @@ wxAccStatus TimeTextCtrlAx::GetChildCount(int* childCount)
 // object, not what the object does as a result. For example, a
 // toolbar button that prints a document has a default action of
 // "Press" rather than "Prints the current document."
-wxAccStatus TimeTextCtrlAx::GetDefaultAction(int childId, wxString* actionName)
+wxAccStatus TimeTextCtrlAx::GetDefaultAction(int childId, wxString *actionName)
 {
-   *actionName = wxT("");
+   actionName->Clear();
 
    return wxACC_OK;
 }
 
 // Returns the description for this object or a child.
-wxAccStatus TimeTextCtrlAx::GetDescription( int childId, wxString *description )
+wxAccStatus TimeTextCtrlAx::GetDescription(int childId, wxString *description)
 {
    description->Clear();
 
@@ -1421,21 +1440,20 @@ wxAccStatus TimeTextCtrlAx::GetDescription( int childId, wxString *description )
 // If childId is 0 and child is NULL, no object in
 // this subhierarchy has the focus.
 // If this object has the focus, child should be 'this'.
-wxAccStatus TimeTextCtrlAx::GetFocus(int* childId, wxAccessible** child)
+wxAccStatus TimeTextCtrlAx::GetFocus(int *childId, wxAccessible **child)
 {
-   *childId = mCtrl->mDigits[mCtrl->mFocusedDigit].field + 1;
+   *childId = mCtrl->GetFocusedDigit();
    *child = this;
 
    return wxACC_OK;
 }
 
 // Returns help text for this object or a child, similar to tooltip text.
-wxAccStatus TimeTextCtrlAx::GetHelpText( int childId, wxString *helpText )
+wxAccStatus TimeTextCtrlAx::GetHelpText(int childId, wxString *helpText)
 {
-#if wxUSE_TOOLTIPS // Not available in wxX11
+#if wxUSE_TOOLTIPS
    wxToolTip *pTip = mCtrl->GetToolTip();
-   if( pTip )
-   {
+   if (pTip) {
       *helpText = pTip->GetTip();
    }
 
@@ -1449,7 +1467,7 @@ wxAccStatus TimeTextCtrlAx::GetHelpText( int childId, wxString *helpText )
 
 // Returns the keyboard shortcut for this object or child.
 // Return e.g. ALT+K
-wxAccStatus TimeTextCtrlAx::GetKeyboardShortcut( int childId, wxString *shortcut )
+wxAccStatus TimeTextCtrlAx::GetKeyboardShortcut(int childId, wxString *shortcut)
 {
    shortcut->Clear();
 
@@ -1458,58 +1476,92 @@ wxAccStatus TimeTextCtrlAx::GetKeyboardShortcut( int childId, wxString *shortcut
 
 // Returns the rectangle for this object (id = 0) or a child element (id > 0).
 // rect is in screen coordinates.
-wxAccStatus TimeTextCtrlAx::GetLocation( wxRect& rect, int elementId )
+wxAccStatus TimeTextCtrlAx::GetLocation(wxRect & rect, int elementId)
 {
-   if( elementId == wxACC_SELF )
-   {
-      rect = mCtrl->GetRect();
-      rect.SetPosition( mCtrl->GetParent()->ClientToScreen( rect.GetPosition() ) );
+   rect = mCtrl->GetRect();
+
+   if (elementId != wxACC_SELF) {
+//      rect.x += mCtrl->mFields[elementId - 1].fieldX;
+//      rect.width =  mCtrl->mFields[elementId - 1].fieldW;
+        rect = mCtrl->mDigits[elementId - 1].digitBox;
    }
-   else
-   {
-      rect = mCtrl->mDigits[elementId - 1].digitBox;
-      rect.SetPosition( mCtrl->ClientToScreen( rect.GetPosition() ) );
-   }
+
+   rect.SetPosition(mCtrl->GetParent()->ClientToScreen(rect.GetPosition()));
 
    return wxACC_OK;
 }
 
 // Gets the name of the specified object.
-wxAccStatus TimeTextCtrlAx::GetName(int childId, wxString* name)
+wxAccStatus TimeTextCtrlAx::GetName(int childId, wxString *name)
 {
-   if( childId == wxACC_SELF )
-   {
+   wxString value = mCtrl->GetTimeString();
+   int field = mCtrl->GetFocusedField();
+
+   // Return the entire time string including the control label
+   // when the requested child ID is wxACC_SELF.  (Mainly when
+   // the control gets the focus.)
+   if (childId == wxACC_SELF) {
       *name = mCtrl->GetName();
-      if( name->IsEmpty() )
-      {
+      if (name->IsEmpty()) {
          *name = mCtrl->GetLabel();
       }
-   }
-   else
-   {
-      *name = mCtrl->mFields[childId - 1].label;
-   }
 
-   if( name->IsEmpty() )
-   {
-      *name = _("Time Control");
+      *name += wxT(" ") +
+               mCtrl->GetTimeString();
+   }
+   // The user has moved from one field of the time to another so
+   // report the value of the field and the field's label.
+   else if (mLastField != field) {
+      wxString label = mCtrl->mFields[field - 1].label;
+      int cnt = mCtrl->mFields.GetCount();
+      wxString decimal = wxLocale::GetInfo(wxLOCALE_DECIMAL_POINT, wxLOCALE_CAT_NUMBER);
+
+      // If the new field is the last field, then check it to see if
+      // it represents fractions of a second.
+      if (field > 1 && field == cnt) {
+         if (mCtrl->mFields[field - 2].label == decimal) {
+            int digits = mCtrl->mFields[field - 1].digits;
+            if (digits == 2) {
+               label = _("centiseconds");
+            }
+            else if (digits == 3) {
+               label = _("milliseconds");
+            }
+         }
+      }
+      // If the field following this one represents fractions of a
+      // second then use that label instead of the decimal point.
+      else if (label == decimal && field == cnt - 1) {
+         label = mCtrl->mFields[field].label;
+      }
+
+      *name = mCtrl->mFields[field - 1].str +
+              wxT(" ") +
+              label +
+              wxT(" ") +
+              mCtrl->GetTimeString().at(mCtrl->mDigits[childId - 1].pos);
+      mLastField = field;
+      mLastDigit = childId;
+   }
+   // The user has moved from one digit to another within a field so
+   // just report the digit under the cursor.
+   else if (mLastDigit != childId) {
+      *name = mCtrl->GetTimeString().at(mCtrl->mDigits[childId - 1].pos);
+      mLastDigit = childId;
+   }
+   // The user has updated the value of a field, so report the field's
+   // value only.
+   else {
+      *name = mCtrl->mFields[field - 1].str;
    }
 
    return wxACC_OK;
 }
 
 // Returns a role constant.
-wxAccStatus TimeTextCtrlAx::GetRole(int childId, wxAccRole* role)
+wxAccStatus TimeTextCtrlAx::GetRole(int childId, wxAccRole *role)
 {
-   if( childId == wxACC_SELF )
-   {
-      *role = wxROLE_SYSTEM_STATICTEXT;
-   }
-   else
-   {
-      *role = wxROLE_SYSTEM_SPINBUTTON;
-   }
-
+   *role = wxROLE_SYSTEM_STATICTEXT;
    return wxACC_OK;
 }
 
@@ -1521,35 +1573,25 @@ wxAccStatus TimeTextCtrlAx::GetRole(int childId, wxAccRole* role)
 // - an integer representing the selected child element,
 //   or 0 if this object is selected (GetType() == wxT("long"))
 // - a "void*" pointer to a wxAccessible child object
-wxAccStatus TimeTextCtrlAx::GetSelections( wxVariant *selections )
+wxAccStatus TimeTextCtrlAx::GetSelections(wxVariant *selections)
 {
    return wxACC_NOT_IMPLEMENTED;
 }
 
 // Returns a state constant.
-wxAccStatus TimeTextCtrlAx::GetState(int childId, long* state)
+wxAccStatus TimeTextCtrlAx::GetState(int childId, long *state)
 {
    *state = wxACC_STATE_SYSTEM_FOCUSABLE;
-   *state |= ( mCtrl == wxWindow::FindFocus() ? wxACC_STATE_SYSTEM_FOCUSED : 0 );
+   *state |= (mCtrl == wxWindow::FindFocus() ? wxACC_STATE_SYSTEM_FOCUSED : 0);
 
    return wxACC_OK;
 }
 
 // Returns a localized string representing the value for the object
 // or child.
-wxAccStatus TimeTextCtrlAx::GetValue(int childId, wxString* strValue)
+wxAccStatus TimeTextCtrlAx::GetValue(int childId, wxString *strValue)
 {
-   if( childId == wxACC_SELF )
-   {
-      *strValue = mCtrl->GetTimeString();
-   }
-   else
-   {
-      mCtrl->ControlsToValue();
-      *strValue = mCtrl->mFields[childId - 1].str;
-   }
-
-   return wxACC_OK;
+   return wxACC_NOT_IMPLEMENTED;
 }
 
 #endif

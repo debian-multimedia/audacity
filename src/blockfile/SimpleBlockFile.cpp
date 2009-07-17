@@ -390,8 +390,17 @@ int SimpleBlockFile::ReadData(samplePtr data, sampleFormat format,
    
       memset(&info, 0, sizeof(info));
 
-      SNDFILE *sf=sf_open(OSFILENAME(mFileName.GetFullPath()), SFM_READ, &info);
-      if (!sf){
+      wxFile f;   // will be closed when it goes out of scope
+      SNDFILE *sf = NULL;
+
+      if (f.Open(mFileName.GetFullPath())) {
+         // Even though there is an sf_open() that takes a filename, use the one that
+         // takes a file descriptor since wxWidgets can open a file with a Unicode name and
+         // libsndfile can't (under Windows).
+         sf = sf_open_fd(f.fd(), SFM_READ, &info, FALSE);
+      }
+
+      if (!sf) {
       
          memset(data,0,SAMPLE_SIZE(format)*len);
 
@@ -582,7 +591,14 @@ bool SimpleBlockFile::GetCache()
 {  
    bool cacheBlockFiles = false;
    gPrefs->Read(wxT("/Directories/CacheBlockFiles"), &cacheBlockFiles);
-   return cacheBlockFiles;
+
+   int lowMem = gPrefs->Read(wxT("/Directories/CacheLowMem"), 16l);
+   if (lowMem < 16) {
+      lowMem = 16;
+   }
+   lowMem <<= 20;
+    
+   return cacheBlockFiles && (wxGetFreeMemory() > lowMem);
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

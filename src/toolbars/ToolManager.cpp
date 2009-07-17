@@ -101,8 +101,15 @@ class ToolFrame:public wxFrame
 #if defined(__WXMAC__)
       border = 0;
 
-      // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do
-      SetWindowClass( (WindowRef) MacGetWindowRef(), kFloatingWindowClass );
+   // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do
+   //
+   // LL:  I've commented this out because if you have, for instance, the meter
+   //      toolbar undocked and large and then you open a dialog like an effect,
+   //      the dialog may appear behind the dialog and you can't move either one.
+   //
+   //      However, I'm leaving it here because I don't remember why I'd included
+   //      it in the first place.
+// SetWindowClass((WindowRef)d.MacGetWindowRef(), kFloatingWindowClass);
 #endif
 
       // Save parameters
@@ -189,10 +196,10 @@ class ToolFrame:public wxFrame
          r.width = sizerW + 2;
          r.height = sizerW + 2;
 
-         dc.DrawLine( r.GetLeft(), r.GetBottom(), r.GetRight(), r.GetTop() );
-         dc.DrawLine( r.GetLeft() + 3, r.GetBottom(), r.GetRight(), r.GetTop() + 3 );
-         dc.DrawLine( r.GetLeft() + 6, r.GetBottom(), r.GetRight(), r.GetTop() + 6 );
-         dc.DrawLine( r.GetLeft() + 9, r.GetBottom(), r.GetRight(), r.GetTop() + 9 );
+         AColor::Line(dc, r.GetLeft(), r.GetBottom(), r.GetRight(), r.GetTop() );
+         AColor::Line(dc, r.GetLeft() + 3, r.GetBottom(), r.GetRight(), r.GetTop() + 3 );
+         AColor::Line(dc, r.GetLeft() + 6, r.GetBottom(), r.GetRight(), r.GetTop() + 6 );
+         AColor::Line(dc, r.GetLeft() + 9, r.GetBottom(), r.GetRight(), r.GetTop() + 9 );
       }
 
    }
@@ -548,7 +555,7 @@ void ToolManager::ReadConfig()
       ToolBar *bar = mBars[ ndx ];
 
       // Change to the bar subkey
-      gPrefs->SetPath( bar->GetLabel() );
+      gPrefs->SetPath( bar->GetSection() );
 
       // Read in all the settings
       gPrefs->Read( wxT("Dock"), &dock, ndx == SelectionBarID ? BotDockID : TopDockID );
@@ -703,7 +710,7 @@ void ToolManager::WriteConfig()
       ToolBar *bar = mBars[ ndx ];
 
       // Change to the bar subkey
-      gPrefs->SetPath( bar->GetLabel() );
+      gPrefs->SetPath( bar->GetSection() );
 
       // Search both docks for toolbar order
       int to = mTopDock->GetOrder( bar );
@@ -844,6 +851,21 @@ void ToolManager::LayoutToolBars()
    // Update the layout
    mTopDock->LayoutToolBars();
    mBotDock->LayoutToolBars();
+}
+
+//
+// Tell the toolbars that preferences have been updated
+//
+void ToolManager::UpdatePrefs()
+{
+   for( int ndx = 0; ndx < ToolBarCount; ndx++ ) 
+   {
+      ToolBar *bar = mBars[ ndx ];
+      if( bar )
+      {
+         bar->UpdatePrefs();
+      }
+   }
 }
 
 //

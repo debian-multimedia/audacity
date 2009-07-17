@@ -48,57 +48,40 @@ class AUDACITY_DLL_API TrackArtist {
    ~TrackArtist();
 
    void SetColours();
-   void DrawTracks(TrackList * tracks,
+   void DrawTracks(TrackList *tracks, Track *start,
                    wxDC & dc, wxRegion & reg,
-                   wxRect & r, wxRect & clip, ViewInfo * viewInfo, 
-                   bool drawEnvelope,bool drawSamples,bool drawSliders);
+                   wxRect & r, wxRect & clip, ViewInfo *viewInfo, 
+                   bool drawEnvelope, bool drawSamples, bool drawSliders);
 
-   void DrawVRuler(Track * t, wxDC * dc, wxRect & r);
-   int GetWaveYPos(float value, int height, bool dB, float dBr);
+   void DrawTrack(const Track *t,
+                  wxDC & dc, const wxRect & r, const ViewInfo *viewInfo, 
+                  bool drawEnvelope, bool drawSamples, bool drawSliders,
+                  bool hasSolo);
+
+   void DrawVRuler(Track *t, wxDC *dc, wxRect & r);
+
+   void UpdateVRuler(Track *t, wxRect & r);
 
    void SetInset(int left, int top, int right, int bottom);
 
    void UpdatePrefs();
 
-   //
-   // Lower-level drawing functions
-   // 
+   void InvalidateSpectrumCache(TrackList *tracks);
+   void InvalidateSpectrumCache(WaveTrack *track);
+   int GetSpectrumMinFreq(int deffreq);
+   int GetSpectrumMaxFreq(int deffreq);
+   int GetSpectrumLogMinFreq(int deffreq);
+   int GetSpectrumLogMaxFreq(int deffreq);
+   int GetSpectrumWindowSize();
 
-   void DrawWaveform(WaveTrack *track,
-                     wxDC & dc, wxRect & r,
-                     ViewInfo * viewInfo, 
-                     bool drawEnvelope, bool drawSamples,
-                     bool drawSliders, bool dB, bool muted);
+#ifdef EXPERIMENTAL_FFT_SKIP_POINTS
+   int GetSpectrumFftSkipPoints();
+#endif
 
-   void DrawSpectrum(WaveTrack *track,
-                     wxDC & dc, wxRect & r,
-                     ViewInfo * viewInfo, bool autocorrelation, bool logF);
-#ifdef USE_MIDI
-   void DrawNoteTrack(NoteTrack *track,
-                      wxDC & dc, wxRect & r, ViewInfo * viewInfo);
-#endif // USE_MIDI
-
-   void DrawLabelTrack(LabelTrack *track,
-                       wxDC & dc, wxRect & r, ViewInfo * viewInfo);
-
-   void DrawTimeTrack(TimeTrack *track,
-                       wxDC & dc, wxRect & r, ViewInfo * viewInfo);
-
-   void DrawTimeSlider(WaveTrack *track,
-                       wxDC & dc, wxRect & r, ViewInfo * viewInfo,
-                       bool rightwards);
-
-   void DrawClipWaveform(WaveTrack* track, WaveClip* clip,
-                         wxDC & dc, wxRect & r,
-                         ViewInfo * viewInfo,
-                         bool drawEnvelope,
-                         bool drawSamples,
-                         bool drawSliders,
-                         bool dB, bool muted);
-
-   void DrawClipSpectrum(WaveTrack *track, WaveClip *clip,
-                         wxDC & dc, wxRect & r,
-                         ViewInfo * viewInfo, bool autocorrelation, bool logF);
+   void SetSpectrumMinFreq(int freq);
+   void SetSpectrumMaxFreq(int freq);
+   void SetSpectrumLogMinFreq(int freq);
+   void SetSpectrumLogMaxFreq(int freq);
 
    void SetBackgroundBrushes(wxBrush unselectedBrush, wxBrush selectedBrush,
 			     wxPen unselectedPen, wxPen selectedPen) {
@@ -110,13 +93,96 @@ class AUDACITY_DLL_API TrackArtist {
 
  private:
 
+   //
+   // Lower-level drawing functions
+   // 
+
+   void DrawWaveform(WaveTrack *track,
+                     wxDC & dc, const wxRect & r, const ViewInfo *viewInfo, 
+                     bool drawEnvelope, bool drawSamples, bool drawSliders,
+                     bool dB, bool muted);
+
+   void DrawSpectrum(WaveTrack *track,
+                     wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
+                     bool autocorrelation, bool logF);
+#ifdef USE_MIDI
+   void DrawNoteTrack(NoteTrack *track,
+                      wxDC & dc, const wxRect & r, const ViewInfo *viewInfo);
+#endif // USE_MIDI
+
+   void DrawLabelTrack(LabelTrack *track,
+                       wxDC & dc, const wxRect & r, const ViewInfo *viewInfo);
+
+   void DrawTimeTrack(TimeTrack *track,
+                      wxDC & dc, const wxRect & r, const ViewInfo *viewInfo);
+
+   void DrawTimeSlider(WaveTrack *track,
+                       wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
+                       bool rightwards);
+
+   void DrawClipWaveform(WaveTrack *track, WaveClip *clip,
+                         wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
+                         bool drawEnvelope, bool drawSamples, bool drawSliders,
+                         bool dB, bool muted);
+
+   void DrawClipSpectrum(WaveTrack *track, WaveClip *clip,
+                         wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
+                         bool autocorrelation, bool logF);
+
+   // Waveform utility functions
+
+   void DrawWaveformBackground(wxDC & dc, const wxRect &r, const double env[],
+                               float zoomMin, float zoomMax, bool dB,
+                               const sampleCount where[],
+                               sampleCount ssel0, sampleCount ssel1,
+                               bool drawEnvelope);
+
+   void DrawMinMaxRMS(wxDC & dc, const wxRect & r, const double env[],
+                      float zoomMin, float zoomMax, bool dB,
+                      const float min[], const float max[], const float rms[],
+                      const int bl[], bool showProgress, bool muted);
+
+   void DrawIndividualSamples(wxDC & dc, const wxRect & r,
+                              float zoomMin, float zoomMax, bool dB,
+                              WaveClip *clip,
+                              double t0, double pps, double h,
+                              bool drawSamples, bool showPoints, bool muted);
+
+   void DrawNegativeOffsetTrackArrows(wxDC & dc, const wxRect & r);
+
+   void DrawEnvelope(wxDC & dc, const wxRect & r, const double env[],
+                     float zoomMin, float zoomMax, bool dB);
+   void DrawEnvLine(wxDC & dc, const wxRect & r, int x, int y, int cy, bool top);
+
+   // Preference values
+   float mdBrange;            // "/GUI/EnvdBRange"
+   long mShowClipping;        // "/GUI/ShowClipping"
+   int mLogMaxFreq;           // "/SpectrumLog/MaxFreq"
+   int mLogMinFreq;           // "/SpectrumLog/MinFreq"
+   int mMaxFreq;              // "/Spectrum/MaxFreq"
+   int mMinFreq;              // "/Spectrum/MinFreq"
+   int mWindowSize;           // "/Spectrum/FFTSize"
+   bool mIsGrayscale;         // "/Spectrum/Grayscale"
+
+#ifdef EXPERIMENTAL_FFT_SKIP_POINTS
+   int mFftSkipPoints;        // "/Spectrum/FFTSkipPoints"
+#endif //EXPERIMENTAL_FFT_SKIP_POINTS
+
+#ifdef EXPERIMENTAL_FFT_Y_GRID
+   bool mFftYGrid;            // "/Spectrum/FFTYGrid"
+#endif //EXPERIMENTAL_FFT_Y_GRID
+
+#ifdef EXPERIMENTAL_FIND_NOTES
+   bool mFftFindNotes;        // "/Spectrum/FFTFindNotes"
+   float mFindNotesMinA;      // "/Spectrum/FindNotesMinA"
+   int mNumberOfMaxima;       // "/Spectrum/FindNotesN"
+   bool mFindNotesQuantize;   // "/Spectrum/FindNotesQuantize")
+#endif //EXPERIMENTAL_FIND_NOTES
+   
    int mInsetLeft;
    int mInsetTop;
    int mInsetRight;
    int mInsetBottom;
-
-   float mdBrange;
-   long mShowClipping;
 
    wxBrush blankBrush;
    wxBrush unselectedBrush;
@@ -151,48 +217,11 @@ class AUDACITY_DLL_API TrackArtist {
    int findNotesNOld;
    bool findNotesQuantizeOld;
 #endif
-
-   // Waveform utility functions
-
-   void DrawWaveformBackground(wxDC &dc, wxRect r, uchar *imageBuffer,
-                               sampleCount *where, sampleCount ssel0, sampleCount ssel1,
-                               double *env, 
-                               float zoomMin, float zoomMax,
-                               bool dB, bool drawEnvelope);
-
-   void DrawIndividualSamples(wxDC &dc, wxRect r,
-                              WaveTrack *track,                
-                              double t0, double pps, double h,
-                              float zoomMin, float zoomMax,
-                              bool dB,
-                              bool drawSamples,
-                              bool showPoints, bool muted);
-
-   void DrawIndividualClipSamples(wxDC &dc, wxRect r,
-                                        WaveClip *clip,
-                                        double t0, double pps, double h,
-                                        float zoomMin, float zoomMax,
-                                        bool dB,
-                                        bool drawSamples,
-                                        bool showPoints, bool muted);
-
-   void DrawMinMaxRMS(wxDC &dc, wxRect r, uchar *imageBuffer,
-                      float zoomMin, float zoomMax,
-                      double *envValues,
-                      float *min, float *max, float *rms,int* bl,
-                      bool dB, bool muted, bool showProgress);
-
-   void DrawNegativeOffsetTrackArrows(wxDC &dc, wxRect &r);
-
-   void DrawEnvLine(wxDC &dc, wxRect r, int x, int y, bool top);
-
 };
 
-extern int GetWaveYPosNew(float value, float min, float max,
+extern int GetWaveYPos(float value, float min, float max,
 			  int height, bool dB, bool outer, float dBr, 
 			  bool clip);
-
-
 
 #endif                          // define __AUDACITY_TRACKARTIST__
 

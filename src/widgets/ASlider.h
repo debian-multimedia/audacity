@@ -19,13 +19,11 @@
 #include <wx/panel.h>
 
 #if wxUSE_ACCESSIBILITY
-#if defined(__WXMSW__)
-#include <oleacc.h>
-#endif
 #include <wx/access.h>
 #endif
 
 class wxBitmap;
+class wxCursor;
 class wxImage;
 class wxSize;
 class wxPoint;
@@ -33,7 +31,7 @@ class wxTextCtrl;
 class wxButton;
 
 //
-// Predefined slider types
+// Predefined slider types (mStyle)
 //
 #define FRAC_SLIDER 1    // 0.0...1.0
 #define DB_SLIDER 2      // -36...36 dB
@@ -52,6 +50,7 @@ class wxButton;
 // window (used inside Track Labels).  The ASlider class,
 // which uses this class, is below.
 //
+
 class LWSlider
 {
    friend class ASlider;
@@ -61,17 +60,17 @@ class LWSlider
 
    // MM: Construct customizable slider
    LWSlider(wxWindow * parent,
-       wxString name,
-       const wxPoint &pos,
-       const wxSize &size,
-       float minValue,
-       float maxValue,
-       float stepValue,
-       bool canUseShift,
-       int style,
-       bool heavyweight=false,
-       bool popup=true
-       );
+            wxString name,
+            const wxPoint &pos,
+            const wxSize &size,
+            float minValue,
+            float maxValue,
+            float stepValue,
+            bool canUseShift,
+            int style,
+            bool heavyweight=false,
+            bool popup=true, 
+            int orientation = wxHORIZONTAL); // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
     
    // Construct predefined slider
    LWSlider(wxWindow * parent,
@@ -80,7 +79,8 @@ class LWSlider
             const wxSize &size,
             int style,
             bool heavyweight=false,
-            bool popup=true);
+            bool popup=true, 
+            int orientation = wxHORIZONTAL); // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
 
    void Init(wxWindow * parent,
              wxString name,
@@ -93,19 +93,25 @@ class LWSlider
              int style,
              bool heavyweight,
              bool popup,
-             float speed
-   );
+             float speed, 
+             int orientation = wxHORIZONTAL); // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
 
    virtual ~LWSlider();
 
    wxWindowID GetId();
    void SetId(wxWindowID id);
 
-   float Get( bool convert = true );
+   void SetDefaultValue(float value);
+   void SetDefaultShortcut(bool value);
+
+   void GetScroll(float & line, float & page);
+   void SetScroll(float line, float page);
+
+   float Get(bool convert = true);
    void Set(float value);
 
-   void Increase(int steps);
-   void Decrease(int steps);
+   void Increase(float steps);
+   void Decrease(float steps);
 
    // If set to less than 1.0, moving the mouse one pixel will move
    // the slider by less than 1 unit
@@ -122,6 +128,7 @@ class LWSlider
    void RecreateTipWin();
 
    bool ShowDialog();
+   bool ShowDialog(wxPoint pos);
 
  private:
 
@@ -135,14 +142,15 @@ class LWSlider
    void SendUpdate( float newValue );
 
    int ValueToPosition(float val);
-   float DragPositionToValue(int xPos, bool shiftDown);
-   float ClickPositionToValue(int xPos, bool shiftDown);
+   float DragPositionToValue(int fromPos, bool shiftDown);
+   float ClickPositionToValue(int fromPos, bool shiftDown);
    
    wxWindow* GetToolTipParent() const;
       
    wxWindow *mParent;
 
    int mStyle;
+   int mOrientation; // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
 
    bool mHW; // is it really heavyweight (in a window)
    bool mPopup; // should display dialog on double click
@@ -153,24 +161,39 @@ class LWSlider
    int mWidth;                  //In pixels
    int mHeight;                 //In pixels
 
+   // for (mOrientation == wxHORIZONTAL)
    int mCenterY;
 
    int mLeftX;
    int mRightX;
    int mWidthX;
 
+   // for (mOrientation == wxVERTICAL) //v Vertical PAN_SLIDER currently not handled, forced to horizontal.
+   int mCenterX;
+
+   int mTopY;
+   int mBottomY; // low values at bottom 
+   int mHeightY;
+
+
    int mThumbWidth;             //In pixels
    int mThumbHeight;            //In pixels
 
    float mClickValue;
-   int mClickX;
+   int mClickPos; // position in x if (mOrientation == wxHORIZONTAL), else in y
 
    float mMinValue;
    float mMaxValue;
    float mStepValue;
    float mSpeed;
- 
+
+   float mScrollLine;
+   float mScrollPage;
+
    float mCurrentValue;
+
+   bool mDefaultShortcut;
+   float mDefaultValue;
 
    bool mCanUseShift;
 
@@ -202,14 +225,19 @@ class ASlider :public wxPanel
             int style = FRAC_SLIDER,
             bool popup = true,
             bool canUseShift = true,
-            float stepValue = STEP_CONTINUOUS );
+            float stepValue = STEP_CONTINUOUS, 
+            int orientation = wxHORIZONTAL);
    virtual ~ASlider();
+
+   void GetScroll(float & line, float & page);
+   void SetScroll(float line, float page);
 
    float Get( bool convert = true );
    void Set(float value);
 
-   void Increase(int steps);
-   void Decrease(int steps);
+   void Increase(float steps);
+   void Decrease(float steps);
+   bool ShowDialog(wxPoint pos = wxPoint(-1, -1));
 
    void SetSpeed(float speed);
 
@@ -251,7 +279,9 @@ class SliderDialog: public wxDialog
                 wxPoint position,
                 wxSize size, 
                 int style,
-                float value);
+                float value,
+                float line,
+                float page);
    ~SliderDialog();
    
    float Get();

@@ -89,7 +89,7 @@ void OnPlayToSelection();
 void OnPlayLooped();
 void OnPlayCutPreview();
 
-        //
+        // Wave track control
 
 void OnTrackPan();
 void OnTrackPanLeft();
@@ -102,6 +102,22 @@ void OnTrackMute();
 void OnTrackSolo();
 void OnTrackClose();
 
+        // Mixer control
+
+void OnOutputGain();
+void OnInputGain();
+void OnInputSource();
+void OnOutputGainInc();
+void OnOutputGainDec();
+void OnInputGainInc();
+void OnInputGainDec();
+
+        // Transcription control
+
+void OnPlayAtSpeed();
+void OnSetPlaySpeed();
+void OnPlaySpeedInc();
+void OnPlaySpeedDec();
 
         // Selection-Editing Commands
 
@@ -176,7 +192,6 @@ void OnExit();
 
 void OnUndo();
 void OnRedo();
-void OnHistory();
 
 void OnCut();
 void OnSplitCut();
@@ -230,9 +245,17 @@ void OnUnMuteAllTracks();
 
 void OnShowClipping();
 
-void OnSelectionFormat(int index);
+void OnHistory();
+
+#ifdef EXPERIMENTAL_LYRICS_WINDOW
+   void OnLyrics();
+#endif
+#ifdef EXPERIMENTAL_MIXER_BOARD
+   void OnMixerBoard();
+#endif
 
 void OnPlotSpectrum();
+void OnContrast();
 
 void OnShowControlToolBar();
 void OnShowDeviceToolBar();
@@ -294,7 +317,7 @@ void OnEditLabels();
 
         // Effect Menu
 
-bool OnEffect(int type, Effect * f);
+bool OnEffect(int type, Effect * f, wxString params = wxEmptyString, bool saveState = true);
 void OnEffect(int type, int index);
 void OnGenerateEffect(int index);
 void OnGeneratePlugin(int index);
@@ -312,16 +335,13 @@ void OnEditChains();
 void OnImportCleanSpeechPresets();
 void OnExportCleanSpeechPresets();
 void OnStereoToMono(int index);
-void ResolveEffectIndices(EffectArray *effects);
 wxString BuildCleanFileName(wxString fileName);
-
-int  mNormalizeIndex;
-int  mStereoToMonoIndex;
 
         // Help Menu
 
 void OnAbout();
-void OnHelp();
+void OnQuickHelp();
+void OnManual();
 void OnLog();
 void OnHelpWelcome();
 void OnBenchmark();

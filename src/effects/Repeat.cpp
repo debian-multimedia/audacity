@@ -57,7 +57,7 @@ bool EffectRepeat::PromptUser()
    // could be repeated without overflowing any track
    //
    int maxCount = -1;
-   TrackListIterator iter(mWaveTracks);
+   TrackListOfKindIterator iter(Track::Wave, mTracks);
    WaveTrack *track = (WaveTrack *) iter.First();
    while (track) {
       sampleCount trackLen = 
@@ -108,49 +108,75 @@ bool EffectRepeat::TransferParameters( Shuttle & shuttle )
 
 bool EffectRepeat::Process()
 {
-   this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
-   bool bGoodResult = true;
+   // Set up mOutputTracks. This effect needs Track::All because it uses Paste that needs to have label tracks.
+   this->CopyInputTracks(Track::All);
 
-   TrackListIterator iter(mOutputWaveTracks);
-   WaveTrack *track = (WaveTrack *) iter.First();
    int nTrack = 0;
+   bool bGoodResult = true;
 	double maxDestLen = 0.0; // used to change selection to generated bit
-   while ((track != NULL) && bGoodResult) {
-      double trackStart = track->GetStartTime();
-      double trackEnd = track->GetEndTime();
-      double t0 = mT0 < trackStart? trackStart: mT0;
-      double t1 = mT1 > trackEnd? trackEnd: mT1;
 
-      if (t1 <= t0)
-         continue;
+   TrackListIterator iter(mOutputTracks);
+   // go to first wavetrack
+   Track* t;
+   for (t = iter.First(); t->GetKind() != Track::Wave; t = iter.Next());
+   if (!t)
+      return false;
 
-      sampleCount start = track->TimeToLongSamples(t0);
-      sampleCount end = track->TimeToLongSamples(t1);
-      sampleCount len = (sampleCount)(end - start);
-      double tLen = track->LongSamplesToTime(len);
-      double tc = t0 + tLen;
+   // we only do a "group change" in the first selected track of the group. 
+   // Paste call does changes to the group tracks
+   bool first = true;
 
-      if (len <= 0)
-         continue;
+   for (; t && bGoodResult; t = iter.Next()) {
+      if (t->GetKind() == Track::Label)
+         first = true;
+      else if (t->GetKind() == Track::Wave && t->GetSelected()) {
+         WaveTrack* track = (WaveTrack*)t;
 
-      Track *dest;
-      track->Copy(t0, t1, &dest);
-      for(int j=0; j<repeatCount; j++)
-      {
-         if (!track->Paste(tc, dest) || 
-               TrackProgress(nTrack, j / repeatCount)) // TrackProgress returns true on Cancel.
+         double trackStart = track->GetStartTime();
+         double trackEnd = track->GetEndTime();
+         double t0 = mT0 < trackStart? trackStart: mT0;
+         double t1 = mT1 > trackEnd? trackEnd: mT1;
+
+         if (t1 <= t0)
+            continue;
+
+         sampleCount start = track->TimeToLongSamples(t0);
+         sampleCount end = track->TimeToLongSamples(t1);
+         sampleCount len = (sampleCount)(end - start);
+         double tLen = track->LongSamplesToTime(len);
+         double tc = t0 + tLen;
+
+         if (len <= 0)
+            continue;
+
+         Track *dest;
+         track->Copy(t0, t1, &dest);
+         for(int j=0; j<repeatCount; j++)
          {
-            bGoodResult = false;
-            break;
+            if (first) {
+               if (!track->Paste(tc, dest, mOutputTracks) || 
+                     TrackProgress(nTrack, j / repeatCount)) // TrackProgress returns true on Cancel.
+               {
+                  bGoodResult = false;
+                  break;
+               }
+            }
+            else {
+               if (!track->HandlePaste(tc, dest) || 
+                     TrackProgress(nTrack, j / repeatCount)) // TrackProgress returns true on Cancel.
+               {
+                  bGoodResult = false;
+                  break;
+               }
+            }
+            tc += tLen;
          }
-         tc += tLen;
+         first = false;
+         if (tc > maxDestLen)
+            maxDestLen = tc;
+         delete dest;
+         nTrack++;
       }
-      if (tc > maxDestLen)
-         maxDestLen = tc;
-      delete dest;
-
-      track = (WaveTrack *) iter.Next();
-      nTrack++;
    }
 
    if (bGoodResult)
@@ -160,7 +186,7 @@ bool EffectRepeat::Process()
 	   mT1 = maxDestLen;
    }
 
-   this->ReplaceProcessedWaveTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult); 
    return bGoodResult;
 }
 
@@ -192,7 +218,7 @@ RepeatDialog::RepeatDialog(EffectRepeat *effect,
 void RepeatDialog::PopulateOrExchange(ShuttleGui & S)
 {
    wxTextValidator vld(wxFILTER_INCLUDE_CHAR_LIST);
-   vld.SetIncludes(wxArrayString(12, numbers));
+   vld.SetIncludes(wxArrayString(10, numbers));
 
    S.StartHorizontalLay(wxCENTER, false);
    {

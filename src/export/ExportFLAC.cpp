@@ -177,7 +177,7 @@ public:
    // Required
 
    bool DisplayOptions(wxWindow *parent, int format = 0);
-   bool Export(AudacityProject *project,
+   int Export(AudacityProject *project,
                int channels,
                wxString fName,
                bool selectedOnly,
@@ -212,7 +212,7 @@ void ExportFLAC::Destroy()
    delete this;
 }
 
-bool ExportFLAC::Export(AudacityProject *project,
+int ExportFLAC::Export(AudacityProject *project,
                         int numChannels,
                         wxString fName,
                         bool selectionOnly,
@@ -226,7 +226,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    TrackList *tracks = project->GetTracks();
    
    wxLogNull logNo;            // temporarily disable wxWindows error messages 
-   bool      cancelling = false;
+   int updateResult = eProgressSuccess;
 
    int levelPref;
    gPrefs->Read(wxT("/FileFormats/FLACLevel"), &levelPref, 5);
@@ -237,7 +237,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    FLAC::Encoder::File encoder;
 
 #ifdef LEGACY_FLAC
-   encoder.set_filename(OSFILENAME(fName));
+   encoder.set_filename(OSOUTPUT(fName));
 #endif
    encoder.set_channels(numChannels);
    encoder.set_sample_rate(lrint(rate));
@@ -245,7 +245,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    // See note in GetMetadata() about a bug in libflac++ 1.1.2
    if (!GetMetadata(project, metadata)) {
       return false;
-      }
+   }
 
    if (mMetadata) {
       encoder.set_metadata(&mMetadata, 1);
@@ -283,7 +283,20 @@ bool ExportFLAC::Export(AudacityProject *project,
 #ifdef LEGACY_FLAC
    encoder.init();
 #else
-   encoder.init(OSFILENAME(fName));
+   wxFFile f;     // will be closed when it goes out of scope
+   if (!f.Open(fName, wxT("w+b"))) {
+      wxMessageBox(wxString::Format(_("FLAC export couldn't open %s"), fName.c_str()));
+      return false;
+   }
+
+   // Even though there is an init() method that takes a filename, use the one that
+   // takes a file handle because wxWidgets can open a file with a Unicode name and
+   // libflac can't (under Windows).
+   int status = encoder.init(f.fp());
+   if (status != FLAC__STREAM_ENCODER_INIT_STATUS_OK) {
+      wxMessageBox(wxString::Format(_("FLAC encoder failed to initialize\nStatus: %d"), status));
+      return false;
+   }
 #endif
 
    if (mMetadata) {
@@ -298,6 +311,7 @@ bool ExportFLAC::Export(AudacityProject *project,
                             t0, t1,
                             numChannels, SAMPLES_PER_RUN, false,
                             rate, format, true, mixerSpec);
+   delete [] waveTracks;
 
    int i, j;
    FLAC__int32 **tmpsmplbuf = new FLAC__int32*[numChannels];
@@ -310,7 +324,7 @@ bool ExportFLAC::Export(AudacityProject *project,
          _("Exporting the selected audio as FLAC") :
          _("Exporting the entire project as FLAC"));
 
-   while (!cancelling) {
+   while (updateResult == eProgressSuccess) {
       sampleCount samplesThisRun = mixer->Process(SAMPLES_PER_RUN);
       if (samplesThisRun == 0) { //stop encoding
          break;
@@ -331,8 +345,9 @@ bool ExportFLAC::Export(AudacityProject *project,
          }
          encoder.process(tmpsmplbuf, samplesThisRun);
       }
-      cancelling = !progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
+      updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }
+   f.Detach(); // libflac closes the file
    encoder.finish();
 
    delete progress;
@@ -344,7 +359,7 @@ bool ExportFLAC::Export(AudacityProject *project,
    
    delete[] tmpsmplbuf;
    
-   return !cancelling;
+   return updateResult;
 }
 
 bool ExportFLAC::DisplayOptions(wxWindow *parent, int format)
@@ -369,8 +384,6 @@ bool ExportFLAC::GetMetadata(AudacityProject *project, Tags *tags)
       tags = project->GetTags();
 
    mMetadata = ::FLAC__metadata_object_new(FLAC__METADATA_TYPE_VORBIS_COMMENT);
-
-   FLAC::Metadata::VorbisComment::Entry entry;
 
    wxString n, v;
    for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {

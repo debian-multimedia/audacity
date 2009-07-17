@@ -257,7 +257,6 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
             break;
          case 1:
             mChannels[i][c]->SetChannel(Track::RightChannel);
-            mChannels[i][c]->SetTeamed(true);
             break;
             }
          }
@@ -285,7 +284,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       endian = 1;  // big endian
 
    /* number of samples currently in each channel's buffer */
-   bool cancelled = false;
+   int updateResult = eProgressSuccess;
    long bytesRead = 0;
    long samplesRead = 0;
    int bitstream = 0;
@@ -327,18 +326,20 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
 
       samplesSinceLastCallback += samplesRead;
       if (samplesSinceLastCallback > SAMPLES_PER_CALLBACK) {
-          cancelled = !mProgress->Update(ov_time_tell(mVorbisFile),
+          updateResult = mProgress->Update(ov_time_tell(mVorbisFile),
                                          ov_time_total(mVorbisFile, bitstream));
           samplesSinceLastCallback -= SAMPLES_PER_CALLBACK;
 
       }
-   } while (!cancelled && bytesRead != 0);
+   } while (updateResult == eProgressSuccess && bytesRead != 0);
 
    delete[]mainBuffer;
 
-   bool res = (!cancelled && bytesRead >= 0);
+   int res = updateResult;
+   if (bytesRead < 0)
+     res = eProgressFailed;
 
-   if (!res) {
+   if (res == eProgressFailed || res == eProgressCancelled) {
       for (i = 0; i < mVorbisFile->links; i++)
       {
          if (mChannels[i])
@@ -351,7 +352,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
          }
       }
       delete[] mChannels;
-      return (cancelled ? eImportCancelled : eImportFailed);
+      return res;
    }
 
    *outNumTracks = 0;
@@ -394,7 +395,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
       }
    }
 
-   return eImportSuccess;
+   return res;
 }
 
 OggImportFileHandle::~OggImportFileHandle()

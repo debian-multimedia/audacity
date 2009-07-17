@@ -75,6 +75,21 @@ EffectAutoDuck::EffectAutoDuck()
 {
    SetEffectFlags(BUILTIN_EFFECT | PROCESS_EFFECT | ADVANCED_EFFECT);
    
+   gPrefs->Read(wxT("/Effects/AutoDuck/DuckAmountDb"),
+      &mDuckAmountDb, PARAM_DEFAULT_DUCK_AMOUNT_DB);
+   gPrefs->Read(wxT("/Effects/AutoDuck/InnerFadeDownLen"),
+      &mInnerFadeDownLen, PARAM_DEFAULT_INNER_FADE_DOWN_LEN);
+   gPrefs->Read(wxT("/Effects/AutoDuck/InnerFadeUpLen"),
+      &mInnerFadeUpLen, PARAM_DEFAULT_INNER_FADE_UP_LEN);
+   gPrefs->Read(wxT("/Effects/AutoDuck/OuterFadeDownLen"),
+      &mOuterFadeDownLen, PARAM_DEFAULT_OUTER_FADE_DOWN_LEN);
+   gPrefs->Read(wxT("/Effects/AutoDuck/OuterFadeUpLen"),
+      &mOuterFadeUpLen, PARAM_DEFAULT_OUTER_FADE_UP_LEN);
+   gPrefs->Read(wxT("/Effects/AutoDuck/ThresholdDb"),
+      &mThresholdDb, PARAM_DEFAULT_THRESHOLD_DB);
+   gPrefs->Read(wxT("/Effects/AutoDuck/MaximumPause"),
+      &mMaximumPause, PARAM_DEFAULT_MAXIMUM_PAUSE);
+
    mControlTrack = NULL;
 }
 
@@ -140,7 +155,6 @@ bool EffectAutoDuck::Init()
    }
    
    mControlTrack = controlTrackCandidate;
-   wxASSERT(mWaveTracks);
 
    return true;
 }
@@ -197,7 +211,7 @@ bool EffectAutoDuck::Process()
 {
    int i;
    
-   if (!mWaveTracks || !mControlTrack)
+   if (GetNumWaveTracks() == 0 || !mControlTrack)
       return false;
 
    bool cancel = false;
@@ -324,8 +338,8 @@ bool EffectAutoDuck::Process()
 
    if (!cancel)
    {
-      this->CopyInputWaveTracks(); // Set up mOutputWaveTracks.
-      TrackListIterator iter(mOutputWaveTracks);
+      this->CopyInputTracks(); // Set up mOutputTracks.
+      SelectedTrackListOfKindIterator iter(Track::Wave, mOutputTracks);
       Track *iterTrack = iter.First();
       
       int trackNumber = 0;
@@ -354,7 +368,7 @@ bool EffectAutoDuck::Process()
       }
    }
    
-   this->ReplaceProcessedWaveTracks(!cancel); 
+   this->ReplaceProcessedTracks(!cancel); 
    return !cancel;
 }
 
@@ -741,8 +755,8 @@ void EffectAutoDuckPanel::OnPaint(wxPaintEvent& evt)
       
       dc.SetPen(wxPen(*wxBLACK, 1, wxDOT));
       
-      dc.DrawLine(FADE_DOWN_START, 10, FADE_DOWN_START, clientHeight - 10);
-      dc.DrawLine(FADE_UP_START, 10, FADE_UP_START, clientHeight - 10);
+      AColor::Line(dc, FADE_DOWN_START, 10, FADE_DOWN_START, clientHeight - 10);
+      AColor::Line(dc, FADE_UP_START, 10, FADE_UP_START, clientHeight - 10);
       
       dc.SetPen(AColor::envelopePen);
       dc.SetBrush(*wxWHITE_BRUSH);

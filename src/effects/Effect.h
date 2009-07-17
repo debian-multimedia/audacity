@@ -56,7 +56,6 @@ class wxWindow;
 #define SKIP_EFFECT_MILLISECOND 99999
 
 class AUDACITY_DLL_API Effect {
-   
  // 
  // public methods
  //
@@ -106,6 +105,7 @@ class AUDACITY_DLL_API Effect {
       // covers most built-in effects.
       return mFlags;
    }
+
    virtual bool TransferParameters( Shuttle & shuttle ){
       return true;
    }
@@ -129,7 +129,7 @@ class AUDACITY_DLL_API Effect {
    // have the "selected" flag set to true, which is consistent with
    // Audacity's standard UI.
    bool DoEffect(wxWindow *parent, int flags, double projectRate, TrackList *list,
-                 TrackFactory *factory, double *t0, double *t1);
+                 TrackFactory *factory, double *t0, double *t1, wxString params);
 
    wxString GetPreviewName();
 
@@ -138,8 +138,6 @@ class AUDACITY_DLL_API Effect {
    // important for sorting.
    static wxString StripAmpersand(const wxString& str);
 
-   void HandleLinkedTracksOnGenerate(double length, double t0);
-   bool HandleGroupChangeSpeed(double m_PercentChange, double mCurT0, double mCurT1);
  //
  // protected virtual methods
  //
@@ -196,9 +194,7 @@ class AUDACITY_DLL_API Effect {
                                // be created with this rate...
    TrackFactory   *mFactory;
    TrackList      *mTracks;      // the complete list of all tracks
-   TrackList      *mWaveTracks;  // effects which do not add or remove tracks
-                               // should use this
-   TrackList*     mOutputWaveTracks; // used only if CopyInputWaveTracks() is called.
+   TrackList      *mOutputTracks; // used only if CopyInputTracks() is called.
    double         mT0;
    double         mT1;
 
@@ -228,6 +224,9 @@ class AUDACITY_DLL_API Effect {
 
    int GetNumWaveGroups() { return mNumGroups; }
 
+   // Calculates the start time and selection length in samples
+   void GetSamples(WaveTrack *track, sampleCount *start, sampleCount *len);
+
  //
  // protected static data
  //
@@ -236,18 +235,22 @@ class AUDACITY_DLL_API Effect {
  protected:
    static double sDefaultGenerateLen;
    int mFlags;
+   double mLength;
+
+   // type of the tracks on mOutputTracks
+   int mOutputTracksType;
  
  //
  // private methods
  //
-   // Use these two methods to copy the input tracks to mOutputWaveTracks, if 
+   // Use these two methods to copy the input tracks to mOutputTracks, if 
    // doing the processing on them, and replacing the originals only on success (and not cancel).
-   void CopyInputWaveTracks();
+   void CopyInputTracks(int trackType = Track::Wave);
    
    // If bGoodResult, replace mWaveTracks tracks in mTracks with successfully processed 
-   // mOutputWaveTracks copies, get rid of old mWaveTracks, and set mWaveTracks to mOutputWaveTracks. 
-   // Else clear and delete mOutputWaveTracks copies.
-   void ReplaceProcessedWaveTracks(const bool bGoodResult);
+   // mOutputTracks copies, get rid of old mWaveTracks, and set mWaveTracks to mOutputTracks. 
+   // Else clear and delete mOutputTracks copies.
+   void ReplaceProcessedTracks(const bool bGoodResult);
 
  // Used only by the base Effect class
  //
@@ -260,6 +263,8 @@ class AUDACITY_DLL_API Effect {
  // Used only by the base Effect class
  //
  private:
+   wxArrayPtrVoid mIMap;
+   wxArrayPtrVoid mOMap;
 
    int mNumTracks; //v This is really mNumWaveTracks, per CountWaveTracks() and GetNumWaveTracks().
    int mNumGroups;
@@ -270,6 +275,7 @@ class AUDACITY_DLL_API Effect {
    friend class EffectManager;// so it can delete effects and access mID.
 
 };
+
 
 // Base dialog for generate effect
 

@@ -49,7 +49,6 @@ libFLAC++.a libFLAC.a: libflac-recursive
 
 # libnyquist
 libnyquist-recursive:
-	$(MAKE) -C libnyquist/misc
 	$(MAKE) -C libnyquist
 libnyquist.a: libnyquist-recursive
 	ln -sf libnyquist/libnyquist.a libnyquist.a
@@ -136,6 +135,12 @@ soundtouch-recursive:
 libSoundTouch.a: soundtouch-recursive
 	ln -sf soundtouch/source/SoundTouch/.libs/libSoundTouch.a .
 
+# TagLib
+taglib-recursive:
+	$(MAKE) -C taglib
+taglib.a: taglib-recursive
+	ln -sf taglib/taglib/.libs/libtag.a taglib.a 
+
 # PortAudio
 portaudio-v19-recursive:
 	$(MAKE) -C portaudio-v19 lib/libportaudio.la
@@ -146,19 +151,12 @@ portaudio-v19/lib/libportaudio.a: portaudio-v19-recursive
 portmixer-recursive:
 	$(MAKE) -C portmixer
 portmixer/libportmixer.a: portmixer-recursive
-	ln -sf portmixer/libportmixer.a .
 
 portaudio/pa_unix_oss/portaudio.a:
 	$(MAKE) -C portaudio/pa_unix_oss
 
 portaudio/pa_mac_core/portaudio.a:
 	$(MAKE) -C portaudio/pa_mac_core
-
-portmixer/px_unix_oss/portmixer.a:
-	$(MAKE) -C portmixer/px_unix_oss PA_VER=$(findstring -v19,@BUILDLIBS@)
-
-portmixer/px_mac_core/portmixer.a:
-	$(MAKE) -C portmixer/px_mac_core PA_VER=$(findstring -v19,@BUILDLIBS@)
 
 # RTAudio not supported 23/08/2007 R.A.
 # librtaudio-recursive:
@@ -188,8 +186,6 @@ clean:
 	-$(MAKE) -C portaudio/pa_unix_oss clean
 	-$(MAKE) -C portaudio/pa_mac_core clean
 	-$(MAKE) -C portmixer clean
-	-$(MAKE) -C portmixer/px_unix_oss clean
-	-$(MAKE) -C portmixer/px_mac_core clean
 	-$(MAKE) -C sbsms clean
 	-$(MAKE) -C soundtouch clean
 	-$(MAKE) -C twolame clean
@@ -216,8 +212,6 @@ distclean:
 	-$(MAKE) -C portaudio/pa_unix_oss distclean
 	-$(MAKE) -C portaudio/pa_mac_core distclean
 	-$(MAKE) -C portmixer distclean
-	-$(MAKE) -C portmixer/px_unix_oss distclean
-	-$(MAKE) -C portmixer/px_mac_core distclean
 	-$(MAKE) -C sbsms distclean
 	-$(MAKE) -C soundtouch distclean
 	-$(MAKE) -C twolame distclean

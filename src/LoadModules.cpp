@@ -26,7 +26,8 @@ i.e. an alternative to the usual interface, for Audacity.
 #include "Audacity.h"
 #include "AudacityApp.h"
 #include "Internat.h"
-#include "BatchCommands.h"
+
+#include "commands/ScriptCommandRelay.h"
 #include <NonGuiThread.h>  // header from libwidgetextra
 
 #include "LoadModules.h"
@@ -36,8 +37,8 @@ i.e. an alternative to the usual interface, for Audacity.
 #define mainPanelFnName "MainPanelFunc"
 
 typedef wxWindow * pwxWindow;
-typedef int AUDACITY_DLL_API (*tModuleInit)(int);
-typedef pwxWindow AUDACITY_DLL_API (*tPanelFn)(int);
+typedef int (*tModuleInit)(int);
+typedef pwxWindow (*tPanelFn)(int);
 
 // This variable will hold the address of a subroutine in 
 // a DLL that can hijack the normal panel.
@@ -63,57 +64,9 @@ wxWindow * MakeHijackPanel()
    return pPanelHijack(0);
 }
 
-//------- Start of stuff related to invoking a batch command ----
-// Our DLL may call commands back in Audacity.
-// It will do that through the ExecCommand function.
-extern "C" {
-
-typedef int AUDACITY_DLL_API (*tpExecScriptServerFunc)( wxString * pOut, wxString * pIn);
-typedef int AUDACITY_DLL_API (*tpRegScriptServerFunc)(tpExecScriptServerFunc pFn);
-
-// This is the function which actually obeys one command.
-AUDACITY_DLL_API int ExecCommand( wxString * pOut, wxString * pIn )
-{
-   // Create a Batch that will have just one command in it...
-   BatchCommands Batch;
-   bool rc;
-
-   // Find the command name terminator...ingore line if not found
-   int splitAt = pIn->Find(wxT(':'));
-   if (splitAt < 0) {
-      *pOut= wxT("BAD - Missing ':'?");
-      return false;
-   }
-
-   // Parse and clean
-   wxString cmd = pIn->Left(splitAt).Strip(wxString::both);
-   wxString parm = pIn->Mid(splitAt + 1).Strip(wxString::trailing);
-
-   rc = Batch.ApplyCommand( cmd, parm );
-   if( rc )
-   {
-      *pOut = wxT("OK");
-      return rc;
-   }
-   *pOut = wxT("FAILED to Execute");
-   return rc;
-}
-}
-
-// This variable will hold the address of a subroutine in
-// a DLL that starts a thread and reads script commands.
-tpRegScriptServerFunc scriptFn = NULL;
-
-// We pass the ExecFunction to any scripting DLL that needs it
-// right here.
-void RegisterAndRun(  )
-{
-   wxASSERT( scriptFn != NULL );
-   while( true )
-      scriptFn(&ExecCommand);
-}
-
-//------- End of stuff related to invoking a batch command ----
+// This variable will hold the address of a subroutine in a DLL that
+// starts a thread and reads script commands.
+tpRegScriptServerFunc scriptFn;
 
 void LoadModule(wxString fname)
 {
@@ -148,7 +101,7 @@ void LoadModule(wxString fname)
    ::wxSetWorkingDirectory(saveOldCWD);
 }
 
-void LoadModules()
+void LoadModules(CommandHandler &cmdHandler)
 {
    wxArrayString audacityPathList = wxGetApp().audacityPathList;
    wxArrayString pathList;
@@ -176,17 +129,19 @@ void LoadModules()
    }
 
    #ifdef __WXMSW__
-   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, wxFILE, files);   
+   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, files);   
    #else
-   wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, wxFILE, files);
+   wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, files);
    #endif
 
    for(i=0; i<files.GetCount(); i++)
       LoadModule(files[i]);
    // After loading all the modules, we may have a registered scripting function.
-   if( scriptFn )
+   if(scriptFn)
    {
-      NonGuiThread::StartChild( &RegisterAndRun );
+      ScriptCommandRelay::SetCommandHandler(cmdHandler);
+      ScriptCommandRelay::SetRegScriptServerFunc(scriptFn);
+      NonGuiThread::StartChild(&ScriptCommandRelay::Run);
    }
 }
 
@@ -294,11 +249,11 @@ void ModuleManager::Initialize()
    }
 
    #if defined(__WXMSW__)
-   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, wxFILE, files);   
+   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, files);   
 //   #elif defined(__WXMAC__)
-//   wxGetApp().FindFilesInPathList(wxT("*.dylib"), pathList, wxFILE, files);
+//   wxGetApp().FindFilesInPathList(wxT("*.dylib"), pathList, files);
    #else
-   wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, wxFILE, files);
+   wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, files);
    #endif
 
    for (i = 0; i < files.GetCount(); i++) {

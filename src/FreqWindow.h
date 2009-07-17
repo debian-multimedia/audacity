@@ -14,6 +14,7 @@
 #include <wx/brush.h>
 #include <wx/frame.h>
 #include <wx/panel.h>
+#include <wx/checkbox.h>
 #include <wx/dialog.h>
 #include <wx/gdicmn.h>
 #include <wx/pen.h>
@@ -31,8 +32,6 @@ class FreqWindow;
 
 class TrackList;
 
-extern FreqWindow *gFreqWindow;
-
 void InitFreqWindow(wxWindow * parent);
 
 class FreqWindow;
@@ -44,6 +43,7 @@ class FreqPlot:public wxWindow {
 
    void OnMouseEvent(wxMouseEvent & event);
    void OnPaint(wxPaintEvent & event);
+   void OnErase(wxEraseEvent & event);
 
  private:
 
@@ -58,8 +58,9 @@ class FreqWindow:public wxDialog {
               const wxString & title, const wxPoint & pos);
 
    virtual ~ FreqWindow();
+   void GetAudio();
 
-   void Plot(int len, float *data, double rate);
+   void Plot();
 
    void PlotMouseEvent(wxMouseEvent & event);
    void PlotPaint(wxPaintEvent & event);
@@ -72,11 +73,20 @@ class FreqWindow:public wxDialog {
    void OnFuncChoice(wxCommandEvent & event);
    void OnAxisChoice(wxCommandEvent & event);
    void OnExport(wxCommandEvent & event);
+   void OnReplot(wxCommandEvent & event);
+   void OnGridOnOff(wxCommandEvent & event);
 
    void Recalc();
    void DrawPlot();
 
  private:
+   float *mBuffer;
+   bool mDrawGrid;
+   int mSize;
+   int mAlg;
+   int mFunc;
+   int mAxis;
+   int dBRange;
 
 #ifdef __WXMSW__
    static const int fontSize = 8;
@@ -95,10 +105,12 @@ class FreqWindow:public wxDialog {
 
    wxButton *mCloseButton;
    wxButton *mExportButton;
+   wxButton *mReplotButton;
    wxChoice *mAlgChoice;
    wxChoice *mSizeChoice;
    wxChoice *mFuncChoice;
    wxChoice *mAxisChoice;
+   wxCheckBox *mGridOnOff;
 
    wxRect mPlotRect;
    wxRect mInfoRect;

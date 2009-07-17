@@ -33,18 +33,8 @@
 // Comment out the next two lines if you want to disable 'experimental theming'
 // Work in progress, June-2008.
 //#define EXPERIMENTAL_THEMING
+#if IS_BETA
 #define EXPERIMENTAL_THEME_PREFS
-
-//The next few enable different kinds of label/wavetrack pairing.
-//You should probably only enable one at a time.
-//The next line enables a menu-based system
-//#define EXPERIMENTAL_STICKY_TRACKS
-//The next block enables a positional-based system.
-//LABEL_LINKING only links label tracks, while FULL_LINKING links wave and label tracks
-#define EXPERIMENTAL_POSITION_LINKING
-#ifdef EXPERIMENTAL_POSITION_LINKING
-   #define EXPERIMENTAL_FULL_LINKING
-   //#define EXPERIMENTAL_LABEL_LINKING
 #endif
 
 //Next line enables Mic monitoring at times when it was previously off.
@@ -55,16 +45,6 @@
 //#define EXPERIMENTAL_ROLL_UP_DIALOG
 //#define RIGHT_ALIGNED_TEXTBOXES
 //#define EXPERIMENTAL_VOICE_DETECTION
-
-//uncomment this line to enable On-Demand loading of PCM files.  
-//for now it is incomplete so it will load instantly but 
-//the display of summary data will not be there (one can still see sample data if zoomed in)
-#define EXPERIMENTAL_ONDEMAND
-
-//FFmpeg integration. Some FFmpeg-related changes are NOT ifdef'ed,
-//as they are harmless (like - a few mockup methods in Import* classes)
-// To enable ffmpeg support #define USE_FFMPEG in config*.h, as for any other
-// optional importer library (windows users: edit win/configwin.h)
 
 // Effect categorisation. Adds support for arranging effects in categories
 // and displaying those categories as submenus in the Effect menu.
@@ -89,9 +69,25 @@
 // A Frequency Grid for the Spectrum Log(f) & Find Notes modes
 //#define EXPERIMENTAL_FFT_Y_GRID
 
-// AM, 22.Nov 2007: 
-// Saves the default view mode for wave tracks.
-#define EXPERIMENTAL_SAVE_DEFAULT_VIEW
+// Andy Coder, 03.Mar 2009:
+// Allow keyboard seeking before initial playback position
+//#define EXPERIMENTAL_SEEK_BEHIND_CURSOR
+
+// Philip Van Baren 01 July 2009
+// Replace RealFFT() and PowerSpectrum function to use (faster) RealFFTf function
+#define EXPERIMENTAL_USE_REALFFTF
+
+// RBD, 1 Sep 2008
+// Enables MIDI Output of NoteTrack (MIDI) data during playback
+// USE_MIDI must be defined in order for EXPERIMENTAL_MIDI_OUT to work
+#ifdef USE_MIDI
+//#define EXPERIMENTAL_MIDI_OUT
+#endif
+
+// USE_MIDI must be defined in order for EXPERIMENTAL_SCOREALIGN to work
+#ifdef USE_MIDI
+//#define EXPERIMENTAL_SCOREALIGN
+#endif
 
 #ifdef EXPERIMENTAL_FEATURES
    // The first experimental feature is a notebook that adds
@@ -132,6 +128,9 @@ extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebo
 
 #ifdef EXPERIMENTAL_AUDACITY_TESTER
 #endif
+
+#define EXPERIMENTAL_LYRICS_WINDOW //vvv Vaughan, 2009-07-06
+#define EXPERIMENTAL_MIXER_BOARD //vvv Vaughan, 2009-07-07
 
 #endif
 

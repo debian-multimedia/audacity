@@ -4,7 +4,7 @@
 // Author:      Julian Smart
 // Modified by: Leland Lucius
 // Created:     01/02/97
-// RCS-ID:      $Id: FileDialogPrivate.cpp,v 1.14 2008/11/08 21:00:26 llucius Exp $
+// RCS-ID:      $Id: FileDialogPrivate.cpp,v 1.17 2009/07/02 22:11:19 vjohnson Exp $
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
 //
@@ -228,18 +228,16 @@ FileDialogHookFunction(HWND      hDlg,
          {
             OPENFILENAME *ofn = (OPENFILENAME *)
             GetWindowLongPtr(hDlg, GWLP_USERDATA);
-            FileDialog *me = (FileDialog *)
-            ofn->lCustData;
-            me->FilterFiles(hDlg);
+            FileDialog *me = (FileDialog *) ofn->lCustData;
+            me->FilterFiles(hDlg, false);
          }
          else if (CDN_TYPECHANGE == (pNotifyCode->hdr).code)
          {
             OPENFILENAME *ofn = (OPENFILENAME *)
             GetWindowLongPtr(hDlg, GWLP_USERDATA);
-            FileDialog *me = (FileDialog *)
-            ofn->lCustData;
+            FileDialog *me = (FileDialog *) ofn->lCustData;
             me->ParseFilter(ofn->nFilterIndex);
-            me->FilterFiles(hDlg);
+            me->FilterFiles(hDlg, true);
          }
          break;
       }
@@ -249,10 +247,15 @@ FileDialogHookFunction(HWND      hDlg,
    return 0;
 }
 
-void FileDialog::FilterFiles(HWND hDlg)
+#define WM_GETISHELLBROWSER WM_USER + 7
+
+void FileDialog::FilterFiles(HWND hDlg, bool refresh)
 {
    HWND parent = ::GetParent(hDlg);
    IShellFolder *ishell = NULL;
+   IShellBrowser *ishellbrowser = NULL;  // Does not have to be released
+   IShellView *ishellview = NULL;
+   IFolderView *ifolderview = NULL;
    LPMALLOC imalloc = NULL;
    HRESULT hr;
    
@@ -271,13 +274,25 @@ void FileDialog::FilterFiles(HWND hDlg)
       wxASSERT((hr == NOERROR) && (imalloc != NULL));
       return;
    }
-   
+
+   // Get IShellBrowser interface for current dialog
+   ishellbrowser = (IShellBrowser*)::SendMessage(parent, WM_GETISHELLBROWSER, 0, 0);
+   if (ishellbrowser)
+   {
+      // Get IShellBrowser interface for returned browser
+      if (ishellbrowser->QueryActiveShellView(&ishellview) == S_OK)
+      {
+         // Get the IFolderView interface...available on XP or greater
+         ishellview->QueryInterface(IID_IFolderView, (void **)&ifolderview);
+      }
+   }
+
    // Init
    LVITEM lvi;
    wxZeroMemory(lvi);
-   
+
    // Process all items
-   int fltcnt = m_Filters.GetCount();
+   int fltcnt = (int) m_Filters.GetCount();
    int itmcnt = ::SendMessage(lv, LVM_GETITEMCOUNT, 0, 0);
    for (int itm = 0; itm < itmcnt; itm++)
    {
@@ -289,8 +304,24 @@ void FileDialog::FilterFiles(HWND hDlg)
          wxASSERT(FALSE);
          break;
       }
+
       LPCITEMIDLIST fidl = (LPCITEMIDLIST) lvi.lParam;
-      
+
+      // On Vista, lParam no longer contains the pidl so retrieve it via the
+      // IFolderView interface.  This interface is only available on XP or higher
+      // so if that limitation isn't workable, use IShellView::GetItemObject() to
+      // retrieve items.
+      if (fidl == NULL && ifolderview != NULL)
+      {
+         ifolderview->Item(itm, (LPITEMIDLIST *) &fidl);
+      }
+
+      if (fidl == NULL)
+      {
+         wxASSERT(fidl != NULL);
+         break;
+      }
+
       // Retrieve the IShellFolder interface of the parent (must be Release()'d)
       if (ishell == NULL)
       {
@@ -370,9 +401,28 @@ void FileDialog::FilterFiles(HWND hDlg)
          itmcnt--;
       }
    }
-   
-done:
-   
+
+   // On Vista and maybe XP, we seem to need to refresh the view after
+   // changing the filters.  But, only refresh for type changes and not
+   // selection changes since it causes additional selection change
+   // events to occur.
+   if (ishellview && refresh)
+   {
+      ishellview->Refresh();
+   }
+
+   // Release the interface
+   if (ifolderview)
+   {
+      ifolderview->Release();
+   }
+
+   // Release the interface
+   if (ishellview)
+   {
+      ishellview->Release();
+   }
+
    // Release the interface
    if (ishell)
    {
@@ -419,8 +469,8 @@ FileDialog::FileDialog(wxWindow *parent,
 {
    m_dialogStyle = style;
    
-   if ( ( m_dialogStyle & wxMULTIPLE ) && ( m_dialogStyle & wxSAVE ) )
-      m_dialogStyle &= ~wxMULTIPLE;
+   if ( ( m_dialogStyle & wxFD_MULTIPLE ) && ( m_dialogStyle & wxFD_SAVE ) )
+      m_dialogStyle &= ~wxFD_MULTIPLE;
    
    m_bMovedWindow = false;
    
@@ -439,8 +489,8 @@ void FileDialog::GetPaths(wxArrayString& paths) const
    paths.Empty();
    
    wxString dir(m_dir);
-   if ( m_dir.Last() != _T('\\') )
-      dir += _T('\\');
+   if ( m_dir.Last() != wxT('\\') )
+      dir += wxT('\\');
    
    size_t count = m_fileNames.GetCount();
    for ( size_t n = 0; n < count; n++ )
@@ -462,7 +512,7 @@ void FileDialog::SetPath(const wxString& path)
    wxString ext;
    wxSplitPath(path, &m_dir, &m_fileName, &ext);
    if ( !ext.empty() )
-      m_fileName << _T('.') << ext;
+      m_fileName << wxT('.') << ext;
 }
 
 void FileDialog::DoGetPosition( int *x, int *y ) const
@@ -514,7 +564,7 @@ int FileDialog::ShowModal()
    long msw_flags = OFN_HIDEREADONLY;
 #endif
    
-   if ( m_dialogStyle & wxFILE_MUST_EXIST )
+   if ( m_dialogStyle & wxFD_FILE_MUST_EXIST )
       msw_flags |= OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
    /*
     If the window has been moved the programmer is probably
@@ -537,7 +587,7 @@ int FileDialog::ShowModal()
 #endif
    }
    
-   if (m_dialogStyle & wxMULTIPLE )
+   if (m_dialogStyle & wxFD_MULTIPLE )
    {
       // OFN_EXPLORER must always be specified with OFN_ALLOWMULTISELECT
       msw_flags |= OFN_EXPLORER | OFN_ALLOWMULTISELECT;
@@ -546,12 +596,12 @@ int FileDialog::ShowModal()
    // if wxCHANGE_DIR flag is not given we shouldn't change the CWD which the
    // standard dialog does by default (notice that under NT it does it anyhow, 
    // OFN_NOCHANGEDIR or not, see below)
-   if ( !(m_dialogStyle & wxCHANGE_DIR) )
+   if ( !(m_dialogStyle & wxFD_CHANGE_DIR) )
    {
       msw_flags |= OFN_NOCHANGEDIR;
    }
    
-   if ( m_dialogStyle & wxOVERWRITE_PROMPT )
+   if ( m_dialogStyle & wxFD_OVERWRITE_PROMPT )
    {
       msw_flags |= OFN_OVERWRITEPROMPT;
    }
@@ -573,7 +623,7 @@ int FileDialog::ShowModal()
    wxZeroMemory(of);
    
    // Allow Places bar to show on supported platforms
-   if ( wxGetOsVersion() == wxWINDOWS_NT )
+   if ( wxGetOsVersion() == wxOS_WINDOWS_NT )
    {
       of.lStructSize       = sizeof(OPENFILENAME);
    }
@@ -600,17 +650,17 @@ int FileDialog::ShowModal()
       wxChar ch = m_dir[i];
       switch ( ch )
       {
-         case _T('/'):
+         case wxT('/'):
             // convert to backslash
-            ch = _T('\\');
+            ch = wxT('\\');
             
             // fall through
             
-         case _T('\\'):
+         case wxT('\\'):
             while ( i < len - 1 )
             {
                wxChar chNext = m_dir[i + 1];
-               if ( chNext != _T('\\') && chNext != _T('/') )
+               if ( chNext != wxT('\\') && chNext != wxT('/') )
                   break;
                
                // ignore the next one, unless it is at the start of a UNC path
@@ -636,7 +686,7 @@ int FileDialog::ShowModal()
    
    size_t items = wxParseCommonDialogsFilter(m_wildCard, wildDescriptions, m_FilterGroups);
    
-   wxASSERT_MSG( items > 0 , _T("empty wildcard list") );
+   wxASSERT_MSG( items > 0 , wxT("empty wildcard list") );
    
    wxString filterBuffer;
    
@@ -675,7 +725,7 @@ int FileDialog::ShowModal()
    // user types "foo" and the default extension is ".bar" we should force it
    // to check for "foo.bar" existence and not "foo")
    wxString defextBuffer; // we need it to be alive until GetSaveFileName()!
-   if (m_dialogStyle & wxSAVE && m_dialogStyle & wxOVERWRITE_PROMPT)
+   if (m_dialogStyle & wxFD_SAVE && m_dialogStyle & wxFD_OVERWRITE_PROMPT)
    {
       const wxChar* extension = filterBuffer;
       int maxFilter = (int)(of.nFilterIndex*2L) - 1;
@@ -697,7 +747,7 @@ int FileDialog::ShowModal()
    
    //== Execute FileDialog >>=================================================
    
-   bool success = (m_dialogStyle & wxSAVE ? GetSaveFileName(&of)
+   bool success = (m_dialogStyle & wxFD_SAVE ? GetSaveFileName(&of)
                    : GetOpenFileName(&of)) != 0;
    
 #ifdef __WXWINCE__
@@ -713,7 +763,7 @@ int FileDialog::ShowModal()
    // seems safe). 
    if ( success && 
        (msw_flags & OFN_NOCHANGEDIR) && 
-       wxGetOsVersion() == wxWINDOWS_NT ) 
+       wxGetOsVersion() == wxOS_WINDOWS_NT ) 
    { 
       wxSetWorkingDirectory(cwdOrig); 
    } 
@@ -725,14 +775,14 @@ int FileDialog::ShowModal()
       
       int oldStructSize = of.lStructSize;
       of.lStructSize       = oldStructSize - (sizeof(void *) + 2*sizeof(DWORD));
-      success = (m_dialogStyle & wxSAVE) ? (GetSaveFileName(&of) != 0)
+      success = (m_dialogStyle & wxFD_SAVE) ? (GetSaveFileName(&of) != 0)
       : (GetOpenFileName(&of) != 0);
       errCode = CommDlgExtendedError();
       
       if (!success && (errCode == CDERR_STRUCTSIZE))
       {
          of.lStructSize       = oldStructSize + (sizeof(void *) + 2*sizeof(DWORD));
-         success = (m_dialogStyle & wxSAVE) ? (GetSaveFileName(&of) != 0)
+         success = (m_dialogStyle & wxFD_SAVE) ? (GetSaveFileName(&of) != 0)
          : (GetOpenFileName(&of) != 0);
       }
    }
@@ -743,7 +793,7 @@ int FileDialog::ShowModal()
    {
       m_fileNames.Empty();
       
-      if ( ( m_dialogStyle & wxMULTIPLE ) &&
+      if ( ( m_dialogStyle & wxFD_MULTIPLE ) &&
 #if defined(OFN_EXPLORER)
           ( fileNameBuffer[of.nFileOffset-1] == wxT('\0') )
 #else
@@ -764,7 +814,7 @@ int FileDialog::ShowModal()
             i += wxStrlen(&fileNameBuffer[i]) + 1;
          }
 #else
-         wxStringTokenizer toke(fileNameBuffer, _T(" \t\r\n"));
+         wxStringTokenizer toke(fileNameBuffer, wxT(" \t\r\n"));
          m_dir = toke.GetNextToken();
          m_fileName = toke.GetNextToken();
          m_fileNames.Add(m_fileName);
@@ -774,8 +824,8 @@ int FileDialog::ShowModal()
 #endif // OFN_EXPLORER
          
          wxString dir(m_dir);
-         if ( m_dir.Last() != _T('\\') )
-            dir += _T('\\');
+         if ( m_dir.Last() != wxT('\\') )
+            dir += wxT('\\');
          
          m_path = dir + m_fileName;
          m_filterIndex = (int)of.nFilterIndex - 1;

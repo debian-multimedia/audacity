@@ -103,7 +103,6 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
       mixLeft->SetChannel(Track::LeftChannel);
       mixRight->SetChannel(Track::RightChannel);
       mixLeft->SetLinked(true);
-      mixRight->SetTeamed(true);
    }
 
    int maxBlockLen = mixLeft->GetIdealBlockSize();
@@ -118,11 +117,11 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
                             rate, format);
 
    wxYield();
-   ProgressDialog *progress = new ProgressDialog(_NoAcc("&Mix and Render"),
+   ProgressDialog *progress = new ProgressDialog(_("Mix and Render"),
                                                  _("Mixing and rendering tracks"));
    
-   bool bCancel = false;
-   while(!bCancel) {
+   int updateResult = eProgressSuccess;
+   while(updateResult == eProgressSuccess) {
       sampleCount blockLen = mixer->Process(maxBlockLen);
 
       if (blockLen == 0)
@@ -140,7 +139,7 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
          mixRight->Append(buffer, format, blockLen);
       }
 
-      bCancel = !progress->Update(mixer->MixGetCurrentTime(), totalTime);
+      updateResult = progress->Update(mixer->MixGetCurrentTime(), totalTime);
    }
 
    delete progress;
@@ -148,7 +147,7 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
    mixLeft->Flush();
    if (!mono) 
       mixRight->Flush();
-   if (bCancel)
+   if (updateResult == eProgressCancelled || updateResult == eProgressFailed)
    {
       delete mixLeft;
       if (!mono) 
@@ -175,7 +174,7 @@ bool MixAndRender(TrackList *tracks, TrackFactory *trackFactory,
    delete[] waveArray;
    delete mixer;
 
-   return !bCancel;
+   return (updateResult == eProgressSuccess || updateResult == eProgressStopped);
 }
 
 Mixer::Mixer(int numInputTracks, WaveTrack **inputTracks,
@@ -263,6 +262,7 @@ Mixer::~Mixer()
       DeleteSamples(mTemp[i]);
    }
    delete[] mBuffer;
+   delete[] mTemp;
    delete[] mInputTrack;
    delete[] mEnvValues;
    delete[] mFloatBuffer;
@@ -335,7 +335,7 @@ sampleCount Mixer::MixVariableRates(int *channelFlags, WaveTrack *track,
 
    // Find the last sample
    sampleCount last = -1;
-   WaveClipList::Node* it = track->GetClipIterator();
+   WaveClipList::compatibility_iterator it = track->GetClipIterator();
    while (it) {
       sampleCount end = it->GetData()->GetEndSample();
       if (end > last) {

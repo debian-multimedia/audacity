@@ -21,7 +21,6 @@
 #include "ChangeSpeed.h"
 #include "ClickRemoval.h"
 #include "Compressor.h"
-#include "Contrast.h"
 #include "DtmfGen.h"
 #include "Echo.h"
 #include "Equalization.h"
@@ -59,8 +58,8 @@
 #include "audiounits/LoadAudioUnits.h"
 #endif
 
-#if defined(__WXMSW__) && !defined(__CYGWIN__)
-#include "VST/LoadVSTWin.h"
+#ifdef USE_VST
+#include "VST/LoadVST.h"
 #endif
 
 #ifdef USE_LADSPA
@@ -267,8 +266,7 @@ void LoadEffects()
    em.RegisterEffect(new EffectWahwah());
 
    // Analyze menu
-   em.RegisterEffect(new EffectContrast(), ANALYZE_EFFECT);
-   em.RegisterEffect(new EffectFindClipping(), ANALYZE_EFFECT);
+   em.RegisterEffect(new EffectFindClipping());
 
 #ifdef USE_NYQUIST
    LoadNyquistPlugins();
@@ -276,6 +274,10 @@ void LoadEffects()
 
 #ifdef USE_LADSPA
    LoadLadspaPlugins();
+#endif
+
+#ifdef USE_VST
+   LoadVSTPlugins();
 #endif
 
 #ifdef USE_SLV2

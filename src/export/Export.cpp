@@ -85,6 +85,7 @@ static void ExportCallback(void *cbdata, int index)
 #include <wx/arrimpl.cpp>
 
 WX_DEFINE_OBJARRAY(ExportPluginArray);
+WX_DEFINE_OBJARRAY(FormatInfoArray);
 
 ExportPlugin::ExportPlugin()
 {
@@ -93,7 +94,7 @@ ExportPlugin::ExportPlugin()
 
 ExportPlugin::~ExportPlugin()
 {
-   mFormatInfos.Empty();
+   mFormatInfos.Clear();
 }
 
 bool ExportPlugin::CheckFileName(wxFileName &filename, int format)
@@ -110,7 +111,7 @@ bool ExportPlugin::CheckFileName(wxFileName &filename, int format)
  */
 int ExportPlugin::AddFormat()
 {
-   FormatInfo *nf = new FormatInfo();
+   FormatInfo nf;
    mFormatInfos.Add(nf);
    return mFormatInfos.Count();
 }
@@ -131,63 +132,63 @@ void ExportPlugin::Destroy()
  */
 void ExportPlugin::SetFormat(const wxString & format, int index)
 {
-   mFormatInfos[index]->mFormat = format;
+   mFormatInfos[index].mFormat = format;
 }
 
 void ExportPlugin::SetDescription(const wxString & description, int index)
 {
-   mFormatInfos[index]->mDescription = description;
+   mFormatInfos[index].mDescription = description;
 }
 
 void ExportPlugin::AddExtension(const wxString &extension,int index)
 {
-   mFormatInfos[index]->mExtensions.Add(extension);
+   mFormatInfos[index].mExtensions.Add(extension);
 }
 
 void ExportPlugin::SetExtensions(const wxArrayString & extensions, int index)
 {
-   mFormatInfos[index]->mExtensions = extensions;
+   mFormatInfos[index].mExtensions = extensions;
 }
 
 void ExportPlugin::SetMask(const wxString & mask, int index)
 {
-   mFormatInfos[index]->mMask = mask;
+   mFormatInfos[index].mMask = mask;
 }
 
 void ExportPlugin::SetMaxChannels(int maxchannels, int index)
 {
-   mFormatInfos[index]->mMaxChannels = maxchannels;
+   mFormatInfos[index].mMaxChannels = maxchannels;
 }
 
 void ExportPlugin::SetCanMetaData(bool canmetadata, int index)
 {
-   mFormatInfos[index]->mCanMetaData = canmetadata;
+   mFormatInfos[index].mCanMetaData = canmetadata;
 }
 
 wxString ExportPlugin::GetFormat(int index)
 {
-   return mFormatInfos[index]->mFormat;
+   return mFormatInfos[index].mFormat;
 }
 
 wxString ExportPlugin::GetDescription(int index)
 {
-   return mFormatInfos[index]->mDescription;
+   return mFormatInfos[index].mDescription;
 }
 
 wxString ExportPlugin::GetExtension(int index)
 {
-   return mFormatInfos[index]->mExtensions[0];
+   return mFormatInfos[index].mExtensions[0];
 }
 
 wxArrayString ExportPlugin::GetExtensions(int index)
 {
-   return mFormatInfos[index]->mExtensions;
+   return mFormatInfos[index].mExtensions;
 }
 
 wxString ExportPlugin::GetMask(int index)
 {
-   if (!mFormatInfos[index]->mMask.IsEmpty()) {
-      return mFormatInfos[index]->mMask;
+   if (!mFormatInfos[index].mMask.IsEmpty()) {
+      return mFormatInfos[index].mMask;
    }
 
    wxString mask = GetDescription(index) + wxT("|");
@@ -207,12 +208,12 @@ wxString ExportPlugin::GetMask(int index)
 
 int ExportPlugin::GetMaxChannels(int index)
 {
-   return mFormatInfos[index]->mMaxChannels;
+   return mFormatInfos[index].mMaxChannels;
 }
 
 bool ExportPlugin::GetCanMetaData(int index)
 {
-   return mFormatInfos[index]->mCanMetaData;
+   return mFormatInfos[index].mCanMetaData;
 }
 
 bool ExportPlugin::IsExtension(wxString & ext, int index)
@@ -234,7 +235,7 @@ bool ExportPlugin::DisplayOptions(wxWindow *parent, int format)
    return false;
 }
 
-bool ExportPlugin::Export(AudacityProject *project,
+int ExportPlugin::Export(AudacityProject *project,
                           int channels,
                           wxString fName,
                           bool selectedOnly,
@@ -251,7 +252,7 @@ bool ExportPlugin::Export(AudacityProject *project,
   return DoExport(project, channels, fName, selectedOnly, t0, t1, mixerSpec, subformat);
 }
 
-bool ExportPlugin::DoExport(AudacityProject *project,
+int ExportPlugin::DoExport(AudacityProject *project,
                             int channels,
                             wxString fName,
                             bool selectedOnly,
@@ -266,8 +267,6 @@ bool ExportPlugin::DoExport(AudacityProject *project,
 //----------------------------------------------------------------------------
 // Export
 //----------------------------------------------------------------------------
-
-WX_DEFINE_OBJARRAY(FormatInfoArray);
 
 Exporter::Exporter()
 {
@@ -414,8 +413,8 @@ bool Exporter::ExamineTracks()
    // Tally how many are right, left, mono, and make sure at
    // least one track is selected (if selectedOnly==true)
 
-   float earliestBegin = mT1;
-   float latestEnd = mT0;
+   double earliestBegin = mT1;
+   double latestEnd = mT0;
 
    TrackList *tracks = mProject->GetTracks();
    TrackListIterator iter1(tracks);
@@ -748,7 +747,7 @@ bool Exporter::CheckMix()
 
 bool Exporter::ExportTracks()
 {
-   bool success;
+   int success;
 
    // Keep original in case of failure
    if (mActualName != mFilename) {
@@ -767,7 +766,7 @@ bool Exporter::ExportTracks()
 
    if (mActualName != mFilename) {
       // Remove backup
-      if (success) {
+      if (success == eProgressSuccess || success == eProgressStopped) {
          ::wxRemoveFile(mFilename.GetFullPath());
       }
       else {
@@ -777,7 +776,7 @@ bool Exporter::ExportTracks()
       }
    }
 
-   return success;
+   return (success == eProgressSuccess || success == eProgressStopped);
 }
 
 //----------------------------------------------------------------------------
@@ -810,6 +809,10 @@ ExportMixerPanel::~ExportMixerPanel()
 {
    delete[] mTrackRects;
    delete[] mChannelRects;
+
+   if (mBitmap) {
+      delete mBitmap;
+   }
 }
 
 //set the font on memDC such that text can fit in specified width and height
@@ -947,7 +950,7 @@ void ExportMixerPanel::OnPaint(wxPaintEvent & evt)
    for( int i = 0; i < mMixerSpec->GetNumTracks(); i++ )
       for( int j = 0; j < mMixerSpec->GetNumChannels(); j++ )
          if( mMixerSpec->mMap[ i ][ j ] )
-            memDC.DrawLine( mTrackRects[ i ].x + mBoxWidth, 
+            AColor::Line(memDC, mTrackRects[ i ].x + mBoxWidth, 
                   mTrackRects[ i ].y + mTrackHeight / 2, mChannelRects[ j ].x,
                   mChannelRects[ j ].y + mChannelHeight / 2 );
    
@@ -1045,19 +1048,16 @@ ExportMixerDialog::ExportMixerDialog( TrackList *tracks, bool selectedOnly,
 {
    int numTracks = 0;
    TrackListIterator iter( tracks );
-   
+
    for( Track *t = iter.First(); t; t = iter.Next() )
    {
-      if( t->GetKind() == Track::Wave && ( t->GetSelected() || !selectedOnly ) )
+      if( t->GetKind() == Track::Wave && ( t->GetSelected() || !selectedOnly ) && !t->GetMute() )
       {
          numTracks++;
          if( t->GetChannel() == Track::LeftChannel )
-         {
             mTrackNames.Add( t->GetName() + _( " - Left" ) );
+         else if( t->GetChannel() == Track::RightChannel )
             mTrackNames.Add( t->GetName() + _( " - Right" ) );
-            t = iter.Next();
-            numTracks++;
-         }
          else
             mTrackNames.Add( t->GetName() );
       }

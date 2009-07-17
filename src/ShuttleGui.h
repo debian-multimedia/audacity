@@ -15,6 +15,9 @@
 #define SHUTTLE_GUI
 
 #include "Audacity.h"
+
+#include <wx/string.h>
+
 #include "WrappedType.h" 
 
 const int nMaxNestedSizers = 20;
@@ -152,9 +155,10 @@ public:
    wxTextCtrl * TieTextBox( const wxString &Prompt, int &Selected, const int nChars=0);
    wxTextCtrl * TieTextBox( const wxString &Prompt, double &Value, const int nChars=0);
 
-   wxCheckBox * TieCheckBox( const wxString &Prompt, WrappedType & WrappedRef);
-   wxCheckBox * TieCheckBox( const wxString &Prompt, const wxString &Selected);
+   wxCheckBox * TieCheckBox( const wxString &Prompt, WrappedType & WrappedRef );
+   wxCheckBox * TieCheckBox( const wxString &Prompt, const wxString &Selected );
 	wxCheckBox * TieCheckBox( const wxString &Prompt, bool & Var );
+	wxCheckBox * TieCheckBoxOnRight( const wxString & Prompt, WrappedType & WrappedRef );
 	wxCheckBox * TieCheckBoxOnRight( const wxString & Prompt, bool & Var );
 
    wxChoice * TieChoice( const wxString &Prompt, WrappedType & WrappedRef, const wxArrayString * pChoices );
@@ -178,7 +182,14 @@ public:
 // Note that unlike the other Tie functions, ALL the arguments are const.
 // That's because the data is being exchanged between the dialog and mpShuttle
 // so it doesn't need an argument that is writeable.
-   void TieCheckBox( const wxString &Prompt, const wxString &SettingName, const bool bDefault);
+   wxCheckBox * TieCheckBox( 
+      const wxString &Prompt,
+      const wxString &SettingName,
+      const bool bDefault);
+   wxCheckBox * TieCheckBoxOnRight( 
+      const wxString &Prompt,
+      const wxString &SettingName,
+      const bool bDefault);
    wxChoice * TieChoice( 
       const wxString &Prompt, 
       const wxString &SettingName, 
@@ -312,7 +323,7 @@ enum
    eDebugID       = wxID_LOWEST - 2
 };
 
-wxSizer *CreateStdButtonSizer( wxWindow *parent,
+AUDACITY_DLL_API wxSizer *CreateStdButtonSizer( wxWindow *parent,
                                long buttons = eOkButton | eCancelButton,
                                wxButton *extra = NULL );
 
@@ -333,5 +344,11 @@ public:
    void AddSpace( int width, int height );
    void AddSpace( int size ) { AddSpace( size, size ); };
    int GetBorder() { return miBorder; };
+
+   void SetSizeHints( int minX = -1, int minY = -1 );
+   void SetSizeHints( const wxArrayString & items );
+   void SetSizeHints( const wxArrayInt & items );
+   static void SetSizeHints( wxWindow *window, const wxArrayString & items );
+   static void SetSizeHints( wxWindow *window, const wxArrayInt & items );
 };
 #endif

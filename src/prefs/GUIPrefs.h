@@ -14,23 +14,24 @@
 #define __AUDACITY_GUI_PREFS__
 
 #include <wx/defs.h>
-#include <wx/string.h>
+
+#include <wx/arrstr.h>
+#include <wx/window.h>
+
+#include "../ShuttleGui.h"
 
 #include "PrefsPanel.h"
 
-class wxWindow;
-class ShuttleGui;
-
-class GUIPrefs : public PrefsPanel 
+class GUIPrefs:public PrefsPanel 
 {
-public:
+ public:
    GUIPrefs(wxWindow * parent);
    ~GUIPrefs();
    virtual bool Apply();
 
-private:
+ private:
    void Populate();
-   void PopulateOrExchange( ShuttleGui & S );
+   void PopulateOrExchange(ShuttleGui & S);
 
    wxArrayString mLangCodes;
    wxArrayString mLangNames;
@@ -38,12 +39,8 @@ private:
    wxArrayString mHtmlHelpCodes;
    wxArrayString mHtmlHelpChoices;
 
-   wxArrayString mSoloCodes;
-   wxArrayString mSoloChoices;
-
-#ifdef EXPERIMENTAL_SAVE_DEFAULT_VIEW
-   int mDefaultViewMode;
-#endif //EXPERIMENTAL_SAVE_DEFAULT_VIEW
+   wxArrayString mRangeCodes;
+   wxArrayString mRangeChoices;
 };
 
 #endif
@@ -58,4 +55,3 @@ private:
 //
 // vim: et sts=3 sw=3
 // arch-tag: 57018e2b-d264-4f93-bfa7-06752ebf631e
-

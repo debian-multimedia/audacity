@@ -270,8 +270,12 @@ private:
    int                   mNumStreams;    //!< mNumstreams is less or equal to mFormatContext->nb_streams
    streamContext       **mScs;           //!< Array of pointers to stream contexts. Length is mNumStreams.
    wxArrayString        *mStreamInfo;    //!< Array of stream descriptions. Length is mNumStreams
+   
+   wxInt64               mProgressPos;   //!< Current timestamp, file position or whatever is used as first argument for Update()
+   wxInt64               mProgressLen;   //!< Duration, total length or whatever is used as second argument for Update()
 
    bool                  mCancelled;     //!< True if importing was canceled by user
+   bool                  mStopped;       //!< True if importing was stopped by user
    wxString              mName;
    WaveTrack           ***mChannels;     //!< 2-dimentional array of WaveTrack's. First dimention - streams, second - channels of a stream. Length is mNumStreams
 };
@@ -344,9 +348,12 @@ FFmpegImportFileHandle::FFmpegImportFileHandle(const wxString & name)
    mFormatContext = NULL;
    mNumStreams = 0;
    mScs = NULL;
-   mCancelled =false;
+   mCancelled = false;
+   mStopped = false;
    mName = name;
    mChannels = NULL;
+   mProgressPos = 0;
+   mProgressLen = 1;
 }
 
 bool FFmpegImportFileHandle::Init()
@@ -357,7 +364,7 @@ bool FFmpegImportFileHandle::Init()
 
    FFmpegLibsInst->av_log_set_callback(av_log_wx_callback);
 
-   int err = FFmpegLibsInst->av_open_input_file(&mFormatContext,OSFILENAME(mName),NULL,0, NULL);
+   int err = ufile_fopen_input(&mFormatContext, mName);
    if (err < 0)
    {
       wxLogMessage(wxT("FFmpeg : av_open_input_file() failed for file %s"),mName.c_str());
@@ -496,7 +503,6 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
                break;
             case 1:
                mChannels[s][c]->SetChannel(Track::RightChannel);
-               mChannels[s][c]->SetTeamed(true);
                break;
             }
          }
@@ -531,15 +537,15 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
    // This is the heart of the importing process
    streamContext *sc = NULL;
    // The result of Import() to be returend. It will be something other than zero if user canceled or some error appears.
-   int res = 0;
+   int res = eProgressSuccess;
    // Read next frame.
-   while ((sc = ReadNextFrame()) != NULL && (res == 0))
+   while ((sc = ReadNextFrame()) != NULL && (res == eProgressSuccess))
    {
       // ReadNextFrame returns 1 if stream is not to be imported
       if (sc != (streamContext*)1)
       {
          // Decode frame until it is not possible to decode any further
-         while (sc->m_pktRemainingSiz > 0 && (res == 0))
+         while (sc->m_pktRemainingSiz > 0 && (res == eProgressSuccess || res == eProgressStopped))
          {
             if (DecodeFrame(sc,false) < 0)
                break;
@@ -552,14 +558,14 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
          // Cleanup after frame decoding
          if (sc->m_pktValid)
          {
-            av_free_packet(&sc->m_pkt);
+            FFmpegLibsInst->av_free_packet(&sc->m_pkt);
             sc->m_pktValid = 0;
          }    
       }
    }
 
    // Flush the decoders.
-   if ((mNumStreams != 0) && (res == 0))
+   if ((mNumStreams != 0) && (res == eProgressSuccess || res == eProgressStopped))
    {
       for (int i = 0; i < mNumStreams; i++)
       {
@@ -569,7 +575,7 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
 
             if (mScs[i]->m_pktValid)
             {
-               av_free_packet(&mScs[i]->m_pkt);
+               FFmpegLibsInst->av_free_packet(&mScs[i]->m_pkt);
                mScs[i]->m_pktValid = 0;
             }				
          }
@@ -577,7 +583,7 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
    }
 
    // Something bad happened - destroy everything!
-   if (res)
+   if (res == eProgressCancelled || res == eProgressFailed)
    {
       for (int s = 0; s < mNumStreams; s++)
       {
@@ -585,11 +591,9 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
       }
       delete[] mChannels;
 
-      if (mCancelled)
-         return eImportCancelled;
-      else
-         return eImportFailed;
+      return res;
    }
+   //else if (res == 2), we just stop the decoding as if the file has ended
 
    *outNumTracks = 0;
    for (int s = 0; s < mNumStreams; s++)
@@ -616,7 +620,7 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
    // Save metadata
    WriteMetadata(mFormatContext,tags);
 
-   return eImportSuccess;
+   return res;
 }
 
 streamContext *FFmpegImportFileHandle::ReadNextFrame()
@@ -640,7 +644,7 @@ streamContext *FFmpegImportFileHandle::ReadNextFrame()
    // When not all streams are selected for import this will happen very often.
    if (sc == NULL)
    {
-      av_free_packet(&pkt);
+      FFmpegLibsInst->av_free_packet(&pkt);
       return (streamContext*)1;
    }
 
@@ -777,13 +781,28 @@ int FFmpegImportFileHandle::WriteData(streamContext *sc)
    free(tmp);
    
    // Try to update the progress indicator (and see if user wants to cancel)
-   if (!mProgress->Update((wxLongLong)sc->m_pkt.pts * sc->m_stream->time_base.num / sc->m_stream->time_base.den,
-                          (wxLongLong)(mFormatContext->duration > 0 ? mFormatContext->duration / AV_TIME_BASE: 1))) {
-      mCancelled = true;
-      return 1;
+   int updateResult = eProgressSuccess;
+   // PTS (presentation time) is the proper way of getting current position
+   if (sc->m_pkt.pts != AV_NOPTS_VALUE && mFormatContext->duration != AV_NOPTS_VALUE)
+   {
+      mProgressPos = sc->m_pkt.pts * sc->m_stream->time_base.num / sc->m_stream->time_base.den;
+      mProgressLen = (mFormatContext->duration > 0 ? mFormatContext->duration / AV_TIME_BASE: 1);
    }
+   // When PTS is not set, use number of frames and number of current frame
+   else if (sc->m_stream->nb_frames > 0 && sc->m_codecCtx->frame_number > 0 && sc->m_codecCtx->frame_number <= sc->m_stream->nb_frames)
+   {
+      mProgressPos = sc->m_codecCtx->frame_number;
+      mProgressLen = sc->m_stream->nb_frames;
+   }
+   // When number of frames is unknown, use position in file
+   else if (mFormatContext->file_size > 0 && sc->m_pkt.pos > 0 && sc->m_pkt.pos <= mFormatContext->file_size)
+   {
+      mProgressPos = sc->m_pkt.pos;
+      mProgressLen = mFormatContext->file_size;
+   }
+   updateResult = mProgress->Update(mProgressPos, mProgressLen != 0 ? mProgressLen : 1);
 
-   return 0;
+   return updateResult;
 }
 
 void FFmpegImportFileHandle::WriteMetadata(AVFormatContext *avf,Tags *tags)
@@ -818,6 +837,9 @@ FFmpegImportFileHandle::~FFmpegImportFileHandle()
 
       delete mScs[i];
    }
+   free(mScs);
+
+   delete mStreamInfo;
 
    DropFFmpegLibs();
 }
