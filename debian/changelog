@@ -1,4 +1,4 @@
-audacity (1.3.8-1) unstable; urgency=low
+audacity (1.3.8-1) UNRELEASED; urgency=low
 
   [ Benjamin Drung ]
   * New upstream release.
@@ -14,12 +14,12 @@ audacity (1.3.8-1) unstable; urgency=low
   * Drop debian/source.lintian-overrides, not needed any longer.
   * Update debian/watch file to search on Google Code.
   * Do not create help directory on runtime (backport patch from upstream)
-    - Add debian/dont-create-help-directory-on-runtime.patch
+    - Add debian/patches/dont-create-help-directory-on-runtime.patch
 
   [ Reinhard Tartler ]
   * Build against system taglib
 
- -- Benjamin Drung <bdrung@ubuntu.com>  Sun, 02 Aug 2009 00:13:47 +0200
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sun, 02 Aug 2009 00:42:30 +0200
 
 audacity (1.3.7-3) unstable; urgency=low
 
