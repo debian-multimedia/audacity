@@ -15,7 +15,7 @@ audacity (1.3.8-1) UNRELEASED; urgency=low
   * Update debian/watch file to search on Google Code.
   * Do not create help directory on runtime (backport patch from upstream)
     - Add debian/patches/dont-create-help-directory-on-runtime.patch
-  * Add debian/patches/export-multiple.patch
+  * Add debian/patches/export-multiple.patch (LP: #276043).
 
   [ Reinhard Tartler ]
   * Build against system taglib
