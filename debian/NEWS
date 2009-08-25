@@ -1,3 +1,9 @@
+audacity (1.3.8-1) experimental; urgency=low
+
+  * This release is not compatible to the ffmpeg 0.5 series.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 25 Aug 2009 03:28:39 +0200
+
 audacity (1.3.6-3) unstable; urgency=low
 
   * Explicitly built against the system libsamplerate, effectively disabling
