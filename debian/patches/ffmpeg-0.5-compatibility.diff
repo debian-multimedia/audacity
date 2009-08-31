@@ -1,3 +1,5 @@
+Description: Make audacity compatible to the ffmpeg 0.5 series
+Origin: upstream: http://sourceforge.net/mailarchive/message.php?msg_name=4A988604.5080907%40gmail.com
 Index: src/export/ExportFFmpeg.cpp
 ===================================================================
 RCS file: /cvsroot/audacity/audacity-src/src/export/ExportFFmpeg.cpp,v
