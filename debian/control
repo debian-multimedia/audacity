@@ -6,7 +6,8 @@ Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian@debian-unofficial.org>,
            Benjamin Drung <bdrung@ubuntu.com>
 Standards-Version: 3.8.3
-Build-Depends: cdbs (>= 0.4.4),
+Build-Depends: autotools-dev,
+               cdbs (>= 0.4.4),
                debhelper (>= 5),
                gettext,
                libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64 !hurd-i386],

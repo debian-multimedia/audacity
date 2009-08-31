@@ -6,10 +6,9 @@ audacity (1.3.9-1) UNRELEASED; urgency=low
   * Add debian/patches/ffmpeg-0.5-compatibility.diff to make audacity
     compatible to the ffmpeg 0.5 series.
   * Rename recommended "unstripped" to "extra" ffmpeg variants.
-  * Remove unneeded autotools-dev from build dependencies.
   * Add meta-information to all patch files according to the DEP-3.
 
- -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 01 Sep 2009 00:17:26 +0200
+ -- Benjamin Drung <bdrung@ubuntu.com>  Tue, 01 Sep 2009 00:52:46 +0200
 
 audacity (1.3.8-1) experimental; urgency=low
 
