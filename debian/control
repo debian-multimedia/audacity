@@ -38,7 +38,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
 Package: audacity
 Architecture: any
 Depends: audacity-data (= ${source:Version}), ${shlibs:Depends}, ${misc:Depends}
-Recommends: libavcodec52 | libavcodec-unstripped-52, libavformat52 | libavformat-unstripped-52
+Recommends: libavcodec52 | libavcodec-extra-52, libavformat52 | libavformat-extra-52
 Suggests: ladspa-plugin, libmp3lame0
 Description: A fast, cross-platform audio editor
  Audacity is a multi-track audio editor for Linux/Unix, MacOS and
