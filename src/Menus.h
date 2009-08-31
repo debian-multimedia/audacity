@@ -248,7 +248,7 @@ void OnShowClipping();
 void OnHistory();
 
 #ifdef EXPERIMENTAL_LYRICS_WINDOW
-   void OnLyrics();
+   void OnKaraoke();
 #endif
 #ifdef EXPERIMENTAL_MIXER_BOARD
    void OnMixerBoard();
@@ -274,6 +274,9 @@ void OnSoundActivated();
 void OnToggleSoundActivated();
 void OnTogglePlayRecording();
 void OnToggleSWPlaythrough();
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   void OnToogleAutomatedInputLevelAdjustment();
+#endif
 
         // Tracks Menu
 

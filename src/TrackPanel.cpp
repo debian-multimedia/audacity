@@ -820,7 +820,8 @@ void TrackPanel::OnTimer()
    AudacityProject *p = GetProject();
 
    #ifdef EXPERIMENTAL_LYRICS_WINDOW
-      if (p->GetAudioIOToken() > 0) 
+      if ((p->GetAudioIOToken() > 0) &&
+            gAudioIO->IsStreamActive(p->GetAudioIOToken()))
       {
          // Update lyrics display. 
          LyricsWindow* pLyricsWindow = p->GetLyricsWindow();
@@ -832,20 +833,34 @@ void TrackPanel::OnTimer()
       }
    #endif
    #ifdef EXPERIMENTAL_MIXER_BOARD
-      MixerBoard* pMixerBoard = p->GetMixerBoard();
-      if (pMixerBoard && (p->GetAudioIOToken() > 0))
-         pMixerBoard->UpdateMeters(gAudioIO->GetStreamTime());
+      MixerBoard* pMixerBoard = this->GetMixerBoard();
+      if (pMixerBoard && 
+            (p->GetAudioIOToken() > 0) &&
+            gAudioIO->IsStreamActive(p->GetAudioIOToken()))
+      {
+         pMixerBoard->UpdateMeters(gAudioIO->GetStreamTime(), 
+                                    (p->mLastPlayMode == loopedPlay));
+      }
    #endif
 
-   // Each time the loop, check to see if we were playing or
-   // recording audio, but the stream has stopped.
+   // Check whether we were playing or recording, but the stream has stopped.
    if (p->GetAudioIOToken()>0 &&
-       !gAudioIO->IsStreamActive(p->GetAudioIOToken())
-#ifdef EXPERIMENTAL_MIDI_OUT
-       && !gAudioIO->IsMidiActive()
-#endif
-	  ) {
+         !gAudioIO->IsStreamActive(p->GetAudioIOToken())
+         #ifdef EXPERIMENTAL_MIDI_OUT
+            && !gAudioIO->IsMidiActive()
+         #endif
+      ) 
+   {
       p->GetControlToolBar()->OnStop(dummyEvent);
+      #ifdef EXPERIMENTAL_LYRICS_WINDOW
+         // Reset lyrics display. 
+         LyricsWindow* pLyricsWindow = p->GetLyricsWindow();
+         if (pLyricsWindow) 
+         {
+            Lyrics* pLyricsPanel = pLyricsWindow->GetLyricsPanel();
+            pLyricsPanel->Update(p->GetSel0());
+         }
+      #endif
       #ifdef EXPERIMENTAL_MIXER_BOARD
          if (pMixerBoard) 
             pMixerBoard->ResetMeters();
@@ -858,12 +873,12 @@ void TrackPanel::OnTimer()
    // and flush the tracks once we've completely finished
    // recording new state.
    if (p->GetAudioIOToken()>0 &&
-       !gAudioIO->IsAudioTokenActive(p->GetAudioIOToken())
-#ifdef EXPERIMENTAL_MIDI_OUT
-       && !gAudioIO->IsMidiActive()
-#endif       
-       ) {
-
+         !gAudioIO->IsAudioTokenActive(p->GetAudioIOToken())
+         #ifdef EXPERIMENTAL_MIDI_OUT
+            && !gAudioIO->IsMidiActive()
+         #endif       
+         ) 
+   {
       if (gAudioIO->GetNumCaptureChannels() > 0) {
          // Tracks are buffered during recording.  This flushes
          // them so that there's nothing left in the append
@@ -1047,6 +1062,18 @@ void TrackPanel::DoDrawIndicator(wxDC & dc)
    // Calculate the horizontal position of the indicator
    x = GetLeftOffset() + int ( ( pos - mViewInfo->h ) * mViewInfo->zoom );
 
+   mRuler->DrawIndicator( pos, rec );
+
+   // Ensure that we don't draw through the Track Info
+   wxRect clip = GetRect();
+   int leftCutoff = clip.x + GetLabelWidth();
+   int rightInset = kLeftInset + 2; // See the call to SetInset
+   int rightCutoff = clip.x + clip.width - rightInset;
+   if (!between_inclusive(leftCutoff, x, rightCutoff))
+   {
+      return;
+   }
+
    // Draw indicator in all visible tracks
    VisibleTrackIterator iter( GetProject() );
    for( Track *t = iter.First(); t; t = iter.Next() )
@@ -1067,8 +1094,6 @@ void TrackPanel::DoDrawIndicator(wxDC & dc)
                    x,
                    y + t->GetHeight() - 3 );
    }
-
-   mRuler->DrawIndicator( pos, rec );
 }
 
 /// This function draws the cursor things, both in the
@@ -1688,6 +1713,16 @@ void TrackPanel::HandleSelect(wxMouseEvent & event)
    } 
  done:
    SelectionHandleDrag(event, t);
+   #ifdef EXPERIMENTAL_LYRICS_WINDOW
+      // Update lyrics display for new selection.
+      AudacityProject* pProj = GetActiveProject();
+      LyricsWindow* pLyricsWindow = pProj->GetLyricsWindow();
+      if (pLyricsWindow && pLyricsWindow->IsShown()) 
+      {
+         Lyrics* pLyricsPanel = pLyricsWindow->GetLyricsPanel();
+         pLyricsPanel->Update(pProj->GetSel0());
+      }
+   #endif
 }
 
 /// This function gets called when we're handling selection
@@ -1869,22 +1904,17 @@ void TrackPanel::ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
 
    double origSel0, origSel1;
    double sel0, sel1;
-//   Track *track0, *track1;  //mchinen:commenting out - variables not used.  remove if after August 2008
 
    if (pTrack == NULL && mCapturedTrack != NULL)
       pTrack = mCapturedTrack;
 
    if (mSelStart < selend) {
       sel0 = mSelStart;
-//      track0 = mCapturedTrack;
       sel1 = selend;
-//      track1 = pTrack;
    }
    else {
       sel1 = mSelStart;
-//      track1 = mCapturedTrack;
       sel0 = selend;
-//      track0 = pTrack;
    }
 
    origSel0 = sel0;
@@ -3502,6 +3532,7 @@ void TrackPanel::HandleMinimizing(wxMouseEvent & event)
 
       mTrackInfo.DrawMinimize(&dc, r, t, false, t->GetMinimized());
       Refresh(false);
+      GetActiveProject()->RedrawProject();
    }
 }
 
@@ -3547,7 +3578,11 @@ void TrackPanel::HandleSliders(wxMouseEvent &event, bool pan)
       #endif
    }
 
-   RefreshTrack(mCapturedTrack);
+   VisibleTrackIterator iter(GetProject());
+   for (Track *t = iter.First(); t; t = iter.Next())
+   {
+      RefreshTrack(t);
+   }
 
    if (event.ButtonUp()) {
       MakeParentPushState(pan ? _("Moved pan slider") : _("Moved gain slider"),
@@ -3680,6 +3715,11 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    if (event.ShiftDown()) {
       mTracks->Select(t, !t->GetSelected());
       RefreshTrack(t);
+      #ifdef EXPERIMENTAL_MIXER_BOARD
+         MixerBoard* pMixerBoard = this->GetMixerBoard();
+         if (pMixerBoard && (t->GetKind() == Track::Wave))
+            pMixerBoard->RefreshTrackCluster((WaveTrack*)t);
+      #endif
       return;
    }
 
@@ -3698,7 +3738,13 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       mViewInfo->sel1 = t->GetEndTime();
    }
 
-   Refresh(false);  
+   this->Refresh(false);  
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      MixerBoard* pMixerBoard = this->GetMixerBoard();
+      if (pMixerBoard)
+         pMixerBoard->RefreshTrackClusters();
+   #endif
+
    if (!unsafe)
       MakeParentModifyState();
 }
@@ -3722,7 +3768,7 @@ void TrackPanel::HandleRearrange(wxMouseEvent & event)
       mTracks->MoveUp(mCapturedTrack);
       dir = _("up");
       #ifdef EXPERIMENTAL_MIXER_BOARD
-         if (pMixerBoard)
+         if (pMixerBoard && (mCapturedTrack->GetKind() == Track::Wave))
             pMixerBoard->MoveTrackCluster((WaveTrack*)mCapturedTrack, true);
       #endif
    }
@@ -3730,7 +3776,7 @@ void TrackPanel::HandleRearrange(wxMouseEvent & event)
       mTracks->MoveDown(mCapturedTrack);
       dir = _("down");
       #ifdef EXPERIMENTAL_MIXER_BOARD
-         if (pMixerBoard)
+         if (pMixerBoard && (mCapturedTrack->GetKind() == Track::Wave))
             pMixerBoard->MoveTrackCluster((WaveTrack*)mCapturedTrack, false);
       #endif
    }
@@ -4906,12 +4952,28 @@ void TrackPanel::DrawEverythingElse(wxDC * dc,
          skipBorder = true;
       }
 
+      // If the previous track is linked to this one but isn't on the screen
+      // (and thus would have been skipped by VisibleTrackIterator) we need to
+      // draw that track's border instead.
+      Track *borderTrack = t;
+      wxRect borderRect = r, borderTrackRect = trackRect;
+
+      if (l && !t->GetLinked() && trackRect.y < 0)
+      {
+         borderTrack = l;
+
+         borderTrackRect.y = l->GetY() - mViewInfo->vpos;
+         borderTrackRect.height = l->GetHeight();
+
+         borderRect = borderTrackRect;
+         borderRect.height += t->GetHeight();
+      }
+
       if (!skipBorder) {
          if (mAx->IsFocused(t)) {
-            focusRect = r;
+            focusRect = borderRect;
          }
-
-         DrawOutside(t, dc, r, trackRect);
+         DrawOutside(borderTrack, dc, borderRect, borderTrackRect);
       }
 
       // Believe it or not, we can speed up redrawing if we don't
@@ -5951,72 +6013,12 @@ void TrackPanel::OnTrackMenu(Track *t)
 
 void TrackPanel::OnTrackMute(bool shiftDown, Track *t)
 {
-   if(!t) {
+   if (!t) {
       t = GetFocusedTrack();
-      if(!t) return;
+      if (!t || (t->GetKind() != Track::Wave)) 
+         return;
    }
-
-   if (shiftDown) 
-   {
-      // Cosmetic...  
-      // Shift-click mutes this track and unmutes other tracks.
-      TrackListIterator iter(mTracks);
-      Track *i = iter.First();
-      while (i) {
-         if (i == t) {
-            i->SetMute(true);
-            if(i->GetLinked()) { // also mute the linked track
-               i = iter.Next();
-               i->SetMute(true);
-            }
-         }
-         else {
-            i->SetMute(false);
-         }
-         i->SetSolo(false);
-         i = iter.Next();
-      }
-   }
-   else {
-      // Normal click toggles this track.
-      t->SetMute(!t->GetMute());
-      if(t->GetLinked())   // set mute the same on both, if a pair
-      {
-         bool muted = t->GetMute();
-         TrackListIterator iter(mTracks);
-         Track *i = iter.First();
-         while (i != t) {  // search for this track
-            i = iter.Next();
-         }
-         i = iter.Next();  // get the next one, since linked
-         i->SetMute(muted);   // and mute it as well
-      }
-
-      if( IsSimpleSolo() )
-      {
-         TrackListIterator iter(mTracks);
-         Track *i = iter.First();
-         int nPlaying=0;
-
-         // We also set a solo indicator if we have just one track / stereo pair playing.
-         // otherwise clear solo on everything.
-         while (i) {
-            if( !i->GetMute())
-            {
-               nPlaying += 1;
-               if(i->GetLinked())
-                  i = iter.Next();  // don't count this one as it is linked
-            }
-            i = iter.Next();
-         }
-
-         i = iter.First();
-         while (i) {
-            i->SetSolo( (nPlaying==1) && !i->GetMute() );   // will set both of a stereo pair
-            i = iter.Next();
-         }
-      }
-   }
+   GetProject()->HandleTrackMute(t, shiftDown);
 
    #ifdef EXPERIMENTAL_MIXER_BOARD
       // Update mixer board, too.
@@ -6035,63 +6037,13 @@ void TrackPanel::OnTrackMute(bool shiftDown, Track *t)
 
 void TrackPanel::OnTrackSolo(bool shiftDown, Track *t)
 {
-   if(!t) {
+   if (!t) 
+   {
       t = GetFocusedTrack();
-      if(!t) return;
+      if (!t || (t->GetKind() != Track::Wave)) 
+         return;
    }
-
-   bool bSoloMultiple = !IsSimpleSolo() ^ shiftDown;
-
-   // Standard and Simple solo have opposite defaults:
-   //   Standard - Behaves as individual buttons, shift=radio buttons
-   //   Simple   - Behaves as radio buttons, shift=individual
-   // In addition, Simple solo will mute/unmute tracks 
-   // when in standard radio button mode.
-   if ( bSoloMultiple ) 
-   {
-      t->SetSolo( !t->GetSolo() );
-      if(t->GetLinked())
-      {
-         bool soloed = t->GetSolo();
-         TrackListIterator iter(mTracks);
-         Track *i = iter.First();
-         while (i != t) {  // search for this track
-            i = iter.Next();
-         }
-         i = iter.Next();  // get the next one, since linked
-         i->SetSolo(soloed);   // and solo it as well
-      }
-   }
-   else 
-   {
-      // Normal click solo this track only, mute everything else.
-      // OR unmute and unsolo everything.
-      TrackListIterator iter(mTracks);
-      Track *i = iter.First();
-      bool bWasSolo = t->GetSolo();
-      while (i) {
-         if( i==t )
-         {
-            i->SetSolo(!bWasSolo);
-            if( IsSimpleSolo() )
-               i->SetMute(false);
-            if(t->GetLinked())
-            {
-               i = iter.Next();
-               i->SetSolo(!bWasSolo);
-               if( IsSimpleSolo() )
-                  i->SetMute(false);
-            }
-         }
-         else
-         {
-            i->SetSolo(false);
-            if( IsSimpleSolo() )
-               i->SetMute(!bWasSolo);
-         }
-         i = iter.Next();
-      }
-   }
+   GetProject()->HandleTrackSolo(t, shiftDown);
 
    #ifdef EXPERIMENTAL_MIXER_BOARD
       // Update mixer board, too.
@@ -6644,7 +6596,7 @@ void TrackPanel::OnMoveTrack(wxCommandEvent & event)
    if (mTracks->Move(mPopupMenuTarget, bUp)) {
       #ifdef EXPERIMENTAL_MIXER_BOARD
          MixerBoard* pMixerBoard = this->GetMixerBoard(); // Update mixer board, too.
-         if (pMixerBoard)
+         if (pMixerBoard && (mPopupMenuTarget->GetKind() == Track::Wave))
             pMixerBoard->MoveTrackCluster((WaveTrack*)mPopupMenuTarget, bUp);
       #endif
 
@@ -6690,7 +6642,7 @@ void TrackPanel::OnSetName(wxCommandEvent &event)
 
       #ifdef EXPERIMENTAL_MIXER_BOARD
          MixerBoard* pMixerBoard = this->GetMixerBoard();
-         if (pMixerBoard) 
+         if (pMixerBoard && (t->GetKind() == Track::Wave))
             pMixerBoard->UpdateName((WaveTrack*)t);
       #endif
 
@@ -6882,7 +6834,11 @@ wxRect TrackPanel::FindTrackRect(Track * target, bool label)
             GetSize().GetWidth(),
             target->GetHeight());
 
-   if (target->GetLinked()) {
+   // The check for a null linked track is necessary because there's
+   // a possible race condition between the time the 2 linked tracks
+   // are added and when wxAccessible functions are called.  This is
+   // most evident when using Jaws.
+   if (target->GetLinked() && target->GetLink()) {
       r.height += target->GetLink()->GetHeight();
    }
 

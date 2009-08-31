@@ -34,7 +34,9 @@
 // Work in progress, June-2008.
 //#define EXPERIMENTAL_THEMING
 #if IS_BETA
-#define EXPERIMENTAL_THEME_PREFS
+//August 2009 - Theming not locked down enough enough for a stable release.
+// we're doing betas which are leading up to an RC.
+//#define EXPERIMENTAL_THEME_PREFS
 #endif
 
 //Next line enables Mic monitoring at times when it was previously off.
@@ -131,6 +133,11 @@ extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebo
 
 #define EXPERIMENTAL_LYRICS_WINDOW //vvv Vaughan, 2009-07-06
 #define EXPERIMENTAL_MIXER_BOARD //vvv Vaughan, 2009-07-07
+
+#if USE_PORTMIXER
+   //Automatically tries to find an acceptable input volume
+   //#define AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+#endif
 
 #endif
 

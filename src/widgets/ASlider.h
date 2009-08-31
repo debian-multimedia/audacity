@@ -30,6 +30,8 @@ class wxPoint;
 class wxTextCtrl;
 class wxButton;
 
+class Ruler;
+
 //
 // Predefined slider types (mStyle)
 //
@@ -201,6 +203,8 @@ class LWSlider
 
    wxWindow *mPopWin;
 
+   Ruler* mpRuler;
+
    bool mIsDragging;
 
    wxBitmap *mBitmap;
@@ -257,6 +261,7 @@ class ASlider :public wxPanel
    LWSlider *mLWSlider;
    bool mSliderIsFocused;
 
+ protected:
    int mStyle;
 
  public:

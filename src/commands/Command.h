@@ -11,25 +11,28 @@
 \file Command.h
 \brief Contains declaration of Command base class.
 
+\class CommandExecutionContext
+\brief Represents a context to which a command may be applied.
+
+\class Command
+\brief Base class which encapsulates a process.
+
+That process may depend on certain parameters (determined by the command's
+signature) and may produce output on various channels. Any process which is to
+be controlled by a script should be separated out into its own Command class.
+(And that class should be registered with the CommandDirectory).
+
 *//*******************************************************************/
 
 #ifndef __COMMAND__
 #define __COMMAND__
 
-#include <map>
-#include <utility>
-#include <wx/string.h>
-#include <wx/msgout.h>
-#include <wx/variant.h>
-#include <wx/arrstr.h>
-
 #include "CommandMisc.h"
-#include "CommandBuilder.h"
-#include "CommandTargets.h"
+#include "CommandSignature.h"
 
 class AudacityApp;
 class AudacityProject;
-class wxVariant;
+class CommandOutputTarget;
 
 class CommandExecutionContext
 {
@@ -40,234 +43,108 @@ class CommandExecutionContext
          : app(app), proj(proj) {}
 };
 
-/// A Validator is an object which checks whether a wxVariant satisfies
-//  a certain criterion. This is a base validator which allows anything.
-class Validator
-{
-public:
-   Validator() {};
-   virtual ~Validator() {};
-
-   virtual bool Validate(const wxVariant &v) const
-   {
-      return true;
-   }
-
-   // For error messages
-   virtual wxString GetDescription() const
-   {
-      return wxT("any value");
-   }
-};
-
-/// Must be one of the defined options
-class OptionValidator : public Validator
-{
-private:
-   wxArrayString mOptions;
-
-public:
-   void AddOption(const wxString &option)
-   {
-      mOptions.Add(option);
-   }
-   virtual bool Validate(const wxVariant &v) const
-   {
-      return (mOptions.Index(v.GetString()) != wxNOT_FOUND);
-   }
-   virtual wxString GetDescription()
-   {
-      wxString desc = wxT("one of: ");
-      int optionCount = mOptions.GetCount();
-      int i = 0;
-      for (i = 0; i+1 < optionCount; ++i)
-      {
-         desc += mOptions[i] + wxT(", ");
-      }
-      desc += mOptions[optionCount-1];
-      return desc;
-   }
-};
-
-/// Must be a boolean
-class BoolValidator : public Validator
-{
-public:
-   virtual bool Validate(const wxVariant &v) const
-   {
-      return v.IsType(wxT("bool"));
-   }
-   virtual wxString GetDescription() const
-   {
-      return wxT("y/n");
-   }
-};
-
-/// Must be a floating-point number
-class DoubleValidator : public Validator
-{
-public:
-   virtual bool Validate(const wxVariant &v) const
-   {
-      return v.IsType(wxT("double"));
-   }
-   virtual wxString GetDescription() const
-   {
-      return wxT("a floating-point number");
-   }
-};
-
-/// Must lie between the two given numbers
-class RangeValidator : public Validator
-{
-private:
-   double lower, upper;
-public:
-
-   virtual bool Validate(const wxVariant &v) const
-   {
-      double d = v.GetDouble();
-      return ((lower < d) && (d < upper));
-   }
-   virtual wxString GetDescription() const
-   {
-      return wxString::Format(wxT("between %d and %d"), lower, upper);
-   }
-};
-
-/// Must be integral
-class IntValidator : public Validator
-{
-public:
-   virtual bool Validate(const wxVariant &v) const
-   {
-      if (!v.IsType(wxT("double"))) return false;
-      double d = v.GetDouble();
-      return ((long)d == d);
-   }
-   virtual wxString GetDescription() const
-   {
-      return wxT("an integer");
-   }
-};
-
-/// Must pass both of the supplied validators
-class AndValidator : public Validator
-{
-   private:
-      const Validator &v1, &v2;
-   public:
-      AndValidator(const Validator &u1, const Validator &u2)
-         : v1(u1), v2(u2)
-      { }
-      virtual bool Validate(const wxVariant &v) const
-      {
-         if (!v1.Validate(v)) return false;
-         return v2.Validate(v);
-      }
-      virtual wxString GetDescription() const
-      {
-         return v1.GetDescription() + wxT(" and ") + v2.GetDescription();
-      }
-};
-
+// Interface
 class Command
 {
-private:
-   wxString mName;
-   ParamMap mParams;
+public:
+   virtual void Progress(double completed) = 0;
+   virtual void Status(wxString message) = 0;
+   virtual void Error(wxString message) = 0;
+   virtual ~Command() { }
+   virtual wxString GetName() = 0;
+   virtual CommandSignature &GetSignature() = 0;
+   virtual bool SetParameter(const wxString &paramName, const wxVariant &paramValue);
+   virtual bool Apply(CommandExecutionContext context) = 0;
+};
 
-   bool Valid(wxString paramName, const wxVariant &paramValue)
+// Command which wraps another command
+class DecoratedCommand : public Command
+{
+protected:
+   Command *mCommand;
+public:
+   virtual void Progress(double completed);
+   virtual void Status(wxString message);
+   virtual void Error(wxString message);
+
+   DecoratedCommand(Command *cmd)
+      : mCommand(cmd)
    {
-      return mParams[paramName].second.Validate(paramValue);
+      wxASSERT(cmd != NULL);
    }
+   virtual ~DecoratedCommand();
+   virtual wxString GetName();
+   virtual CommandSignature &GetSignature();
+   virtual bool SetParameter(const wxString &paramName, const wxVariant &paramValue);
+   virtual bool Apply(CommandExecutionContext context) = 0;
+};
+
+// Decorator command that performs the given command and then outputs a status
+// message according to the result
+class ApplyAndSendResponse : public DecoratedCommand
+{
+public:
+   ApplyAndSendResponse(Command *cmd)
+      : DecoratedCommand(cmd)
+   { }
+
+   virtual bool Apply(CommandExecutionContext context);
+};
+
+class CommandImplementation : public Command
+{
+private:
+   CommandType &mType;
+   ParamValueMap mParams;
+
+   /// Using the command signature, looks up a possible parameter value and
+   /// checks whether it passes the validator.
+   bool Valid(const wxString &paramName, const wxVariant &paramValue);
 
 protected:
    CommandOutputTarget *mOutput;
 
    // Convenience methods for allowing subclasses to access parameters
-   bool GetBool(const wxString &paramName)
-   {
-      const wxVariant &v = mParams[paramName].first;
-      wxASSERT(v.IsType(wxT("bool")));
-      return v.GetBool();
-   }
-   long GetLong(const wxString &paramName)
-   {
-      const wxVariant &v = mParams[paramName].first;
-      wxASSERT(v.IsType(wxT("double")));
-      return (long)v.GetDouble();
-   }
-   double GetDouble(const wxString &paramName)
-   {
-      const wxVariant &v = mParams[paramName].first;
-      wxASSERT(v.IsType(wxT("double")));
-      return v.GetDouble();
-   }
-   wxString GetString(const wxString &paramName)
-   {
-      const wxVariant &v = mParams[paramName].first;
-      wxASSERT(v.IsType(wxT("string")));
-      return v.GetString();
-   }
-
-   void Progress(double completed)
-   {
-      if (mOutput)
-         mOutput->Progress(completed);
-   }
-   void Status(wxString status)
-   {
-      if (mOutput)
-         mOutput->Status(status);
-   }
-   void Error(wxString message)
-   {
-      if (mOutput)
-         mOutput->Error(message);
-   }
+   void TypeCheck(const wxString &typeName,
+                  const wxString &paramName,
+                  const wxVariant &param);
+   void CheckParam(const wxString &paramName);
+   bool GetBool(const wxString &paramName);
+   long GetLong(const wxString &paramName);
+   double GetDouble(const wxString &paramName);
+   wxString GetString(const wxString &paramName);
 
 public:
-   Command(const wxString &name, CommandOutputTarget *output = new CommandOutputTarget())
-      : mName(name),
-        mParams(CommandBuilder::GetSignature(name)),
-        mOutput(output)
-   { }
+   // Convenience methods for passing messages to the output target
+   void Progress(double completed);
+   void Status(wxString status);
+   void Error(wxString message);
 
-   virtual ~Command()
-   {
-      if (mOutput)
-         delete mOutput;
-   }
+   /// Constructor should not be called directly; only by a factory which
+   /// ensures name and params are set appropriately for the command.
+   CommandImplementation(CommandType &type,
+                         CommandOutputTarget *output);
 
-   // Note: wxVariant is reference counted
-   bool SetParameter(const wxString &paramName, wxVariant paramValue)
-   {
-      wxASSERT(!paramValue.IsType(wxT("null")));
+   virtual ~CommandImplementation();
 
-      if (!Valid(paramName, paramValue))
-      {
-         Error(wxT("Invalid value for parameter '")
-               + paramName + wxT("': should be ")
-               + mParams[paramName].second.GetDescription());
-         return false;
-      }
-      mParams[paramName].first = paramValue;
-      return true;
-   }
+   /// An instance method for getting the command name (for consistency)
+   wxString GetName();
+
+   /// Get the signature of the command
+   CommandSignature &GetSignature();
+
+   /// Attempt to one of the command's parameters to a particular value.
+   /// (Note: wxVariant is reference counted)
+   bool SetParameter(const wxString &paramName, const wxVariant &paramValue);
 
    // Subclasses should override the following:
+   // =========================================
 
-   virtual bool Apply(CommandExecutionContext context)
-   {
-      return true;
-   }
-
-   static ParamMap GetSignature()
-   {
-      return ParamMap();
-   }
+   /// Actually carry out the command. Return true if successful and false
+   /// otherwise.
+   virtual bool Apply(CommandExecutionContext context);
 };
+
 #endif /* End of include guard: __COMMAND__ */
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

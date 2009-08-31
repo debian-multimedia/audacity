@@ -17,13 +17,14 @@
 #define __SCRIPTCOMMANDRELAY__
 
 #include "../Audacity.h"
-#include <wx/string.h>
 
 class CommandHandler;
 class ResponseQueue;
 class Response;
-
-
+class ResponseQueueTarget;
+class AudacityProject;
+class Command;
+class wxString;
 
 typedef int (*tpExecScriptServerFunc)( wxString * pIn, wxString * pOut);
 typedef int (*tpRegScriptServerFunc)(tpExecScriptServerFunc pFn);
@@ -46,9 +47,10 @@ class ScriptCommandRelay
       static void SetCommandHandler(CommandHandler &ch);
 
       static void Run();
-
+      static void PostCommand(AudacityProject *project, Command *cmd);
       static void SendResponse(const wxString &response);
       static Response ReceiveResponse();
+      static ResponseQueueTarget *GetResponseTarget();
 };
 
 #endif /* End of include guard: __SCRIPTCOMMANDRELAY__ */

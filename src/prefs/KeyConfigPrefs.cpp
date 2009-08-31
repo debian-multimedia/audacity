@@ -77,10 +77,13 @@ KeyConfigPrefs::KeyConfigPrefs(wxWindow * parent)
 
 KeyConfigPrefs::~KeyConfigPrefs()
 {
-   mKey->Disconnect(wxEVT_KEY_DOWN,
-                    wxKeyEventHandler(KeyConfigPrefs::OnCaptureKeyDown));
-   mKey->Disconnect(wxEVT_CHAR,
-                    wxKeyEventHandler(KeyConfigPrefs::OnCaptureChar));
+   if (mKey)
+   {
+      mKey->Disconnect(wxEVT_KEY_DOWN,
+            wxKeyEventHandler(KeyConfigPrefs::OnCaptureKeyDown));
+      mKey->Disconnect(wxEVT_CHAR,
+            wxKeyEventHandler(KeyConfigPrefs::OnCaptureChar));
+   }
 }
 
 void KeyConfigPrefs::Populate()
@@ -153,8 +156,8 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
          }
          S.AddWindow(mKey);
 
-         S.Id(SetButtonID).AddButton(_("S&et"));
-         S.Id(ClearButtonID).AddButton(_("&Clear"));
+         S.Id(SetButtonID).AddButton(_("Se&t"));
+         S.Id(ClearButtonID).AddButton(_("Cl&ear"));
       }
       S.EndThreeColumn();
 

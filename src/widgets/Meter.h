@@ -37,6 +37,7 @@ struct MeterBar {
    double peakHoldTime;
    wxRect rClip;
    bool   clipping;
+   bool   isclipping;
    int    tailPeakCount;
    float  peakPeakHold;
 };
@@ -107,6 +108,7 @@ class Meter : public wxPanel
    ~Meter();
 
    void UpdatePrefs();
+   void Clear();
 
    Style GetStyle() { return mStyle; }
    void SetStyle(Style newStyle);
@@ -157,6 +159,8 @@ class Meter : public wxPanel
    
    float GetMaxPeak();
 
+   double ToLinearIfDB(double value);
+
    //
    // Event handlers
    //
@@ -185,11 +189,15 @@ class Meter : public wxPanel
    void OnDB(wxCommandEvent &evt);
    void OnClip(wxCommandEvent &evt);
    void OnMonitor(wxCommandEvent &evt);
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   void OnAutomatedInputLevelAdjustment(wxCommandEvent &evt);
+#endif
    void OnFloat(wxCommandEvent &evt);
    void OnPreferences(wxCommandEvent &evt);
-
+   bool IsClipping();
    
    void StartMonitoring();
+
  private:
    void DrawMeterBar(wxDC &dc, MeterBar *meterBar);
    void ResetBar(MeterBar *bar, bool resetClipping);

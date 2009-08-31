@@ -55,6 +55,7 @@ for drawing different aspects of the label and its text box.
 #include "AllThemeResources.h"
 #include "AColor.h"
 #include "Project.h"
+#include "commands/CommandManager.h"
 
 wxFont LabelTrack::msFont;
 
@@ -149,14 +150,11 @@ void LabelTrack::SetOffset(double dOffset)
 void LabelTrack::ShiftLabelsOnClear(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++){
-      double x = mLabels[i]->t;
-      double y = mLabels[i]->t1;
       if (mLabels[i]->t >= e){//label is after deletion region
          mLabels[i]->t  = mLabels[i]->t  - (e-b);
          mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
       }else if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
-         wxASSERT((i < mLabels.GetCount()));
-         mLabels.RemoveAt(i);
+         DeleteLabel( i );
          i--;
       }else if (mLabels[i]->t >= b && mLabels[i]->t1 > e){//deletion region covers start
          mLabels[i]->t  = b;
@@ -171,6 +169,22 @@ void LabelTrack::ShiftLabelsOnClear(double b, double e)
    }
 }
 
+//used when we want to use clear only on the labels
+void LabelTrack::ChangeLabelsOnClear(double b, double e)
+{
+   for (size_t i=0;i<mLabels.GetCount();i++) {
+      if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
+         DeleteLabel(i);
+         i--;
+      }else if (mLabels[i]->t < b && mLabels[i]->t1 > e){//label encloses deletion region
+         mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
+      }else if (mLabels[i]->t <= e && mLabels[i]->t1 > e){//deletion region covers label start
+         mLabels[i]->t  = e;
+      }else if (mLabels[i]->t < b && mLabels[i]->t1 >= b){//deletion regions covers label end
+         mLabels[i]->t1 = b;
+      }
+   }
+}
 void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 {
    for (unsigned int i=0;i<mLabels.GetCount();i++){
@@ -1399,6 +1413,11 @@ bool LabelTrack::CaptureKey(wxKeyEvent & event)
    {
       if( IsGoodLabelFirstCharacter(keyCode, charCode) && !event.CmdDown() ){
          AudacityProject * pProj = GetActiveProject();
+         CommandManager * cm = pProj->GetCommandManager();
+         if (pProj->GetAudioIOToken() > 0 && gAudioIO->IsStreamActive(pProj->GetAudioIOToken()) &&
+            cm && cm->GetKeyFromName(wxT("AddLabelPlaying")) == keyCode)
+            return false;
+
          // IF Label already there, then don't add a new one on typing.
          if( GetLabelIndex( pProj->mViewInfo.sel0,  pProj->mViewInfo.sel1) != wxNOT_FOUND )
             return false;
@@ -1458,10 +1477,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
             else
             {
                // ELSE no text in text box, so delete whole label.
-               delete mLabels[mSelIndex];
-               mLabels.RemoveAt(mSelIndex);
-               mSelIndex = -1;
-               mCurrentCursorPos = 1;
+               DeleteLabel( mSelIndex );
             }
             mInitialCursorPos = mCurrentCursorPos;
             updated = true;
@@ -1490,10 +1506,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
             else
             {
                // delete whole label if no text in text box
-               delete mLabels[mSelIndex];
-               mLabels.RemoveAt(mSelIndex);
-               mSelIndex = -1;
-               mCurrentCursorPos = 1;
+               DeleteLabel( mSelIndex );
             }
             mInitialCursorPos = mCurrentCursorPos;
             updated = true;
@@ -1556,15 +1569,10 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
          }
          break;
 
-      case WXK_RETURN:
+      case WXK_RETURN: 
       case WXK_NUMPAD_ENTER:
 
-      case WXK_ESCAPE:
-         if (mLabels[mSelIndex]->title == wxT("")) {
-            delete mLabels[mSelIndex];
-            mLabels.RemoveAt(mSelIndex);
-         }
-         
+      case WXK_ESCAPE:        
          mSelIndex = -1;
          break;
          
@@ -2005,11 +2013,10 @@ bool LabelTrack::Cut(double t0, double t1, Track ** dest)
          mLabels[i]->t -= t0;
          mLabels[i]->t1 -= t0;
          ((LabelTrack *) (*dest))->mLabels.Add(mLabels[i]);
+         //Don't use DeleteLabel() since we've only moved it.
          mLabels.RemoveAt(i);
-         // If we've removed the selected label, then 
-         // better indicate that no label is selected.
-         if (i==mSelIndex)
-            mSelIndex=-1;
+         // JC: ALWAYS unselect, since RemoveAt renumbers labels.
+         mSelIndex=-1;
          len--;
          i--;
       }
@@ -2084,7 +2091,7 @@ bool LabelTrack::Clear(double t0, double t1)
          ShiftLabelsOnClear(t0, t1);
    }
    else
-      ShiftLabelsOnClear(t0, t1);
+      ChangeLabelsOnClear(t0, t1);
 
    return true;
 }
@@ -2095,7 +2102,7 @@ bool LabelTrack::Silence(double t0, double t1)
 
    for (int i = 0; i < len; i++) {
       if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1) {
-         mLabels.RemoveAt(i);
+         DeleteLabel( i );
          len--;
          i--;
       }
@@ -2190,7 +2197,21 @@ int LabelTrack::AddLabel(double t, double t1, const wxString &title)
 void LabelTrack::DeleteLabel(int index)
 {
    wxASSERT((index < (int)mLabels.GetCount()));
+   delete mLabels[index];
    mLabels.RemoveAt(index);
+   // IF we've deleted the selected label
+   // THEN set no label selected.
+   if( mSelIndex== index )
+   {
+      mSelIndex = -1;
+      mCurrentCursorPos = 1;
+   }
+   // IF we removed a label before the selected label
+   // THEN the new selected label number is one less.
+   else if( index < mSelIndex )
+   {
+      mSelIndex--;
+   }
 }
 
 wxBitmap & LabelTrack::GetGlyph( int i)
@@ -2337,6 +2358,7 @@ void LabelTrack::SortLabels()
       if( j<i)
       {
          // Remove at i and insert at j.
+         // Don't use DeleteLabel() since just moving it.
          pTemp = mLabels[i];
          mLabels.RemoveAt( i );
          mLabels.Insert(pTemp, j);

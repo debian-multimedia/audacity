@@ -23,36 +23,27 @@ to that system.
 #define __BATCHEVALCOMMAND__
 
 #include "Command.h"
+#include "CommandType.h"
 #include "../BatchCommands.h"
 
-
-class BatchEvalCommand : public Command
+class BatchEvalCommandType : public CommandType
 {
 public:
-   BatchEvalCommand()
-      : Command(wxT("BatchEvalCommand"))
+   virtual wxString BuildName();
+   virtual void BuildSignature(CommandSignature &signature);
+   virtual Command *Create(CommandOutputTarget *target);
+};
+
+class BatchEvalCommand : public CommandImplementation
+{
+public:
+   BatchEvalCommand(CommandType &type,
+                    CommandOutputTarget *target)
+      : CommandImplementation(type, target)
    { }
-   ~BatchEvalCommand() { }
 
-   virtual bool Apply(CommandExecutionContext context)
-   {
-      wxString cmdName = GetString(wxT("CommandName"));
-      wxString cmdParams = GetString(wxT("ParamString"));
-
-      // Create a Batch that will have just one command in it...
-      BatchCommands Batch;
-
-      return Batch.ApplyCommand(cmdName, cmdParams);
-   }
-
-   static ParamMap GetSignature()
-   {
-      ParamMap signature;
-      Validator paramValidator;
-      signature[wxT("ParamString")] =
-         std::pair<wxVariant, Validator>(wxT(""), paramValidator);
-      return signature;
-   }
+   virtual ~BatchEvalCommand();
+   virtual bool Apply(CommandExecutionContext context);
 };
 
 #endif /* End of include guard: __BATCHEVALCOMMAND__ */

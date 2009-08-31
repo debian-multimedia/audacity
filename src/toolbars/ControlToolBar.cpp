@@ -413,6 +413,11 @@ void ControlToolBar::SetRecord(bool down)
    EnableDisableButtons();
 }
 
+bool ControlToolBar::IsRecordDown()
+{
+   return mRecord->IsDown();
+}
+
 void ControlToolBar::PlayPlayRegion(double t0, double t1,
                                     bool looped /* = false */,
                                     bool cutpreview /* = false */,
@@ -705,6 +710,10 @@ void ControlToolBar::StopPlaying()
    SetPlay(false);
    SetRecord(false);
 
+   #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+      gAudioIO->AILADisable();
+   #endif
+
    mPause->PopUp();
    mPaused=false;
    //Make sure you tell gAudioIO to unpause
@@ -715,10 +724,12 @@ void ControlToolBar::StopPlaying()
    mBusyProject = NULL;
 
    // So that we continue monitoring after playing or recording.
+   // also clean the MeterQueues
    AudacityProject *project = GetActiveProject();
-   if( project )
+   if( project ) {
       project->MayStartMonitoring();
-
+      project->GetMeterToolBar()->Clear();
+   }
 }
 
 void ControlToolBar::OnBatch(wxCommandEvent &evt)
@@ -885,6 +896,11 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
          for (unsigned int i = 0; i < newRecordingTracks.GetCount(); i++)
             t->Add(newRecordingTracks[i]);
       }
+
+      //Automated Input Level Adjustment Initialization
+      #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+         gAudioIO->AILAInitialize();
+      #endif
 
       int token = gAudioIO->StartStream(playbackTracks,
                                         newRecordingTracks,

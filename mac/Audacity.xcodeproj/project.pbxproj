@@ -468,7 +468,6 @@
 		2800FE230FF32381005CA9E5 /* libportmidi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2800FE070FF322D4005CA9E5 /* libportmidi.a */; };
 		2800FE370FF32566005CA9E5 /* MidiIOPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2800FE350FF32566005CA9E5 /* MidiIOPrefs.cpp */; };
 		2801A6460BF9268700648258 /* ImportQT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2801A6430BF9268700648258 /* ImportQT.cpp */; };
-		2801A6470BF9268700648258 /* ImportQTWrapper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2801A6450BF9268700648258 /* ImportQTWrapper.cpp */; };
 		280828550A75E0D0000002EF /* LabelDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 280828530A75E0D0000002EF /* LabelDialog.cpp */; };
 		2808285A0A75E0EA000002EF /* Grid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 280828580A75E0EA000002EF /* Grid.cpp */; };
 		2809C4B80BCB7E560006010F /* FileIO.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2809C4B60BCB7E560006010F /* FileIO.cpp */; };
@@ -1147,14 +1146,23 @@
 		287DBE8C0F3F6B2700C5BBED /* ima_oki_adpcm.h in Headers */ = {isa = PBXBuildFile; fileRef = 287DBE860F3F6B2700C5BBED /* ima_oki_adpcm.h */; };
 		287DBE8D0F3F6B2700C5BBED /* mpc2k.c in Sources */ = {isa = PBXBuildFile; fileRef = 287DBE870F3F6B2700C5BBED /* mpc2k.c */; };
 		287DBE8E0F3F6B2700C5BBED /* rf64.c in Sources */ = {isa = PBXBuildFile; fileRef = 287DBE880F3F6B2700C5BBED /* rf64.c */; };
+		287E207F102561F300BF47A2 /* PluginManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 287E207E102561F300BF47A2 /* PluginManager.cpp */; };
 		287F9F3D0A69748F00F025FA /* TimeDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 287F9F3C0A69748F00F025FA /* TimeDialog.cpp */; };
 		288052870DEA69C900671EA4 /* PipeServer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 288052840DEA69C900671EA4 /* PipeServer.cpp */; };
 		288052880DEA69C900671EA4 /* ScripterCallback.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 288052850DEA69C900671EA4 /* ScripterCallback.cpp */; };
 		288052C20DEA73F500671EA4 /* NonGuiThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 288052BC0DEA72F300671EA4 /* NonGuiThread.cpp */; };
 		288053740DEA9E4C00671EA4 /* ScripterCallback.h in Headers */ = {isa = PBXBuildFile; fileRef = 288052860DEA69C900671EA4 /* ScripterCallback.h */; };
 		2882177B0A35D8730029AF41 /* ShuttlePrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 288217790A35D8730029AF41 /* ShuttlePrefs.cpp */; };
-		2885BFF40FC108F800128165 /* LoadVST.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2885BFF20FC108F800128165 /* LoadVST.cpp */; };
+		28851FAB1027F16500152EE1 /* Command.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851F9C1027F16400152EE1 /* Command.cpp */; };
+		28851FAC1027F16500152EE1 /* CommandSignature.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851F9D1027F16400152EE1 /* CommandSignature.cpp */; };
+		28851FAD1027F16500152EE1 /* CommandType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851F9F1027F16400152EE1 /* CommandType.cpp */; };
+		28851FAE1027F16500152EE1 /* CompareAudioCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851FA11027F16400152EE1 /* CompareAudioCommand.cpp */; };
+		28851FAF1027F16500152EE1 /* GetTrackInfoCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851FA31027F16400152EE1 /* GetTrackInfoCommand.cpp */; };
+		28851FB01027F16500152EE1 /* HelpCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851FA51027F16400152EE1 /* HelpCommand.cpp */; };
+		28851FB11027F16500152EE1 /* MessageCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851FA71027F16400152EE1 /* MessageCommand.cpp */; };
+		28851FB21027F16500152EE1 /* SelectCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28851FA91027F16400152EE1 /* SelectCommand.cpp */; };
 		2891B2870C531D2C0044FBE3 /* FindClipping.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2891B2850C531D2C0044FBE3 /* FindClipping.cpp */; };
+		28948427101DF8FC005B0713 /* EffectsPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28948425101DF8FC005B0713 /* EffectsPrefs.cpp */; };
 		2897F6F00AB3DB5A003C20C5 /* ControlToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2897F6DC0AB3DB5A003C20C5 /* ControlToolBar.cpp */; };
 		2897F6F10AB3DB5A003C20C5 /* EditToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2897F6DE0AB3DB5A003C20C5 /* EditToolBar.cpp */; };
 		2897F6F20AB3DB5A003C20C5 /* MeterToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2897F6E00AB3DB5A003C20C5 /* MeterToolBar.cpp */; };
@@ -1192,6 +1200,10 @@
 		28A96DC30E28642300F3CE01 /* strparse.h in Headers */ = {isa = PBXBuildFile; fileRef = 28F3A4010E28289500729866 /* strparse.h */; };
 		28B6ED8F0DE3D1B50046F0F3 /* LoadModules.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28B6ED8D0DE3D1B50046F0F3 /* LoadModules.cpp */; };
 		28B97B890FBF771A0076CF28 /* VSTEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28B97B850FBF771A0076CF28 /* VSTEffect.cpp */; };
+		28BD8AB1101DF4C700686679 /* BatchEvalCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AA9101DF4C600686679 /* BatchEvalCommand.cpp */; };
+		28BD8AB2101DF4C700686679 /* CommandDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAA101DF4C600686679 /* CommandDirectory.cpp */; };
+		28BD8AB3101DF4C700686679 /* ExecMenuCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAC101DF4C600686679 /* ExecMenuCommand.cpp */; };
+		28BD8AB4101DF4C700686679 /* GetAllMenuCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAE101DF4C600686679 /* GetAllMenuCommands.cpp */; };
 		28CCDD000F939FD70081F2FC /* FileHistory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28CCDCFF0F939FD70081F2FC /* FileHistory.cpp */; };
 		28D540050FD1912A00FA7C75 /* AppCommandEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28D53FFA0FD1912A00FA7C75 /* AppCommandEvent.cpp */; };
 		28D540060FD1912A00FA7C75 /* CommandBuilder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28D53FFE0FD1912A00FA7C75 /* CommandBuilder.cpp */; };
@@ -1206,6 +1218,9 @@
 		28DA07390E4F5CEC003933C5 /* ExportFFmpegDialogs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DA07380E4F5CEC003933C5 /* ExportFFmpegDialogs.cpp */; };
 		28DABFBE0FF19DB100AC7848 /* RealFFTf.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DABFBC0FF19DB100AC7848 /* RealFFTf.cpp */; };
 		28DB34790FDC2C5D0011F589 /* ResponseQueue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DB34780FDC2C5D0011F589 /* ResponseQueue.cpp */; };
+		28DE72AE10388583007E18EC /* PreferenceCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72AA10388583007E18EC /* PreferenceCommands.cpp */; };
+		28DE72AF10388583007E18EC /* SetTrackInfoCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72AC10388583007E18EC /* SetTrackInfoCommand.cpp */; };
+		28DE72B2103885AA007E18EC /* TimeWarper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72B0103885AA007E18EC /* TimeWarper.cpp */; };
 		28E2370D0E515D9200281398 /* audiomixerreader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1000E50AD5700CC4BD3 /* audiomixerreader.cpp */; };
 		28E2370E0E515D9300281398 /* audiomixerreader.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1010E50AD5700CC4BD3 /* audiomixerreader.h */; };
 		28E2370F0E515D9400281398 /* audioreader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1020E50AD5700CC4BD3 /* audioreader.cpp */; };
@@ -1487,6 +1502,7 @@
 		ED2707510EF9C64F007D4FFD /* TimeScale.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED27074D0EF9C64F007D4FFD /* TimeScale.cpp */; };
 		ED3D7FF00DF73889000F43E3 /* EffectCategory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D7FEC0DF73889000F43E3 /* EffectCategory.cpp */; };
 		ED3D7FF10DF73889000F43E3 /* EffectManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D7FEE0DF73889000F43E3 /* EffectManager.cpp */; };
+		EDD94EDB103CB520000873F1 /* ImportExportCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -2268,7 +2284,6 @@
 		2800FE360FF32566005CA9E5 /* MidiIOPrefs.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = MidiIOPrefs.h; sourceTree = "<group>"; };
 		2801A6430BF9268700648258 /* ImportQT.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ImportQT.cpp; sourceTree = "<group>"; };
 		2801A6440BF9268700648258 /* ImportQT.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ImportQT.h; sourceTree = "<group>"; };
-		2801A6450BF9268700648258 /* ImportQTWrapper.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ImportQTWrapper.cpp; sourceTree = "<group>"; };
 		2808025B0F32C11F0021001D /* bug.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = bug.lsp; path = ../nyquist/bug.lsp; sourceTree = SOURCE_ROOT; };
 		2808025C0F32C11F0021001D /* dspprims.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = dspprims.lsp; path = ../nyquist/dspprims.lsp; sourceTree = SOURCE_ROOT; };
 		2808025D0F32C11F0021001D /* envelopes.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = envelopes.lsp; path = ../nyquist/envelopes.lsp; sourceTree = SOURCE_ROOT; };
@@ -3029,6 +3044,7 @@
 		287DBE860F3F6B2700C5BBED /* ima_oki_adpcm.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ima_oki_adpcm.h; sourceTree = "<group>"; };
 		287DBE870F3F6B2700C5BBED /* mpc2k.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = mpc2k.c; sourceTree = "<group>"; };
 		287DBE880F3F6B2700C5BBED /* rf64.c */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.c; path = rf64.c; sourceTree = "<group>"; };
+		287E207E102561F300BF47A2 /* PluginManager.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = PluginManager.cpp; sourceTree = "<group>"; };
 		287F9F3B0A69748F00F025FA /* TimeDialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TimeDialog.h; sourceTree = "<group>"; };
 		287F9F3C0A69748F00F025FA /* TimeDialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TimeDialog.cpp; sourceTree = "<group>"; };
 		2880527E0DEA694100671EA4 /* mod-script-pipe.so */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "mod-script-pipe.so"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -3039,11 +3055,26 @@
 		288052BC0DEA72F300671EA4 /* NonGuiThread.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; name = NonGuiThread.cpp; path = "lib-widget-extra/NonGuiThread.cpp"; sourceTree = "<group>"; };
 		288217790A35D8730029AF41 /* ShuttlePrefs.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ShuttlePrefs.cpp; sourceTree = "<group>"; };
 		2882177A0A35D8730029AF41 /* ShuttlePrefs.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ShuttlePrefs.h; sourceTree = "<group>"; };
+		28851F9C1027F16400152EE1 /* Command.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = Command.cpp; sourceTree = "<group>"; };
+		28851F9D1027F16400152EE1 /* CommandSignature.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = CommandSignature.cpp; sourceTree = "<group>"; };
+		28851F9E1027F16400152EE1 /* CommandSignature.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CommandSignature.h; sourceTree = "<group>"; };
+		28851F9F1027F16400152EE1 /* CommandType.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = CommandType.cpp; sourceTree = "<group>"; };
+		28851FA01027F16400152EE1 /* CommandType.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CommandType.h; sourceTree = "<group>"; };
+		28851FA11027F16400152EE1 /* CompareAudioCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = CompareAudioCommand.cpp; sourceTree = "<group>"; };
+		28851FA21027F16400152EE1 /* CompareAudioCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CompareAudioCommand.h; sourceTree = "<group>"; };
+		28851FA31027F16400152EE1 /* GetTrackInfoCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = GetTrackInfoCommand.cpp; sourceTree = "<group>"; };
+		28851FA41027F16400152EE1 /* GetTrackInfoCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = GetTrackInfoCommand.h; sourceTree = "<group>"; };
+		28851FA51027F16400152EE1 /* HelpCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = HelpCommand.cpp; sourceTree = "<group>"; };
+		28851FA61027F16400152EE1 /* HelpCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = HelpCommand.h; sourceTree = "<group>"; };
+		28851FA71027F16400152EE1 /* MessageCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = MessageCommand.cpp; sourceTree = "<group>"; };
+		28851FA81027F16400152EE1 /* MessageCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = MessageCommand.h; sourceTree = "<group>"; };
+		28851FA91027F16400152EE1 /* SelectCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = SelectCommand.cpp; sourceTree = "<group>"; };
+		28851FAA1027F16400152EE1 /* SelectCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = SelectCommand.h; sourceTree = "<group>"; };
 		2885BFF10FC108F800128165 /* aeffectx.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; name = aeffectx.h; path = VST/aeffectx.h; sourceTree = "<group>"; };
-		2885BFF20FC108F800128165 /* LoadVST.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; name = LoadVST.cpp; path = VST/LoadVST.cpp; sourceTree = "<group>"; };
-		2885BFF30FC108F800128165 /* LoadVST.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; name = LoadVST.h; path = VST/LoadVST.h; sourceTree = "<group>"; };
 		2891B2850C531D2C0044FBE3 /* FindClipping.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = FindClipping.cpp; sourceTree = "<group>"; };
 		2891B2860C531D2C0044FBE3 /* FindClipping.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = FindClipping.h; sourceTree = "<group>"; };
+		28948425101DF8FC005B0713 /* EffectsPrefs.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = EffectsPrefs.cpp; sourceTree = "<group>"; };
+		28948426101DF8FC005B0713 /* EffectsPrefs.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = EffectsPrefs.h; sourceTree = "<group>"; };
 		2897F6DC0AB3DB5A003C20C5 /* ControlToolBar.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ControlToolBar.cpp; sourceTree = "<group>"; };
 		2897F6DD0AB3DB5A003C20C5 /* ControlToolBar.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ControlToolBar.h; sourceTree = "<group>"; };
 		2897F6DE0AB3DB5A003C20C5 /* EditToolBar.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = EditToolBar.cpp; sourceTree = "<group>"; };
@@ -3100,6 +3131,14 @@
 		28B6ED8E0DE3D1B50046F0F3 /* LoadModules.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = LoadModules.h; sourceTree = "<group>"; };
 		28B97B850FBF771A0076CF28 /* VSTEffect.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; name = VSTEffect.cpp; path = VST/VSTEffect.cpp; sourceTree = "<group>"; };
 		28B97B860FBF771A0076CF28 /* VSTEffect.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; name = VSTEffect.h; path = VST/VSTEffect.h; sourceTree = "<group>"; };
+		28BD8AA9101DF4C600686679 /* BatchEvalCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = BatchEvalCommand.cpp; sourceTree = "<group>"; };
+		28BD8AAA101DF4C600686679 /* CommandDirectory.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = CommandDirectory.cpp; sourceTree = "<group>"; };
+		28BD8AAB101DF4C600686679 /* CommandDirectory.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CommandDirectory.h; sourceTree = "<group>"; };
+		28BD8AAC101DF4C600686679 /* ExecMenuCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ExecMenuCommand.cpp; sourceTree = "<group>"; };
+		28BD8AAD101DF4C600686679 /* ExecMenuCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ExecMenuCommand.h; sourceTree = "<group>"; };
+		28BD8AAE101DF4C600686679 /* GetAllMenuCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = GetAllMenuCommands.cpp; sourceTree = "<group>"; };
+		28BD8AAF101DF4C600686679 /* GetAllMenuCommands.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = GetAllMenuCommands.h; sourceTree = "<group>"; };
+		28BD8AB0101DF4C600686679 /* Validators.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = Validators.h; sourceTree = "<group>"; };
 		28CCDCFF0F939FD70081F2FC /* FileHistory.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = FileHistory.cpp; sourceTree = "<group>"; };
 		28CCDD040F93A0B20081F2FC /* FileHistory.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = FileHistory.h; sourceTree = "<group>"; };
 		28D53FFA0FD1912A00FA7C75 /* AppCommandEvent.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = AppCommandEvent.cpp; sourceTree = "<group>"; };
@@ -3110,7 +3149,6 @@
 		28D53FFF0FD1912A00FA7C75 /* CommandBuilder.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CommandBuilder.h; sourceTree = "<group>"; };
 		28D540000FD1912A00FA7C75 /* CommandHandler.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = CommandHandler.cpp; sourceTree = "<group>"; };
 		28D540010FD1912A00FA7C75 /* CommandHandler.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = CommandHandler.h; sourceTree = "<group>"; };
-		28D540020FD1912A00FA7C75 /* DebugPrintCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = DebugPrintCommand.h; sourceTree = "<group>"; };
 		28D540030FD1912A00FA7C75 /* ScriptCommandRelay.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ScriptCommandRelay.cpp; sourceTree = "<group>"; };
 		28D540040FD1912A00FA7C75 /* ScriptCommandRelay.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ScriptCommandRelay.h; sourceTree = "<group>"; };
 		28D587C70E264CF3009C7DEA /* LoadLV2.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; name = LoadLV2.cpp; path = lv2/LoadLV2.cpp; sourceTree = "<group>"; };
@@ -3129,6 +3167,12 @@
 		28DABFBD0FF19DB100AC7848 /* RealFFTf.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = RealFFTf.h; sourceTree = "<group>"; };
 		28DB34770FDC2C5D0011F589 /* ResponseQueue.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = ResponseQueue.h; sourceTree = "<group>"; };
 		28DB34780FDC2C5D0011F589 /* ResponseQueue.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = ResponseQueue.cpp; sourceTree = "<group>"; };
+		28DE72AA10388583007E18EC /* PreferenceCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = PreferenceCommands.cpp; sourceTree = "<group>"; };
+		28DE72AB10388583007E18EC /* PreferenceCommands.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = PreferenceCommands.h; sourceTree = "<group>"; };
+		28DE72AC10388583007E18EC /* SetTrackInfoCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = SetTrackInfoCommand.cpp; sourceTree = "<group>"; };
+		28DE72AD10388583007E18EC /* SetTrackInfoCommand.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = SetTrackInfoCommand.h; sourceTree = "<group>"; };
+		28DE72B0103885AA007E18EC /* TimeWarper.cpp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = TimeWarper.cpp; sourceTree = "<group>"; };
+		28DE72B1103885AA007E18EC /* TimeWarper.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = TimeWarper.h; sourceTree = "<group>"; };
 		28E237080E515D1D00281398 /* libscorealign.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libscorealign.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		28E3E6E60A7C14CA00AB1361 /* ExportFLAC.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ExportFLAC.h; sourceTree = "<group>"; };
 		28E3E6E70A7C14CA00AB1361 /* ExportFLAC.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ExportFLAC.cpp; sourceTree = "<group>"; };
@@ -3444,6 +3488,8 @@
 		ED3D7FED0DF73889000F43E3 /* EffectCategory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EffectCategory.h; sourceTree = "<group>"; };
 		ED3D7FEE0DF73889000F43E3 /* EffectManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = EffectManager.cpp; sourceTree = "<group>"; };
 		ED3D7FEF0DF73889000F43E3 /* EffectManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EffectManager.h; sourceTree = "<group>"; };
+		EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ImportExportCommands.cpp; sourceTree = "<group>"; };
+		EDD94EDA103CB520000873F1 /* ImportExportCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImportExportCommands.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -3998,25 +4044,53 @@
 			children = (
 				28D53FFA0FD1912A00FA7C75 /* AppCommandEvent.cpp */,
 				28D53FFB0FD1912A00FA7C75 /* AppCommandEvent.h */,
+				28BD8AA9101DF4C600686679 /* BatchEvalCommand.cpp */,
 				28D53FFC0FD1912A00FA7C75 /* BatchEvalCommand.h */,
+				28851F9C1027F16400152EE1 /* Command.cpp */,
 				28D53FFD0FD1912A00FA7C75 /* Command.h */,
 				28D53FFE0FD1912A00FA7C75 /* CommandBuilder.cpp */,
 				28D53FFF0FD1912A00FA7C75 /* CommandBuilder.h */,
+				28BD8AAA101DF4C600686679 /* CommandDirectory.cpp */,
+				28BD8AAB101DF4C600686679 /* CommandDirectory.h */,
 				28D540000FD1912A00FA7C75 /* CommandHandler.cpp */,
 				28D540010FD1912A00FA7C75 /* CommandHandler.h */,
 				174D9026098C78AF00D5909F /* CommandManager.cpp */,
 				174D9027098C78AF00D5909F /* CommandManager.h */,
 				1818558F0FFE916C0026D190 /* CommandMisc.h */,
+				28851F9D1027F16400152EE1 /* CommandSignature.cpp */,
+				28851F9E1027F16400152EE1 /* CommandSignature.h */,
+				28851F9F1027F16400152EE1 /* CommandType.cpp */,
+				28851FA01027F16400152EE1 /* CommandType.h */,
 				181855900FFE916C0026D190 /* CommandTargets.h */,
-				28D540020FD1912A00FA7C75 /* DebugPrintCommand.h */,
+				28851FA11027F16400152EE1 /* CompareAudioCommand.cpp */,
+				28851FA21027F16400152EE1 /* CompareAudioCommand.h */,
+				28BD8AAC101DF4C600686679 /* ExecMenuCommand.cpp */,
+				28BD8AAD101DF4C600686679 /* ExecMenuCommand.h */,
+				28BD8AAE101DF4C600686679 /* GetAllMenuCommands.cpp */,
+				28BD8AAF101DF4C600686679 /* GetAllMenuCommands.h */,
+				28851FA31027F16400152EE1 /* GetTrackInfoCommand.cpp */,
+				28851FA41027F16400152EE1 /* GetTrackInfoCommand.h */,
+				28851FA51027F16400152EE1 /* HelpCommand.cpp */,
+				28851FA61027F16400152EE1 /* HelpCommand.h */,
+				EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */,
+				EDD94EDA103CB520000873F1 /* ImportExportCommands.h */,
 				174D902A098C78AF00D5909F /* Keyboard.cpp */,
 				174D902B098C78AF00D5909F /* Keyboard.h */,
+				28851FA71027F16400152EE1 /* MessageCommand.cpp */,
+				28851FA81027F16400152EE1 /* MessageCommand.h */,
+				28DE72AA10388583007E18EC /* PreferenceCommands.cpp */,
+				28DE72AB10388583007E18EC /* PreferenceCommands.h */,
 				28DB34770FDC2C5D0011F589 /* ResponseQueue.h */,
 				28DB34780FDC2C5D0011F589 /* ResponseQueue.cpp */,
 				181855950FFE916C0026D190 /* ScreenshotCommand.cpp */,
 				181855960FFE916C0026D190 /* ScreenshotCommand.h */,
 				28D540030FD1912A00FA7C75 /* ScriptCommandRelay.cpp */,
 				28D540040FD1912A00FA7C75 /* ScriptCommandRelay.h */,
+				28851FA91027F16400152EE1 /* SelectCommand.cpp */,
+				28851FAA1027F16400152EE1 /* SelectCommand.h */,
+				28DE72AC10388583007E18EC /* SetTrackInfoCommand.cpp */,
+				28DE72AD10388583007E18EC /* SetTrackInfoCommand.h */,
+				28BD8AB0101DF4C600686679 /* Validators.h */,
 			);
 			path = commands;
 			sourceTree = "<group>";
@@ -4287,6 +4361,7 @@
 				1790B0B209883BFD008A330A /* PitchName.h */,
 				1790B0B309883BFD008A330A /* PlatformCompatibility.cpp */,
 				1790B0B409883BFD008A330A /* PlatformCompatibility.h */,
+				287E207E102561F300BF47A2 /* PluginManager.cpp */,
 				1790B0CC09883BFD008A330A /* Prefs.cpp */,
 				1790B0CD09883BFD008A330A /* Prefs.h */,
 				1790B0CE09883BFD008A330A /* Printing.cpp */,
@@ -4462,6 +4537,8 @@
 				1790B04D09883BFD008A330A /* StereoToMono.h */,
 				ED27074D0EF9C64F007D4FFD /* TimeScale.cpp */,
 				ED27074E0EF9C64F007D4FFD /* TimeScale.h */,
+				28DE72B0103885AA007E18EC /* TimeWarper.cpp */,
+				28DE72B1103885AA007E18EC /* TimeWarper.h */,
 				1790B04E09883BFD008A330A /* ToneGen.cpp */,
 				1790B04F09883BFD008A330A /* ToneGen.h */,
 				1790B05009883BFD008A330A /* TruncSilence.cpp */,
@@ -4557,7 +4634,6 @@
 				1790B08D09883BFD008A330A /* ImportPlugin.h */,
 				2801A6430BF9268700648258 /* ImportQT.cpp */,
 				2801A6440BF9268700648258 /* ImportQT.h */,
-				2801A6450BF9268700648258 /* ImportQTWrapper.cpp */,
 				1790B08E09883BFD008A330A /* ImportRaw.cpp */,
 				1790B08F09883BFD008A330A /* ImportRaw.h */,
 				1790B09009883BFD008A330A /* RawAudioGuess.cpp */,
@@ -4584,6 +4660,8 @@
 				284B278F0FC66863005EAC96 /* DevicePrefs.h */,
 				1790B0BB09883BFD008A330A /* DirectoriesPrefs.cpp */,
 				1790B0BC09883BFD008A330A /* DirectoriesPrefs.h */,
+				28948425101DF8FC005B0713 /* EffectsPrefs.cpp */,
+				28948426101DF8FC005B0713 /* EffectsPrefs.h */,
 				1790B0BF09883BFD008A330A /* GUIPrefs.cpp */,
 				1790B0C009883BFD008A330A /* GUIPrefs.h */,
 				284B27900FC66863005EAC96 /* ImportExportPrefs.cpp */,
@@ -6040,8 +6118,6 @@
 			isa = PBXGroup;
 			children = (
 				2885BFF10FC108F800128165 /* aeffectx.h */,
-				2885BFF20FC108F800128165 /* LoadVST.cpp */,
-				2885BFF30FC108F800128165 /* LoadVST.h */,
 				28B97B850FBF771A0076CF28 /* VSTEffect.cpp */,
 				28B97B860FBF771A0076CF28 /* VSTEffect.h */,
 			);
@@ -8278,7 +8354,6 @@
 				28F5C1110BE5886A00D17341 /* FileDialogPrivate.cpp in Sources */,
 				285DE1FA0BF03C7800A20DF0 /* Screenshot.cpp in Sources */,
 				2801A6460BF9268700648258 /* ImportQT.cpp in Sources */,
-				2801A6470BF9268700648258 /* ImportQTWrapper.cpp in Sources */,
 				2891B2870C531D2C0044FBE3 /* FindClipping.cpp in Sources */,
 				283AA0EB0C56ED08002CBD34 /* ErrorDialog.cpp in Sources */,
 				28501EA10CEECEF80029ABAA /* HelpText.cpp in Sources */,
@@ -8362,7 +8437,6 @@
 				18A2840F0F79BCAB0013A1BE /* Generator.cpp in Sources */,
 				28CCDD000F939FD70081F2FC /* FileHistory.cpp in Sources */,
 				28B97B890FBF771A0076CF28 /* VSTEffect.cpp in Sources */,
-				2885BFF40FC108F800128165 /* LoadVST.cpp in Sources */,
 				284B279A0FC66864005EAC96 /* DevicePrefs.cpp in Sources */,
 				284B279B0FC66864005EAC96 /* ImportExportPrefs.cpp in Sources */,
 				284B279C0FC66864005EAC96 /* LibraryPrefs.cpp in Sources */,
@@ -8382,6 +8456,24 @@
 				1865A9B81004490500946EE6 /* Lyrics.cpp in Sources */,
 				1865A9B91004490500946EE6 /* LyricsWindow.cpp in Sources */,
 				289E750A1006D0BD00CEF79B /* MixerBoard.cpp in Sources */,
+				28BD8AB1101DF4C700686679 /* BatchEvalCommand.cpp in Sources */,
+				28BD8AB2101DF4C700686679 /* CommandDirectory.cpp in Sources */,
+				28BD8AB3101DF4C700686679 /* ExecMenuCommand.cpp in Sources */,
+				28BD8AB4101DF4C700686679 /* GetAllMenuCommands.cpp in Sources */,
+				28948427101DF8FC005B0713 /* EffectsPrefs.cpp in Sources */,
+				287E207F102561F300BF47A2 /* PluginManager.cpp in Sources */,
+				28851FAB1027F16500152EE1 /* Command.cpp in Sources */,
+				28851FAC1027F16500152EE1 /* CommandSignature.cpp in Sources */,
+				28851FAD1027F16500152EE1 /* CommandType.cpp in Sources */,
+				28851FAE1027F16500152EE1 /* CompareAudioCommand.cpp in Sources */,
+				28851FAF1027F16500152EE1 /* GetTrackInfoCommand.cpp in Sources */,
+				28851FB01027F16500152EE1 /* HelpCommand.cpp in Sources */,
+				28851FB11027F16500152EE1 /* MessageCommand.cpp in Sources */,
+				28851FB21027F16500152EE1 /* SelectCommand.cpp in Sources */,
+				28DE72AE10388583007E18EC /* PreferenceCommands.cpp in Sources */,
+				28DE72AF10388583007E18EC /* SetTrackInfoCommand.cpp in Sources */,
+				28DE72B2103885AA007E18EC /* TimeWarper.cpp in Sources */,
+				EDD94EDB103CB520000873F1 /* ImportExportCommands.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9005,6 +9097,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILDING_AUDACITY=1";
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = 4.0;
 				INFOPLIST_FILE = Info.plist;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -9066,6 +9159,7 @@
 				FFMPEG_PREFIX = /usr/local;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = 4.0;
 				INFOPLIST_OTHER_PREPROCESSOR_FLAGS = "-traditional";
 				INFOPLIST_PREFIX_HEADER = Info.plist.h;
 				INFOPLIST_PREPROCESS = YES;
@@ -9519,6 +9613,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_VERSION = 4.0;
 				INFOPLIST_OTHER_PREPROCESSOR_FLAGS = "-traditional";
 				INFOPLIST_PREFIX_HEADER = Info.plist.h;
 				INFOPLIST_PREPROCESS = YES;
@@ -9831,6 +9926,7 @@
 				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_VERSION = 4.0;
 				INFOPLIST_OTHER_PREPROCESSOR_FLAGS = "-traditional";
 				INFOPLIST_PREFIX_HEADER = Info.plist.h;
 				INFOPLIST_PREPROCESS = YES;
@@ -10407,6 +10503,7 @@
 				FFMPEG_PREFIX = /usr/local;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_VERSION = 4.0;
 				INFOPLIST_OTHER_PREPROCESSOR_FLAGS = "-traditional";
 				INFOPLIST_PREFIX_HEADER = Info.plist.h;
 				INFOPLIST_PREPROCESS = YES;

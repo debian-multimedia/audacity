@@ -11,8 +11,6 @@
 \file CommandBuilder.cpp
 \brief Contains definitions for CommandBuilder class.
 
-*//****************************************************************//**
-
 \class CommandBuilder
 \brief A type of factory for Commands of various sorts.
 
@@ -23,86 +21,98 @@ system by constructing BatchCommandEval objects.
 
 *//*******************************************************************/
 
+#include "CommandDirectory.h"
 #include "CommandBuilder.h"
-#include <wx/log.h>
-#include <wx/wx.h>
-#include "DebugPrintCommand.h"
-#include "BatchEvalCommand.h"
-#include "ScreenshotCommand.h"
 #include "../Shuttle.h"
+#include "BatchEvalCommand.h"
+#include "Command.h"
+#include "CommandTargets.h"
+#include "ScriptCommandRelay.h"
 
 CommandBuilder::CommandBuilder(const wxString &cmdString)
-: mValid(false), mCommand(NULL)
+   : mValid(false), mCommand(NULL)
 {
    BuildCommand(cmdString);
 }
 
 CommandBuilder::CommandBuilder(const wxString &cmdName, const wxString &params)
-: mValid(false), mCommand(NULL)
+   : mValid(false), mCommand(NULL)
 {
    BuildCommand(cmdName, params);
 }
 
-CommandBuilder::~CommandBuilder() { }
+CommandBuilder::~CommandBuilder() 
+{ 
+   Cleanup();
+}
 
-bool CommandBuilder::WasValid() { return mValid; }
+bool CommandBuilder::WasValid() 
+{
+   return mValid; 
+}
 
-const wxString &CommandBuilder::GetErrorMessage() { return mError; }
+const wxString &CommandBuilder::GetErrorMessage() 
+{
+   return mError; 
+}
 
 Command *CommandBuilder::GetCommand()
 {
    wxASSERT(mValid);
    wxASSERT(NULL != mCommand);
-   return mCommand;
+   Command *tmp = mCommand;
+   mCommand = NULL;
+   return tmp;
 }
 
-// Short-term solution!
-bool CommandBuilder::LookUpCommand(wxString name, std::pair<Command*,ParamMap> &result)
+void CommandBuilder::Cleanup()
 {
-   if (name.IsSameAs(wxT("screenshot")))
+   if (mCommand != NULL)
    {
-      CommandOutputTarget *output
-         = new CommandOutputTarget(new NullProgressTarget(),
-                                   new MessageBoxTarget(),
-                                   new MessageBoxTarget());
-      result = std::pair<Command*,ParamMap>(new ScreenshotCommand(output),
-                                            ScreenshotCommand::GetSignature());
-      return true;
-   } // Other cases...
-   return false;
-}
-
-// Short-term solution!
-ParamMap CommandBuilder::GetSignature(wxString name)
-{
-   if(name.IsSameAs(wxT("screenshot")))
-   {
-      return ScreenshotCommand::GetSignature();
+      delete mCommand;
+      mCommand = NULL;
    }
-   return Command::GetSignature();
 }
 
-void CommandBuilder::BuildCommand(const wxString &cmdName, const wxString &cmdParams)
+void CommandBuilder::Failure(const wxString &msg)
 {
-   // Stage 1: work out what command to create
+   mError = msg;
+   mValid = false;
+}
 
-   ParamMap signature;
+void CommandBuilder::Success(Command *cmd)
+{
+   mCommand = cmd;
+   mValid = true;
+}
 
-   std::pair<Command*,ParamMap> commandEntry;
-   if (LookUpCommand(cmdName, commandEntry))
-   {
-      mCommand = commandEntry.first;
-      signature = commandEntry.second;
-   }
-   else
+void CommandBuilder::BuildCommand(const wxString &cmdName,
+                                  wxString cmdParams)
+{
+   // Stage 1: create a Command object of the right type
+
+   CommandMessageTarget *scriptOutput = ScriptCommandRelay::GetResponseTarget();
+   CommandOutputTarget *output
+      = new CommandOutputTarget(new NullProgressTarget(),
+                                scriptOutput,
+                                scriptOutput);
+
+   CommandType *factory = CommandDirectory::Get()->LookUp(cmdName);
+
+   if (factory == NULL)
    {
       // Fall back to hoping the Batch Command system can handle it
-      mCommand = new BatchEvalCommand();
+      CommandType *type = CommandDirectory::Get()->LookUp(wxT("BatchCommand"));
+      wxASSERT(type != NULL);
+      mCommand = type->Create(output);
       mCommand->SetParameter(wxT("CommandName"), cmdName);
       mCommand->SetParameter(wxT("ParamString"), cmdParams);
-      mValid = true;
+      Success(new ApplyAndSendResponse(mCommand));
       return;
    }
+
+   CommandSignature &signature = factory->GetSignature();
+   mCommand = factory->Create(output);
 
    // Stage 2: set the parameters
 
@@ -110,36 +120,70 @@ void CommandBuilder::BuildCommand(const wxString &cmdName, const wxString &cmdPa
    shuttle.mParams = cmdParams;
    shuttle.mbStoreInClient = true;
 
-   ParamMap::const_iterator iter;
-   for (iter = signature.begin(); iter != signature.end(); ++iter)
+   ParamValueMap::const_iterator iter;
+   ParamValueMap params = signature.GetDefaults();
+
+   for (iter = params.begin(); iter != params.end(); ++iter)
    {
       wxString paramString;
-      if (shuttle.TransferString(iter->first, paramString, wxT(""))
-         && (!mCommand->SetParameter(iter->first, paramString)))
+      if (shuttle.TransferString(iter->first, paramString, wxT("")))
       {
-         mError = wxT("Invalid value for parameter '") + iter->first;
-         mValid = false;
-         return;
+         if (!mCommand->SetParameter(iter->first, paramString))
+         {
+            Failure();
+            return;
+         }
       }
    }
-   // TODO check for unrecognised parameters
 
-   mValid = true;
+   // Check for unrecognised parameters
+
+   while (cmdParams != wxEmptyString)
+   {
+      cmdParams.Trim(true);
+      cmdParams.Trim(false);
+      int splitAt = cmdParams.Find(wxT('='));
+      if (splitAt < 0 && cmdParams != wxEmptyString)
+      {
+         Failure(wxT("Parameter string is missing '='"));
+         return;
+      }
+      wxString paramName = cmdParams.Left(splitAt);
+      if (params.find(paramName) == params.end())
+      {
+         Failure(wxT("Unrecognised parameter: '") + paramName + wxT("'"));
+         return;
+      }
+      cmdParams = cmdParams.Mid(splitAt+1);
+      splitAt = cmdParams.Find(wxT(' '));
+      if (splitAt < 0)
+      {
+         splitAt = cmdParams.Len();
+      }
+      cmdParams = cmdParams.Mid(splitAt);
+   }
+
+   Success(new ApplyAndSendResponse(mCommand));
 }
 
-void CommandBuilder::BuildCommand(const wxString &cmdString)
+void CommandBuilder::BuildCommand(wxString cmdString)
 {
    // Find the command name terminator...  If there is more than one word and
    // no terminator, the command is badly formed
+   cmdString.Trim(true); cmdString.Trim(false);
    int splitAt = cmdString.Find(wxT(':'));
-   if (splitAt < 0 && cmdString.Strip(wxString::both).Find(wxT(' ')) >= 0) {
-      mError = wxT("BAD - Missing ':'?");
+   if (splitAt < 0 && cmdString.Find(wxT(' ')) >= 0) {
+      mError = wxT("Command is missing ':'");
+      ScriptCommandRelay::SendResponse(wxT("\n"));
       mValid = false;
       return;
    }
 
-   wxString cmdName = cmdString.Left(splitAt).Strip(wxString::both);
-   wxString cmdParams = cmdString.Mid(splitAt+1).Strip(wxString::both);
+   wxString cmdName = cmdString.Left(splitAt);
+   wxString cmdParams = cmdString.Mid(splitAt+1);
+   cmdName.Trim(true);
+   cmdParams.Trim(false);
+
    BuildCommand(cmdName, cmdParams);
 }
 

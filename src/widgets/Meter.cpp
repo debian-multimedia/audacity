@@ -66,11 +66,13 @@
 //#include "../../images/MixerImages.h"
 #include "../Project.h"
 #include "../toolbars/MeterToolBar.h"
+#include "../toolbars/ControlToolBar.h"
 #include "../Prefs.h"
 
 #include "../Theme.h"
 #include "../AllThemeResources.h"
 #include "../Experimental.h"
+
 
 /* Updates to the meter are passed accross via meter updates, each contained in
  * a MeterUpdateMsg object */
@@ -170,6 +172,7 @@ enum {
    OnDisableMeterID,
    OnMonitorID,
    OnHorizontalID,
+   OnAutomatedInputLevelAdjustmentID,
    OnVerticalID,
    OnMultiID,
    OnEqualizerID,
@@ -197,6 +200,9 @@ BEGIN_EVENT_TABLE(Meter, wxPanel)
    EVT_MENU(OnDBID, Meter::OnDB)
    EVT_MENU(OnClipID, Meter::OnClip)
    EVT_MENU(OnMonitorID, Meter::OnMonitor)
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   EVT_MENU(OnAutomatedInputLevelAdjustmentID, Meter::OnAutomatedInputLevelAdjustment)
+#endif
    EVT_MENU(OnFloatID, Meter::OnFloat)
    EVT_MENU(OnPreferencesID, Meter::OnPreferences)
 END_EVENT_TABLE()
@@ -286,8 +292,15 @@ Meter::Meter(wxWindow* parent, wxWindowID id,
 
    mTimer.SetOwner(this, OnMeterUpdateID);
    Reset(44100.0, true);
-   for(i=0; i<kMaxMeterBars; i++)
+   for(i=0; i<kMaxMeterBars; i++) {
       mBar[i].clipping = false;
+      mBar[i].isclipping = false;
+   }
+}
+
+void Meter::Clear()
+{
+   mQueue.Clear();
 }
 
 void Meter::CreateIcon(int aquaOffset)
@@ -399,6 +412,19 @@ void Meter::OnMouse(wxMouseEvent &evt)
             menu->Append(OnMonitorID, _("Stop Monitoring"));
          else
             menu->Append(OnMonitorID, _("Start Monitoring"));
+
+         #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+            if (gAudioIO->AILAIsActive())
+               menu->Append(OnAutomatedInputLevelAdjustmentID, _("Stop Automated Input Level Adjustment"));
+            else
+               menu->Append(OnAutomatedInputLevelAdjustmentID, _("Start Automated Input Level Adjustment"));
+
+            bool AVActive;
+            gPrefs->Read(wxT("/AudioIO/AutomatedInputLevelAdjustment"), &AVActive, false);
+            if (!AVActive || !GetActiveProject()->GetControlToolBar()->IsRecordDown())
+               menu->Enable(OnAutomatedInputLevelAdjustmentID, false);
+         #endif
+
       }
       menu->AppendSeparator();
 
@@ -609,7 +635,8 @@ void Meter::OnMeterUpdate(wxTimerEvent &evt)
 {
    MeterUpdateMsg msg;
    int numChanges = 0;
-  
+   double maxPeak = 0.0;
+   bool discarded = false;
    // There may have been several update messages since the last
    // time we got to this function.  Catch up to real-time by
    // popping them off until there are none left.  It is necessary
@@ -628,6 +655,8 @@ void Meter::OnMeterUpdate(wxTimerEvent &evt)
 
       mT += deltaT;
       for(j=0; j<mNumBars; j++) {
+         mBar[j].isclipping = false;
+
          if (mDecay) {
             if (mDB) {
                float decayAmount = mDecayRate * deltaT / mDBRange;
@@ -659,14 +688,35 @@ void Meter::OnMeterUpdate(wxTimerEvent &evt)
          
          if (msg.clipping[j] ||
              mBar[j].tailPeakCount+msg.headPeakCount[j] >=
-             mNumPeakSamplesToClip)
+             mNumPeakSamplesToClip){
             mBar[j].clipping = true;
+            mBar[j].isclipping = true;
+         }
+
          mBar[j].tailPeakCount = msg.tailPeakCount[j];
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+         if (mT > gAudioIO->AILAGetLastDecisionTime()) {
+            discarded = false;
+            maxPeak = msg.peak[j] > maxPeak ? msg.peak[j] : maxPeak;
+            printf("%f@%f ", msg.peak[j], mT);
+         }
+         else {
+	         discarded = true;
+            printf("%f@%f discarded\n", msg.peak[j], mT);
+	      }
+#endif
       }
    } // while
-  
-   if (numChanges > 0)      
+
+   if (numChanges > 0) {
+      #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+         if (gAudioIO->AILAIsActive() && mIsInput && !discarded) {
+            gAudioIO->AILAProcess(maxPeak);
+            putchar('\n');
+         }
+      #endif
       RepaintBarsNow();
+   }
 }
 
 float Meter::GetMaxPeak()
@@ -678,6 +728,13 @@ float Meter::GetMaxPeak()
       maxPeak = mBar[j].peak > maxPeak ? mBar[j].peak : maxPeak;
 
    return(maxPeak);
+}
+
+double Meter::ToLinearIfDB(double value)
+{
+   if (mDB)
+      value = pow(10.0, (-(1.0-value)*mDBRange)/20.0);
+   return value;
 }
 
 wxFont Meter::GetFont()
@@ -701,7 +758,16 @@ void Meter::ResetBar(MeterBar *b, bool resetClipping)
       b->clipping = false;
       b->peakPeakHold =0.0;
    }
+   b->isclipping = false;
    b->tailPeakCount = 0;
+}
+
+bool Meter::IsClipping()
+{
+   for (int c = 0; c < kMaxMeterBars; c++)
+      if (mBar[c].isclipping)
+         return true;
+   return false;
 }
 
 void Meter::HandleLayout()
@@ -868,7 +934,7 @@ void Meter::HandleLayout()
    }
 
    // MixerTrackCluster style has no popup, so disallows SetStyle, so never needs icon.
-   //vvvvv There's an ASSERT failure if this:  if (mStyle != MixerTrackCluster)
+   if (mStyle != MixerTrackCluster) 
       CreateIcon(mIconPos.y % 4);
 
    mLayoutValid = true;
@@ -890,7 +956,7 @@ void Meter::HandlePaint(wxDC &dc)
          // For any vertical style, also need mRightSize big enough for Ruler width.
          int rulerWidth;
          int rulerHeight;
-         dc.GetTextExtent(wxT("-88"), &rulerWidth, &rulerHeight); // -88 is nice and wide.
+         dc.GetTextExtent(wxT("-888"), &rulerWidth, &rulerHeight); // -888 is nice and wide.
          if (mRightSize.x < rulerWidth)
             mRightSize.x = rulerWidth;
       }
@@ -1193,6 +1259,19 @@ void Meter::OnMonitor(wxCommandEvent &evt)
    StartMonitoring();
 }
 
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+void Meter::OnAutomatedInputLevelAdjustment(wxCommandEvent &evt)
+{
+   if (gAudioIO->AILAIsActive()) {
+      gAudioIO->AILADisable();
+      AudacityProject *p = GetActiveProject();
+      if (p) p->TP_DisplayStatusMessage(_("Automated Input Level Adjustment stopped as requested by user."));
+   }
+   else
+      gAudioIO->AILAInitialize();
+}
+#endif
+
 void Meter::OnFloat(wxCommandEvent &evt)
 {
 }
@@ -1208,17 +1287,17 @@ void Meter::OnPreferences(wxCommandEvent &evt)
        1,
        100);
 
-#if defined(__WXMAC__)
-   // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do
-   //
-   // LL:  I've commented this out because if you have, for instance, the meter
-   //      toolbar undocked and large and then you open a dialog like an effect,
-   //      the dialog may appear behind the dialog and you can't move either one.
-   //
-   //      However, I'm leaving it here because I don't remember why I'd included
-   //      it in the first place.
-// SetWindowClass((WindowRef)d.MacGetWindowRef(), kFloatingWindowClass);
-#endif
+   //#if defined(__WXMAC__)
+      // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do
+      //
+      // LL:  I've commented this out because if you have, for instance, the meter
+      //      toolbar undocked and large and then you open a dialog like an effect,
+      //      the dialog may appear behind the dialog and you can't move either one.
+      //
+      //      However, I'm leaving it here because I don't remember why I'd included
+      //      it in the first place.
+      // SetWindowClass((WindowRef)d.MacGetWindowRef(), kFloatingWindowClass);
+   //#endif
 
    if (d.ShowModal() == wxID_OK) {
       mMeterRefreshRate = d.GetValue();

@@ -148,6 +148,12 @@ scroll information.  It also has some status flags.
 #include "toolbars/ToolsToolBar.h"
 #include "toolbars/TranscriptionToolBar.h"
 
+#include "commands/ScriptCommandRelay.h"
+#include "commands/CommandDirectory.h"
+#include "commands/CommandTargets.h"
+#include "commands/Command.h"
+#include "commands/CommandType.h"
+
 using std::cout;
 
 TrackList *AudacityProject::msClipboard = new TrackList();
@@ -935,17 +941,19 @@ AudacityProject::~AudacityProject()
 
 void AudacityProject::UpdatePrefsVariables()
 {
-   gPrefs->Read(wxT("/GUI/EmptyCanBeDirty"), &mEmptyCanBeDirty, true );
-//   gPrefs->Read(wxT("/GUI/UpdateSpectrogram"), &mViewInfo.bUpdateSpectrogram, true);
-   gPrefs->Read(wxT("/GUI/AutoScroll"), &mViewInfo.bUpdateTrackIndicator, true);
-   gPrefs->Read(wxT("/GUI/TracksFitVerticallyZoomed"), &mTracksFitVerticallyZoomed, false);
-   gPrefs->Read(wxT("/GUI/SelectAllOnNone"), &mSelectAllOnNone, true);
-   gPrefs->Read(wxT("/GUI/ShowSplashScreen"), &mShowSplashScreen, true);
-   gPrefs->Read(wxT("/GUI/Help"), &mHelpPref, wxT("InBrowser") );
-
-   gPrefs->Read(wxT("/Batch/CleanSpeechMode"), &mCleanSpeechMode, false);
    gPrefs->Read(wxT("/AudioFiles/ShowId3Dialog"), &mShowId3Dialog, true);
    gPrefs->Read(wxT("/AudioFiles/NormalizeOnLoad"),&mNormalizeOnLoad, false);
+
+   gPrefs->Read(wxT("/Batch/CleanSpeechMode"), &mCleanSpeechMode, false);
+
+   gPrefs->Read(wxT("/GUI/AutoScroll"), &mViewInfo.bUpdateTrackIndicator, true);
+   gPrefs->Read(wxT("/GUI/EmptyCanBeDirty"), &mEmptyCanBeDirty, true );
+   gPrefs->Read(wxT("/GUI/Help"), &mHelpPref, wxT("InBrowser") );
+   gPrefs->Read(wxT("/GUI/SelectAllOnNone"), &mSelectAllOnNone, true);
+   gPrefs->Read(wxT("/GUI/ShowSplashScreen"), &mShowSplashScreen, true);
+   gPrefs->Read(wxT("/GUI/Solo"), &mSoloPref, wxT("Standard") );
+   gPrefs->Read(wxT("/GUI/TracksFitVerticallyZoomed"), &mTracksFitVerticallyZoomed, false);
+   //   gPrefs->Read(wxT("/GUI/UpdateSpectrogram"), &mViewInfo.bUpdateSpectrogram, true);
 
    gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleRate"), &mRate, AudioIO::GetOptimalSupportedSampleRate());
    mDefaultFormat = (sampleFormat) gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleFormat"), floatSample);
@@ -996,6 +1004,7 @@ void AudacityProject::RedrawProject(const bool bForceWaveTracks /*= false*/)
       }
    }
    mTrackPanel->Refresh(false);
+   //v \todo MixerBoard calls this, but are there cases where this needs to refresh MixerBoard?
 }
 
 void AudacityProject::RefreshCursor()
@@ -1503,7 +1512,6 @@ void AudacityProject::OnODTaskUpdate(wxCommandEvent & event)
 //redraws the task and does other book keeping after the task is complete.
 void AudacityProject::OnODTaskComplete(wxCommandEvent & event)
 {
-
   if(mTrackPanel)
       mTrackPanel->Refresh(false);
 }
@@ -2040,6 +2048,7 @@ wxArrayString AudacityProject::ShowOpenDialog(wxString extra)
       mask = mask.AfterFirst(wxT('|')).AfterFirst(wxT('|'));
    }
    gPrefs->Write(wxT("/DefaultOpenType"), mask.BeforeFirst(wxT('|')));
+   gPrefs->Write(wxT("/LastOpenType"), mask.BeforeFirst(wxT('|')));
 
    // Return the selected files
    dlog.GetPaths(selected);
@@ -3137,7 +3146,7 @@ void AudacityProject::AddImportedTracks(wxString fileName,
 }
 
 // If pNewTrackList is passed in non-NULL, it gets filled with the pointers to new tracks.
-void AudacityProject::Import(wxString fileName, WaveTrackArray* pTrackArray /*= NULL*/)
+bool AudacityProject::Import(wxString fileName, WaveTrackArray* pTrackArray /*= NULL*/)
 {
    Track **newTracks;
    int numTracks;
@@ -3158,14 +3167,14 @@ void AudacityProject::Import(wxString fileName, WaveTrackArray* pTrackArray /*= 
                  errorMessage, wxT("innerlink:wma-proprietary"));   
    }
    if (numTracks <= 0)
-      return;
+      return false;
 
    wxGetApp().AddFileToHistory(fileName);
 
    // for LOF ("list of files") files, do not import the file as if it
    // were an audio file itself
    if (fileName.AfterLast('.').IsSameAs(wxT("lof"), false)) {
-      return;
+      return false;
    }
 
    // Have to set up newTrackList before calling AddImportedTracks, 
@@ -3190,6 +3199,7 @@ void AudacityProject::Import(wxString fileName, WaveTrackArray* pTrackArray /*= 
    }
 
    GetDirManager()->FillBlockfilesCache();
+   return true;
 }
 
 bool AudacityProject::SaveAs(bool bWantSaveCompressed /*= false*/)
@@ -3414,7 +3424,7 @@ void AudacityProject::SetStateTo(unsigned int n)
          pLyricsPanel->Add(pLabelTrack->GetLabel(i)->t,
                            pLabelTrack->GetLabel(i)->title);
       pLyricsPanel->Finish(pLabelTrack->GetEndTime());
-      pLyricsPanel->Update(0.0);
+      pLyricsPanel->Update(this->GetSel0());
    }
 #endif
 
@@ -3424,7 +3434,7 @@ void AudacityProject::SetStateTo(unsigned int n)
       if (!mMixerBoard)
          return;
       mMixerBoard->UpdateTrackClusters();
-      mMixerBoard->UpdateMeters(gAudioIO->GetStreamTime()); 
+      mMixerBoard->UpdateMeters(gAudioIO->GetStreamTime(), (mLastPlayMode == loopedPlay)); 
    }
 #endif
 
@@ -3492,13 +3502,16 @@ void AudacityProject::Clear()
 void AudacityProject::SelectNone()
 {
    TrackListIterator iter(mTracks);
-
    Track *t = iter.First();
    while (t) {
       t->SetSelected(false);
       t = iter.Next();
    }
    mTrackPanel->Refresh(false);
+   #ifdef EXPERIMENTAL_MIXER_BOARD
+      if (mMixerBoard)
+         mMixerBoard->Refresh(false);
+   #endif
 }
 
 // Utility function called by other zoom methods
@@ -3867,10 +3880,30 @@ void AudacityProject::EditClipboardByLabel( WaveTrack::EditDestFunction action )
       delete regions.Item( i );
 }
 
+
 // TrackPanel callback method
 void AudacityProject::TP_DisplayStatusMessage(wxString msg)
 {
    mStatusBar->SetStatusText(msg);
+   mLastStatusUpdateTime = ::wxGetUTCTime();
+}
+
+// Set the status indirectly, using the command system
+// (more overhead, but can be used from a non-GUI thread)
+void AudacityProject::SafeDisplayStatusMessage(const wxChar *msg)
+{
+   CommandOutputTarget *target
+      = new CommandOutputTarget(TargetFactory::ProgressDefault(),
+                                new StatusBarTarget(*mStatusBar),
+                                TargetFactory::MessageDefault());
+   CommandType *type = CommandDirectory::Get()->LookUp(wxT("Message"));
+   wxASSERT_MSG(type != NULL, wxT("Message command not found!"));
+   Command *statusCmd = type->Create(target);
+   statusCmd->SetParameter(wxT("MessageString"), msg);
+   ScriptCommandRelay::PostCommand(this, statusCmd);
+
+   // Although the status hasn't actually been set yet, updating the time now
+   // is probably accurate enough
    mLastStatusUpdateTime = ::wxGetUTCTime();
 }
 
@@ -3894,13 +3927,23 @@ void AudacityProject::TP_DisplaySelection()
       mRuler->SetPlayRegion(mViewInfo.sel0, mViewInfo.sel1);
 }
 
-// TrackPanel callback method
-wxSize AudacityProject::TP_GetTracksUsableArea()
+
+// TrackPanel access
+
+wxSize AudacityProject::GetTPTracksUsableArea()
 {
    wxSize s;
    mTrackPanel->GetTracksUsableArea(&s.x, &s.y);
    return s;
 }
+
+void AudacityProject::RefreshTPTrack(Track* pTrk, bool refreshbacking /*= true*/)
+{
+   mTrackPanel->RefreshTrack(pTrk, refreshbacking);
+}
+
+
+// TrackPanel callback methods
 
 int AudacityProject::TP_GetCurrentTool()
 {
@@ -4170,6 +4213,129 @@ bool AudacityProject::GetSnapTo()
 bool AudacityProject::IsSticky()
 {
    return (GetStickyFlag() && (mLastFlags & LabelTracksExistFlag));  
+}
+
+void AudacityProject::HandleTrackMute(Track *t, const bool exclusive)
+{
+   // "exclusive" mute means mute the chosen track and unmute all others.
+   if (exclusive) 
+   {
+      TrackListIterator iter(mTracks);
+      Track *i = iter.First();
+      while (i) {
+         if (i == t) {
+            i->SetMute(true);
+            if(i->GetLinked()) { // also mute the linked track
+               i = iter.Next();
+               i->SetMute(true);
+            }
+         }
+         else {
+            i->SetMute(false);
+         }
+         i->SetSolo(false);
+         i = iter.Next();
+      }
+   }
+   else 
+   {
+      // Normal click toggles this track.
+      t->SetMute(!t->GetMute());
+      if(t->GetLinked())   // set mute the same on both, if a pair
+      {
+         bool muted = t->GetMute();
+         TrackListIterator iter(mTracks);
+         Track *i = iter.First();
+         while (i != t) {  // search for this track
+            i = iter.Next();
+         }
+         i = iter.Next();  // get the next one, since linked
+         i->SetMute(muted);   // and mute it as well
+      }
+
+      if( IsSimpleSolo() )
+      {
+         TrackListIterator iter(mTracks);
+         Track *i = iter.First();
+         int nPlaying=0;
+
+         // We also set a solo indicator if we have just one track / stereo pair playing.
+         // otherwise clear solo on everything.
+         while (i) {
+            if( !i->GetMute())
+            {
+               nPlaying += 1;
+               if(i->GetLinked())
+                  i = iter.Next();  // don't count this one as it is linked
+            }
+            i = iter.Next();
+         }
+
+         i = iter.First();
+         while (i) {
+            i->SetSolo( (nPlaying==1) && !i->GetMute() );   // will set both of a stereo pair
+            i = iter.Next();
+         }
+      }
+   }
+}
+
+// Type of solo (standard or simple) follows the set preference, unless
+// alternate == true, which causes the opposite behavior.
+void AudacityProject::HandleTrackSolo(Track *t, const bool alternate)
+{
+   bool bSoloMultiple = !IsSimpleSolo() ^ alternate;
+
+   // Standard and Simple solo have opposite defaults:
+   //   Standard - Behaves as individual buttons, shift=radio buttons
+   //   Simple   - Behaves as radio buttons, shift=individual
+   // In addition, Simple solo will mute/unmute tracks 
+   // when in standard radio button mode.
+   if ( bSoloMultiple ) 
+   {
+      t->SetSolo( !t->GetSolo() );
+      if(t->GetLinked())
+      {
+         bool soloed = t->GetSolo();
+         TrackListIterator iter(mTracks);
+         Track *i = iter.First();
+         while (i != t) {  // search for this track
+            i = iter.Next();
+         }
+         i = iter.Next();  // get the next one, since linked
+         i->SetSolo(soloed);   // and solo it as well
+      }
+   }
+   else 
+   {
+      // Normal click solo this track only, mute everything else.
+      // OR unmute and unsolo everything.
+      TrackListIterator iter(mTracks);
+      Track *i = iter.First();
+      bool bWasSolo = t->GetSolo();
+      while (i) {
+         if( i==t )
+         {
+            i->SetSolo(!bWasSolo);
+            if( IsSimpleSolo() )
+               i->SetMute(false);
+            if(t->GetLinked())
+            {
+               i = iter.Next();
+               i->SetSolo(!bWasSolo);
+               if( IsSimpleSolo() )
+                  i->SetMute(false);
+            }
+         }
+         else
+         {
+            i->SetSolo(false);
+            if( IsSimpleSolo() )
+               i->SetMute(!bWasSolo);
+         }
+         i = iter.Next();
+      }
+   }
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

@@ -13,14 +13,25 @@
 #define __SCREENSHOTCOMMAND__
 
 #include "Command.h"
+#include "CommandType.h"
 
+#include <wx/colour.h>
 class wxWindow;
 class wxTopLevelWindow;
 class wxCommandEvent;
 class wxRect;
 class ToolManager;
+class CommandOutputTarget;
 
-class ScreenshotCommand : public Command
+class ScreenshotCommandType : public CommandType
+{
+public:
+   virtual wxString BuildName();
+   virtual void BuildSignature(CommandSignature &signature);
+   virtual Command *Create(CommandOutputTarget *target);
+};
+
+class ScreenshotCommand : public CommandImplementation
 {
 private:
    // May need to ignore the screenshot dialog
@@ -41,9 +52,14 @@ private:
 
 public:
    wxTopLevelWindow *GetFrontWindow(AudacityProject *project);
-   ScreenshotCommand(CommandOutputTarget *output, wxWindow *ignore = NULL);
+   ScreenshotCommand(CommandType &type,
+                     CommandOutputTarget *output,
+                     wxWindow *ignore = NULL)
+      : CommandImplementation(type, output),
+        mIgnore(ignore),
+        mBackground(false)
+   { }
    bool Apply(CommandExecutionContext context);
-   static ParamMap GetSignature();
 };
 
 #endif /* End of include guard: __SCREENSHOTCOMMAND__ */

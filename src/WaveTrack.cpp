@@ -51,6 +51,8 @@ Track classes.
 
 #include "ondemand/ODManager.h"
 
+#include "effects/TimeWarper.h"
+
 using std::max;
 
 WaveTrack* TrackFactory::DuplicateWaveTrack(WaveTrack &orig)
@@ -76,7 +78,7 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
       rate = GetActiveProject()->GetRate();
    }
 
-   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0L);
+   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0);
 
    mLegacyProjectFileOffset = 0;
 
@@ -96,7 +98,7 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
 WaveTrack::WaveTrack(WaveTrack &orig):
    Track(orig)
 {
-   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0L);
+   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0);
 
    mLegacyProjectFileOffset = 0;
 
@@ -269,13 +271,22 @@ bool WaveTrack::IsEmpty(double t0, double t1)
 
 bool WaveTrack::Cut(double t0, double t1, Track **dest)
 {
+   return Cut(t0, t1, dest, true);
+}
+
+bool WaveTrack::Cut(double t0, double t1, Track **dest, bool groupCut)
+{
    if (t1 < t0)
       return false;
 
    // Cut is the same as 'Copy', then 'Delete'
    if (!Copy(t0, t1, dest))
       return false;
-   return Clear(t0, t1);
+
+   if (groupCut)
+      return Clear(t0, t1);
+   else
+      return HandleClear(t0, t1, false, false);
 }
 
 bool WaveTrack::SplitCut(double t0, double t1, Track **dest)
@@ -487,8 +498,16 @@ bool WaveTrack::ClearAndAddCutLine(double t0, double t1)
 // be pasted with visible split lines.  Normally, effects do not
 // want these extra lines, so they may be merged out.
 //
-bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
-                              bool merge, TrackList* tracks, bool relativeLabels)
+bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
+                              double t1, // End of time to clear
+                              Track *src, // What to paste
+                              bool preserve, // Whether to reinsert splits/cuts
+                              bool merge, // Whether to remove 'extra' splits
+                              TrackList* tracks, // Used in Paste
+                              bool relativeLabels, // Whether to handle labels
+                              bool useHandlePaste, // Which pasting method
+                              TimeWarper *effectWarper // How does time change
+                              )
 {
    WaveClipList::compatibility_iterator ic;
    WaveClipList::compatibility_iterator it;
@@ -500,6 +519,14 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
    // If duration is 0, then it's just a plain paste
    if (dur == 0.0) {
       return Paste(t0, src, tracks, relativeLabels);
+   }
+
+   // If provided time warper was NULL, use a default one that does nothing
+   TimeWarper *warper = NULL;
+   if (effectWarper != NULL) {
+      warper = effectWarper;
+   } else {
+      warper = new IdentityTimeWarper();
    }
 
    // Align to a sample
@@ -516,6 +543,12 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
       st = LongSamplesToTime(TimeToLongSamples(clip->GetStartTime()));
 
       // Remember split line
+      if (st >= t0 && st <= t1) {
+         splits.Add(st);
+      }
+
+      // Also remember the end of the clip
+      st = LongSamplesToTime(TimeToLongSamples(clip->GetEndTime()));
       if (st >= t0 && st <= t1) {
          splits.Add(st);
       }
@@ -546,8 +579,16 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
 
    // Now, clear the selection
    if (HandleClear(t0, t1, false, false)) {
+
+      // The pasting method depends on how this method was called
+      bool pasteResult;
+      if (useHandlePaste)
+         pasteResult = HandlePaste(t0, src);
+      else
+         pasteResult = Paste(t0, src, tracks, relativeLabels);
+
       // And paste in the new data
-      if (Paste(t0, src, tracks, relativeLabels)) {
+      if (pasteResult) {
          unsigned int i;
 
          // First, merge the new clip(s) in with the existing clips
@@ -598,12 +639,12 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
          // Restore cut/split lines
          if (preserve) {
 
-            // Restore the split lines by simply resplitting at the saved time.
+            // Restore the split lines, transforming the position appropriately
             for (i = 0; i < splits.GetCount(); i++) {
-               SplitAt(splits[i]);
+               SplitAt(warper->Warp(splits[i]));
             }
 
-            // Restore the saved cut lines
+            // Restore the saved cut lines, also transforming if time altered
             for (ic = GetClipIterator(); ic; ic = ic->GetNext()) {
                double st;
                double et;
@@ -620,7 +661,7 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
                   // Offset the cut from the start of the clip and add it to
                   // this clips cutlines.
                   if (cs >= st && cs <= et) {
-                     cut->SetOffset(cs - st);
+                     cut->SetOffset(warper->Warp(cs) - st);
                      clip->GetCutLines()->Append(cut);
                      cuts.RemoveAt(i);
                      i--;
@@ -630,6 +671,10 @@ bool WaveTrack::ClearAndPaste(double t0, double t1, Track *src, bool preserve,
          }
       }
    }
+
+   // If we created a default time warper, we need to delete it
+   if (effectWarper == NULL)
+      delete warper;
 
    return true;
 }
@@ -905,16 +950,17 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
 
    //printf("Check if we need to make room for the pasted data\n");
    
-   // Make room for the pasted data, unless the space being pasted in is empty of
-   // any clips
-   if (!IsEmpty(t0, t0+insertDuration-1.0/mRate) && editClipCanMove) {
+   // Make room for the pasted data
+   if (editClipCanMove) {
       if (other->GetNumClips() > 1) {
          // We need to insert multiple clips, so split the current clip and
          // move everything to the right, then try to paste again
-         Track *tmp = NULL;
-         Cut(t0, GetEndTime()+1.0/mRate, &tmp);
-         HandlePaste(t0 + insertDuration, tmp);
-         delete tmp;
+         if (!IsEmpty(t0, GetEndTime())) {
+            Track *tmp = NULL;
+            Cut(t0, GetEndTime()+1.0/mRate, &tmp, false);
+            HandlePaste(t0 + insertDuration, tmp);
+            delete tmp;
+         }
       } else
       {
          // We only need to insert one single clip, so just move all clips
@@ -1416,7 +1462,6 @@ void WaveTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("name"), mName);
    xmlFile.WriteAttr(wxT("channel"), mChannel);
    xmlFile.WriteAttr(wxT("linked"), mLinked);
-   xmlFile.WriteAttr(wxT("offset"), mOffset, 8);
    xmlFile.WriteAttr(wxT("mute"), mMute);
    xmlFile.WriteAttr(wxT("solo"), mSolo);
    xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
@@ -1900,7 +1945,10 @@ bool WaveTrack::SplitAt(double t)
          double val;
          t = LongSamplesToTime(TimeToLongSamples(t)); // put t on a sample
          val = c->GetEnvelope()->GetValue(t);
-         c->GetEnvelope()->Insert(t - c->GetOffset() - 1.0/c->GetRate(), val);  // frame end points
+         //make two envelope points to preserve the value.  
+         //handle the case where we split on the 1st sample (without this we hit an assert)
+         if(t != c->GetOffset())
+            c->GetEnvelope()->Insert(t - c->GetOffset() - 1.0/c->GetRate(), val);  // frame end points
          c->GetEnvelope()->Insert(t - c->GetOffset(), val);
          WaveClip* newClip = new WaveClip(*c, mDirManager);
          if (!c->Clear(t, c->GetEndTime()))
@@ -1913,7 +1961,9 @@ bool WaveTrack::SplitAt(double t)
             delete newClip;
             return false;
          }
-         sampleCount here = llrint(floor(((t - c->GetStartTime() - mOffset) * mRate) + 0.5));
+         
+         //offset the new clip by the splitpoint (noting that it is already offset to c->GetStartTime())
+         sampleCount here = llrint(floor(((t - c->GetStartTime()) * mRate) + 0.5));
          newClip->Offset((double)here/(double)mRate);
          mClips.Append(newClip);
          return true;

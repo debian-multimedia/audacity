@@ -13,8 +13,11 @@
   Vaughan Johnson
 
 **********************************************************************/
-#include "Generator.h"
 
+#include "../Prefs.h"
+
+#include "Generator.h"
+#include "TimeWarper.h"
 
 bool Generator::Process()
 {
@@ -30,40 +33,73 @@ bool Generator::Process()
    // Iterate over the tracks
    bool bGoodResult = true;
    int ntrack = 0;
-   SelectedTrackListOfKindIterator iter(Track::Wave, mOutputTracks);
-   WaveTrack *track = (WaveTrack *)iter.First();
-   while (track) {
-      if (mDuration > 0.0)
-      {
-         // Create a temporary track
-         WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(),
-                                                 track->GetRate());
-         BeforeTrack(*track);
+   TrackListIterator iter(mOutputTracks);
+   Track* t = iter.First();
 
-         // Fill it with data
-         if (!GenerateTrack(tmp, *track, ntrack))
-            bGoodResult = false;
+   // we only do a "group change" in the first selected track of the group. 
+   // ClearAndPaste has a call to Paste that does changes to the group tracks
+   bool first = true;
 
-         // Transfer the data from the temporary track to the actual one
-         tmp->Flush();
-         track->ClearAndPaste(mT0, mT1, tmp, true, true, mOutputTracks);
-         delete tmp;
+   while (t != NULL)
+   {
+      if (t->GetKind() == Track::Label)
+         first = true;
+      else if (t->GetKind() == Track::Wave && t->GetSelected()) {
+         WaveTrack* track = (WaveTrack*)t;
+         
+         bool editClipCanMove;
+         gPrefs->Read(wxT("/GUI/EditClipCanMove"), &editClipCanMove, true);
 
-         if (!bGoodResult) {
+         //if we can't move clips, check if generation is done on an empty place with enough
+         //duration before actually generate anything.
+         if (!editClipCanMove && track->IsEmpty(mT0, mT0+1.0/track->GetRate()) &&
+            !track->IsEmpty(mT0, mT0+mDuration-1.0/track->GetRate())) {
+            wxMessageBox(
+               _("There is not enough room available to generate the audio"),
+               _("Error"), wxICON_STOP);   
             Failure();
             return false;
          }
-      }
-      else
-      {
-         // If the duration is zero, there's no need to actually
-         // generate anything
-         track->Clear(mT0, mT1);
-      }
 
+         if (mDuration > 0.0)
+         {
+            // Create a temporary track
+            WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(),
+                                                    track->GetRate());
+            BeforeTrack(*track);
+
+            // Fill it with data
+            if (!GenerateTrack(tmp, *track, ntrack))
+               bGoodResult = false;
+            else {
+               // Transfer the data from the temporary track to the actual one
+               tmp->Flush();
+               SetTimeWarper(new StepTimeWarper(mT1, mDuration-mT1));
+               bGoodResult = track->ClearAndPaste(mT0, mT1, tmp, true,
+                     false, mOutputTracks,
+                     false, first, GetTimeWarper());
+               if (first) {
+                  first = false;
+               }
+               delete tmp;
+            }
+
+            if (!bGoodResult) {
+               Failure();
+               return false;
+            }
+         }
+         else
+         {
+            // If the duration is zero, there's no need to actually
+            // generate anything
+            track->Clear(mT0, mT1);
+         }
+
+         ntrack++;
+      }
       // Move on to the next track
-      ntrack++;
-      track = (WaveTrack *)iter.Next();
+      t = iter.Next();
    }
 
    Success();

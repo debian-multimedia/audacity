@@ -17,6 +17,7 @@
 #include <wx/choice.h>
 #include <wx/string.h>
 #include <wx/window.h>
+#include <wx/dynarray.h>
 
 #include "../ShuttleGui.h"
 
@@ -36,6 +37,17 @@ class DevicePrefs:public PrefsPanel
 
    void OnHost(wxCommandEvent & e);
    void OnDevice(wxCommandEvent & e);
+
+   /* @return The default playback device name for the selected HostAPI
+    *
+    * Created so we can set a default that respects the user's choice of API,
+    * unlike Pa_GetDefaultOutputDevice() which always returns the default
+    * device in the default API.
+    * @param index Which HostAPI in the lists mHostNames / mHostIndexes / 
+    * mHostLabels the user has selected.
+    */
+   wxString GetDefaultPlayDevice(int index);
+   wxString GetDefaultRecordDevice(int index);
 
    wxArrayString mHostNames;
    wxArrayString mHostLabels;
