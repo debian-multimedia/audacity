@@ -65,6 +65,7 @@ It handles initialization and termination by subclassing wxApp.
 #include "commands/AppCommandEvent.h"
 #include "effects/LoadEffects.h"
 #include "effects/Contrast.h"
+#include "effects/VST/VSTEffect.h"
 #include "FFmpeg.h"
 #include "GStreamerLoader.h"
 #include "FreqWindow.h"
@@ -92,9 +93,6 @@ It handles initialization and termination by subclassing wxApp.
 #include "LoadModules.h"
 
 #include "import/Import.h"
-#ifdef USE_QUICKTIME
-#include "import/ImportQT.h"
-#endif
 
 #ifdef _DEBUG
     #ifdef _MSC_VER
@@ -795,6 +793,12 @@ void AudacityApp::InitLang( const wxString & lang )
    Internat::Init();
 }
 
+// Only used when checking plugins
+void AudacityApp::OnFatalException()
+{
+   exit(-1);
+}
+
 // The `main program' equivalent, creating the windows and returning the
 // main frame
 bool AudacityApp::OnInit()
@@ -803,12 +807,18 @@ bool AudacityApp::OnInit()
    // Disable window animation
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
 #endif
-   
-   mLogger = NULL;
 
-   #if USE_QUICKTIME
-   ::InitQuicktime();
-   #endif
+#ifdef USE_VST // if no VST support, answer is always no
+   // Have we been started to check a plugin?
+   if (argc == 3 && wxStrcmp(argv[1], VSTCMDKEY) == 0) {
+      wxHandleFatalExceptions();
+
+      VSTEffect::Check(argv[2]);
+      return false;
+   }
+#endif
+
+   mLogger = NULL;
 
    // Unused strings that we want to be translated, even though
    // we're not using them yet...

@@ -15,6 +15,7 @@
 #define __AUDACITY_MIXER_BOARD__
 
 #include <wx/frame.h>
+#include <wx/bmpbuttn.h>
 #include <wx/hashmap.h>
 #include <wx/image.h>
 #include <wx/panel.h>
@@ -26,14 +27,43 @@
 #include "widgets/ASlider.h"
 #include "widgets/Meter.h"
 
+// containment hierarchy: 
+//    MixerBoardFrame -> MixerBoard -> MixerBoardScrolledWindow -> MixerTrackCluster(s)
+
+
+// MixerTrackSlider is a subclass just to override OnMouseEvent, 
+// so we can know when adjustment ends, so we can PushState only then.
+class MixerTrackSlider : public ASlider
+{
+public:
+   MixerTrackSlider(wxWindow * parent,
+                     wxWindowID id,
+                     wxString name,
+                     const wxPoint & pos, 
+                     const wxSize & size,
+                     int style = FRAC_SLIDER,
+                     bool popup = true,
+                     bool canUseShift = true,
+                     float stepValue = STEP_CONTINUOUS, 
+                     int orientation = wxHORIZONTAL);
+   virtual ~MixerTrackSlider() {};
+
+   void OnMouseEvent(wxMouseEvent & event);
+
+protected:
+   bool mIsPan;
+
+public:
+    DECLARE_EVENT_TABLE()
+};
+
+
 class AudacityProject;
 class MixerBoard;
 class WaveTrack;
 
-// containment hierarchy: 
-//    MixerBoardFrame -> MixerBoard -> MixerBoardScrolledWindow -> MixerTrackCluster(s)
-
-class MixerTrackCluster : public wxPanel { 
+class MixerTrackCluster : public wxPanel 
+{ 
 public:
    MixerTrackCluster(wxWindow* parent, 
                      MixerBoard* grandParent, AudacityProject* project, 
@@ -42,31 +72,37 @@ public:
                      const wxSize& size = wxDefaultSize);
    virtual ~MixerTrackCluster() {};
 
+   void HandleResize(); // For wxSizeEvents, update gain slider and meter.
+
+   void HandleSliderGain(const bool bWantPushState = false);
+   void HandleSliderPan(const bool bWantPushState = false);
+
    void ResetMeter();
 
-   void UpdateHeight(); // For wxSizeEvents, update gain slider and meter.
-
-   // These are used by TrackPanel for synchronizing control states, etc.
+   // These are used by TrackPanel for synchronizing control states.
+   void UpdateForStateChange(); // Update the controls that can be affected by state change.
    void UpdateName();
    void UpdateMute();
    void UpdateSolo();
    void UpdatePan();
    void UpdateGain();
-   void UpdateMeter(double t0, double t1);
+   void UpdateMeter(const double t0, const double t1);
 
 private:
-   int GetGainToSliderValue();
    wxColour GetTrackColor();
 
    // event handlers
+   void HandleSelect(const bool bShiftDown);
+
    void OnKeyEvent(wxKeyEvent& event);
    void OnMouseEvent(wxMouseEvent& event);
    void OnPaint(wxPaintEvent& evt);
 
+   void OnButton_MusicalInstrument(wxCommandEvent& event);
    void OnButton_Mute(wxCommandEvent& event);
    void OnButton_Solo(wxCommandEvent& event);
-   void OnSlider_Pan(wxCommandEvent& event);
    void OnSlider_Gain(wxCommandEvent& event);
+   void OnSlider_Pan(wxCommandEvent& event);
    //v void OnSliderScroll_Gain(wxScrollEvent& event);
 
 public:
@@ -79,11 +115,11 @@ private:
 
    // controls
    wxStaticText* mStaticText_TrackName;
-   wxStaticBitmap* mStaticBitmap_MusicalInstrument;
+   wxBitmapButton* mBitmapButton_MusicalInstrument;
    AButton* mToggleButton_Mute;
    AButton* mToggleButton_Solo;
-   ASlider* mSlider_Pan;
-   ASlider* mSlider_Gain;
+   MixerTrackSlider* mSlider_Pan;
+   MixerTrackSlider* mSlider_Gain;
    Meter* mMeter;
 
 public:
@@ -93,7 +129,8 @@ public:
 WX_DEFINE_ARRAY(MixerTrackCluster*, MixerTrackClusterArray);
 
 
-class MusicalInstrument {
+class MusicalInstrument 
+{
 public:
    MusicalInstrument(wxBitmap* pBitmap, const wxString strXPMfilename);
    virtual ~MusicalInstrument();
@@ -108,7 +145,8 @@ WX_DECLARE_OBJARRAY(MusicalInstrument, MusicalInstrumentArray);
 // wxScrolledWindow ignores mouse clicks in client area, 
 // but they don't get passed to Mixerboard.
 // We need to catch them to deselect all track clusters.
-class MixerBoardScrolledWindow : public wxScrolledWindow {
+class MixerBoardScrolledWindow : public wxScrolledWindow 
+{
 public: 
    MixerBoardScrolledWindow(AudacityProject* project, 
                               MixerBoard* parent, wxWindowID id = -1, 
@@ -132,7 +170,8 @@ public:
 class MixerBoardFrame;
 class TrackList;
 
-class MixerBoard : public wxWindow { 
+class MixerBoard : public wxWindow 
+{ 
    friend class MixerBoardFrame;
 
 public:
@@ -156,10 +195,9 @@ public:
    bool HasSolo();
    void IncrementSoloCount(int nIncrement = 1);
 
-   void RefreshTrackClusters();
+   void RefreshTrackCluster(const WaveTrack* pLeftTrack, bool bEraseBackground = true);
+   void RefreshTrackClusters(bool bEraseBackground = true);
    void ResetMeters();
-
-   void UniquelyMuteOrSolo(const WaveTrack* pTargetLeftTrack, bool bSolo);
 
    void UpdateName(const WaveTrack* pLeftTrack);
    void UpdateMute(const WaveTrack* pLeftTrack = NULL); // NULL means update for all tracks.
@@ -167,7 +205,7 @@ public:
    void UpdatePan(const WaveTrack* pLeftTrack);
    void UpdateGain(const WaveTrack* pLeftTrack);
    
-   void UpdateMeters(double t1);
+   void UpdateMeters(const double t1, const bool bLoopedPlay);
 
    void UpdateWidth();
 
@@ -211,7 +249,8 @@ public:
 };
 
 
-class MixerBoardFrame : public wxFrame { 
+class MixerBoardFrame : public wxFrame 
+{ 
 public:
    MixerBoardFrame(AudacityProject* parent);
    virtual ~MixerBoardFrame();

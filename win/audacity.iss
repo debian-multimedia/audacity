@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-1.3.8a-win
+OutputBaseFilename=audacity-win-1.3.8
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -12,14 +12,14 @@ WizardSmallImageFile=audacity_InnoWizardSmallImage.bmp
 SolidCompression=yes
 
 ; installer-related directives
-AppName=Audacity 1.3 Alpha
+AppName=Audacity 1.3 Beta
 AppVerName=Audacity 1.3.8
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
 AppUpdatesURL=http://audacity.sourceforge.net
 ChangesAssociations=yes
-DefaultDirName={pf}\Audacity 1.3 Alpha
+DefaultDirName={pf}\Audacity 1.3 Beta
 ; Always warn if dir exists, because we'll overwrite previous Audacity.
 DirExistsWarning=yes
 DisableProgramGroupPage=yes
@@ -90,17 +90,23 @@ Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC
 Source: "..\win\Release\languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
 Source: "..\win\Release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
 Source: "..\win\Release\nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion
-Source: "..\win\Release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny, fadein.ny, fadeout.ny, undcbias.ny"; Flags: ignoreversion
+Source: "..\win\Release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny"; Flags: ignoreversion
 
 [Icons]
-Name: "{commonprograms}\Audacity 1.3 Alpha"; Filename: "{app}\audacity.exe"
-Name: "{userdesktop}\Audacity 1.3 Alpha"; Filename: "{app}\audacity.exe"; MinVersion: 4,4; Tasks: desktopicon
+Name: "{commonprograms}\Audacity 1.3 Beta"; Filename: "{app}\audacity.exe"
+Name: "{userdesktop}\Audacity 1.3 Beta"; Filename: "{app}\audacity.exe"; MinVersion: 4,4; Tasks: desktopicon
 
 [InstallDelete]
 ; Get rid of Audacity 1.0.0 stuff that's no longer used.
 Type: files; Name: "{app}\audacity-help.htb"
 Type: files; Name: "{app}\audacity-1.2-help.htb"
-; Don't think we want to do this because user may have stored their own.
+
+; Get rid of previous versions of MSVC runtimes.
+Type: files; Name: "{app}\Microsoft.VC80.CRT.manifest"
+Type: files; Name: "{app}\msvcp80.dll"
+Type: files; Name: "{app}\msvcr80.dll"
+
+; Don't want to do this because user may have stored their own.
 ;   Type: filesandordirs; Name: "{app}\vst"
 
 ; We've switched from a folder in the start menu to just the Audacity.exe at the top level.
@@ -119,6 +125,9 @@ Root: HKCR; Subkey: "Audacity.Project"; ValueType: string; ValueData: "Audacity 
 Root: HKCR; Subkey: "Audacity.Project\shell"; ValueType: string; ValueData: ""; Flags: createvalueifdoesntexist uninsdeletekey;
 Root: HKCR; Subkey: "Audacity.Project\shell\open"; Flags: createvalueifdoesntexist uninsdeletekey;
 Root: HKCR; Subkey: "Audacity.Project\shell\open\command"; ValueType: string; ValueData: """{app}\audacity.exe"" ""%1"""; Flags: createvalueifdoesntexist uninsdeletekey;
+
+;The following would allow a following 'help' installer to know where to put the 'help' files.
+;Root: HKCR; Subkey: "Audacity.Project\Path";  ValueType: string; ValueData: {app}; Flags: createvalueifdoesntexist uninsdeletekey;
 
 [Run]
 Filename: "{app}\audacity.exe"; Description: "Launch Audacity"; Flags: nowait postinstall skipifsilent

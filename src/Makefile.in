@@ -82,6 +82,7 @@ OBJS = \
 	MixerBoard.o \
 	PitchName.o \
 	PlatformCompatibility.o \
+	PluginManager.o \
 	Printing.o \
 	Profiler.o \
 	Project.o \
@@ -112,13 +113,28 @@ OBJS = \
 	WaveTrack.o \
 	WrappedType.o \
 	commands/AppCommandEvent.o \
+	commands/BatchEvalCommand.o \
+	commands/Command.o \
+	commands/CompareAudioCommand.o \
 	commands/CommandBuilder.o \
+	commands/CommandDirectory.o \
 	commands/CommandHandler.o \
 	commands/CommandManager.o \
+	commands/CommandSignature.o \
+	commands/CommandType.o \
+	commands/ExecMenuCommand.o \
+	commands/GetAllMenuCommands.o \
+	commands/GetTrackInfoCommand.o \
+	commands/HelpCommand.o \
+	commands/ImportExportCommands.o \
 	commands/Keyboard.o \
+	commands/MessageCommand.o \
+	commands/PreferenceCommands.o \
 	commands/ResponseQueue.o \
 	commands/ScreenshotCommand.o \
 	commands/ScriptCommandRelay.o \
+	commands/SelectCommand.o \
+	commands/SetTrackInfoCommand.o \
 	effects/Effect.o \
 	effects/Generator.o \
 	effects/EffectCategory.o \
@@ -155,9 +171,11 @@ OBJS = \
 	effects/Silence.o \
 	effects/SpikeCleaner.o \
 	effects/StereoToMono.o \
+	effects/TimeWarper.o \
 	effects/ToneGen.o \
 	effects/TruncSilence.o \
 	effects/TwoPassSimpleMono.o \
+	effects/VST/VSTEffect.o \
 	effects/Wahwah.o \
 	export/Export.o \
 	export/ExportMultiple.o \
@@ -185,6 +203,7 @@ OBJS = \
    prefs/BatchPrefs.o \
    prefs/DevicePrefs.o \
    prefs/DirectoriesPrefs.o \
+   prefs/EffectsPrefs.o \
    prefs/GUIPrefs.o \
    prefs/ImportExportPrefs.o \
    prefs/KeyConfigPrefs.o \

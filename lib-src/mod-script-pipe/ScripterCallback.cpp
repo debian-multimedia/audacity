@@ -43,13 +43,9 @@ BOOL APIENTRY DllMain( HANDLE hModule,
 
 extern void PipeServer();
 
-
 extern "C" {
 
-   // This is an example of an exported variable
-
 typedef SCRIPT_PIPE_DLL_IMPORT int (*tpExecScriptServerFunc)( wxString * pIn, wxString * pOut);
-
 
 static tpExecScriptServerFunc pScriptServerFn=NULL;
 
@@ -65,6 +61,7 @@ int DoSrv(char *pIn)
    wxString Str1(pIn, wxConvISO8859_1);
    Str1.Replace( wxT("\r"), wxT(""));
    Str1.Replace( wxT("\n"), wxT(""));
+   Str2 = wxEmptyString;
    (*pScriptServerFn)( &Str1 , &Str2);
 
    Str2 += wxT('\n');
@@ -76,13 +73,10 @@ int DoSrv(char *pIn)
    {
       if( Str2[i] == wxT('\n') )
       {
-         aStr.Add( Str2.Mid( iStart, i-iStart) + wxT('\n') );
+         aStr.Add( Str2.Mid( iStart, i-iStart) + wxT("\n") );
          iStart = i+1;
       }
    }
-
-   // The end of the responses is signalled by an empty line.
-   aStr.Add(wxT('\n'));
 
    currentLine     = 0;
    currentPosition = 0;
@@ -119,7 +113,10 @@ int DoSrvMore(char *pOut, size_t nMax)
       {
          // Write as much of the rest of the line as will fit in the buffer
          size_t charsToWrite = smin(charsLeftInLine, nMax - 1);
-         memcpy(pOut, lineString.Right(charsToWrite).mb_str(), charsToWrite);
+         memcpy(pOut, 
+                lineString.Mid(currentPosition, 
+                               currentPosition + charsToWrite).mb_str(), 
+                charsToWrite);
          pOut[charsToWrite] = '\0';
          currentPosition    += charsToWrite;
          // Need to cast to prevent compiler warnings
@@ -178,6 +175,9 @@ int SCRIPT_PIPE_DLL_API ExtensionModuleInit(int ix)
    return 0;
 }
 
-
+wxString SCRIPT_PIPE_DLL_API GetVersionString()
+{
+   return SCRIPT_PIPE_VERSION_STRING;
 }
 
+} // End extern "C"

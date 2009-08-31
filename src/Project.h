@@ -167,7 +167,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool WarnOfLegacyFile( );
 
    // If pNewTrackList is passed in non-NULL, it gets filled with the pointers to new tracks.
-   void Import(wxString fileName, WaveTrackArray *pTrackArray = NULL); 
+   bool Import(wxString fileName, WaveTrackArray *pTrackArray = NULL); 
 
    void AddImportedTracks(wxString fileName,
                           Track **newTracks, int numTracks);
@@ -255,6 +255,14 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool GetStickyFlag() { return mStickyFlag; };
    void SetStickyFlag(bool flag) { mStickyFlag = flag; };
 
+   // "exclusive" mute means mute the chosen track and unmute all others.
+   void HandleTrackMute(Track *t, const bool exclusive); 
+
+   // Type of solo (standard or simple) follows the set preference, unless
+   // alternate == true, which causes the opposite behavior.
+   void HandleTrackSolo(Track *t, const bool alternate);
+
+
    // Snap To
 
    void SetSnapTo(bool state);
@@ -271,12 +279,20 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void FinishAutoScroll();
    void FixScrollbars();
 
-   // TrackPanel callback methods
+   void SafeDisplayStatusMessage(const wxChar *msg);
 
-   virtual wxSize TP_GetTracksUsableArea();
-   virtual void TP_DisplayStatusMessage(wxString msg);
+   // TrackPanel access
+   virtual wxSize GetTPTracksUsableArea();
+   virtual void RefreshTPTrack(Track* pTrk, bool refreshbacking = true);
+   
+   // TrackPanel callback methods, overrides of TrackPanelListener
    virtual void TP_DisplaySelection();
+   virtual void TP_DisplayStatusMessage(wxString msg);
+
    virtual int TP_GetCurrentTool();
+   virtual ToolsToolBar * TP_GetToolsToolBar();
+   virtual ControlToolBar * TP_GetControlToolBar();
+
    virtual void TP_OnPlayKey();
    virtual void TP_PushState(wxString longDesc, wxString shortDesc,
                              bool consolidate);
@@ -287,8 +303,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    virtual void TP_ScrollWindow(double scrollto);
    virtual void TP_ScrollUpDown(int delta);
    virtual void TP_HandleResize();
-   virtual ControlToolBar * TP_GetControlToolBar();
-   virtual ToolsToolBar * TP_GetToolsToolBar();
 
    // ToolBar
 
@@ -374,6 +388,10 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void DeleteCurrentAutoSaveFile();
    
    static bool GetCacheBlockFiles();
+   
+   bool IsSimpleSolo() { return mSoloPref == wxT("Simple"); };
+
+ private:
 
    // The project's name and file info
    wxString mFileName;
@@ -448,6 +466,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    ToolManager *mToolManager;
    bool mShowSplashScreen;
    wxString mHelpPref;
+   wxString mSoloPref;
 
  private:
    int  mAudioIOToken;

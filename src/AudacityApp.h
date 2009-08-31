@@ -55,7 +55,7 @@ enum
    AlwaysEnabledFlag      = 0x00000000,
 
    AudioIONotBusyFlag     = 0x00000001,
-   TimeSelectedFlag       = 0x00000002,
+   TimeSelectedFlag       = 0x00000002, // This is equivalent to check if there is a valid selection, so it's used for Zoom to Selection too 
    TracksSelectedFlag     = 0x00000004,
    TracksExistFlag        = 0x00000008,
    LabelTracksExistFlag   = 0x00000010,
@@ -89,6 +89,7 @@ class AudacityApp:public wxApp {
  public:
    virtual bool OnInit(void);
    virtual int OnExit(void);
+   virtual void OnFatalException();
 
 //LDA - Until we have a better way to save/restore binary data.
    float* GetCleanSpeechNoiseGate() { return mCleanSpeechNoiseGate; }

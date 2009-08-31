@@ -451,6 +451,16 @@ void CommandManager::AddCheck(const wxChar *name,
    AddItem(name, label, callback, wxT(""), NoFlagsSpecifed, NoFlagsSpecifed, checkmark);
 }
 
+void CommandManager::AddCheck(const wxChar *name,
+                              const wxChar *label,
+                              CommandFunctor *callback,
+                              int checkmark,
+                              int flags,
+                              int mask)
+{
+   AddItem(name, label, callback, wxT(""), flags, mask, checkmark);
+}
+
 void CommandManager::AddItem(const wxChar *name,
                              const wxChar *label,
                              CommandFunctor *callback,
@@ -786,6 +796,17 @@ void CommandManager::EnableUsingFlags(wxUint32 flags, wxUint32 mask)
          Enable(entry, enable);
       }
    }
+}
+
+bool CommandManager::GetEnabled(const wxString &name)
+{
+   CommandListEntry *entry = mCommandNameHash[name];
+   if (!entry || !entry->menu) {
+      wxLogDebug(wxT("Warning: command doesn't exist: '%s'"),
+                 (const wxChar*)name);
+      return false;
+   }
+   return entry->enabled;
 }
 
 void CommandManager::Check(wxString name, bool checked)

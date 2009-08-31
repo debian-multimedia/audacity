@@ -142,6 +142,9 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    mRate = 0;
    mDataLen = 0;
    mBuffer = NULL;
+   p = GetActiveProject();
+   if (!p)
+      return;
 
    mFreqFont = wxFont(fontSize, wxSWISS, wxNORMAL, wxNORMAL);
    mArrowCursor = new wxCursor(wxCURSOR_ARROW);
@@ -311,7 +314,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    vRuler = new RulerPanel(this, wxID_ANY);
    vRuler->ruler.SetBounds(0, 0, 100, 100); // Ruler can't handle small sizes
    vRuler->ruler.SetOrientation(wxVERTICAL);
-   vRuler->ruler.SetRange(10.0, -dBRange);
+   vRuler->ruler.SetRange(10.0, -dBRange); // Note inversion for vertical.
    vRuler->ruler.SetFormat(Ruler::LinearDBFormat);
    vRuler->ruler.SetUnits(_("dB"));
    vRuler->ruler.SetLabelEdges(false);
@@ -397,7 +400,6 @@ void FreqWindow::GetAudio()
    int selcount = 0;
    int i;
    bool warning = false;
-   AudacityProject *p = GetActiveProject();
    TrackListIterator iter(p->GetTracks());
    Track *t = iter.First();
    while (t) {
@@ -523,7 +525,7 @@ void FreqWindow::DrawPlot()
    }
    int w1, w2, h;
    vRuler->ruler.GetMaxSize(&w1, &h);
-   vRuler->ruler.SetRange(mYMax, mYMin);
+   vRuler->ruler.SetRange(mYMax, mYMin); // Note inversion for vertical.
    vRuler->ruler.GetMaxSize(&w2, &h);
    if( w1 != w2 )   // Reduces flicker
    {
@@ -1269,10 +1271,6 @@ void FreqWindow::OnReplot(wxCommandEvent & WXUNUSED(event))
       dBRange = 90.;
    GetAudio();
    
-   AudacityProject* p = GetActiveProject();
-   if (!p)
-      return;
-
    if(p->mFreqWindow)
       p->mFreqWindow->Plot();
 }
@@ -1283,10 +1281,6 @@ void FreqWindow::OnGridOnOff(wxCommandEvent & WXUNUSED(event))
       mDrawGrid = true;
    else
       mDrawGrid = false;
-
-   AudacityProject* p = GetActiveProject();
-   if (!p)
-      return;
 
    if(p->mFreqWindow)
       p->mFreqWindow->Plot();

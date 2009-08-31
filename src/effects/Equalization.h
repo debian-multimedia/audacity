@@ -116,6 +116,7 @@ private:
 
    void Filter(sampleCount len,
                float *buffer);
+   void ReadPrefs();
 
    HFFT hFFT;
    float *mFFTBuffer;
@@ -130,6 +131,7 @@ private:
    int mInterp;
    bool mPrompting;
    bool mDrawGrid;
+   bool mEditingBatchParams;
 
 public:
    enum curveType {
@@ -210,7 +212,7 @@ public:
    // constructors and destructors
    EqualizationDialog(EffectEqualization * effect,
                double loFreq, double hiFreq,
-               float *filterFuncR, float *filterFuncI, long windowSize, wxString CurveName,
+               float *filterFuncR, float *filterFuncI, long windowSize, wxString CurveName, bool disallowCustom,
                wxWindow *parent, wxWindowID id,
                const wxString &title,
                const wxPoint& pos = wxDefaultPosition,
@@ -258,6 +260,9 @@ private:
    void spline(double x[], double y[], int n, double y2[]);
    double splint(double x[], double y[], int n, double y2[], double xr);
    void LayoutEQSliders();
+   bool SaveAs();
+   void RevertCustom();
+   void Finish(bool ok);
 
    // XMLTagHandler callback methods for loading and saving
    bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
@@ -313,6 +318,7 @@ private:
 private:
    EffectEqualization * m_pEffect;
 
+   bool mDisallowCustom;
    double mLoFreq;
    double mHiFreq;
    float *mFilterFuncR;
@@ -349,6 +355,7 @@ private:
    wxCheckBox *mGridOnOff;
 
    EQCurveArray mCurves;
+   EQCurve mCustomBackup;
 
 private:
    DECLARE_EVENT_TABLE()

@@ -22,7 +22,7 @@
 #include <wx/sizer.h>
 #include <wx/stattext.h>
 
-#include "../widgets/Ruler.h"
+#include "widgets/Ruler.h"
 
 class wxStatusBar;
 class wxButton;
@@ -87,6 +87,7 @@ class FreqWindow:public wxDialog {
    int mFunc;
    int mAxis;
    int dBRange;
+   AudacityProject *p;
 
 #ifdef __WXMSW__
    static const int fontSize = 8;

@@ -54,7 +54,7 @@ void HighlightTextCtrl::OnMouseEvent(wxMouseEvent& event)
       {
          Syllable* pCurSyl = mLyrics->GetSyllable(nNewSyl);
          AudacityProject* pProj = GetActiveProject();
-         pProj->mViewInfo.sel0 = pCurSyl->t;
+         pProj->SetSel0(pCurSyl->t);
 
          //vvv Should probably select to end as in AudacityProject::OnSelectCursorEnd, 
          // but better to generalize that in AudacityProject methods. 
@@ -88,6 +88,8 @@ Lyrics::Lyrics(wxWindow* parent, wxWindowID id,
    mKaraokeHeight = mHeight;
    mLyricsStyle = kBouncingBallLyrics; // default
    mKaraokeFontSize = this->GetDefaultFontSize(); // Call only after mLyricsStyle is set.
+
+   this->SetBackgroundColour(*wxWHITE);
 
    mHighlightTextCtrl = 
       new HighlightTextCtrl(this, -1, // wxWindow* parent, wxWindowID id, 
@@ -471,7 +473,7 @@ void Lyrics::OnPaint(wxPaintEvent &evt)
    }
    else // (mLyricsStyle == kHighlightLyrics)
    {
-      //vvvvv causes flicker in ported version
+      //v causes flicker in ported version
       //    this->SetHighlightFont();
    }
 }
@@ -499,6 +501,8 @@ void Lyrics::OnSize(wxSizeEvent &evt)
       mHighlightTextCtrl->SetSize(mWidth, mKaraokeHeight);
       this->SetHighlightFont();
    }
+
+   this->Refresh(false);
 }
 
 //v Doesn't seem to be a way to capture a selection event in a read-only wxTextCtrl.

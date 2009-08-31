@@ -45,6 +45,7 @@ writing audio.
 
 #include <math.h>
 #include <stdlib.h>
+#include <algorithm>
 
 #ifdef __WXMSW__
 #include <malloc.h>
@@ -52,6 +53,10 @@ writing audio.
 
 #ifdef HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
+
+#if USE_PORTMIXER
+#include "portmixer.h"
 #endif
 
 #include <wx/log.h>
@@ -86,6 +91,11 @@ writing audio.
 #include "../Experimental.h"
 
 #define NO_STABLE_INDICATOR -1000000000
+#define LOWER_BOUND 0.0
+#define UPPER_BOUND 1.0
+
+using std::max;
+using std::min;
 
 AudioIO *gAudioIO;
 
@@ -238,6 +248,10 @@ AudioIO::AudioIO()
    mMidiStream = NULL;
    mMidiStreamActive = false;
    mSendMidiState = false;
+#endif
+
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   mAILAActive = false;
 #endif
 
    mStreamToken = 0;
@@ -913,6 +927,10 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
          mResample[i] = new Resample( true, mFactor, mFactor );
       }
    }
+
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   AILASetStartTime();
+#endif
 
    // We signal the audio thread to call FillBuffers, to prime the RingBuffers
    // so that they will have data in them when the stream starts.  Having the
@@ -2495,6 +2513,157 @@ void AudioIO::FillMidiBuffers()
 }
 #endif
 
+// Automated Input Level Adjustment - Automatically tries to find an acceptable input volume
+#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+void AudioIO::AILAInitialize() {
+   gPrefs->Read(wxT("/AudioIO/AutomatedInputLevelAdjustment"), &mAILAActive,         false);
+   gPrefs->Read(wxT("/AudioIO/TargetPeak"),            &mAILAGoalPoint,      AILA_DEF_TARGET_PEAK);
+   gPrefs->Read(wxT("/AudioIO/DeltaPeakVolume"),       &mAILAGoalDelta,      AILA_DEF_DELTA_PEAK);
+   gPrefs->Read(wxT("/AudioIO/AnalysisTime"),          &mAILAAnalysisTime,   AILA_DEF_ANALYSIS_TIME);
+   gPrefs->Read(wxT("/AudioIO/NumberAnalysis"),        &mAILATotalAnalysis,  AILA_DEF_NUMBER_ANALYSIS);
+   mAILAGoalDelta         /= 100.0;
+   mAILAGoalPoint         /= 100.0; 
+   mAILAAnalysisTime      /= 1000.0;
+   mAILAMax                = 0.0;
+   mAILALastStartTime      = max(0.0, mT0);
+   mAILAClipped            = false;
+   mAILAAnalysisCounter    = 0;
+   mAILAChangeFactor       = 1.0;
+   mAILALastChangeType     = 0;
+   mAILATopLevel           = 1.0;
+   mAILAAnalysisEndTime    = -1.0;
+}
+
+void AudioIO::AILADisable() {
+   mAILAActive = false;
+}
+
+bool AudioIO::AILAIsActive() {
+   return mAILAActive;
+}
+
+void AudioIO::AILASetStartTime() {
+   mAILAAbsolutStartTime = Pa_GetStreamTime(mPortStreamV19);
+   printf("START TIME %f\n\n", mAILAAbsolutStartTime);
+}
+
+double AudioIO::AILAGetLastDecisionTime() {
+   return mAILAAnalysisEndTime;
+}
+
+void AudioIO::AILAProcess(double maxPeak) {
+   AudacityProject *proj = GetActiveProject();
+   if (proj && mAILAActive) {
+      if (mInputMeter->IsClipping()) {
+         mAILAClipped = true;
+         printf("clipped");
+      }
+      
+      mAILAMax = max(mAILAMax, maxPeak);
+   
+      if ((mAILATotalAnalysis == 0 || mAILAAnalysisCounter < mAILATotalAnalysis) && mTime - mAILALastStartTime >= mAILAAnalysisTime) {
+         putchar('\n');
+         mAILAMax = mInputMeter->ToLinearIfDB(mAILAMax);
+         double iv = (double) Px_GetInputVolume(mPortMixer);
+         unsigned short changetype = 0; //0 - no change, 1 - increase change, 2 - decrease change
+         printf("mAILAAnalysisCounter:%d\n", mAILAAnalysisCounter);
+         printf("\tmAILAClipped:%d\n", mAILAClipped);
+         printf("\tmAILAMax (linear):%f\n", mAILAMax);
+         printf("\tmAILAGoalPoint:%f\n", mAILAGoalPoint);
+         printf("\tmAILAGoalDelta:%f\n", mAILAGoalDelta);
+         printf("\tiv:%f\n", iv);
+         printf("\tmAILAChangeFactor:%f\n", mAILAChangeFactor);
+         if (mAILAClipped || mAILAMax > mAILAGoalPoint + mAILAGoalDelta) {
+            printf("too high:\n");
+            mAILATopLevel = min(mAILATopLevel, iv);
+            printf("\tmAILATopLevel:%f\n", mAILATopLevel);
+            //if clipped or too high
+            if (iv <= LOWER_BOUND) {
+               //we can't improve it more now
+               if (mAILATotalAnalysis != 0) {
+                  mAILAActive = false;
+                  proj->TP_DisplayStatusMessage(_("Automated Input Level Adjustment stopped. It was not possible to optimize it more. Still too high."));
+               }
+               printf("\talready min vol:%f\n", iv);
+            }
+            else {
+               float vol = (float) max(LOWER_BOUND, iv+(mAILAGoalPoint-mAILAMax)*mAILAChangeFactor);
+               Px_SetInputVolume(mPortMixer, vol);
+               wxString msg;
+               msg.Printf(_("Automated Input Level Adjustment decreased the volume to %f."), vol);
+               proj->TP_DisplayStatusMessage(msg);
+               changetype = 1;
+               printf("\tnew vol:%f\n", vol);
+               float check = Px_GetInputVolume(mPortMixer);
+               printf("\tverified %f\n", check);
+            }
+         }
+         else if ( mAILAMax < mAILAGoalPoint - mAILAGoalDelta ) {
+            //if too low
+            printf("too low:\n"); 
+            if (iv >= UPPER_BOUND || iv + 0.005 > mAILATopLevel) { //condition for too low volumes and/or variable volumes that cause mAILATopLevel to decrease too much
+               //we can't improve it more
+               if (mAILATotalAnalysis != 0) {
+                  mAILAActive = false;
+                  proj->TP_DisplayStatusMessage(_("Automated Input Level Adjustment stopped. It was not possible to optimize it more. Still too low."));
+               }
+               printf("\talready max vol:%f\n", iv);
+            }
+            else {
+               float vol = (float) min(UPPER_BOUND, iv+(mAILAGoalPoint-mAILAMax)*mAILAChangeFactor);
+               if (vol > mAILATopLevel) {
+                  vol = (iv + mAILATopLevel)/2.0;
+                  printf("\tTruncated vol:%f\n", vol);
+               }
+               Px_SetInputVolume(mPortMixer, vol);
+               wxString msg;
+               msg.Printf(_("Automated Input Level Adjustment increased the volume to %.2f."), vol);
+               proj->TP_DisplayStatusMessage(msg);
+               changetype = 2;
+               printf("\tnew vol:%f\n", vol);
+               float check = Px_GetInputVolume(mPortMixer);
+               printf("\tverified %f\n", check);
+            }
+         }
+
+         mAILAAnalysisCounter++;
+         //const PaStreamInfo* info = Pa_GetStreamInfo(mPortStreamV19);
+         //double latency = 0.0;
+         //if (info)
+         //   latency = info->inputLatency;
+         //mAILAAnalysisEndTime = mTime+latency;
+         mAILAAnalysisEndTime = Pa_GetStreamTime(mPortStreamV19) - mAILAAbsolutStartTime;
+         mAILAMax             = 0;
+         printf("\tA decision was made @ %f\n", mAILAAnalysisEndTime);
+         mAILAClipped         = false;  
+         mAILALastStartTime   = mTime;
+         
+         if (changetype == 0)
+            mAILAChangeFactor *= 0.8; //time factor
+         else if (mAILALastChangeType == changetype)
+            mAILAChangeFactor *= 1.1; //concordance factor
+         else
+            mAILAChangeFactor *= 0.7; //discordance factor
+         mAILALastChangeType = changetype;
+         putchar('\n');
+      }
+
+      if (mAILAActive && mAILATotalAnalysis != 0 && mAILAAnalysisCounter >= mAILATotalAnalysis) {
+         mAILAActive = false;
+         if (mAILAMax > mAILAGoalPoint + mAILAGoalDelta)
+            proj->TP_DisplayStatusMessage(_("Automated Input Level Adjustment stopped. The total number of analysis has been exceeded without finding an acceptable volume. Still too high."));
+         else if (mAILAMax < mAILAGoalPoint - mAILAGoalDelta)
+            proj->TP_DisplayStatusMessage(_("Automated Input Level Adjustment stopped. The total number of analysis has been exceeded without finding an acceptable volume. Still too low."));
+         else {
+            wxString msg;
+            msg.Printf(_("Automated Input Level Adjustment stopped. %.2f seems an acceptable volume."), Px_GetInputVolume(mPortMixer));
+            proj->TP_DisplayStatusMessage(msg);
+         }
+      }
+   }
+}
+#endif
+
 //////////////////////////////////////////////////////////////////////
 //
 //    PortAudio callback thread context
@@ -2578,7 +2747,6 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
       }
       gAudioIO->mUpdatingMeters = false;
    }  // end recording VU meter update
-
 
    // Stop recording if 'silence' is detected
    if(gAudioIO->mPauseRec && inputBuffer) {

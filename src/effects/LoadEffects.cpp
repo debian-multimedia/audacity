@@ -9,6 +9,7 @@
 **********************************************************************/
 
 #include "../Audacity.h"
+#include "../Prefs.h"
 
 #include "LoadEffects.h"
 
@@ -59,7 +60,7 @@
 #endif
 
 #ifdef USE_VST
-#include "VST/LoadVST.h"
+#include "VST/VSTEffect.h"
 #endif
 
 #ifdef USE_LADSPA
@@ -269,27 +270,39 @@ void LoadEffects()
    em.RegisterEffect(new EffectFindClipping());
 
 #ifdef USE_NYQUIST
-   LoadNyquistPlugins();
+   if (gPrefs->Read(wxT("/Nyquist/Enable"), true)) {
+      LoadNyquistPlugins();
+   }
 #endif
 
 #ifdef USE_LADSPA
-   LoadLadspaPlugins();
+   if (gPrefs->Read(wxT("/Ladspa/Enable"), true)) {
+      LoadLadspaPlugins();
+   }
 #endif
 
 #ifdef USE_VST
-   LoadVSTPlugins();
+   if (gPrefs->Read(wxT("/VST/Enable"), true)) {
+      RegisterVSTEffects();
+   }
 #endif
 
 #ifdef USE_SLV2
-   LoadLV2Plugins();
+   if (gPrefs->Read(wxT("/SLV2/Enable"), true)) {
+      LoadLV2Plugins();
+   }
 #endif
 
 #ifdef USE_AUDIO_UNITS
-   LoadAudioUnits();
+   if (gPrefs->Read(wxT("/AudioUnits/Enable"), true)) {
+      LoadAudioUnits();
+   }
 #endif
 
 #ifdef USE_VAMP
-   LoadVampPlugins();
+   if (gPrefs->Read(wxT("/VAMP/Enable"), true)) {
+      LoadVampPlugins();
+   }
 #endif
    
 }

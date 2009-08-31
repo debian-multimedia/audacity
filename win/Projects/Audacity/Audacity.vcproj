@@ -748,6 +748,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\PluginManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\PluginManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\portaudio.h"
 				>
 			</File>
@@ -1340,6 +1348,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\effects\TimeWarper.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\effects\TimeWarper.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\effects\ToneGen.cpp"
 				>
 			</File>
@@ -1375,14 +1391,6 @@
 		<Filter
 			Name="src/effects/VST"
 			>
-			<File
-				RelativePath="..\..\..\src\effects\VST\LoadVST.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\effects\VST\LoadVST.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\effects\VST\VSTEffect.cpp"
 				>
@@ -1589,6 +1597,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\prefs\DirectoriesPrefs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\prefs\EffectsPrefs.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\prefs\EffectsPrefs.h"
 				>
 			</File>
 			<File
@@ -1928,7 +1944,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\commands\BatchEvalCommand.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\commands\BatchEvalCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\Command.cpp"
 				>
 			</File>
 			<File
@@ -1941,6 +1965,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\commands\CommandBuilder.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandDirectory.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandDirectory.h"
 				>
 			</File>
 			<File
@@ -1964,7 +1996,71 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\commands\DebugPrintCommand.h"
+				RelativePath="..\..\..\src\commands\CommandSignature.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandSignature.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandTargets.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandType.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CommandType.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CompareAudioCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\CompareAudioCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\ExecMenuCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\ExecMenuCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\GetAllMenuCommands.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\GetAllMenuCommands.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\GetTrackInfoCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\GetTrackInfoCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\HelpCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\HelpCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\ImportExportCommands.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\ImportExportCommands.h"
 				>
 			</File>
 			<File
@@ -1973,6 +2069,22 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\commands\Keyboard.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\MessageCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\MessageCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\PreferenceCommands.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\PreferenceCommands.h"
 				>
 			</File>
 			<File
@@ -1997,6 +2109,26 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\commands\ScriptCommandRelay.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\SelectCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\SelectCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\SetTrackInfoCommand.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\SetTrackInfoCommand.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\commands\Validators.h"
 				>
 			</File>
 		</Filter>

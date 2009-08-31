@@ -16,14 +16,8 @@
 #ifndef __COMMANDBUILDER__
 #define __COMMANDBUILDER__
 
-#include <wx/string.h>
-#include <wx/variant.h>
-#include <utility>
-#include <map>
-#include "CommandMisc.h"
-
 class Command;
-class Validator;
+class wxString;
 
 // CommandBuilder has the task of validating and interpreting a command string.
 // If the string represents a valid command, it builds the command object.
@@ -35,18 +29,19 @@ class CommandBuilder
       Command *mCommand;
       wxString mError;
 
-      void BuildCommand(const wxString &cmdName, const wxString &cmdParams);
-      void BuildCommand(const wxString &cmdString);
+      void Failure(const wxString &msg = wxEmptyString);
+      void Success(Command *cmd);
+      void BuildCommand(const wxString &cmdName, wxString cmdParams);
+      void BuildCommand(wxString cmdString);
    public:
       CommandBuilder(const wxString &cmdString);
-      CommandBuilder(const wxString &cmdName, const wxString &cmdParams);
+      CommandBuilder(const wxString &cmdName, 
+                     const wxString &cmdParams);
       ~CommandBuilder();
       bool WasValid();
       Command *GetCommand();
+      void Cleanup();
       const wxString &GetErrorMessage();
-
-      static bool LookUpCommand(wxString name, std::pair<Command*,ParamMap> &result);
-      static ParamMap GetSignature(wxString name);
 };
 #endif /* End of include guard: __COMMANDBUILDER__ */
 

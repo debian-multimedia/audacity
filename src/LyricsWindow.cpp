@@ -45,73 +45,82 @@ const wxSize gSize = wxSize(LYRICS_DEFAULT_WIDTH, LYRICS_DEFAULT_HEIGHT);
 
 LyricsWindow::LyricsWindow(AudacityProject *parent):
    wxFrame(parent, -1, 
-            wxString::Format(_("Audacity Lyrics%s"), 
+            wxString::Format(_("Audacity Karaoke%s"), 
                               ((parent->GetName() == wxEmptyString) ? 
                                  wxT("") :
                                  wxString::Format(
                                    wxT(" - %s"),
                                    parent->GetName().c_str()).c_str())),
             wxPoint(100, 300), gSize, 
-            wxDEFAULT_FRAME_STYLE
-#ifndef __WXMAC__
-           | ((parent == NULL) ? 0x0 : wxFRAME_FLOAT_ON_PARENT) //vvvvv
-#endif
-             )
+            //v Bug in wxFRAME_FLOAT_ON_PARENT:
+            // If both the project frame and LyricsWindow are minimized and you restore LyricsWindow, you can't restore project frame until you close
+            // LyricsWindow, but then project frame and LyricsWindow are restored but LyricsWindow is unresponsive because it thinks it's not shown.
+            //    wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT)
+            wxDEFAULT_FRAME_STYLE)
 {
-#ifdef __WXMAC__
-   // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do
-   SetWindowClass((WindowRef) MacGetWindowRef(), kFloatingWindowClass);
-#endif
+   //vvv Still necessary? It's commented out in ToolManager and Meter, so I did so here.
+   //   #ifdef __WXMAC__
+   //      // WXMAC doesn't support wxFRAME_FLOAT_ON_PARENT, so we do 
+   //      SetWindowClass((WindowRef) MacGetWindowRef(), kFloatingWindowClass);
+   //   #endif
    mProject = parent;
 
    // loads either the XPM or the windows resource, depending on the platform
-#if !defined(__WXMAC__) && !defined(__WXX11__)
-   #ifdef __WXMSW__
-      wxIcon ic(wxICON(AudacityLogo));
-   #else
-      wxIcon ic(wxICON(AudacityLogo48x48));
+   #if !defined(__WXMAC__) && !defined(__WXX11__)
+      #ifdef __WXMSW__
+         wxIcon ic(wxICON(AudacityLogo));
+      #else
+         wxIcon ic(wxICON(AudacityLogo48x48));
+      #endif
+      SetIcon(ic);
    #endif
-   SetIcon(ic);
-#endif
 
-   wxToolBar* pToolBar = this->CreateToolBar();
-   const int kHorizMargin = 8;
-   wxRadioButton* pRadioButton_BouncingBall = 
-      new wxRadioButton(pToolBar, kID_RadioButton_BouncingBall, _("Bouncing Ball"), wxPoint(kHorizMargin, 4),
-          wxDefaultSize, wxRB_GROUP);
-   // Reposition to center vertically. 
-   wxSize tbSize = pToolBar->GetSize();
-   wxSize btnSize = pRadioButton_BouncingBall->GetSize();
-   int top = (tbSize.GetHeight() - btnSize.GetHeight()) / 2;
-   pRadioButton_BouncingBall->Move(kHorizMargin, top);
-   pToolBar->AddControl(pRadioButton_BouncingBall);
+   wxPoint panelPos(0, 0);
+   wxSize panelSize = gSize;
 
-   int left = kHorizMargin + btnSize.GetWidth() + kHorizMargin; //vvv Doesn't actually work. Probably need sizers.
-   wxRadioButton* pRadioButton_Highlight = 
-      new wxRadioButton(pToolBar, kID_RadioButton_Highlight, _("Highlight"), wxPoint(left, top));
-   pToolBar->AddControl(pRadioButton_Highlight);
-   pRadioButton_Highlight->Enable(false); //vvvvv not working right in ported version, so disabled.
+   //vvvvv not yet working right in ported version, so choice is disabled.
+   // It seems when you select highlight style, the TrackPanel timer stops working, but 
+   // going back to bouncing ball style starts it up again (!!!), per breakpoints in TrackPanel::OnTimer().
+   //
+   //wxToolBar* pToolBar = this->CreateToolBar();
+   //const int kHorizMargin = 8;
+   //wxRadioButton* pRadioButton_BouncingBall = 
+   //   new wxRadioButton(pToolBar, kID_RadioButton_BouncingBall, _("Bouncing Ball"), wxPoint(kHorizMargin, 4),
+   //       wxDefaultSize, wxRB_GROUP);
+   //// Reposition to center vertically. 
+   //wxSize tbSize = pToolBar->GetSize();
+   //wxSize btnSize = pRadioButton_BouncingBall->GetSize();
+   //int top = (tbSize.GetHeight() - btnSize.GetHeight()) / 2;
+   //pRadioButton_BouncingBall->Move(kHorizMargin, top);
+   //pToolBar->AddControl(pRadioButton_BouncingBall);
+   //
+   //int left = kHorizMargin + btnSize.GetWidth() + kHorizMargin; //vvv Doesn't actually work. Probably need sizers.
+   //wxRadioButton* pRadioButton_Highlight = 
+   //   new wxRadioButton(pToolBar, kID_RadioButton_Highlight, _("Highlight"), wxPoint(left, top));
+   //pToolBar->AddControl(pRadioButton_Highlight);
+   //
+   //panelPos.x += tbSize.GetHeight();
+   //panelSize.y -= tbSize.GetHeight();
+   //
+   //#if defined(__WXMAC__)
+   //   wxColour face = wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE);
+   //   pRadioButton_BouncingBall->SetBackgroundColour(face);
+   //   pRadioButton_Highlight->SetBackgroundColour(face);
+   //#endif
+   //
+   //pToolBar->Realize();
 
-#if defined(__WXMAC__)
-   wxColour face = wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE);
-   pRadioButton_BouncingBall->SetBackgroundColour(face);
-   pRadioButton_Highlight->SetBackgroundColour(face);
-#endif
+   mLyricsPanel = new Lyrics(this, -1, panelPos, panelSize);
 
-   pToolBar->Realize();
-
-   mLyricsPanel = 
-      new Lyrics(this, -1, 
-                  wxPoint(0, tbSize.GetHeight()), 
-                  wxSize(gSize.GetWidth(), gSize.GetHeight() - tbSize.GetHeight()));
-   switch (mLyricsPanel->GetLyricsStyle()) 
-   {
-      case Lyrics::kBouncingBallLyrics:
-         pRadioButton_BouncingBall->SetValue(true); break;
-      case Lyrics::kHighlightLyrics:
-      default:
-         pRadioButton_Highlight->SetValue(true); break;
-   }
+   //vvvvv Highlight style is broken in ported version.
+   //switch (mLyricsPanel->GetLyricsStyle()) 
+   //{
+   //   case Lyrics::kBouncingBallLyrics:
+   //      pRadioButton_BouncingBall->SetValue(true); break;
+   //   case Lyrics::kHighlightLyrics:
+   //   default:
+   //      pRadioButton_Highlight->SetValue(true); break;
+   //}
 }
 
 LyricsWindow::~LyricsWindow()
