@@ -36,6 +36,9 @@ DEB_CONFIGURE_EXTRA_FLAGS := $(WITH_JACK_CONFFLAG) \
                              --with-portmixer \
                              --with-soundtouch=system
 
+# Do not link against unused libraries (make dpkg-shlibdeps happy).
+LDFLAGS += -Wl,-z,defs -Wl,--as-needed
+
 common-install-impl::
 	# Don't package unnecessary copy of GPL
 	rm -f debian/tmp/usr/share/doc/audacity/LICENSE.txt
