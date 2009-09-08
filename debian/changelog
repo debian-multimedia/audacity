@@ -1,4 +1,4 @@
-audacity (1.3.9-1) UNRELEASED; urgency=low
+audacity (1.3.9-1) unstable; urgency=low
 
   * New upstream release.
   * Drop 10-kFreeBSD.patch and 20-autoconf.patch (accepted by upstream).
