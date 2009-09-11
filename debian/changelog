@@ -1,3 +1,9 @@
+audacity (1.3.9-3) unstable; urgency=low
+
+  * Add debian/patches/gsocket.patch to fix conflicting GSocket definition.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Fri, 11 Sep 2009 10:39:31 +0200
+
 audacity (1.3.9-2) unstable; urgency=low
 
   * Respect locales/$LANG (Closes: #481424, LP: #292168).
