@@ -1,0 +1,31 @@
+Description: Protect against Pa_GetDeviceInfo returning null sometimes.
+ Please see https://launchpad.net/bugs/436990 for thoughts about the underlying
+ issue.
+Bug-Ubuntu: https://launchpad.net/bugs/436990
+Forwarded: yes
+Author: David Henningsson <launchpad.web@epost.diwic.se>
+diff -Nur -x '*.orig' -x '*~' audacity-1.3.9/src/prefs/DevicePrefs.cpp audacity-1.3.9.new/src/prefs/DevicePrefs.cpp
+--- audacity-1.3.9/src/prefs/DevicePrefs.cpp	2009-08-31 12:45:38.000000000 +0200
++++ audacity-1.3.9.new/src/prefs/DevicePrefs.cpp	2009-09-26 10:30:10.717880112 +0200
+@@ -301,6 +301,10 @@
+    wxLogDebug(wxT("GetDefaultPlayDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
+    wxLogDebug(wxT("GetDefaultPlayDevice() default output %d"), apiinfo->defaultOutputDevice);
+    const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultOutputDevice);
++   if (devinfo == NULL) {
++     wxLogDebug(wxT("GetDefaultPlayDevice() no default output device"));
++     return wxString("", wxConvLocal);
++   }
+    wxString name(devinfo->name, wxConvLocal);
+    wxLogDebug(wxT("GetDefaultPlayDevice() default output device name %s"), name.c_str());
+    return name;
+@@ -313,6 +317,10 @@
+    wxLogDebug(wxT("GetDefaultRecordDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
+    wxLogDebug(wxT("GetDefaultRecordDevice() default input %d"), apiinfo->defaultInputDevice);
+    const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultInputDevice);
++   if (devinfo == NULL) {
++     wxLogDebug(wxT("GetDefaultRecordDevice() no default input device"));
++     return wxString("", wxConvLocal);
++   }
+    wxString name(devinfo->name, wxConvLocal);
+    wxLogDebug(wxT("GetDefaultRecordDevice() default input device name %s"), name.c_str());
+    return name;
