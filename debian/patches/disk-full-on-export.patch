@@ -1,0 +1,40 @@
+Description: No error message is given when disk gets full on PCM export
+ Please also have a look at the error message on sf_close and see that it
+ actually works.
+Bug-Ubuntu: https://launchpad.net/bugs/259798
+Forwarded: yes
+Author: David Henningsson <launchpad.web@epost.diwic.se>
+diff -Nur -x '*.orig' -x '*~' audacity-1.3.9/src/export/ExportPCM.cpp audacity-1.3.9.new/src/export/ExportPCM.cpp
+--- audacity-1.3.9/src/export/ExportPCM.cpp	2009-10-11 10:24:55.418303300 +0200
++++ audacity-1.3.9.new/src/export/ExportPCM.cpp	2009-10-11 10:28:05.589104320 +0200
+@@ -529,6 +529,7 @@
+                        formatStr.c_str()));
+ 
+    while(updateResult == eProgressSuccess) {
++      sampleCount samplesWritten;
+       sampleCount numSamples = mixer->Process(maxBlockLen);
+ 
+       if (numSamples == 0)
+@@ -538,11 +539,20 @@
+ 
+       ODManager::LockLibSndFileMutex();
+       if (format == int16Sample)
+-         sf_writef_short(sf, (short *)mixed, numSamples);
++         samplesWritten = sf_writef_short(sf, (short *)mixed, numSamples);
+       else
+-         sf_writef_float(sf, (float *)mixed, numSamples);
++         samplesWritten = sf_writef_float(sf, (float *)mixed, numSamples);
+       ODManager::UnlockLibSndFileMutex();
+ 
++      if (samplesWritten != numSamples) {
++        char buffer2[1000];
++        sf_error_str(sf, buffer2, 1000);
++        /* Tried the format %s variant (like below) but got garbage, probably it depends on 
++           Audacity and/or libsndfile being compiled with unicode or not */
++        wxMessageBox(_("Error while writing file (disk full?): ") + wxString::FromAscii(buffer2));
++        break;
++      }
++
+       updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
+    }
+ 
