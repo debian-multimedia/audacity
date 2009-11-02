@@ -1,7 +1,7 @@
 Description: If monitoring is activated when closing audacity,
  the autosave file is not erased correctly
 Bug-Ubuntu: https://launchpad.net/bugs/455990
-Forwarded: no
+Forwarded: yes
 Author: David Henningsson <launchpad.web@epost.diwic.se>
 diff -Nur -x '*.orig' -x '*~' audacity-1.3.9/src/Project.cpp audacity-1.3.9.new/src/Project.cpp
 --- audacity-1.3.9/src/Project.cpp	2009-08-31 12:45:38.000000000 +0200
