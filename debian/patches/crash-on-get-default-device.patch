@@ -1,3 +1,8 @@
+Description: Check for proper index set in calls to GetDefaultPlayDevice and
+ GetDefaultRecordDevice, to avoid crashes later. 
+Bug-Ubuntu: https://launchpad.net/bugs/475277
+Forwarded: not-needed
+Origin: http://audacity.cvs.sourceforge.net/viewvc/audacity/audacity-src/src/prefs/DevicePrefs.cpp?r1=1.6&r2=1.7
 diff -Nur -x '*.orig' -x '*~' audacity/src/prefs/DevicePrefs.cpp audacity.new/src/prefs/DevicePrefs.cpp
 --- audacity/src/prefs/DevicePrefs.cpp	2009-11-12 21:31:24.097328400 +0100
 +++ audacity.new/src/prefs/DevicePrefs.cpp	2009-11-12 21:32:06.944830051 +0100
