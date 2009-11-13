@@ -5,3 +5,5 @@ debian/tmp/usr/share/man
 debian/audacity.svg usr/share/pixmaps
 debian/audacity.xpm usr/share/pixmaps
 debian/audacity16.xpm usr/share/pixmaps
+debian/source_audacity.py usr/share/apport/package-hooks
+
