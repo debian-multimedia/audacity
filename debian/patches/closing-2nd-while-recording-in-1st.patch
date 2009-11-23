@@ -1,0 +1,27 @@
+diff -Nur -x '*.orig' -x '*~' audacity/src/AudioIO.h audacity.new/src/AudioIO.h
+--- audacity/src/AudioIO.h	2009-10-21 18:20:50.536184321 +0200
++++ audacity.new/src/AudioIO.h	2009-11-23 16:37:05.249920087 +0100
+@@ -80,6 +80,7 @@
+    AudioIO();
+    ~AudioIO();
+ 
++   AudioIOListener* GetListener() { return mListener; }
+    void SetListener(AudioIOListener* listener);
+    
+    /** \brief Start up Portaudio for capture and recording as needed for
+diff -Nur -x '*.orig' -x '*~' audacity/src/Project.cpp audacity.new/src/Project.cpp
+--- audacity/src/Project.cpp	2009-11-23 16:36:10.239918690 +0100
++++ audacity.new/src/Project.cpp	2009-11-23 16:37:58.488672274 +0100
+@@ -1918,6 +1918,12 @@
+       }
+    }
+    
++   // Since we're going to be destroyed, make sure we're not to 
++   // receive audio notifications anymore.
++   if (gAudioIO->GetListener() == this) {
++      gAudioIO->SetListener(gActiveProject);
++   }
++
+    if (gAudacityProjects.IsEmpty() && !gIsQuitting) {
+ 
+       // LL:  On the Mac, we don't want the logger open after all projects
