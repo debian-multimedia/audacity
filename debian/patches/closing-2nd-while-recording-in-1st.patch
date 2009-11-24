@@ -1,6 +1,7 @@
 Description: Crash on start recording, then open and close a project window
 Forwarded: yes
 Author: David Henningsson <diwic@ubuntu.com>
+Applied-Upstream: yes
 diff -Nur -x '*.orig' -x '*~' audacity/src/AudioIO.h audacity.new/src/AudioIO.h
 --- audacity/src/AudioIO.h	2009-10-21 18:20:50.536184321 +0200
 +++ audacity.new/src/AudioIO.h	2009-11-23 16:37:05.249920087 +0100
