@@ -1,4 +1,4 @@
-audacity (1.3.9-7) UNRELEASED; urgency=low
+audacity (1.3.9-7) unstable; urgency=low
 
   [ David Henningsson ]
   * Avoid crash in GetDefaultPlayDevice (LP: #475277)
@@ -11,7 +11,7 @@ audacity (1.3.9-7) UNRELEASED; urgency=low
   [ Benjamin Drung ]
   * Add Applied-Upstream meta data to patch.
 
- -- David Henningsson <diwic@ubuntu.com>  Sat, 28 Nov 2009 12:59:05 +0100
+ -- Benjamin Drung <bdrung@ubuntu.com>  Sat, 28 Nov 2009 13:43:20 +0100
 
 audacity (1.3.9-6) unstable; urgency=low
 
