@@ -1,6 +1,17 @@
 audacity (1.3.9-7) UNRELEASED; urgency=low
 
- -- David Henningsson <launchpad.web@epost.diwic.se>  Thu, 12 Nov 2009 21:27:09 +0100
+  [ David Henningsson ]
+  * Avoid crash in GetDefaultPlayDevice (LP: #475277)
+  * Fixed crash on start recording, then open and close a project window 
+  * Update my email address
+  * Add apport hook for better bug reports on Ubuntu
+  * stopstream-on-close.patch has now been forwarded and committed
+    upstream.
+
+  [ Benjamin Drung ]
+  * Add Applied-Upstream meta data to patch.
+
+ -- David Henningsson <diwic@ubuntu.com>  Sat, 28 Nov 2009 12:59:05 +0100
 
 audacity (1.3.9-6) unstable; urgency=low
 
