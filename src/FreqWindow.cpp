@@ -93,28 +93,6 @@ enum {
 #define FREQ_WINDOW_WIDTH 480
 #define FREQ_WINDOW_HEIGHT 330
 
-void InitFreqWindow(wxWindow * parent)
-{
-   AudacityProject* p = GetActiveProject();
-   if (!p)
-      return;
-
-   if(!p->mFreqWindow)
-   {
-      wxPoint where;
-
-      where.x = 150;
-      where.y = 150;
-
-      p->mFreqWindow = new FreqWindow(parent, -1, _("Frequency Analysis"), where);
-   }
-   wxCommandEvent dummy;
-   p->mFreqWindow->OnReplot(dummy);
-   p->mFreqWindow->Show(true);
-   p->mFreqWindow->Raise();
-   p->mFreqWindow->SetFocus();
-}
-
 // FreqWindow
 
 BEGIN_EVENT_TABLE(FreqWindow, wxDialog)
@@ -134,7 +112,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
                            const wxString & title,
                            const wxPoint & pos):
   wxDialog(parent, id, title, pos, wxDefaultSize,
-     wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX ),
+     wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX),
   mData(NULL), mProcessed(NULL), mBitmap(NULL)
 {
    mMouseX = 0;
@@ -400,6 +378,7 @@ void FreqWindow::GetAudio()
    int selcount = 0;
    int i;
    bool warning = false;
+   wxLogMessage(wxT("Entering FreqWindow::GetAudio()"));
    TrackListIterator iter(p->GetTracks());
    Track *t = iter.First();
    while (t) {
@@ -452,8 +431,11 @@ void FreqWindow::GetAudio()
       wxString msg;
       msg.Printf(_("Too much audio was selected.  Only the first %.1f seconds of audio will be analyzed."),
                           (mDataLen / mRate));
+      wxLogMessage(wxT("About to show length warning message"));
       wxMessageBox(msg);
+      wxLogMessage(wxT("Length warning message done"));
    }
+   wxLogMessage(wxT("Leaving FreqWindow::GetAudio()"));
 }
 
 void FreqWindow::OnSize(wxSizeEvent & event)
@@ -942,6 +924,7 @@ void FreqWindow::OnCloseButton(wxCommandEvent & WXUNUSED(event))
 
 void FreqWindow::Plot()
 {
+   wxLogMessage(wxT("Starting FreqWindow::Plot()"));
    if (mData) {
       delete[]mData;
       mData = NULL;
@@ -956,10 +939,12 @@ void FreqWindow::Plot()
 
    wxSizeEvent dummy;
    OnSize( dummy );
+   wxLogMessage(wxT("Leaving FreqWindow::Plot()"));
 }
 
 void FreqWindow::Recalc()
 {
+   wxLogMessage(wxT("Starting FreqWindow::Recalc()"));
    if (mProcessed)
       delete[] mProcessed;
    mProcessed = NULL;
@@ -1015,6 +1000,10 @@ void FreqWindow::Recalc()
       wss = 4.0 / (wss*wss);
    else
       wss = 1.0;
+
+   //Progress dialog over FFT operation
+   wxLogMessage(wxT("Starting progress dialogue in FreqWindow::Recalc()"));
+   ProgressDialog *mProgress = new ProgressDialog(_("FreqWindow"),_("Drawing Spectrum"));
 
    int start = 0;
    int windows = 0;
@@ -1102,8 +1091,15 @@ void FreqWindow::Recalc()
 
       start += half;
       windows++;
+      // only update the progress dialogue infrequently to reduce it's overhead
+      // If we do it every time, it spends as much time updating X11 as doing
+      // the calculations. 10 seems a reasonable compromise on Linux that
+      // doesn't make it unresponsive, but avoids the slowdown.
+      if ((windows % 10) == 0)
+         mProgress->Update(1 - static_cast<float>(mDataLen - start) / mDataLen);
    }
 
+   wxLogMessage(wxT("Finished updating progress dialogue in FreqWindow::Recalc()"));
    switch (alg) {
    double scale;
    case 0:                     // Spectrum
@@ -1215,8 +1211,10 @@ void FreqWindow::Recalc()
    delete[]out2;
    delete[]win;
 
+   wxLogMessage(wxT("About to draw plot in FreqWindow::Recalc()"));
    DrawPlot();
    mFreqPlot->Refresh(true);
+   delete mProgress;
 }
 
 void FreqWindow::OnExport(wxCommandEvent & WXUNUSED(event))
@@ -1270,9 +1268,7 @@ void FreqWindow::OnReplot(wxCommandEvent & WXUNUSED(event))
    if(dBRange < 90.)
       dBRange = 90.;
    GetAudio();
-   
-   if(p->mFreqWindow)
-      p->mFreqWindow->Plot();
+   Plot();
 }
 
 void FreqWindow::OnGridOnOff(wxCommandEvent & WXUNUSED(event))
@@ -1281,9 +1277,7 @@ void FreqWindow::OnGridOnOff(wxCommandEvent & WXUNUSED(event))
       mDrawGrid = true;
    else
       mDrawGrid = false;
-
-   if(p->mFreqWindow)
-      p->mFreqWindow->Plot();
+   Plot();
 }
 
 BEGIN_EVENT_TABLE(FreqPlot, wxWindow)

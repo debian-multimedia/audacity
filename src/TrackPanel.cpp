@@ -776,6 +776,45 @@ void TrackPanel::SelectTracksByLabel( LabelTrack *lt )
    }
 }
 
+/// Set selection length to the length of a track -- but if linking is turned
+/// on, use the largest possible selection in the group.  And if it's a stereo
+/// track, do the same for the stereo channels.
+void TrackPanel::SelectTrackLength(Track *t)
+{
+   AudacityProject *p = GetActiveProject();
+   TrackGroupIterator it(mTracks);
+   Track *t1 = it.First(t);
+   double minOffset = t->GetOffset();
+   double maxEnd = t->GetEndTime();
+
+   // If we have a group and linking is on, check the group tracks
+   if (p->IsSticky() && t1 != NULL)
+   {
+      for ( ; t1; t1 = it.Next())
+      {
+         if (t1->GetOffset() < minOffset)
+            minOffset = t1->GetOffset();
+         if (t1->GetEndTime() > maxEnd)
+            maxEnd = t1->GetEndTime();
+      }
+   }
+   else
+   {
+      // Otherwise, check for a stereo pair
+      t1 = t->GetLink();
+      if (t1)
+      {
+         if (t1->GetOffset() < minOffset)
+            minOffset = t1->GetOffset();
+         if (t1->GetEndTime() > maxEnd)
+            maxEnd = t1->GetEndTime();
+      }
+   }
+
+   mViewInfo->sel0 = minOffset;
+   mViewInfo->sel1 = maxEnd;
+}
+
 void TrackPanel::GetTracksUsableArea(int *width, int *height) const
 {
    GetSize(width, height);
@@ -1684,9 +1723,7 @@ void TrackPanel::HandleSelect(wxMouseEvent & event)
       mTracks->Select(mCapturedTrack);
 
       // Default behavior: select whole track
-      mViewInfo->sel0 = mCapturedTrack->GetOffset();
-      mViewInfo->sel1 = mCapturedTrack->GetEndTime();
-      
+      SelectTrackLength(mCapturedTrack);
       
       // Special case: if we're over a clip in a WaveTrack,
       // select just that clip
@@ -2272,7 +2309,7 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
          PositionToTime(event.m_x, GetLeftOffset());
       bool clickedInSelection =
          (wt->GetSelected() &&
-          clickTime >= mViewInfo->sel0 &&
+          clickTime > mViewInfo->sel0 &&
           clickTime < mViewInfo->sel1);
 
       if (clickedInSelection) {
@@ -2282,53 +2319,34 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
 
          mCapturedClipIsSelection = true;
 
-         TrackGroupIterator iter(mTracks);
-         Track *t;
-         if (GetProject()->IsSticky() && (t = iter.First(wt))) {
-            while (t) {
-               if (t->GetKind() == Track::Wave) {
-                  WaveTrack *wt = (WaveTrack *)t;
-                  WaveClipList::compatibility_iterator it;
-                  for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
-                     WaveClip *clip = it->GetData();
-                     double clip0 = clip->GetStartTime();
-                     double clip1 = clip->GetEndTime();
-                     
-                     if (clip0 <= mViewInfo->sel1 &&
-                         clip1 >= mViewInfo->sel0) {
-                        mCapturedClipArray.Add(TrackClip(wt, clip));
-                     }
+         TrackAndGroupIterator iter(mTracks);
+         Track *t = iter.First();
+
+         while (t) // must iterate t in all possible branches
+         {
+            if (t->GetSelected()) {
+               // If this track is in a group, move all clips in the group that
+               // overlap the selection region
+               TrackGroupIterator gIter(mTracks);
+               Track *gt = gIter.First(t);
+               if (GetProject()->IsSticky() && gt) {
+                  while (gt) {
+                     AddClipsToCaptured(gt, true);
+                     gt = gIter.Next();
                   }
+
+                  // iteration for t: we're done with this group.
+                  t = iter.NextGroup();
                }
                else {
-                  mCapturedClipArray.Add(TrackClip(t, NULL));
+                  AddClipsToCaptured(t, true);
+                  
+                  // iteration for t
+                  t = iter.Next();
                }
-               t = iter.Next();
             }
-         }
-         else {
-            TrackListIterator iter(mTracks);
-            Track *t = iter.First();
-            while (t) {
-               if (t->GetSelected()) {
-                  if (t->GetKind() == Track::Wave) {
-                     WaveTrack *wt = (WaveTrack *)t;
-                     WaveClipList::compatibility_iterator it;
-                     for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
-                        WaveClip *clip = it->GetData();
-                        double clip0 = clip->GetStartTime();
-                        double clip1 = clip->GetEndTime();
-                        
-                        if (clip0 <= mViewInfo->sel1 &&
-                            clip1 >= mViewInfo->sel0) {
-                           mCapturedClipArray.Add(TrackClip(wt, clip));
-                        }
-                     }
-                  }
-                  else {
-                     mCapturedClipArray.Add(TrackClip(t, NULL));
-                  }
-               }
+            else {
+               // iteration for t
                t = iter.Next();
             }
          }
@@ -2338,26 +2356,15 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
          TrackGroupIterator iter(mTracks);
          Track *t;
          if (GetProject()->IsSticky() && (t = iter.First(wt))) {
+            // Captured clip is in a group -- move all group tracks
             while (t) {
-               if (t->GetKind() == Track::Wave) {
-                  WaveTrack *wt = (WaveTrack *)t;
-                  WaveClipList::compatibility_iterator it;
-                  for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
-                     WaveClip *clip = it->GetData();
-                     mCapturedClipArray.Add(TrackClip(wt, clip));
-                  }
-               }
-               else {
-                  mCapturedClipArray.Add(TrackClip(t, NULL));
-               }
+               AddClipsToCaptured(t, false);
                t = iter.Next();
             }
          }
          else {
             // Only add mCapturedClip, and possibly its stereo partner,
             // to the list of clips to move.
-
-            mCapturedClipIsSelection = false;
 
             mCapturedClipArray.Add(TrackClip(wt, mCapturedClip));
 
@@ -2401,6 +2408,35 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
    }
 
    mMouseCapture = IsSliding;
+}
+
+// Helper for the above, adds a track's clips to mCapturedClipArray (eliminates
+// duplication of this logic)
+void TrackPanel::AddClipsToCaptured(Track *t, bool withinSelection)
+{
+   if (t->GetKind() == Track::Wave)
+   {
+      WaveClipList::compatibility_iterator it =
+         ((WaveTrack *)t)->GetClipIterator();
+      while (it)
+      {
+         WaveClip *clip = it->GetData();
+         if (!withinSelection || (
+                  // Overlap of the selection must be at least one sample
+                  clip->GetStartTime()+1.0/clip->GetRate() <= mViewInfo->sel1 &&
+                  clip->GetEndTime()-1.0/clip->GetRate() >= mViewInfo->sel0) )
+         {
+            mCapturedClipArray.Add(TrackClip(t, clip));
+         }
+         it = it->GetNext();
+      }
+   }
+   else
+   {
+      // This handles label tracks rather heavy-handedly -- it would be nice to
+      // treat individual labels like clips
+      mCapturedClipArray.Add(TrackClip(t, NULL));
+   }
 }
 
 /// Slide tracks horizontally, or slide clips horizontally or vertically
@@ -3660,7 +3696,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
       return;
 
    // LL: Check title bar for popup
-   if (isleft &&PopupFunc(t, r, event.m_x, event.m_y))
+   if (isleft && PopupFunc(t, r, event.m_x, event.m_y))
       return;
 
    // MM: Check minimize buttons on WaveTracks. Must be before
@@ -3726,17 +3762,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    SelectNone();
    mTracks->Select(t);
    SetFocusedTrack(t);
-   Track *t1 = t->GetLink();
-   if(t1)
-   {
-      mViewInfo->sel0 = wxMin(t->GetOffset(), t1->GetOffset());
-      mViewInfo->sel1 = wxMax(t->GetEndTime(), t1->GetEndTime());
-   }
-   else
-   {
-      mViewInfo->sel0 = t->GetOffset();
-      mViewInfo->sel1 = t->GetEndTime();
-   }
+   SelectTrackLength(t);
 
    this->Refresh(false);  
    #ifdef EXPERIMENTAL_MIXER_BOARD
@@ -4464,7 +4490,7 @@ bool TrackPanel::HandleLabelTrackMouseEvent(LabelTrack * lTrack, wxRect &r, wxMo
    }
 
    
-   if (event.RightDown()) {
+   if (event.RightUp()) {
       // popup menu for editing
       RefreshTrack(lTrack);
      
@@ -6419,7 +6445,7 @@ void TrackPanel::OnFormatChange(wxCommandEvent & event)
    Refresh(false);
 }
 
-/// Converts a format enumeration to a wxWindows menu item Id.
+/// Converts a format enumeration to a wxWidgets menu item Id.
 int TrackPanel::IdOfFormat( int format )
 {
    switch (format) {
@@ -6476,7 +6502,7 @@ void TrackPanel::OnRateChange(wxCommandEvent & event)
    Refresh(false);
 }
 
-/// Converts a sampling rate to a wxWindows menu item id
+/// Converts a sampling rate to a wxWidgets menu item id
 int TrackPanel::IdOfRate( int rate )
 {
    for(int i=0;i<nRates;i++) {
@@ -6790,13 +6816,18 @@ Track *TrackPanel::FindTrack(int mouseX, int mouseY, bool label, bool link,
    }
 
    VisibleTrackIterator iter(GetProject());
-
    for (Track * t = iter.First(); t; t = iter.Next()) {
       r.y = t->GetY() - mViewInfo->vpos + kTopInset;
       r.height = t->GetHeight();
 
-      if (link && t->GetLinked()) {
-         r.height += t->GetLink()->GetHeight();
+      if (link && t->GetLink()) {
+         Track *l = t->GetLink();
+         int h = l->GetHeight();
+         if (!t->GetLinked()) {
+            t = l;
+            r.y = t->GetY() - mViewInfo->vpos + kTopInset;;
+         }
+         r.height += h;
       }
 
       //Determine whether the mouse is inside 

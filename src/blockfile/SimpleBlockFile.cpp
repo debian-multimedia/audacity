@@ -104,16 +104,17 @@ wxUint32 SwapUintEndianess(wxUint32 in)
 SimpleBlockFile::SimpleBlockFile(wxFileName baseFileName,
                                  samplePtr sampleData, sampleCount sampleLen,
                                  sampleFormat format,
-                                 bool allowDeferredWrite /* = false */):
+                                 bool allowDeferredWrite /* = false */,
+                                 bool bypassCache /* = false */):
    BlockFile(wxFileName(baseFileName.GetFullPath() + wxT(".au")), sampleLen)
 {
    mCache.active = false;
    
    DEBUG_OUTPUT("SimpleBlockFile created based on sample data");
 
-   bool useCache = GetCache();
+   bool useCache = GetCache() && (!bypassCache);
 
-   if (!(allowDeferredWrite && useCache))
+   if (!(allowDeferredWrite && useCache) && !bypassCache)
       WriteSimpleBlockFile(sampleData, sampleLen, format, NULL);
       
    if (useCache) {
@@ -597,8 +598,8 @@ bool SimpleBlockFile::GetCache()
       lowMem = 16;
    }
    lowMem <<= 20;
-    
-   return cacheBlockFiles && (wxGetFreeMemory() > lowMem);
+
+   return cacheBlockFiles && (GetFreeMemory() > lowMem);
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

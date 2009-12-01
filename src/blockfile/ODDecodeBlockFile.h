@@ -42,13 +42,12 @@ class ODDecodeBlockFile : public SimpleBlockFile
    // Constructor / Destructor
 
    /// Create a disk file and write summary and sample data to it
-   ODDecodeBlockFile(wxFileName baseFileName, wxFileName audioFileName,
-                   samplePtr sampleData, sampleCount sampleLen,
-                   sampleFormat format,
-                   bool allowDeferredWrite = false);
+   ODDecodeBlockFile(wxFileName baseFileName,wxFileName audioFileName, sampleCount aliasStart,
+                     sampleCount aliasLen, int aliasChannel, unsigned int decodeType);
    /// Create the memory structure to refer to the given block file
-   ODDecodeBlockFile(wxFileName existingFile, wxFileName audioFileName, sampleCount len,
-                   float min, float max, float rms);
+   ODDecodeBlockFile(wxFileName existingFile, wxFileName audioFileName, sampleCount aliasStart,
+                     sampleCount aliasLen, int aliasChannel, unsigned int decodeType,
+                   float min, float max, float rms, bool dataAvailable);
 
    virtual ~ODDecodeBlockFile();   
    //checks to see if summary data has been computed and written to disk yet.  Thread safe.  Blocks if we are writing summary data.
@@ -71,6 +70,11 @@ class ODDecodeBlockFile : public SimpleBlockFile
    virtual bool Read256(float *buffer, sampleCount start, sampleCount len);
    /// Returns the 64K summary data block
    virtual bool Read64K(float *buffer, sampleCount start, sampleCount len);
+   
+   /// returns true before decoding is complete, because it is linked to the encoded file until then.
+   /// returns false afterwards.
+   
+   
 
    ///Makes new ODPCMAliasBlockFile or PCMAliasBlockFile depending on summary availability
    virtual BlockFile *Copy(wxFileName fileName);
@@ -105,8 +109,8 @@ class ODDecodeBlockFile : public SimpleBlockFile
    virtual bool ReadSummary(void *data);
    
    ///Returns the type of audiofile this blockfile is loaded from.
-   virtual int GetDecodeType(){return mType;}
-   virtual void SetDecodeType(int type){mType=type;}
+   virtual unsigned int GetDecodeType(){return mType;}
+   virtual void SetDecodeType(unsigned int type){mType=type;}
    
    ///sets the amount of samples the clip associated with this blockfile is offset in the wavetrack (non effecting)
    void SetClipOffset(sampleCount numSamples){mClipOffset= numSamples;}
@@ -121,14 +125,38 @@ class ODDecodeBlockFile : public SimpleBlockFile
    
    wxFileName GetAudioFileName(){return mAudioFileName;}
    
+   ///sets the file name the summary info will be saved in.  threadsafe.
+   virtual void SetFileName(wxFileName &name);
+   virtual wxFileName GetFileName();
+   
+   /// Prevents a read on other threads of the encoded audio file.
+   virtual void LockRead();
+   /// Allows reading of encoded file on other threads.
+   virtual void UnlockRead();
+   
+   ///// Get the name of the file where the audio data for this block is
+   /// stored.
+   wxFileName GetEncodedAudioFilename()
+   {
+      return mAudioFileName;
+   }
+   
+   /// Modify this block to point at a different file.  This is generally
+   /// looked down on, but it is necessary in one case: see
+   /// DirManager::EnsureSafeFilename().
+   void ChangeAudioFile(wxFileName newAudioFile);
+
   protected:
    
 //   virtual void WriteSimpleBlockFile();
    virtual void *CalcSummary(samplePtr buffer, sampleCount len,
                              sampleFormat format);
+   //The on demand type.
+   unsigned int mType;
    
-   int mType;
-   
+   ///This lock is for the filename (string) of the blockfile that contains summary/audio data 
+   ///after decoding
+   ODLock mFileNameMutex;
                                                                                  
    ///The original file the audio came from.
    wxFileName mAudioFileName;
@@ -140,6 +168,8 @@ class ODDecodeBlockFile : public SimpleBlockFile
    ODFileDecoder* mDecoder;
    ODLock mDecoderMutex;
    
+   ///For accessing the audio file that will be decoded.  Used by dir manager;
+   ODLock mReadDataMutex;
    
    ///for reporting after task is complete.  Only for display use.
    sampleCount mStart;
@@ -148,7 +178,9 @@ class ODDecodeBlockFile : public SimpleBlockFile
    sampleCount mClipOffset;
    
    sampleFormat mFormat;
-   sampleCount mDecodeFileStart;
+   
+   sampleCount mAliasStart;//where in the encoded audio file this block corresponds to.
+   int         mAliasChannel;//The channel number in the encoded file..
 
 };
 

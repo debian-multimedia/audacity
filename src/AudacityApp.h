@@ -81,6 +81,7 @@ enum
    NoteTracksExistFlag    = 0x00800000,  //gsw
    NoteTracksSelectedFlag = 0x01000000,  //gsw
    HaveRecentFiles        = 0x02000000,
+   LinkingDisabledFlag    = 0x04000000,  //awd
 
    NoFlagsSpecifed        = 0xffffffff
 };
@@ -164,6 +165,8 @@ class AudacityApp:public wxApp {
 
    FileHistory *GetRecentFiles() {return mRecentFiles;}
    void AddFileToHistory(const wxString & name);
+   bool GetWindowRectAlreadySaved()const {return mWindowRectAlreadySaved;}
+   void SetWindowRectAlreadySaved(bool alreadySaved) {mWindowRectAlreadySaved = alreadySaved;}
 
    Importer *mImporter;
 
@@ -199,6 +202,7 @@ class AudacityApp:public wxApp {
 //      ....      depends on whether [AudacityDir]\presets can be written
    wxString mAppHomeDir;
    wxString mPresetsDir;
+   bool mWindowRectAlreadySaved;
 
 #if defined(__WXMSW__)
    IPCServ *mIPCServ;

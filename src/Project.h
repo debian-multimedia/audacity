@@ -84,7 +84,8 @@ void RefreshCursorForAllProjects();
 AUDACITY_DLL_API void CloseAllProjects();
 
 void GetDefaultWindowRect(wxRect *defRect);
-void GetNextWindowPlacement(wxRect *nextRect, bool *bMaximized);
+void GetNextWindowPlacement(wxRect *nextRect, bool *pMaximized, bool *pIconized);
+bool IsWindowAccessible(wxRect *requestedRect);
 
 WX_DEFINE_ARRAY(AudacityProject *, AProjectArray);
 
@@ -145,7 +146,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    
    void SetSel0(double);        //Added by STM 
    void SetSel1(double);        //Added by STM 
-
 
    bool Clipboard() { return msClipLen > 0.0; }
 
@@ -216,6 +216,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void OnMouseEvent(wxMouseEvent & event);
    void OnIconize(wxIconizeEvent &event);
    void OnSize(wxSizeEvent & event);
+   void OnMove(wxMoveEvent & event);
    void OnScroll(wxScrollEvent & event);
    void OnCloseWindow(wxCloseEvent & event);
    void OnTimer(wxTimerEvent & event);
@@ -249,7 +250,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void Rewind(bool shift);
    void SkipEnd(bool shift);
    void SetStop(bool bStopped);
-   void EditByLabel( WaveTrack::EditFunction action ); 
+   void EditByLabel( WaveTrack::EditFunction action, bool groupIteration ); 
    void EditClipboardByLabel( WaveTrack::EditDestFunction action );
    bool IsSticky();
    bool GetStickyFlag() { return mStickyFlag; };
@@ -261,7 +262,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Type of solo (standard or simple) follows the set preference, unless
    // alternate == true, which causes the opposite behavior.
    void HandleTrackSolo(Track *t, const bool alternate);
-
 
    // Snap To
 
@@ -322,8 +322,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
       MixerBoard* GetMixerBoard() { return mMixerBoard; };
    #endif
 
- public:
-
    // SelectionBar callback methods
 
    virtual void AS_SetRate(double rate);
@@ -364,8 +362,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void PushState(wxString desc, wxString shortDesc,
                   bool consolidate = false);
 
-   FreqWindow *mFreqWindow;
-
  private:
 
    void ClearClipboard();
@@ -388,8 +384,10 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void DeleteCurrentAutoSaveFile();
    
    static bool GetCacheBlockFiles();
-   
-   bool IsSimpleSolo() { return mSoloPref == wxT("Simple"); };
+
+ public:
+   bool IsSoloSimple() { return mSoloPref == wxT("Simple"); };
+   bool IsSoloNone() { return mSoloPref == wxT("None"); };
 
  private:
 
@@ -431,10 +429,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    wxUint32 mLastFlags;
 
-   // see AudacityProject::OnUpdateUI() for explanation of next two
-   bool mInIdle;
-   wxUint32 mTextClipFlag;
-
    // Window elements
 
    wxTimer *mTimer;
@@ -461,6 +455,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
       MixerBoardFrame* mMixerBoardFrame;
    #endif
 
+   FreqWindow *mFreqWindow;
 
  public:
    ToolManager *mToolManager;
@@ -468,7 +463,11 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    wxString mHelpPref;
    wxString mSoloPref;
 
+   void SetNormalizedWindowState(wxRect pSizeAndLocation) {  mNormalizedWindowState = pSizeAndLocation;   }
+   wxRect GetNormalizedWindowState() const { return mNormalizedWindowState;   }
+
  private:
+
    int  mAudioIOToken;
 
    bool mIsDeleting;
@@ -511,7 +510,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Dependencies have been imported and a warning should be shown on save
    bool mImportedDependencies;
 
-
    bool mWantSaveCompressed;
    wxArrayString mStrOtherNamesArray; // used to make sure compressed file names are unique
    
@@ -520,10 +518,10 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    int mLastEffectType;
    wxString mLastEffectDesc;
 
- private:
-
    // The screenshot class needs to access internals
    friend class ScreenshotCommand;
+
+   wxRect mNormalizedWindowState;
 
  public:
     DECLARE_EVENT_TABLE()

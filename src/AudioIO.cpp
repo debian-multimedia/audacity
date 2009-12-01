@@ -101,6 +101,13 @@ AudioIO *gAudioIO;
 
 // static
 int AudioIO::mNextStreamToken = 0;
+int AudioIO::mCachedPlaybackIndex = -1;
+wxArrayLong AudioIO::mCachedPlaybackRates;
+int AudioIO::mCachedCaptureIndex = -1;
+wxArrayLong AudioIO::mCachedCaptureRates;
+wxArrayLong AudioIO::mCachedSampleRates;
+double AudioIO::mCachedBestRateIn = 0.0;
+double AudioIO::mCachedBestRateOut;
 
 const int AudioIO::StandardRates[] = {
    8000,
@@ -208,6 +215,27 @@ void InitAudioIO()
 {
    gAudioIO = new AudioIO();
    gAudioIO->mThread->Run();
+
+   // Make sure device prefs are initialized
+   if (gPrefs->Read(wxT("AudioIO/RecordingDevice"), wxT("")) == wxT("")) {
+      int i = AudioIO::getRecordDevIndex();
+      const PaDeviceInfo *info = Pa_GetDeviceInfo(i);
+      if (info) {
+         gPrefs->Write(wxT("/AudioIO/RecordingDevice"), DeviceName(info));
+         gPrefs->Write(wxT("/AudioIO/Host"),
+               wxString(Pa_GetHostApiInfo(info->hostApi)->name, wxConvLocal));
+      }
+   }
+
+   if (gPrefs->Read(wxT("AudioIO/PlaybackDevice"), wxT("")) == wxT("")) {
+      int i = AudioIO::getPlayDevIndex();
+      const PaDeviceInfo *info = Pa_GetDeviceInfo(i);
+      if (info) {
+         gPrefs->Write(wxT("/AudioIO/PlaybackDevice"), DeviceName(info));
+         gPrefs->Write(wxT("/AudioIO/Host"),
+               wxString(Pa_GetHostApiInfo(info->hostApi)->name, wxConvLocal));
+      }
+   }
 }
 
 void DeinitAudioIO()
@@ -248,11 +276,19 @@ AudioIO::AudioIO()
    mMidiStream = NULL;
    mMidiStreamActive = false;
    mSendMidiState = false;
+
+   mIterator = new Alg_iterator(mSeq, true);
+   mIterator->begin(true);
+   mNextEvent = mIterator->next();
+
+   mAudioCallbackSampleNumber = 0;
 #endif
 
 #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
    mAILAActive = false;
 #endif
+   mSilentBuf = NULL;
+   mLastSilentBufSize = 0;
 
    mStreamToken = 0;
    mStopStreamCount = 0;
@@ -316,8 +352,7 @@ AudioIO::AudioIO()
 #else
    mEmulateMixerOutputVol = true;
    mMixerOutputVol = 1.0;
-   mEmulateMixerInputVol = true;
-   mMixerInputVol = 1.0;
+   mInputMixerWorks = false;
 #endif
 }
 
@@ -344,6 +379,9 @@ AudioIO::~AudioIO()
       (Kill is the not-graceful way.) */
    wxYield();
    mThread->Delete();
+   
+   if(mSilentBuf) 
+      DeleteSamples(mSilentBuf);
 
    delete [] mTempFloats;
    delete mThread;
@@ -353,7 +391,6 @@ void AudioIO::SetMixer(int recordDevice, float recordVolume,
                        float playbackVolume)
 {
    mMixerOutputVol = playbackVolume;
-   mMixerInputVol = recordVolume;
 
 #if defined(USE_PORTMIXER)
    PxMixer *mixer = mPortMixer;
@@ -387,10 +424,10 @@ void AudioIO::GetMixer(int *recordDevice, float *recordVolume,
    {
       *recordDevice = Px_GetCurrentInputSource(mixer);
 
-      if (mEmulateMixerInputVol)
-         *recordVolume = mMixerInputVol;
-      else
+      if (mInputMixerWorks)
          *recordVolume = Px_GetInputVolume(mixer);
+      else
+         *recordVolume = 1.0f;
 
       if (mEmulateMixerOutputVol)
          *playbackVolume = mMixerOutputVol;
@@ -403,8 +440,13 @@ void AudioIO::GetMixer(int *recordDevice, float *recordVolume,
 #endif
 
    *recordDevice = 0;
-   *recordVolume = mMixerInputVol;
+   *recordVolume = 1.0f;
    *playbackVolume = mMixerOutputVol;
+}
+
+bool AudioIO::InputMixerWorks()
+{
+   return mInputMixerWorks;
 }
 
 wxArrayString AudioIO::GetInputSourceNames()
@@ -440,7 +482,19 @@ void AudioIO::HandleDeviceChange()
    // This should not happen, but it would screw things up if it did.
    if (IsStreamActive())
       return;
-   // this function only does something (at the moment) for portmixer.
+
+   // get the selected record and playback devices
+   int playDeviceNum = getPlayDevIndex();
+   int recDeviceNum = getRecordDevIndex();
+
+   // cache playback/capture rates
+   mCachedPlaybackRates = GetSupportedPlaybackRates(playDeviceNum);
+   mCachedCaptureRates = GetSupportedCaptureRates(recDeviceNum);
+   mCachedSampleRates = GetSupportedSampleRates(playDeviceNum, recDeviceNum);
+   mCachedPlaybackIndex = playDeviceNum;
+   mCachedCaptureIndex = recDeviceNum;
+   mCachedBestRateIn = 0.0;
+
 #if defined(USE_PORTMIXER)
 
    // if we have a PortMixer object, close it down
@@ -457,29 +511,23 @@ void AudioIO::HandleDeviceChange()
       mPortMixer = NULL;
    }
 
-   // get the selected record and playback devices
-   int playDeviceNum = getPlayDevIndex();
-   int recDeviceNum = getRecordDevIndex();
-
-   wxArrayLong supportedSampleRates = GetSupportedSampleRates(playDeviceNum, recDeviceNum);
    // that might have given us no rates whatsoever, so we have to guess an
    // answer to do the next bit
-   int numrates = supportedSampleRates.GetCount();
+   int numrates = mCachedSampleRates.GetCount();
    int highestSampleRate;
    if (numrates > 0)
    {
-      highestSampleRate = supportedSampleRates[numrates - 1];
+      highestSampleRate = mCachedSampleRates[numrates - 1];
    }
    else
    {  // we don't actually have any rates that work for Rec and Play. Guess one
       // to use for messing with the mixer, which doesn't actually do either
       highestSampleRate = 44100;
-      // supportedSampleRates is still empty, but it's not used again, so
+      // mCachedSampleRates is still empty, but it's not used again, so
       // can ignore
    }
-   mEmulateMixerInputVol = true;
+   mInputMixerWorks = false;
    mEmulateMixerOutputVol = true;
-   mMixerInputVol = 1.0;
    mMixerOutputVol = 1.0;
 
    int error;
@@ -494,7 +542,7 @@ void AudioIO::HandleDeviceChange()
    playbackParameters.device = playDeviceNum;
    playbackParameters.sampleFormat = paFloat32;
    playbackParameters.hostApiSpecificStreamInfo = NULL;
-   playbackParameters.channelCount = 2;
+   playbackParameters.channelCount = 1;
    if (Pa_GetDeviceInfo(playDeviceNum))
       playbackParameters.suggestedLatency =
          Pa_GetDeviceInfo(playDeviceNum)->defaultLowOutputLatency;
@@ -506,7 +554,7 @@ void AudioIO::HandleDeviceChange()
    captureParameters.device = recDeviceNum;
    captureParameters.sampleFormat = paFloat32;;
    captureParameters.hostApiSpecificStreamInfo = NULL;
-   captureParameters.channelCount = 2;
+   captureParameters.channelCount = 1;
    if (Pa_GetDeviceInfo(recDeviceNum))
       captureParameters.suggestedLatency =
          Pa_GetDeviceInfo(recDeviceNum)->defaultLowInputLatency;
@@ -519,6 +567,16 @@ void AudioIO::HandleDeviceChange()
                          highestSampleRate, paFramesPerBufferUnspecified,
                          paClipOff | paDitherOff,
                          audacityAudioCallback, NULL);
+   
+   if (!error) {
+      // Try portmixer for this stream
+      mPortMixer = Px_OpenMixer(stream, 0);
+      if (!mPortMixer) {
+         Pa_CloseStream(stream);
+         error = true;
+      }
+   }
+
    // if that failed, try just for record
    if( error ) {
       error = Pa_OpenStream(&stream,
@@ -526,22 +584,40 @@ void AudioIO::HandleDeviceChange()
                             highestSampleRate, paFramesPerBufferUnspecified,
                             paClipOff | paDitherOff,
                             audacityAudioCallback, NULL);
+
+      if (!error) {
+         mPortMixer = Px_OpenMixer(stream, 0);
+         if (!mPortMixer) {
+            Pa_CloseStream(stream);
+            error = true;
+         }
+      }
+   }
+
+   // finally, try just for playback
+   if ( error ) {
+      error = Pa_OpenStream(&stream,
+                            NULL, &playbackParameters,
+                            highestSampleRate, paFramesPerBufferUnspecified,
+                            paClipOff | paDitherOff,
+                            audacityAudioCallback, NULL);
+      
+      if (!error) {
+         mPortMixer = Px_OpenMixer(stream, 0);
+         if (!mPortMixer) {
+            Pa_CloseStream(stream);
+            error = true;
+         }
+      }
    }
 
    // if it's still not working, give up
    if( error )
       return;
-   // set up portmixer on the open portaudio stream
-   mPortMixer = Px_OpenMixer(stream, 0);
 
-   if (!mPortMixer) {
-      Pa_CloseStream(stream);
-      return;
-   }
-
-   // Determine mixer capabilities - if it doesn't support either
-   // input or output, we emulate them (by multiplying this value
-   // by all incoming/outgoing samples)
+   // Determine mixer capabilities - if it doesn't support control of output
+   // signal level, we emulate it (by multiplying this value by all outgoing
+   // samples)
 
    mMixerOutputVol = Px_GetPCMOutputVolume(mPortMixer);
    mEmulateMixerOutputVol = false;
@@ -554,26 +630,25 @@ void AudioIO::HandleDeviceChange()
       mEmulateMixerOutputVol = true;
    Px_SetPCMOutputVolume(mPortMixer, mMixerOutputVol);
 
-   mMixerInputVol = Px_GetInputVolume(mPortMixer);
-   mEmulateMixerInputVol = false;
+   float inputVol = Px_GetInputVolume(mPortMixer);
+   mInputMixerWorks = true;   // assume it works unless proved wrong
    Px_SetInputVolume(mPortMixer, 0.0);
    if (Px_GetInputVolume(mPortMixer) > 0.1)
-      mEmulateMixerInputVol = true;
+      mInputMixerWorks = false;  // can't set to zero
    Px_SetInputVolume(mPortMixer, 0.2f);
    if (Px_GetInputVolume(mPortMixer) < 0.1 ||
        Px_GetInputVolume(mPortMixer) > 0.3)
-      mEmulateMixerInputVol = true;
-   Px_SetInputVolume(mPortMixer, mMixerInputVol);
+      mInputMixerWorks = false;  // can't set level accurately
+   Px_SetInputVolume(mPortMixer, inputVol);
 
    Pa_CloseStream(stream);
 
    #if 0
    printf("PortMixer: Output: %s Input: %s\n",
           mEmulateMixerOutputVol? "emulated": "native",
-          mEmulateMixerInputVol? "emulated": "native");
+          mInputMixerWorks? "hardware": "no control");
    #endif
 
-   mMixerInputVol = 1.0;
    mMixerOutputVol = 1.0;
 
 #endif   // USE_PORTMIXER
@@ -1420,15 +1495,23 @@ double AudioIO::GetStreamTime()
 
 wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
 {
+   if (devIndex == -1)
+   {  // weren't given a device index, get the prefs / default one
+      devIndex = getPlayDevIndex();
+   }
+
+   // Check if we can use the cached rates
+   if (mCachedPlaybackIndex != -1 && devIndex == mCachedPlaybackIndex
+         && rate == 0.0)
+   {
+      return mCachedPlaybackRates;
+   }
+
    wxArrayLong supported;
    int irate = (int)rate;
    const PaDeviceInfo* devInfo = NULL;
    int i;
 
-   if (devIndex == -1)
-   {  // weren't given a device index, get the prefs / default one
-      devIndex = getPlayDevIndex();
-   }
    wxLogDebug(wxT("Getting supported playback rates for device %d"), devIndex);
    devInfo = Pa_GetDeviceInfo(devIndex);
    
@@ -1441,7 +1524,7 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
    PaStreamParameters pars;
 
    pars.device = devIndex;
-   pars.channelCount = 2;
+   pars.channelCount = 1;
    pars.sampleFormat = paFloat32;
    pars.suggestedLatency = devInfo->defaultHighOutputLatency;
    pars.hostApiSpecificStreamInfo = NULL;
@@ -1469,15 +1552,23 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
 
 wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
 {
+   if (devIndex == -1)
+   {  // not given a device, look up in prefs / default
+      devIndex = getRecordDevIndex();
+   }
+
+   // Check if we can use the cached rates
+   if (mCachedCaptureIndex != -1 && devIndex == mCachedCaptureIndex
+         && rate == 0.0)
+   {
+      return mCachedCaptureRates;
+   }
+
    wxArrayLong supported;
    int irate = (int)rate;
    const PaDeviceInfo* devInfo = NULL;
    int i;
 
-   if (devIndex == -1)
-   {  // not given a device, look up in prefs / default
-      devIndex = getRecordDevIndex();
-   }
    wxLogDebug(wxT("Getting supported capture rates for device %d"), devIndex);
    devInfo = Pa_GetDeviceInfo(devIndex);
 
@@ -1523,6 +1614,23 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
 
 wxArrayLong AudioIO::GetSupportedSampleRates(int playDevice, int recDevice, double rate)
 {
+   // Not given device indices, look up prefs
+   if (playDevice == -1) {
+      playDevice = getPlayDevIndex();
+   }
+   if (recDevice == -1) {
+      recDevice = getRecordDevIndex();
+   }
+
+   // Check if we can use the cached rates
+   if (mCachedPlaybackIndex != -1 && mCachedCaptureIndex != -1 && 
+         playDevice == mCachedPlaybackIndex &&
+         recDevice == mCachedCaptureIndex &&
+         rate == 0.0)
+   {
+      return mCachedSampleRates;
+   }
+
    wxArrayLong playback = GetSupportedPlaybackRates(playDevice, rate);
    wxArrayLong capture = GetSupportedCaptureRates(recDevice, rate);
    int i;
@@ -1570,6 +1678,15 @@ int AudioIO::GetOptimalSupportedSampleRate()
 
 double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
 {
+   // Check if we can use the cached value
+   if (mCachedBestRateIn != 0.0 && mCachedBestRateIn == sampleRate) {
+      return mCachedBestRateOut;
+   }
+
+   // In order to cache the value, all early returns should instead set retval
+   // and jump to finished
+   double retval;
+
    wxArrayLong rates;
    if (capturing) wxLogDebug(wxT("AudioIO::GetBestRate() for capture"));
    if (playing) wxLogDebug(wxT("AudioIO::GetBestRate() for playback"));
@@ -1578,21 +1695,12 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
    if (capturing && !playing) {
       rates = GetSupportedCaptureRates(-1, sampleRate);
    }
-   if (playing && !capturing) {
+   else if (playing && !capturing) {
       rates = GetSupportedPlaybackRates(-1, sampleRate);
    }
    else {   // we assume capturing and playing - the alternative would be a 
             // bit odd
-      wxArrayLong playrates = GetSupportedPlaybackRates(-1, sampleRate);
-      wxArrayLong caprates = GetSupportedCaptureRates(-1, sampleRate);
-      int i;
-      for (i = 0; i < (int)caprates.GetCount(); i++)  // for each capture rate
-         {
-         if (playrates.Index(caprates[i]) != wxNOT_FOUND)
-            rates.Add(caprates[i]);
-         // if the capture rate is also a playback rate, then add to
-         // list of rates available
-         }
+      rates = GetSupportedSampleRates(-1, -1, sampleRate);
    }
    /* rem rates is the array of hardware-supported sample rates (in the current
     * configuration), sampleRate is the Project Rate (desired sample rate) */
@@ -1600,7 +1708,8 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
    
    if (rates.Index(rate) != wxNOT_FOUND) {
       wxLogDebug(wxT("GetBestRate() Returning %.0ld Hz"), rate);
-      return rate;
+      retval = rate;
+      goto finished;
       /* the easy case - the suggested rate (project rate) is in the list, and
        * we can just accept that and send back to the caller. This should be
        * the case for most users most of the time (all of the time on
@@ -1618,7 +1727,8 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
    if (rates.IsEmpty()) {
       /* we're stuck - there are no supported rates with this hardware. Error */
       wxLogDebug(wxT("GetBestRate() Error - no supported sample rates"));
-      return 0;
+      retval = 0.0;
+      goto finished;
    }
    int i;
    for (i = 0; i < (int)rates.GetCount(); i++)  // for each supported rate
@@ -1626,12 +1736,19 @@ double AudioIO::GetBestRate(bool capturing, bool playing, double sampleRate)
          if (rates[i] > rate) {
             // supported rate is greater than requested rate
             wxLogDebug(wxT("GetBestRate() Returning next higher rate - %.0ld Hz"), rates[i]);
-            return rates[i];
+            retval = rates[i];
+            goto finished;
          }
          }
 
    wxLogDebug(wxT("GetBestRate() Returning highest rate - %.0ld Hz"), rates[rates.GetCount() - 1]);
-   return rates[rates.GetCount() - 1]; // the highest available rate
+   retval = rates[rates.GetCount() - 1]; // the highest available rate
+   goto finished;
+
+finished:
+   mCachedBestRateIn = sampleRate;
+   mCachedBestRateOut = retval;
+   return retval;
 }      
 
 
@@ -1886,7 +2003,7 @@ wxString AudioIO::GetDeviceInfo()
       playbackParameters.device = playDeviceNum;
       playbackParameters.sampleFormat = paFloat32;
       playbackParameters.hostApiSpecificStreamInfo = NULL;
-      playbackParameters.channelCount = 2;
+      playbackParameters.channelCount = 1;
       if (Pa_GetDeviceInfo(playDeviceNum)){
          playbackParameters.suggestedLatency =
             Pa_GetDeviceInfo(playDeviceNum)->defaultLowOutputLatency;
@@ -1900,7 +2017,7 @@ wxString AudioIO::GetDeviceInfo()
       captureParameters.device = recDeviceNum;
       captureParameters.sampleFormat = paFloat32;;
       captureParameters.hostApiSpecificStreamInfo = NULL;
-      captureParameters.channelCount = 2;
+      captureParameters.channelCount = 1;
       if (Pa_GetDeviceInfo(recDeviceNum)){
          captureParameters.suggestedLatency =
             Pa_GetDeviceInfo(recDeviceNum)->defaultLowInputLatency;
@@ -2065,6 +2182,23 @@ void AudioIO::FillBuffers()
                   mPlaybackMixers[i]->Process(lrint(deltat * mRate));
                samplePtr warpedSamples = mPlaybackMixers[i]->GetBuffer();
                mPlaybackBuffers[i]->Put(warpedSamples, floatSample, processed);
+               //if looping and processed is less than the full chunk/block/buffer that gets pulled from
+               //other longer tracks, then we still need to advance the ring buffers or
+               //we'll trip up on ourselves when we start them back up again.
+               //if not looping we never start them up again, so its okay to not do anything
+               if(processed < lrint(deltat * mRate) && mPlayLooped)
+               {
+                  if(mLastSilentBufSize < lrint(deltat * mRate))
+                  {
+                     //delete old if necessary
+                     if(mSilentBuf) 
+                        DeleteSamples(mSilentBuf);
+                     mLastSilentBufSize=lrint(deltat * mRate);
+                     mSilentBuf = NewSamples(mLastSilentBufSize, floatSample);
+                     ClearSamples(mSilentBuf, floatSample, 0, mLastSilentBufSize);
+                  }
+                  mPlaybackBuffers[i]->Put(mSilentBuf, floatSample, lrint(deltat * mRate) - processed);                  
+               }
             }
 
             // msmeyer: If playing looped, check if we are at the end of the buffer
@@ -2149,6 +2283,9 @@ void AudioIO::FillBuffers()
 
 void AudioIO::SetListener(AudioIOListener* listener)
 {
+   if (IsBusy())
+      return;
+
    mListener = listener;
 }
 
@@ -2511,6 +2648,100 @@ void AudioIO::FillMidiBuffers()
    } // End of if( mSeq )
 #endif // OLD_CODE
 }
+
+void AudioIO::AudacityMidiCallback() {
+
+   // instrumentation to see if we are called often
+
+   // This calculation is taken from GetStreamTime, found in pa_asio.cpp
+   // asio systemTime is supposed to be measured according to the same
+   // clock as timeGetTime
+   double currentSystemTime = (double)timeGetTime() * .001; // get current system time
+
+   if(!mLastSystemTime) mLastSystemTime = currentSystemTime;
+   if(!mLatencyBetweenSystemTimes) mLatencyBetweenSystemTimes = 0;
+
+   mLatencyBetweenSystemTimes = max(mLatencyBetweenSystemTimes, currentSystemTime - mLastSystemTime);
+   mLastMidiTime = currentSystemTime;
+
+   if(mRequestMidiStop) {
+      /* TODO: Send all notes off */
+      mMidiStreamActive = false;
+      return;
+   }
+   if(mPaused || !mMidiStreamActive) { return; }
+
+   //look at next message
+   //assume next message from iterator is available
+   //(so create iterator & get/store first event before
+   //callback is called)
+
+   double t = getCurrentTrackTime();
+   while(mNextEvent != NULL && mNextEvent->time < t + 0.2) {
+      long ts = calculateMidiTimeStamp(mNextEvent->time);
+
+      /* TODO: Where is ts supposed to be used?
+       * send next message to portmidi with ts;
+       * mNextEvent = mIterator->next();
+       */
+      OutputEvent();
+      GetNextEvent();
+   }
+}
+
+double AudioIO::getCurrentTrackTime() {
+   //compare to code that scrolls cursor
+
+   // This calculation is taken from GetStreamTime, found in pa_asio.cpp
+   // asio systemTime is supposed to be measured according to the same
+   // clock as timeGetTime
+   double timeSinceBoot = (double)timeGetTime() * .001; // get time since boot
+
+   double outputTime;
+   long sampleNumber;
+   do {
+      outputTime = mAudioCallbackOutputTime;
+      sampleNumber = mAudioCallbackSampleNumber;
+   } while (outputTime != mAudioCallbackOutputTime);
+   double delta = timeSinceBoot - outputTime;
+
+   mStartFrame = mT0 * mRate;
+
+   // We add startFrame in case we're not starting at the beginning of the track
+   double trackTime = (sampleNumber + mStartFrame - mNumPauseFrames) / mRate;
+
+   // at outputTime, trackTime will be correct
+
+   trackTime += delta;
+   //now tracktime is adjusted from acot to now
+   return trackTime;
+}
+
+long AudioIO::calculateMidiTimeStamp(double eventTime) {
+   //assumptions: portmidi uses default time function which is "system time" - start time
+   double outputTime;
+   long sampleNumber;
+   do {
+      outputTime = mAudioCallbackOutputTime;
+      sampleNumber = mAudioCallbackSampleNumber;
+   } while (outputTime != mAudioCallbackOutputTime);
+
+   mStartFrame = mT0 * mRate;
+
+   double trackTime = mAudioCallbackSampleNumber + mStartFrame - mNumPauseFrames / mRate;
+   //at ot, tracktime will be correct
+   double delta = eventTime - trackTime;
+
+   outputTime += delta;  // at outputTime, it will be time for event
+   outputTime -= Pt_Time(); // get startTime from PortTime library
+
+   // now, outputTime is in PortMidi timestamp coordinates
+
+   long outputTimeMS = (outputTime * 1000) - 100; // convert to ms and subtract PortMidi latency
+   return outputTimeMS;
+}
+
+
 #endif
 
 // Automated Input Level Adjustment - Automatically tries to find an acceptable input volume
@@ -2712,6 +2943,23 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
    void *tempBuffer = alloca(framesPerBuffer*sizeof(float)*
                              MAX(numCaptureChannels,numPlaybackChannels));
    float *tempFloats = (float*)tempBuffer;
+
+   // output meter may need samples untouched by volume emulation
+   float *outputMeterFloats;
+   outputMeterFloats =
+      (outputBuffer && gAudioIO->mEmulateMixerOutputVol &&
+                       gAudioIO->mMixerOutputVol != 1.0) ?
+         (float *)alloca(framesPerBuffer*numPlaybackChannels * sizeof(float)) :
+         (float *)outputBuffer;
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+   /* GSW: Save timeInfo in case MidiPlayback needs it */
+   gAudioIO->mAudioCallbackOutputTime = timeInfo->outputBufferDacTime;
+   gAudioIO->mAudioCallbackSampleNumber += framesPerBuffer;
+   if(gAudioIO->IsPaused())
+      gAudioIO->mNumPauseFrames += framesPerBuffer;
+#endif
+
    unsigned int i;
    int t;
 
@@ -2773,13 +3021,9 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                       0, framesPerBuffer * numPlaybackChannels);
 
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
-            float gain = 1.0;
-            if (gAudioIO->mEmulateMixerInputVol)
-               gain = gAudioIO->mMixerInputVol;
-
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, gain);
+                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
          }
       }
 
@@ -2802,13 +3046,16 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             outputFloats[i] = 0.0;
 
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
-            float gain = 1.0;
-            if (gAudioIO->mEmulateMixerInputVol)
-               gain = gAudioIO->mMixerInputVol;
-
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, gain);
+                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
+         }
+
+         // Copy the results to outputMeterFloats if necessary
+         if (outputMeterFloats != outputFloats) {
+            for (i = 0; i < framesPerBuffer*numPlaybackChannels; ++i) {
+               outputMeterFloats[i] = outputFloats[i];
+            }
          }
 
          if (gAudioIO->mSeek)
@@ -2899,6 +3146,13 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                 vt->GetChannel() == Track::MonoChannel)
             {
                float gain = vt->GetChannelGain(0);
+
+               // Output volume emulation: possibly copy meter samples, then
+               // apply volume, then copy to the output buffer
+               if (outputMeterFloats != outputFloats)
+                  for (i = 0; i < len; ++i)
+                     outputMeterFloats[numPlaybackChannels*i] +=
+                        gain*tempFloats[i];
                
                if (gAudioIO->mEmulateMixerOutputVol)
                   gain *= gAudioIO->mMixerOutputVol;
@@ -2912,6 +3166,12 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             {
                float gain = vt->GetChannelGain(1);
                
+               // Output volume emulation (as above)
+               if (outputMeterFloats != outputFloats)
+                  for (i = 0; i < len; ++i)
+                     outputMeterFloats[numPlaybackChannels*i+1] +=
+                        gain*tempFloats[i];
+
                if (gAudioIO->mEmulateMixerOutputVol)
                   gain *= gAudioIO->mMixerOutputVol;
                
@@ -2930,6 +3190,19 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                outputFloats[i] = 1.0;
             else if (f < -1.0)
                outputFloats[i] = -1.0;
+         }
+
+         // Same for meter output
+         if (outputMeterFloats != outputFloats)
+         {
+            for (i = 0; i < framesPerBuffer*numPlaybackChannels; ++i)
+            {
+               float f = outputMeterFloats[i];
+               if (f > 1.0)
+                  outputMeterFloats[i] = 1.0;
+               else if (f < -1.0)
+                  outputMeterFloats[i] = -1.0;
+            }
          }
       }
 
@@ -2953,11 +3226,6 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             wxPrintf(wxT("lost %d samples\n"), (int)(framesPerBuffer - len));
          }
 
-         float gain = 1.0;
-         
-         if (gAudioIO->mEmulateMixerInputVol)
-            gain = gAudioIO->mMixerInputVol;
-
          if (len > 0) {
             for( t = 0; t < numCaptureChannels; t++) {
                
@@ -2972,7 +3240,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                   float *inputFloats = (float *)inputBuffer;
                   for( i = 0; i < len; i++)
                      tempFloats[i] =
-                        inputFloats[numCaptureChannels*i+t] * gain;
+                        inputFloats[numCaptureChannels*i+t];
                } break;
                case int24Sample:
                   // We should never get here. Audacity's int24Sample format
@@ -2985,7 +3253,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                   short *inputShorts = (short *)inputBuffer;
                   short *tempShorts = (short *)tempBuffer;
                   for( i = 0; i < len; i++) {
-                     float tmp = inputShorts[numCaptureChannels*i+t] * gain;
+                     float tmp = inputShorts[numCaptureChannels*i+t];
                      if (tmp > 32767)
                         tmp = 32767;
                      if (tmp < -32768)
@@ -3062,20 +3330,24 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             outputFloats[i] = 0.0;
          
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
-            float gain = 1.0;
-            if (gAudioIO->mEmulateMixerInputVol)
-               gain = gAudioIO->mMixerInputVol;
-            
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, gain);
+                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
+         }
+
+         // Copy the results to outputMeterFloats if necessary
+         if (outputMeterFloats != outputFloats) {
+            for (i = 0; i < framesPerBuffer*numPlaybackChannels; ++i) {
+               outputMeterFloats[i] = outputFloats[i];
+            }
          }
       }
+
    }
    /* Send data to playback VU meter if applicable */
    if (gAudioIO->mOutputMeter && 
       !gAudioIO->mOutputMeter->IsMeterDisabled() &&
-      outputBuffer) {
+      outputMeterFloats) {
       // Get here if playback meter is live 
       /* It's critical that we don't update the meters while StopStream is
        * trying to stop PortAudio, otherwise it can lead to a freeze.  We use
@@ -3090,7 +3362,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
       if (gAudioIO->mUpdateMeters) {
          gAudioIO->mOutputMeter->UpdateDisplay(numPlaybackChannels,
                                                framesPerBuffer,
-                                               (float *)outputBuffer);
+                                               outputMeterFloats);
       }
       gAudioIO->mUpdatingMeters = false;
    }  // end playback VU meter update

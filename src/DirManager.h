@@ -28,6 +28,8 @@ class SequenceTest;
 WX_DECLARE_HASH_MAP(int, int, wxIntegerHash, wxIntegerEqual, DirHash);
 WX_DECLARE_HASH_MAP(wxString,BlockFile *,wxStringHash,wxStringEqual,BlockHash);
 
+wxMemorySize GetFreeMemory();
+
 class DirManager: public XMLTagHandler {
  public:
 
@@ -63,6 +65,9 @@ class DirManager: public XMLTagHandler {
                                  
    BlockFile *NewODAliasBlockFile( wxString aliasedFile, sampleCount aliasStart,
                                  sampleCount aliasLen, int aliasChannel);
+                                 
+   BlockFile *NewODDecodeBlockFile( wxString aliasedFile, sampleCount aliasStart,
+                                 sampleCount aliasLen, int aliasChannel, int decodeType);
 
    // Adds one to the reference count of the block file,
    // UNLESS it is "locked", then it makes a new copy of

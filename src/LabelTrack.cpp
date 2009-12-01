@@ -57,6 +57,8 @@ for drawing different aspects of the label and its text box.
 #include "Project.h"
 #include "commands/CommandManager.h"
 
+#include "CaptureEvents.h"
+
 wxFont LabelTrack::msFont;
 
 // static member variables.
@@ -74,12 +76,10 @@ int LabelTrack::mTextHeight;
 
 int LabelTrack::mFontHeight=-1;
 
-
 LabelTrack *TrackFactory::NewLabelTrack()
 {
    return new LabelTrack(mDirManager);
 }
-
 
 LabelTrack::LabelTrack(DirManager * projDirManager):
    Track(projDirManager),
@@ -189,14 +189,14 @@ void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 {
    for (unsigned int i=0;i<mLabels.GetCount();i++){
       // label is after the insert point
-      if (mLabels[i]->t > pt) {
+      if (mLabels[i]->t >= pt) {
          mLabels[i]->t = mLabels[i]->t + length;
          mLabels[i]->t1 = mLabels[i]->t1 + length;
       // label is before the insert point
-      }else if (mLabels[i]->t1 < pt) {
+      }else if (mLabels[i]->t1 <= pt) {
          //nothing
       // insert point is inside the label
-      }else if (mLabels[i]->t < pt && mLabels[i]->t1 > pt){
+      }else{
          mLabels[i]->t1 = mLabels[i]->t1 + length;
       }
    }
@@ -969,6 +969,9 @@ bool LabelTrack::CutSelectedText()
    
    // copy data onto clipboard
    if (wxTheClipboard->Open()) {
+#if defined(__WXGTK__) && defined(HAVE_GTK)
+      CaptureEvents capture;
+#endif
       wxTheClipboard->SetData(new wxTextDataObject(data));
       wxTheClipboard->Close();
    }
@@ -1001,6 +1004,9 @@ bool LabelTrack::CopySelectedText()
 
    // copy the data on clipboard
    if (wxTheClipboard->Open()) {
+#if defined(__WXGTK__) && defined(HAVE_GTK)
+      CaptureEvents capture;
+#endif
       wxTheClipboard->SetData(new wxTextDataObject(data));
       wxTheClipboard->Close();
    }
@@ -1021,10 +1027,13 @@ bool LabelTrack::PasteSelectedText(double sel0, double sel1)
    wxString right=wxT("");
    
    // if text data is available
-   if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
+   if (IsTextClipSupported()) {
       if (wxTheClipboard->Open()) {
+#if defined(__WXGTK__) && HAVE_GTK
+         CaptureEvents capture;
+#endif
          wxTextDataObject data;
-         wxTheClipboard->GetData( data );
+         wxTheClipboard->GetData(data);
          wxTheClipboard->Close();
          text = data.GetText();
       }
@@ -1077,6 +1086,10 @@ bool LabelTrack::PasteSelectedText(double sel0, double sel1)
 /// @return true if the text data is available in the clipboard, false otherwise
 bool LabelTrack::IsTextClipSupported()
 {
+#if defined(__WXGTK__) && defined(HAVE_GTK)
+   CaptureEvents capture;
+#endif
+
    return wxTheClipboard->IsSupported(wxDF_TEXT);
 }
 
@@ -2074,21 +2087,71 @@ bool LabelTrack::Paste(double t, Track * src)
    return true;
 }
 
+// This repeats the labels in a time interval a specified number of times.
+// Like Paste(), it does not shift existing labels over
+//  - It assumes that you've already called ShiftLabelsOnInsert(), because
+//  sometimes with linking enabled that's hard to avoid.
+//  - It assumes that you inserted the necessary extra time at t1, not t0.
+bool LabelTrack::Repeat(double t0, double t1, int n)
+{
+   // Sanity-check the arguments
+   if (n < 0 || t1 < t0) return false;
+
+   double tLen = t1 - t0;
+
+   for (unsigned int i = 0; i < mLabels.GetCount(); i++)
+   {
+      if (mLabels[i]->t >= t0 && mLabels[i]->t <= t1 &&
+            mLabels[i]->t1 >= t0 && mLabels[i]->t1 <= t1)
+      {
+         // Label is completely inside the selection; duplicate it in each
+         // repeat interval
+         unsigned int pos = i; // running label insertion position in mLabels
+
+         for (int j = 1; j <= n; j++)
+         {
+            LabelStruct *l = new LabelStruct();
+            l->t = mLabels[i]->t + j * tLen;
+            l->t1 = mLabels[i]->t1 + j * tLen;
+            l->title = mLabels[i]->title;
+
+            // Figure out where to insert
+            while (pos < mLabels.Count() && mLabels[pos]->t < l->t)
+               pos++;
+            mLabels.Insert(l, pos);
+         }
+      }
+      else if (mLabels[i]->t < t0 &&
+            mLabels[i]->t1 >= t0 && mLabels[i]->t1 <= t1)
+      {
+         // Label ends inside the selection; ShiftLabelsOnInsert() hasn't touched
+         // it, and we need to extend it through to the last repeat interval
+         mLabels[i]->t1 += n * tLen;
+      }
+      
+      // Other cases have already been handled by ShiftLabelsOnInsert()
+   }
+
+   return true;
+}
+
 bool LabelTrack::Clear(double t0, double t1)
 {
    AudacityProject *p = GetActiveProject();   
    if (p && p->IsSticky()){
-      Track* t = NULL;
-      if (mNode) {
-         TrackListNode* n = mNode->prev;
-         if (n)
-            t = n->t;
+      TrackGroupIterator grpIter(p->GetTracks());
+      Track *t = grpIter.First(this);
+      // If this track is part of a group, find a Wave track in the group and do
+      // the clear from there to ensure proper group behavior
+      while (t) {
+         if (t->GetKind() == Track::Wave) {
+            return t->Clear(t0, t1);
+         }
+         t = grpIter.Next();
       }
-      // if it is part of a group
-      if (t && t->GetKind() != Track::Time && t->GetKind() != Track::Label)
-         t->Clear(t0, t1);
-      else
-         ShiftLabelsOnClear(t0, t1);
+
+      // Fallback: shift labels in this track
+      ShiftLabelsOnClear(t0, t1);
    }
    else
       ChangeLabelsOnClear(t0, t1);
@@ -2101,12 +2164,42 @@ bool LabelTrack::Silence(double t0, double t1)
    int len = mLabels.Count();
 
    for (int i = 0; i < len; i++) {
-      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1) {
+      // If the label "surrounds" the selection, split it around the selection
+      if (mLabels[i]->t < t0 && t1 < mLabels[i]->t1)
+      {
+         LabelStruct *l = new LabelStruct();
+         l->t = t1;
+         l->t1 = mLabels[i]->t1;
+         l->title = mLabels[i]->title;
+
+         mLabels[i]->t1 = t0;
+
+         // This might not be the right place to insert, but we sort at the end
+         ++i;
+         mLabels.Insert(l, i);
+      }
+
+      // If label begins in the selection, move the beginning to selection end
+      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1)
+      {
+         mLabels[i]->t = t1;
+      }
+      // If label ends in the selection, move the end to selection beginning
+      if (t0 <= mLabels[i]->t1 && mLabels[i]->t1 <= t1)
+      {
+         mLabels[i]->t1 = t0;
+      }
+
+      // Delete labels that were totally selected
+      if (mLabels[i]->t1 < mLabels[i]->t)
+      {
          DeleteLabel( i );
          len--;
          i--;
       }
    }
+
+   SortLabels();
 
    return true;
 }
@@ -2387,6 +2480,25 @@ void LabelTrack::SortLabels()
          }
       }
    }
+}
+
+wxString LabelTrack::GetTextOfLabels(double t0, double t1)
+{
+   bool firstLabel = true;
+   wxString retVal;
+
+   for (unsigned int i=0; i < mLabels.GetCount(); ++i)
+   {
+      if (mLabels[i]->t >= t0 && mLabels[i]->t1 <= t1)
+      {
+         if (!firstLabel)
+            retVal += '\t';
+         firstLabel = false;
+         retVal += mLabels[i]->title;
+      }
+   }
+
+   return retVal;
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

@@ -252,6 +252,7 @@ class TrackPanel:public wxPanel {
    void ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
                         Track *pTrack);
    void SelectTracksByLabel( LabelTrack *t );
+   void SelectTrackLength(Track *t);
 
 
    // AS: Cursor handling
@@ -273,6 +274,7 @@ class TrackPanel:public wxPanel {
    void HandleSlide(wxMouseEvent & event);
    void StartSlide(wxMouseEvent &event);
    void DoSlide(wxMouseEvent &event);
+   void AddClipsToCaptured(Track *t, bool withinSelection);
 
    // AS: Handle zooming into tracks
    void HandleZoom(wxMouseEvent & event);
@@ -392,7 +394,6 @@ private:
    int IdOfFormat( int format );
 
    // Accessors...
-   bool IsSimpleSolo(){ return mSoloPref==wxT("Simple");};
    bool HasSoloButton(){  return mSoloPref!=wxT("None");};
 
    //JKC: These two belong in the label track.

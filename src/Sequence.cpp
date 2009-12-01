@@ -40,6 +40,7 @@ Sequence.cpp.  Not yet sure why.
 #include "Sequence.h"
 
 #include "BlockFile.h"
+#include "blockfile/ODDecodeBlockFile.h"
 #include "DirManager.h"
 
 #include "blockfile/SimpleBlockFile.h"
@@ -628,6 +629,23 @@ bool Sequence::AppendAlias(wxString fullPath,
    return true;
 }
 
+bool Sequence::AppendCoded(wxString fName, sampleCount start,
+                            sampleCount len, int channel, int decodeType)
+{
+   // Quick check to make sure that it doesn't overflow
+   if (((double)mNumSamples) + ((double)len) > wxLL(9223372036854775807))
+      return false;
+
+   SeqBlock *newBlock = new SeqBlock();
+
+   newBlock->start = mNumSamples;
+   newBlock->f = mDirManager->NewODDecodeBlockFile(fName, start, len, channel, decodeType);
+   mBlock->Add(newBlock);
+   mNumSamples += newBlock->f->GetLength();
+
+   return true;
+}
+
 bool Sequence::AppendBlock(SeqBlock * b)
 {
    // Quick check to make sure that it doesn't overflow
@@ -652,6 +670,19 @@ bool Sequence::AppendBlock(SeqBlock * b)
    // function gets called in an inner loop
 
    return true;
+}
+
+///gets an int with OD flags so that we can determine which ODTasks should be run on this track after save/open, etc.
+unsigned int Sequence::GetODFlags()
+{
+   unsigned int ret = 0;
+   for (unsigned int i = 0; i < mBlock->Count(); i++){
+      if(!mBlock->Item(i)->f->IsDataAvailable())
+         ret = ret|((ODDecodeBlockFile*)mBlock->Item(i)->f)->GetDecodeType();
+      else if(!mBlock->Item(i)->f->IsSummaryAvailable())
+         ret = ret|ODTask::eODPCMSummary;
+   }
+   return ret;
 }
 
 sampleCount Sequence::GetBestBlockSize(sampleCount start) const
@@ -1044,6 +1075,10 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,int* bl,
    sampleCount s0 = where[0];
    sampleCount s1 = where[len];
 
+   // None of the samples asked for are in range. Abandon.
+   if (s0 >= mNumSamples)
+      return false;
+
    int divisor;
    if (samplesPerPixel >= 65536)
       divisor = 65536;
@@ -1067,7 +1102,7 @@ bool Sequence::GetWaveDisplay(float *min, float *max, float *rms,int* bl,
    float sumsq = float(0.0);
    unsigned int b = block0;
    int jcount = 0;
-   int blockStatus;
+   int blockStatus = 1;
 
    while (srcX < s1) {
       // Get more samples

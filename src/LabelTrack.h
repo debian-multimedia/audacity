@@ -75,11 +75,11 @@ class LabelTrack:public Track {
    friend class LabelStruct;
 
  public:
-	bool IsGoodLabelCharacter(int keyCode, wxChar charCode);
-	bool IsGoodLabelFirstCharacter(int keyCode, wxChar charCode);
+   bool IsGoodLabelCharacter(int keyCode, wxChar charCode);
+   bool IsGoodLabelFirstCharacter(int keyCode, wxChar charCode);
    bool IsTextSelected();
 
-	void CreateCustomGlyphs();
+   void CreateCustomGlyphs();
    LabelTrack(DirManager * projDirManager);
    LabelTrack(const LabelTrack &orig);
 
@@ -117,6 +117,7 @@ class LabelTrack:public Track {
    virtual bool Copy (double t0, double t1, Track ** dest);// const;
    virtual bool Clear(double t0, double t1);
    virtual bool Paste(double t, Track * src);
+   bool Repeat(double t0, double t1, int n);
 
    virtual bool Silence(double t0, double t1);
    virtual bool InsertSilence(double t, double len);
@@ -129,7 +130,7 @@ class LabelTrack:public Track {
    bool CutSelectedText();
    bool CopySelectedText();
    bool PasteSelectedText(double sel0, double sel1);
-   bool IsTextClipSupported();
+   static bool IsTextClipSupported();
    
    // methods to set flags
    void SetDragXPos(const int d) { mDragXPos = d; };
@@ -173,6 +174,9 @@ class LabelTrack:public Track {
    void ChangeLabelsOnReverse(double b, double e);
    void ScaleLabels(double b, double e, double change);
    double AdjustTimeStampOnScale(double t, double b, double e, double change);
+   
+   // Returns tab-separated text of all labels completely within given region
+   wxString GetTextOfLabels(double t0, double t1);
 
  public:
    void SortLabels();

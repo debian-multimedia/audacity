@@ -488,8 +488,11 @@ bool EffectNyquist::Process()
       mProgress->Hide();
    }
 
-   this->CopyInputTracks(); // Set up mOutputTracks.
-   TrackListIterator iter(mOutputTracks);
+   // We must copy all the tracks, because Paste needs label tracks to ensure
+   // correct group behavior when the timeline is affected; then we just want
+   // to operate on the selected wave tracks
+   this->CopyInputTracks(Track::All);
+   SelectedTrackListOfKindIterator iter(Track::Wave, mOutputTracks);
    mCurTrack[0] = (WaveTrack *) iter.First();
    mOutputTime = mT1 - mT0;
    mCount = 0;
@@ -503,6 +506,10 @@ bool EffectNyquist::Process()
    mCont = false;
 
    mDebugOutput = "";
+
+   // Keep track of whether the current track is first selected in its group
+   mFirstInGroup = true;
+   Track *gtLast = NULL;
 
    while (mCurTrack[0]) {
       mCurNumChannels = 1;
@@ -521,12 +528,28 @@ bool EffectNyquist::Process()
             mCurStart[1] = mCurTrack[1]->TimeToLongSamples(mT0);
          }
 
+         // Check whether we're in the same group as the last selected track
+         TrackGroupIterator gIter(mOutputTracks);
+         Track *gt = gIter.First(mCurTrack[0]);
+         mFirstInGroup = !gtLast || (gtLast != gt);
+         gtLast = gt;
+
          mCurStart[0] = mCurTrack[0]->TimeToLongSamples(mT0);
          sampleCount end = mCurTrack[0]->TimeToLongSamples(mT1);
          mCurLen = (sampleCount)(end - mCurStart[0]);
 
          mProgressIn = 0.0;
          mProgressOut = 0.0;
+
+         // libnyquist breaks except in LC_NUMERIC=="C".
+         //
+         // Note that we must set the locale to "C" even before calling
+         // nyx_init() because otherwise some effects will not work!
+         //
+         // MB: setlocale is not thread-safe.  Should use uselocale()
+         //     if available, or fix libnyquist to be locale-independent.
+         char *prevlocale = setlocale(LC_NUMERIC, NULL);
+         setlocale(LC_NUMERIC, "C");
 
          nyx_init();
          nyx_set_os_callback(StaticOSCallback, (void *)this);
@@ -537,6 +560,9 @@ bool EffectNyquist::Process()
          nyx_capture_output(NULL, (void *)NULL);
          nyx_set_os_callback(NULL, (void *)NULL);
          nyx_cleanup();
+
+         // Reset previous locale
+         setlocale(LC_NUMERIC, prevlocale);
 
          if (!success) {
             goto finish;
@@ -594,9 +620,13 @@ bool EffectNyquist::ProcessOne()
 
    for (unsigned int j = 0; j < mControls.GetCount(); j++) {
       if (mControls[j].type == NYQ_CTRL_REAL) {
-         cmd += wxString::Format(wxT("(setf %s %f)\n"),
+         // We use Internat::ToString() rather than "%f" here because we
+         // always have to use the dot as decimal separator when giving
+         // numbers to Nyquist, whereas using "%f" will use the user's
+         // decimal separator which may be a comma in some countries.
+         cmd += wxString::Format(wxT("(setf %s %s)\n"),
                                  mControls[j].var.c_str(),
-                                 mControls[j].val);
+                                 Internat::ToString(mControls[j].val).c_str());
       }
       else if (mControls[j].type == NYQ_CTRL_INT || 
             mControls[j].type == NYQ_CTRL_CHOICE) {
@@ -634,16 +664,7 @@ bool EffectNyquist::ProcessOne()
 		mCurBuffer[i] = NULL;
    }
 
-   // libnyquist breaks except in LC_NUMERIC=="C".
-   //
-   // MB: setlocale is not thread-safe.  Should use uselocale()
-   //     if available, or fix libnyquist to be locale-independent.
-   char *prevlocale = setlocale(LC_NUMERIC, NULL);
-   setlocale(LC_NUMERIC, "C");
-
    rval = nyx_eval_expression(cmd.mb_str());
-
-   setlocale(LC_NUMERIC, prevlocale);
 
    if (rval == nyx_string) {
       wxMessageBox(wxString(nyx_get_string(), wxConvISO8859_1), wxT("Nyquist"),
@@ -754,7 +775,11 @@ bool EffectNyquist::ProcessOne()
          out = mOutputTrack[0];
       }
 
-      mCurTrack[i]->ClearAndPaste(mT0, mT1, out, false, false);
+      // If this track is not first in its group we set useHandlePaste
+      mCurTrack[i]->ClearAndPaste(mT0, mT1, out, false, false,
+                                  NULL, false, !mFirstInGroup);
+      // Only the first channel can be first in its group
+      mFirstInGroup = false;
    }
 
    for (i = 0; i < outChannels; i++) {
@@ -819,7 +844,7 @@ int EffectNyquist::GetCallback(float *buffer, int ch,
          mProgressIn = progress;
       }
 
-      if (TotalProgress(mProgressIn+mProgressTot)) {
+      if (TotalProgress(mProgressIn+mProgressOut+mProgressTot)) {
          return -1;
       }
    }
@@ -1041,22 +1066,48 @@ void NyquistDialog::OnSlider(wxCommandEvent & /* event */)
       wxASSERT(slider && text);
       
       int val = slider->GetValue();
-      ctrl->val = (val / (double)ctrl->ticks)*
+
+      double newVal = (val / (double)ctrl->ticks)*
          (ctrl->high - ctrl->low) + ctrl->low;
-      
+
+      // Determine precision for displayed number
+      int precision = ctrl->high - ctrl->low < 1 ? 3 :
+                      ctrl->high - ctrl->low < 10 ? 2 :
+                      ctrl->high - ctrl->low < 100 ? 1 :
+                      0;
+
+      // If the value is at least one tick different from the current value
+      // change it (this prevents changes from manually entered values unless
+      // the slider actually moved)
+      if (fabs(newVal - ctrl->val) >= (1 / (double)ctrl->ticks) *
+                                      (ctrl->high - ctrl->low) && 
+          fabs(newVal - ctrl->val) >= pow(0.1, precision) / 2 )
+      {
+         // First round to the appropriate precision
+         newVal *= pow(10.0, precision);
+         newVal = floor(newVal + 0.5);
+         newVal /= pow(10.0, precision);
+
+         ctrl->val = newVal;
+      }
+
       wxString valStr;
       if (ctrl->type == NYQ_CTRL_REAL) {
-         if (ctrl->high - ctrl->low < 1) {
-            valStr = Internat::ToDisplayString(ctrl->val, 3);
+         // If this is a user-typed value, allow unlimited precision
+         if (ctrl->val != newVal)
+         {
+            valStr = Internat::ToDisplayString(ctrl->val);
          }
-         else if (ctrl->high - ctrl->low < 10) {
-            valStr = Internat::ToDisplayString(ctrl->val, 2);
-         }
-         else if (ctrl->high - ctrl->low < 100) {
-            valStr = Internat::ToDisplayString(ctrl->val, 1);
-         }
-         else {
-            valStr.Printf(wxT("%d"), (int)floor(ctrl->val + 0.5));
+         else
+         {
+            if (precision == 0)
+            {
+               valStr.Printf(wxT("%d"), (int)floor(ctrl->val + 0.5));
+            }
+            else
+            {
+               valStr = Internat::ToDisplayString(ctrl->val, precision);
+            }
          }
       }
       else if (ctrl->type == NYQ_CTRL_INT) {

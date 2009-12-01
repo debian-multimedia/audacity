@@ -178,6 +178,15 @@ class AUDACITY_DLL_API WaveTrack: public Track {
 
    bool AppendAlias(wxString fName, sampleCount start,
                     sampleCount len, int channel,bool useOD);
+   
+   ///for use with On-Demand decoding of compressed files.
+   ///decodeType should be an enum from ODDecodeTask that specifies what
+   ///Type of encoded file this is, such as eODFLAC
+   bool AppendCoded(wxString fName, sampleCount start,
+                            sampleCount len, int channel, int decodeType);
+                            
+   ///gets an int with OD flags so that we can determine which ODTasks should be run on this track after save/open, etc.
+   unsigned int GetODFlags();
                     
    ///Deletes all clips' wavecaches.  Careful, This may not be threadsafe.
    void DeleteWaveCaches();
@@ -296,6 +305,12 @@ class AUDACITY_DLL_API WaveTrack: public Track {
    // other clip. No fancy additional stuff is done.
    void MoveClipToTrack(int clipIndex, WaveTrack* dest);
    void MoveClipToTrack(WaveClip *clip, WaveTrack* dest);
+   
+   // Remove the clip from the track and return a pointer to it.
+   WaveClip* RemoveAndReturnClip(WaveClip* clip);
+   
+   // Append a clip to the track
+   void AddClip(WaveClip* clip);
    
    // Merge two clips, that is append data from clip2 to clip1,
    // then remove clip2 from track.

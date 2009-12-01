@@ -68,7 +68,6 @@ It handles initialization and termination by subclassing wxApp.
 #include "effects/VST/VSTEffect.h"
 #include "FFmpeg.h"
 #include "GStreamerLoader.h"
-#include "FreqWindow.h"
 #include "Internat.h"
 #include "LangChoice.h"
 #include "Prefs.h"
@@ -222,25 +221,8 @@ static wxFrame *gParentFrame = NULL;
 bool gInited = false;
 bool gIsQuitting = false;
 
-void SaveWindowSize()
-{
-   if(!gAudacityProjects.IsEmpty())
-   {
-      // BG: Save size of Window 0.
-      if (!gAudacityProjects[0]->IsIconized()) {
-         wxRect r = gAudacityProjects[0]->GetRect();
-         bool wndMaximized = gAudacityProjects[0]->IsMaximized();
-         gPrefs->Write(wxT("/Window/X"), r.GetX());
-         gPrefs->Write(wxT("/Window/Y"), r.GetY());
-         gPrefs->Write(wxT("/Window/Width"), r.GetWidth());
-         gPrefs->Write(wxT("/Window/Height"), r.GetHeight());
-         gPrefs->Write(wxT("/Window/Maximized"), wndMaximized);   
-      }
-   }
-}
-
 void QuitAudacity(bool bForce)
-{
+{                                          
    if (gIsQuitting)
       return;
 
@@ -251,7 +233,7 @@ void QuitAudacity(bool bForce)
    // BG: unless force is true
 
    // BG: Are there any projects open?
-	//-   if (!gAudacityProjects.IsEmpty())
+   //-   if (!gAudacityProjects.IsEmpty())
 /*start+*/
    if (gAudacityProjects.IsEmpty())
    {
@@ -259,10 +241,10 @@ void QuitAudacity(bool bForce)
       AudacityProject::DeleteClipboard();
 #endif
    }
-	else
+   else
 /*end+*/
-
    {
+      SaveWindowSize();
       while (gAudacityProjects.Count())
       {
          if (bForce)
@@ -315,8 +297,85 @@ void QuitAudacity(bool bForce)
 }
 
 void QuitAudacity()
-{
+{   
    QuitAudacity(false);
+}
+
+void SaveWindowSize()
+{
+   if (wxGetApp().GetWindowRectAlreadySaved())
+   {
+      return;
+   }
+   bool validWindowForSaveWindowSize = FALSE;
+   AudacityProject * validProject = NULL;
+   bool foundIconizedProject = FALSE;
+   size_t numProjects = gAudacityProjects.Count();
+   for (size_t i = 0; i < numProjects; i++)
+   {
+      if (!gAudacityProjects[i]->IsIconized()) {
+         validWindowForSaveWindowSize = TRUE;
+         validProject = gAudacityProjects[i];
+         i = numProjects;
+      }
+      else
+         foundIconizedProject =  TRUE;
+
+   }
+   if (validWindowForSaveWindowSize)
+   {
+      wxRect windowRect = validProject->GetRect();
+      wxRect normalRect = validProject->GetNormalizedWindowState();
+      bool wndMaximized = validProject->IsMaximized();
+      gPrefs->Write(wxT("/Window/X"), windowRect.GetX());
+      gPrefs->Write(wxT("/Window/Y"), windowRect.GetY());
+      gPrefs->Write(wxT("/Window/Width"), windowRect.GetWidth());
+      gPrefs->Write(wxT("/Window/Height"), windowRect.GetHeight());
+      gPrefs->Write(wxT("/Window/Maximized"), wndMaximized);
+      gPrefs->Write(wxT("/Window/Normal_X"), normalRect.GetX());
+      gPrefs->Write(wxT("/Window/Normal_Y"), normalRect.GetY());
+      gPrefs->Write(wxT("/Window/Normal_Width"), normalRect.GetWidth());
+      gPrefs->Write(wxT("/Window/Normal_Height"), normalRect.GetHeight());
+      gPrefs->Write(wxT("/Window/Iconized"), FALSE);
+   }
+   else
+   {
+      if (foundIconizedProject) {
+         validProject = gAudacityProjects[0];
+         bool wndMaximized = validProject->IsMaximized();
+         wxRect normalRect = validProject->GetNormalizedWindowState();
+         // store only the normal rectangle because the itemized rectangle
+         // makes no sense for an opening project window
+         gPrefs->Write(wxT("/Window/X"), normalRect.GetX());
+         gPrefs->Write(wxT("/Window/Y"), normalRect.GetY());
+         gPrefs->Write(wxT("/Window/Width"), normalRect.GetWidth());
+         gPrefs->Write(wxT("/Window/Height"), normalRect.GetHeight());
+         gPrefs->Write(wxT("/Window/Maximized"), wndMaximized);
+         gPrefs->Write(wxT("/Window/Normal_X"), normalRect.GetX());
+         gPrefs->Write(wxT("/Window/Normal_Y"), normalRect.GetY());
+         gPrefs->Write(wxT("/Window/Normal_Width"), normalRect.GetWidth());
+         gPrefs->Write(wxT("/Window/Normal_Height"), normalRect.GetHeight());
+         gPrefs->Write(wxT("/Window/Iconized"), TRUE);
+      }
+      else {
+         // this would be a very strange case that might possibly occur on the Mac
+         // Audacity would have to be running with no projects open
+         // in this case we are going to write only the default values
+         wxRect defWndRect;
+         GetDefaultWindowRect(&defWndRect);
+         gPrefs->Write(wxT("/Window/X"), defWndRect.GetX());
+         gPrefs->Write(wxT("/Window/Y"), defWndRect.GetY());
+         gPrefs->Write(wxT("/Window/Width"), defWndRect.GetWidth());
+         gPrefs->Write(wxT("/Window/Height"), defWndRect.GetHeight());
+         gPrefs->Write(wxT("/Window/Maximized"), FALSE);
+         gPrefs->Write(wxT("/Window/Normal_X"), defWndRect.GetX());
+         gPrefs->Write(wxT("/Window/Normal_Y"), defWndRect.GetY());
+         gPrefs->Write(wxT("/Window/Normal_Width"), defWndRect.GetWidth());
+         gPrefs->Write(wxT("/Window/Normal_Height"), defWndRect.GetHeight());
+         gPrefs->Write(wxT("/Window/Iconized"), FALSE);
+      }
+   }
+   wxGetApp().SetWindowRectAlreadySaved(TRUE);
 }
 
 #if defined(__WXGTK__) && defined(HAVE_GTK)
@@ -329,7 +388,13 @@ void QuitAudacity()
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <dlfcn.h>
-#include <gtk/gtk.h>
+/* There is a conflict between the type names used in Glib >= 2.21 and those in
+ * wxGTK (http://trac.wxwidgets.org/ticket/10883)
+ * Happily we can avoid the hack, as we only need some of the headers, not
+ * the full GTK headers
+ */
+#include <glib/gtypes.h>
+#include <glib-object.h>
 
 typedef struct _GnomeProgram GnomeProgram;
 typedef struct _GnomeModuleInfo GnomeModuleInfo;
@@ -703,7 +768,7 @@ bool AudacityApp::MRUOpen(wxString fileName) {
       }
       else {
          // File doesn't exist - remove file from history
-         wxMessageBox(wxString::Format(_("%s does not exist and could not be opened.\n\nIt has been removed from the history list."), 
+         wxMessageBox(wxString::Format(_("%s could not be found.\n\nIt has been removed from the list of recent files."), 
                       fileName.c_str()));
          return(false);
       }
@@ -808,6 +873,25 @@ bool AudacityApp::OnInit()
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
 #endif
 
+//MERGE:
+//Everything now uses Audacity name for preferences.
+//(Audacity and CleanSpeech the same program and use
+//the same preferences file).
+//
+// LL: Moved here from InitPreferences() to ensure VST effect
+//     discovery writes configuration to the correct directory
+//     on OSX with case-sensitive file systems.
+#ifdef AUDACITY_NAME
+   wxString appName = wxT(AUDACITY_NAME);
+   wxString vendorName = wxT(AUDACITY_NAME);
+#else
+   wxString vendorName = wxT("Audacity");
+   wxString appName = wxT("Audacity");
+#endif
+
+   wxTheApp->SetVendorName(vendorName);
+   wxTheApp->SetAppName(appName);
+
 #ifdef USE_VST // if no VST support, answer is always no
    // Have we been started to check a plugin?
    if (argc == 3 && wxStrcmp(argv[1], VSTCMDKEY) == 0) {
@@ -832,9 +916,9 @@ bool AudacityApp::OnInit()
 
    InitPreferences();
 
-	#if defined(__WXMSW__) && !defined(__WXUNIVERSAL__) && !defined(__CYGWIN__)
-		this->AssociateFileTypes(); 
-	#endif
+   #if defined(__WXMSW__) && !defined(__WXUNIVERSAL__) && !defined(__CYGWIN__)
+      this->AssociateFileTypes(); 
+   #endif
 
    // TODO - read the number of files to store in history from preferences
    mRecentFiles = new FileHistory(/* number of files */);
@@ -935,7 +1019,7 @@ bool AudacityApp::OnInit()
    LoadModules(*mCmdHandler);
 
    // Locale
-   // wxWindows 2.3 has a much nicer wxLocale API.  We can make this code much
+   // wxWidgets 2.3 has a much nicer wxLocale API.  We can make this code much
    // better once we move to wx 2.3/2.4.
 
    wxString lang = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
@@ -1119,12 +1203,12 @@ bool AudacityApp::OnInit()
    }                            // if (argc>1)
 
 #else //__CYGWIN__
-	
+   
    // Cygwin command line parser (by Dave Fancella)
    if (argc > 1 && !didRecoverAnything) {
       int optionstart = 1;
       bool startAtOffset = false;
-		
+      
       // Scan command line arguments looking for trouble
       for (int option = 1; option < argc; option++) {
          if (!argv[option])
@@ -1136,14 +1220,14 @@ bool AudacityApp::OnInit()
             optionstart = option + 1;
          }
       }
-		
+      
       for (int option = optionstart; option < argc; option++) {
          if (!argv[option])
             continue;
          bool handled = false;
          bool openThisFile = false;
          wxString fileToOpen;
-			
+         
          if (!wxString(wxT("-help")).CmpNoCase(argv[option])) {
             PrintCommandLineHelp(); // print the help message out
             exit(0);
@@ -1173,10 +1257,10 @@ bool AudacityApp::OnInit()
             wxPrintf(_("Unknown command line option: %s\n"), argv[option]);
             exit(0);
          }
-			
+         
          if(handled)
             fileToOpen.Clear();
-			
+         
          if (!handled)
             fileToOpen = fileToOpen + wxT(" ") + argv[option];
          if(wxString(argv[option]).Lower().Contains(wxT(".aup")))
@@ -1200,6 +1284,8 @@ bool AudacityApp::OnInit()
    gInited = true;
    
    ModuleManager::Dispatch(AppInitialized);
+
+   mWindowRectAlreadySaved = FALSE;
 
    return TRUE;
 }
@@ -1238,7 +1324,7 @@ bool AudacityApp::InitCleanSpeech()
    wxString presetsDefaultLoc =
       wxFileName(userdatadir, wxT("presets")).GetFullPath();
 
-   // Stop wxWindows from printing its own error messages (not used ... does this really do anything?)
+   // Stop wxWidgets from printing its own error messages (not used ... does this really do anything?)
    wxLogNull logNo;
    
    // Try temp dir that was stored in prefs first
@@ -1287,7 +1373,7 @@ bool AudacityApp::InitTempDir()
       tempFromPrefs = wxT("");
    #endif
 
-   // Stop wxWindows from printing its own error messages
+   // Stop wxWidgets from printing its own error messages
 
    wxLogNull logNo;
 
@@ -1730,11 +1816,11 @@ void AudacityApp::OnMenuExit(wxCommandEvent & event)
 
 //BG: On Windows, associate the aup file type with Audacity
 /* We do this in the Windows installer now, 
-	to avoid issues where user doesn't have admin privileges, but 
-	in case that didn't work, allow the user to decide at startup.
+   to avoid issues where user doesn't have admin privileges, but 
+   in case that didn't work, allow the user to decide at startup.
 
-	//v Should encapsulate this & allow access from Prefs, too, 
-	//		if people want to manually change associations.
+   //v Should encapsulate this & allow access from Prefs, too, 
+   //      if people want to manually change associations.
 */
 #if defined(__WXMSW__) && !defined(__WXUNIVERSAL__) && !defined(__CYGWIN__)
 void AudacityApp::AssociateFileTypes()
@@ -1747,7 +1833,7 @@ void AudacityApp::AssociateFileTypes()
       associateFileTypes.SetName(wxT("HKCU\\Software\\Classes\\.AUP"));
       bKeyExists = associateFileTypes.Exists();
    }
-   if (!bKeyExists) {	
+   if (!bKeyExists) {   
       // File types are not currently associated. 
       // Check pref in case user has already decided against it.
       bool bWantAssociateFiles = true;

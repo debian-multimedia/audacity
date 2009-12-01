@@ -38,22 +38,29 @@ char bheaderTag[bheaderTagLen + 1] = "AudacityBlockFile112";
 
 
    /// Create a disk file and write summary and sample data to it
-ODDecodeBlockFile::ODDecodeBlockFile(wxFileName baseFileName,wxFileName audioFileName,
-                   samplePtr sampleData, sampleCount sampleLen,
-                   sampleFormat format,
-                   bool allowDeferredWrite):
-   SimpleBlockFile(baseFileName,sampleData,sampleLen,format,allowDeferredWrite)
+ODDecodeBlockFile::ODDecodeBlockFile(wxFileName baseFileName,wxFileName audioFileName, sampleCount aliasStart,
+                     sampleCount aliasLen, int aliasChannel,unsigned int decodeType):
+   SimpleBlockFile(baseFileName,NULL,aliasLen,floatSample,true,true), //floatSample has no effect.  last two bools - bypass writing of blockfile and cache
+
+   mAliasStart(aliasStart),
+   mAliasChannel(aliasChannel),
+   mType(decodeType)
 {
    mDataAvailable=false;
    mAudioFileName = audioFileName;
 }
    
 /// Create the memory structure to refer to the given block file
-ODDecodeBlockFile::ODDecodeBlockFile(wxFileName existingFile, wxFileName audioFileName, sampleCount len,
-                   float min, float max, float rms):
-   SimpleBlockFile(existingFile,len,min,max,rms)
+ODDecodeBlockFile::ODDecodeBlockFile(wxFileName existingFile, wxFileName audioFileName, sampleCount aliasStart,
+                     sampleCount aliasLen, int aliasChannel, unsigned int decodeType,
+                   float min, float max, float rms, bool dataAvailable):
+   SimpleBlockFile(existingFile,aliasLen,min,max,rms),
+   
+   mAliasStart(aliasStart),
+   mAliasChannel(aliasChannel),
+   mType(decodeType)
 {
-   mDataAvailable=false;
+   mDataAvailable=dataAvailable;
    mAudioFileName = audioFileName;
 }
 
@@ -124,7 +131,7 @@ bool ODDecodeBlockFile::Read256(float *buffer, sampleCount start, sampleCount le
    }
    else
    {
-      //TODO: put some dummy value?  should we make a fake one?
+      //this should not be reached (client should check IsSummaryAvailable()==true before this.
       buffer = NULL;
       return true;
    }
@@ -139,7 +146,7 @@ bool ODDecodeBlockFile::Read64K(float *buffer, sampleCount start, sampleCount le
    }
    else
    {
-      //TODO: put some dummy value?  should we make a fake one?
+      //this should not be reached (client should check IsSummaryAvailable()==true before this.
       return true;
    }
 }
@@ -152,7 +159,8 @@ BlockFile *ODDecodeBlockFile::Copy(wxFileName newFileName)
 {
    BlockFile *newBlockFile;
    
-   
+   //mAliasedFile can change so we lock readdatamutex, which is responsible for it.
+   LockRead();
    if(IsSummaryAvailable())
    {
       //create a simpleblockfile, because once it has the summary it is a simpleblockfile for all intents an purposes
@@ -160,127 +168,121 @@ BlockFile *ODDecodeBlockFile::Copy(wxFileName newFileName)
    }
    else
    {
-      //TODO:do the correct constructor thingthing for this one.
-      //Also, this one needs to be scheduled for loading as well ... what to do?
-      newBlockFile  = NULL; // new ODPCMAliasBlockFile(newFileName,
-                              //                     mAliasedFileName, mAliasStart,
-                                //                   mLen, mAliasChannel,
-                                  //                 mMin, mMax, mRMS);
-      //TODO:add to the ODManager Task list so this one loads itself.  It's wasteful to do this twice, but lets be simple and naieve
-      //just this once,.
+      //Summary File might exist in this case, but it probably (99.999% of the time) won't.
+      newBlockFile  = new ODDecodeBlockFile(newFileName,
+                                                   mAudioFileName, mAliasStart,
+                                                   mLen, mAliasChannel, mType,
+                                                   mMin, mMax, mRMS,IsSummaryAvailable());
+      //The client code will need to schedule this blockfile for OD decoding if it is going to a new track.
+      //It can do this by checking for IsDataAvailable()==false.
    }
    
+   UnlockRead();
    
    return newBlockFile;
 }
 
 
-/// Writes the xml as a PCMAliasBlockFile if we can (if we have a summary file)
+/// Writes the xml as a SimpleBlockFile if we can (if we have a summary file)
 /// Otherwise writes XML as a subset of attributes with 'odpcmaliasblockfile as the start tag.
 /// Most notably, the summaryfile attribute refers to a file that does not yet, so when the project file is read back in
 /// and this object reconstructed, it needs to avoid trying to open it as well as schedule itself for OD loading
 void ODDecodeBlockFile::SaveXML(XMLWriter &xmlFile)
 {
-/* TODO:
+   LockRead();
    if(IsSummaryAvailable())
    {
-      PCMAliasBlockFile::SaveXML(xmlFile);
+      SimpleBlockFile::SaveXML(xmlFile);
    }
    else
    {
-      xmlFile.StartTag(wxT("ODDecodeBlockFile"));
-
+      xmlFile.StartTag(wxT("oddecodeblockfile"));
+       //unlock to prevent deadlock and resume lock after.
+      UnlockRead();
+      mFileNameMutex.Lock();
       xmlFile.WriteAttr(wxT("summaryfile"), mFileName.GetFullName());
-      xmlFile.WriteAttr(wxT("aliasfile"), mAliasedFileName.GetFullPath());
+      mFileNameMutex.Unlock();
+      LockRead();
+      xmlFile.WriteAttr(wxT("audiofile"), mAudioFileName.GetFullPath());
       xmlFile.WriteAttr(wxT("aliasstart"), mAliasStart);
       xmlFile.WriteAttr(wxT("aliaslen"), mLen);
       xmlFile.WriteAttr(wxT("aliaschannel"), mAliasChannel);
-      //these have not been computed yet.
-      //xmlFile.WriteAttr(wxT("min"), mMin);
-      //xmlFile.WriteAttr(wxT("max"), mMax);
-     // xmlFile.WriteAttr(wxT("rms"), mRMS);
+      xmlFile.WriteAttr(wxT("decodetype"), (size_t)mType);
 
-      xmlFile.EndTag(wxT("odpcmaliasblockfile"));
+      xmlFile.EndTag(wxT("oddecodeblockfile"));
    }
-*/
+	UnlockRead();
 }
 
 /// Constructs a ODPCMAliasBlockFile from the xml output of WriteXML.
 /// Also schedules the ODPCMAliasBlockFile for OD loading.
 BlockFile *ODDecodeBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
-{//TODO:
-//   wxFileName summaryFileName;
-//   wxFileName aliasFileName;
-//   sampleCount aliasStart=0, aliasLen=0;
-//   int aliasChannel=0;
-//   float min=0, max=0, rms=0;
-//   long nValue;
-//
-//
-//
-//   while(*attrs)
-//   {
-//      const wxChar *attr =  *attrs++;
-//      const wxChar *value = *attrs++;
-//      if (!value) 
-//         break;
-//
-//      const wxString strValue = value;
-//      if( !wxStricmp(attr, wxT("summaryfile")) )
-//      {
-//      
-//         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
-//         if (!XMLValueChecker::IsGoodFileString(strValue))
-//            return NULL;
-//
-//         #ifdef _WIN32
-//            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
-//               return NULL;
-//         #endif
-//
-//         dm.AssignFile(summaryFileName,value,FALSE);
-//      }
-//      else if( !wxStricmp(attr, wxT("aliasfile")) )
-//      {
-//         if (XMLValueChecker::IsGoodPathName(strValue))
-//            aliasFileName.Assign(strValue);
-//         else if (XMLValueChecker::IsGoodFileName(strValue, dm.GetProjectDataDir()))
-//            // Allow fallback of looking for the file name, located in the data directory.
-//            aliasFileName.Assign(dm.GetProjectDataDir(), strValue);
-//         else 
-//            return NULL;
-//      }
-//      else if (XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
-//      { // integer parameters
-//         if( !wxStricmp(attr, wxT("aliasstart")) )
-//            aliasStart = nValue;
-//         else if( !wxStricmp(attr, wxT("aliaslen")) )
-//            aliasLen = nValue;
-//         else if( !wxStricmp(attr, wxT("aliaschannel")) )
-//            aliasChannel = nValue;
-//            
-//         //The folowing attributes don't exist yet - not quite sure what to do with them yet.
-////         else if( !wxStricmp(attr, wxT("min")) )
-////            min = nValue;
-////         else if( !wxStricmp(attr, wxT("max")) )
-////            max = nValue;
-////         else if( !wxStricmp(attr, wxT("rms")) )
-////            rms = nValue;
-//      }
-//   }
-//
-//   //file doesn't exist, but IsGoodFileName Checks that it does - maybe we should have a different method to check for valid names?
-//   if ( /*!XMLValueChecker::IsGoodFileName(summaryFileName.GetFullName(), summaryFileName.GetPath(wxPATH_GET_VOLUME)) || */
-//         !XMLValueChecker::IsGoodFileName(aliasFileName.GetFullName(), aliasFileName.GetPath(wxPATH_GET_VOLUME)) || 
-//         (aliasLen <= 0) || (aliasLen < 0.0) || !XMLValueChecker::IsValidChannel(aliasChannel) || (rms < 0.0))
-//      return NULL;
-//
-//
-//   //TODO: schedule for OD Loading
-//   
-//   return new ODPCMAliasBlockFile(summaryFileName, aliasFileName,
-//                                aliasStart, aliasLen, aliasChannel);
-return NULL;
+{
+
+   wxFileName summaryFileName;
+   wxFileName audioFileName;
+   sampleCount aliasStart=0, aliasLen=0;
+   int aliasChannel=0;
+   long nValue;
+   unsigned int   decodeType=0;
+   float rms=0.0f;
+
+
+
+   while(*attrs)
+   {
+      const wxChar *attr =  *attrs++;
+      const wxChar *value = *attrs++;
+      if (!value) 
+         break;
+
+      const wxString strValue = value;
+      if( !wxStricmp(attr, wxT("summaryfile")) )
+      {
+      
+         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
+         if (!XMLValueChecker::IsGoodFileString(strValue))
+            return NULL;
+
+         #ifdef _WIN32
+            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
+               return NULL;
+         #endif
+
+         dm.AssignFile(summaryFileName,value,FALSE);
+      }
+      else if( !wxStricmp(attr, wxT("audiofile")) )
+      {
+         if (XMLValueChecker::IsGoodPathName(strValue))
+            audioFileName.Assign(strValue);
+         else if (XMLValueChecker::IsGoodFileName(strValue, dm.GetProjectDataDir()))
+            // Allow fallback of looking for the file name, located in the data directory.
+            audioFileName.Assign(dm.GetProjectDataDir(), strValue);
+         else 
+            return NULL;
+      }
+      else if (XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
+      { // integer parameters
+         if( !wxStricmp(attr, wxT("aliasstart")) )
+            aliasStart = nValue;
+         else if( !wxStricmp(attr, wxT("aliaslen")) )
+            aliasLen = nValue;
+         else if( !wxStricmp(attr, wxT("aliaschannel")) )
+            aliasChannel = nValue;
+         else if( !wxStricmp(attr, wxT("decodetype")) )
+            decodeType = nValue;
+      }
+   }
+
+   //file doesn't exist, but IsGoodFileName Checks that it does - maybe we should have a different method to check for valid names?
+   if ( /*!XMLValueChecker::IsGoodFileName(summaryFileName.GetFullName(), summaryFileName.GetPath(wxPATH_GET_VOLUME)) || */
+         !XMLValueChecker::IsGoodFileName(audioFileName.GetFullName(), audioFileName.GetPath(wxPATH_GET_VOLUME)) || 
+         (aliasLen <= 0) || (aliasLen < 0.0) || !XMLValueChecker::IsValidChannel(aliasChannel) || (rms < 0.0))
+      return NULL;
+   
+   return new ODDecodeBlockFile(summaryFileName, audioFileName,
+                                aliasStart, aliasLen, aliasChannel,decodeType);
+
 }
 
 
@@ -314,9 +316,9 @@ void ODDecodeBlockFile::WriteODDecodeBlockFile()
 
    // To build the summary data, call ReadData (implemented by the
    // derived classes) to get the sample data
-   samplePtr sampleData = NewSamples(mLen, floatSample);
+   samplePtr sampleData;// = NewSamples(mLen, floatSample);
    
-   //use the decoder here.
+   //use the decoder here.   
    mDecoderMutex.Lock();
    
    if(!mDecoder)
@@ -324,22 +326,27 @@ void ODDecodeBlockFile::WriteODDecodeBlockFile()
       mDecoderMutex.Unlock();
       return;
    }
-   mDecoder->Decode(sampleData, mFormat, mDecodeFileStart, mLen);
+   
+   
+   //sampleData and mFormat are set by the decoder.
+   mDecoder->Decode(sampleData, mFormat, mAliasStart, mLen, mAliasChannel);
    
    mDecoderMutex.Unlock();
-   this->ReadData(sampleData, floatSample, 0, mLen);
+   
 
-   void *summaryData = CalcSummary(sampleData, mLen, floatSample);
-  //OD TODO: use new write()                                          
-//   summaryFile.Write(summaryData, mSummaryInfo.totalSummaryBytes);
+   //the summary is also calculated here.
+   mFileNameMutex.Lock();
+   //TODO: we may need to write a version of WriteSimpleBlockFile that uses threadsafe FILE vs wxFile
    WriteSimpleBlockFile(
     sampleData,
     mLen,
     mFormat,
-     summaryData);
+     NULL);//summaryData);
 
+   mFileNameMutex.Unlock();
+   
    DeleteSamples(sampleData);
-   delete [] (char *) summaryData;
+//   delete [] (char *) summaryData;
 
 
    mDataAvailableMutex.Lock();
@@ -347,7 +354,28 @@ void ODDecodeBlockFile::WriteODDecodeBlockFile()
    mDataAvailableMutex.Unlock();
 }
 
+///sets the file name the summary info will be saved in.  threadsafe.
+void ODDecodeBlockFile::SetFileName(wxFileName &name)
+{
+   mFileNameMutex.Lock();
+   mFileName=name;
+/* mchinen oct 9 2009 don't think we need the char* but leaving it in for now just as a reminder that we might
+   if wxFileName isn't threadsafe.  
+   delete [] mFileNameChar;
+   mFileNameChar = new char[strlen(mFileName.GetFullPath().mb_str(wxConvUTF8))+1];
+   strcpy(mFileNameChar,mFileName.GetFullPath().mb_str(wxConvUTF8)); */
+   mFileNameMutex.Unlock();
+}
 
+///sets the file name the summary info will be saved in.  threadsafe.
+wxFileName ODDecodeBlockFile::GetFileName()
+{
+   wxFileName name;
+   mFileNameMutex.Lock();
+   name = mFileName;
+   mFileNameMutex.Unlock();
+   return name;
+}
 
 /// A thread-safe version of CalcSummary.  BlockFile::CalcSummary
 /// uses a static summary array across the class, which we can't use.
@@ -499,12 +527,19 @@ void *ODDecodeBlockFile::CalcSummary(samplePtr buffer, sampleCount len,
 int ODDecodeBlockFile::ReadData(samplePtr data, sampleFormat format,
                                 sampleCount start, sampleCount len)
 {
-   
+   int ret;
+   LockRead();
    if(IsSummaryAvailable())
-      return SimpleBlockFile::ReadData(data,format,start,len);
+      ret= SimpleBlockFile::ReadData(data,format,start,len);
    else
-      return 0; //TODO: do we need to zero out the data?  It would be more efficient if the client code checked
-               //ISSummaryAvailable first.
+   {
+      //we should do an ODRequest to start processing the data here, and wait till it finishes. and just do a SimpleBlockFIle
+      //ReadData.
+      ClearSamples(data, format, 0, len);
+      ret= len;
+   }
+   UnlockRead();
+   return ret;
 }
 
 /// Read the summary of this alias block from disk.  Since the audio data
@@ -514,29 +549,12 @@ int ODDecodeBlockFile::ReadData(samplePtr data, sampleFormat format,
 ///              be at least mSummaryInfo.totalSummaryBytes long.
 bool ODDecodeBlockFile::ReadSummary(void *data)
 {
-//   wxFFile summaryFile(mFileName.GetFullPath(), wxT("rb"));
-//   wxLogNull *silence=0;
-//   
-//   if( !summaryFile.IsOpened() ){
-//
-//      // new model; we need to return valid data
-//      memset(data,0,(size_t)mSummaryInfo.totalSummaryBytes);
-//   
-//      // we silence the logging for this operation in this object
-//      // after first occurrence of error; it's already reported and
-//      // spewing at the user will complicate the user's ability to
-//      // deal
-//      mSilentLog=TRUE;
-//      return true;
-//
-//   }else mSilentLog=FALSE; // worked properly, any future error is new 
-//
-//   int read = summaryFile.Read(data, (size_t)mSummaryInfo.totalSummaryBytes);
-//
-//   FixSummary(data);
-//
-//   return (read == mSummaryInfo.totalSummaryBytes);
-return true;
+   //I dont think we need to add a mutex here because only the main thread changes filenames and calls ReadSummarz
+   if(IsSummaryAvailable())
+      return SimpleBlockFile::ReadSummary(data);
+   
+   memset(data, 0, (size_t)mSummaryInfo.totalSummaryBytes);
+   return true;
 }
 
 ///set the decoder,
@@ -549,5 +567,26 @@ void ODDecodeBlockFile::SetODFileDecoder(ODFileDecoder* decoder)
    mDecoder = decoder;
    mDecoderMutex.Unlock();
 }
+   
+
+/// Prevents a read on other threads.
+void ODDecodeBlockFile::LockRead()
+{
+   mReadDataMutex.Lock();
+}
+/// Allows reading of encoded file on other threads.
+void ODDecodeBlockFile::UnlockRead()
+{
+   mReadDataMutex.Unlock();
+}
+
+/// Modify this block to point at a different file.  This is generally
+/// looked down on, but it is necessary in one case: see
+/// DirManager::EnsureSafeFilename().
+void ODDecodeBlockFile::ChangeAudioFile(wxFileName newAudioFile)
+{
+   mAudioFileName = newAudioFile;
+}
+   
    
 

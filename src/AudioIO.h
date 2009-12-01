@@ -80,6 +80,7 @@ class AUDACITY_DLL_API AudioIO {
    AudioIO();
    ~AudioIO();
 
+   AudioIOListener* GetListener() { return mListener; }
    void SetListener(AudioIOListener* listener);
    
    /** \brief Start up Portaudio for capture and recording as needed for
@@ -159,13 +160,20 @@ class AUDACITY_DLL_API AudioIO {
    /* Mixer services are always available.  If no stream is running, these
     * methods use whatever device is specified by the preferences.  If a
     * stream *is* running, naturally they manipulate the mixer associated
-    * with that stream.  If no mixer is available, they are emulated
-    * (a gain is applied to input and output samples).
+    * with that stream.  If no mixer is available, output is emulated and 
+    * input is stuck at 1.0f (a gain is applied to output samples).
     */
    void SetMixer(int inputSource, float inputVolume,
                  float playbackVolume);
    void GetMixer(int *inputSource, float *inputVolume,
                  float *playbackVolume);
+   /** @brief Find out if the input hardware level control is available
+    *
+    * Checks the mInputMixerWorks variable, which is set up in
+    * AudioIO::HandleDeviceChange(). External people care, because we want to
+    * disable the UI if it doesn't work.
+    */
+   bool InputMixerWorks();
    /** \brief Get the list of inputs to the current mixer device
     *
     * Returns an array of strings giving the names of the inputs to the 
@@ -232,7 +240,7 @@ class AUDACITY_DLL_API AudioIO {
     */
    static wxArrayLong GetSupportedSampleRates(int playDevice = -1,
                                               int recDevice = -1,
-                                              double rate = 0.0);
+                                       double rate = 0.0);
 
    /** \brief Get a supported sample rate which can be used a an optimal
     * default.
@@ -320,6 +328,9 @@ private:
    void OutputEvent();
    void FillMidiBuffers();
    void GetNextEvent();
+   void AudacityMidiCallback();
+   double getCurrentTrackTime();
+   long calculateMidiTimeStamp(double time);
 #endif
 
    /** \brief Get the number of audio samples free in all of the playback
@@ -374,6 +385,19 @@ private:
    long                mCurrentMidiTime;
    long                mMidiLatency; // latency value for PortMidi
    long                mLastMidiTime; // timestamp of last midi message
+   double              mLastSystemTime; // last system time received
+   double              mLatencyBetweenSystemTimes;
+   long                mStartFrame;
+   long                mNumPauseFrames;
+
+   // TODO: Finish implementation of RequestMidiStop
+   bool                mRequestMidiStop;
+
+   // These two fields are used to synchronize MIDI with audio
+   // TODO: Finish implementing these fields
+   double              mAudioCallbackOutputTime;
+   long                mAudioCallbackSampleNumber;
+
    Alg_seq_ptr         mSeq;
    Alg_iterator_ptr    mIterator;
    Alg_event_ptr       mNextEvent; // the next event to play (or null)
@@ -465,13 +489,22 @@ private:
    #endif /* USE_PORTMIXER */
 
    bool                mEmulateMixerOutputVol;
-   bool                mEmulateMixerInputVol;
+   /** @brief Can we control the hardware input level?
+    *
+    * This flag is set to true if using portmixer to control the 
+    * input volume seems to be working (and so we offer the user the control),
+    * and to false (locking the control out) otherwise. This avoids stupid
+    * scaled clipping problems when trying to do software emulated input volume
+    * control */
+   bool                mInputMixerWorks;
    float               mMixerOutputVol;
-   float               mMixerInputVol;
 
    bool                mPlayLooped;
    double              mCutPreviewGapStart;
    double              mCutPreviewGapLen;
+   
+   samplePtr mSilentBuf;
+   sampleCount mLastSilentBufSize;
    
    AudioIOListener*    mListener;
 
@@ -481,6 +514,15 @@ private:
    friend void DeinitAudioIO();
 
    TimeTrack *mTimeTrack;
+
+   // For cacheing supported sample rates
+   static int mCachedPlaybackIndex;
+   static wxArrayLong mCachedPlaybackRates;
+   static int mCachedCaptureIndex;
+   static wxArrayLong mCachedCaptureRates;
+   static wxArrayLong mCachedSampleRates;
+   static double mCachedBestRateIn;
+   static double mCachedBestRateOut;
 
    /** brief The function which is called from PortAudio's callback thread
     * context to collect and deliver audio for / from the sound device.
