@@ -2,9 +2,9 @@ Description: Add "Consecutively numbered Label/Track Name" option
 Bug-Ubuntu: https://launchpad.net/bugs/276043
 Forwarded: yes
 Author: Benjamin Drung <bdrung@ubuntu.com>
-diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.3.8/src/export/ExportMultiple.cpp
---- audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp	2009-07-16 05:27:35.000000000 +0200
-+++ audacity-src-1.3.8/src/export/ExportMultiple.cpp	2009-07-17 15:39:52.165690507 +0200
+diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
+--- a/src/export/ExportMultiple.cpp
++++ b/src/export/ExportMultiple.cpp
 @@ -65,6 +65,7 @@ enum {
     TrackID,
     ByNameID,
@@ -13,7 +13,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
     PrefixID,
     OverwriteID
  };
-@@ -298,13 +299,21 @@ void ExportMultiple::PopulateOrExchange(
+@@ -307,13 +308,21 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
           {
              // Row 1
              S.SetBorder(1);
@@ -37,7 +37,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
              S.SetBorder(1);
              mByNumber = S.Id(ByNumberID)
                 .AddRadioButtonToGroup(wxT(""));
-@@ -312,7 +321,7 @@ void ExportMultiple::PopulateOrExchange(
+@@ -321,7 +330,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
              S.SetBorder(3);
              mByNumberLabel = S.AddVariableText(_("Numbering consecutively"), false);
  
@@ -46,7 +46,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
              S.AddVariableText(wxT(""), false);
              S.StartHorizontalLay(wxEXPAND, false);
              {
-@@ -356,7 +365,7 @@ void ExportMultiple::EnableControls()
+@@ -365,7 +374,7 @@ void ExportMultiple::EnableControls()
     mFirst->Enable(mLabel->GetValue());
     
     enable = mLabel->GetValue() &&
@@ -55,7 +55,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
              mFirst->GetValue();
     mFirstFileLabel->Enable(enable);
     mFirstFileName->Enable(enable);
-@@ -509,8 +518,10 @@ void ExportMultiple::OnExport(wxCommandE
+@@ -518,8 +527,10 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
     mExported.Empty();
  
     if (mLabel->GetValue()) {
@@ -68,7 +68,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
     }
     else {
        ok = ExportMultipleByTrack(mByName->GetValue(),
-@@ -580,7 +591,7 @@ bool ExportMultiple::DirOk()
+@@ -602,7 +613,7 @@ bool ExportMultiple::DirOk()
     return fn.Mkdir(0777, wxPATH_MKDIR_FULL);
  }
  
@@ -77,7 +77,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
  {
     wxASSERT(mProject);
     bool tagsPrompt = mProject->GetShowId3Dialog();
-@@ -647,9 +658,14 @@ int ExportMultiple::ExportMultipleByLabe
+@@ -669,9 +680,14 @@ int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
              name.Printf(wxT("%s-%02d"), prefix.c_str(), l+1);
           else
              name.Printf(wxT("%s-%d"), prefix.c_str(), l+1);
@@ -93,10 +93,10 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.cpp audacity-src-1.
        setting.destfile.SetName(MakeFileName(name));
  
        wxASSERT(setting.destfile.IsOk());     // scream if file name is broke
-diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.h audacity-src-1.3.8/src/export/ExportMultiple.h
---- audacity-src-1.3.8.orig/src/export/ExportMultiple.h	2009-07-16 05:27:35.000000000 +0200
-+++ audacity-src-1.3.8/src/export/ExportMultiple.h	2009-07-17 15:40:33.465690249 +0200
-@@ -51,7 +51,7 @@ private:
+diff --git a/src/export/ExportMultiple.h b/src/export/ExportMultiple.h
+--- a/src/export/ExportMultiple.h
++++ b/src/export/ExportMultiple.h
+@@ -52,7 +52,7 @@ private:
      * labels that define them (true), or just numbered (false).
      * @param prefix The string used to prefix the file number if files are being
      * numbered rather than named */
@@ -105,7 +105,7 @@ diff -pruN audacity-src-1.3.8.orig/src/export/ExportMultiple.h audacity-src-1.3.
  
     /** \brief Export each track in the project to a separate file
      *
-@@ -154,6 +154,9 @@ private:
+@@ -155,6 +155,9 @@ private:
     wxRadioButton *mByNumber;  /**< button to choose numbering exported files */
     wxStaticText  *mByNumberLabel;
  
