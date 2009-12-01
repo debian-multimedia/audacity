@@ -4,18 +4,18 @@ Bug-Ubuntu: https://launchpad.net/bugs/292168
 Forwarded: yes
 Author: Benjamin Drung <bdrung@ubuntu.com>
 diff --git a/src/AudacityApp.cpp b/src/AudacityApp.cpp
-index 4f239a9..54d8d8d 100644
+index 21be5ac..de36ecc 100644
 --- a/src/AudacityApp.cpp
 +++ b/src/AudacityApp.cpp
-@@ -71,6 +71,7 @@ It handles initialization and termination by subclassing wxApp.
- #include "FreqWindow.h"
+@@ -70,6 +70,7 @@ It handles initialization and termination by subclassing wxApp.
+ #include "GStreamerLoader.h"
  #include "Internat.h"
  #include "LangChoice.h"
 +#include "Languages.h"
  #include "Prefs.h"
  #include "Project.h"
  #include "Screenshot.h"
-@@ -940,9 +941,8 @@ bool AudacityApp::OnInit()
+@@ -1024,9 +1025,8 @@ bool AudacityApp::OnInit()
  
     wxString lang = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
  
@@ -26,7 +26,7 @@ index 4f239a9..54d8d8d 100644
  
  #ifdef NOT_RQD
  //TIDY-ME: (CleanSpeech) Language prompt??
-@@ -954,7 +954,6 @@ bool AudacityApp::OnInit()
+@@ -1038,7 +1038,6 @@ bool AudacityApp::OnInit()
  //lda   if (lang == "")
  //lda      lang = ChooseLanguage(NULL);
  #endif
@@ -35,10 +35,10 @@ index 4f239a9..54d8d8d 100644
     mLocale = NULL;
     InitLang( lang );
 diff --git a/src/Languages.cpp b/src/Languages.cpp
-index 0d60479..7761d24 100644
+index 061beb6..c625243 100644
 --- a/src/Languages.cpp
 +++ b/src/Languages.cpp
-@@ -222,6 +222,10 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
+@@ -223,6 +223,10 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
  
     tempNames.Sort();
  
@@ -50,10 +50,10 @@ index 0d60479..7761d24 100644
        langNames.Add(tempNames[j]);
        langCodes.Add(reverseHash[tempNames[j]]);
 diff --git a/src/prefs/EffectsPrefs.cpp b/src/prefs/EffectsPrefs.cpp
-index 1eba2ec..4bb7788 100644
+index ce63d66..7728baf 100644
 --- a/src/prefs/EffectsPrefs.cpp
 +++ b/src/prefs/EffectsPrefs.cpp
-@@ -118,6 +118,8 @@ bool EffectsPrefs::Apply()
+@@ -126,6 +126,8 @@ bool EffectsPrefs::Apply()
  
     // If language has changed, we want to change it now, not on the next reboot.
     wxString lang = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
@@ -63,12 +63,12 @@ index 1eba2ec..4bb7788 100644
  
     return true;
 diff --git a/src/prefs/GUIPrefs.cpp b/src/prefs/GUIPrefs.cpp
-index 3d293a1..66c8edb 100644
+index 5971088..a6539c1 100644
 --- a/src/prefs/GUIPrefs.cpp
 +++ b/src/prefs/GUIPrefs.cpp
 @@ -113,7 +113,7 @@ void GUIPrefs::PopulateOrExchange(ShuttleGui & S)
  
-          S.TieChoice(_("Language:"),
+          S.TieChoice(_("&Language:"),
                       wxT("/Locale/Language"),
 -                     wxT("en"),
 +                     wxT(""),
