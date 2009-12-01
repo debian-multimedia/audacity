@@ -89,6 +89,15 @@ BEGIN_EVENT_TABLE(ExportMultiple, wxDialog)
    EVT_TEXT(PrefixID, ExportMultiple::OnPrefix)
 END_EVENT_TABLE()
 
+BEGIN_EVENT_TABLE(SuccessDialog, wxDialog)
+   EVT_LIST_KEY_DOWN(wxID_ANY, SuccessDialog::OnKeyDown)
+   EVT_LIST_ITEM_ACTIVATED(wxID_ANY, SuccessDialog::OnItemActivated) // happens when <enter> is pressed with list item having focus
+END_EVENT_TABLE()
+
+BEGIN_EVENT_TABLE(MouseEvtHandler, wxEvtHandler)
+   EVT_LEFT_DCLICK(MouseEvtHandler::OnMouse)
+END_EVENT_TABLE()
+
 ExportMultiple::ExportMultiple(AudacityProject *project)
 : wxDialog(project, wxID_ANY, wxString(_("Export Multiple")))
 {
@@ -530,7 +539,7 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
                )
              ), mExported.GetCount());
 
-      wxDialog dlg(this,
+      SuccessDialog dlg(this,
                    wxID_ANY,
                    wxString(_("ExportMultiple")));
       ShuttleGui S(&dlg, eIsCreating);
@@ -539,11 +548,24 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
          S.AddTitle(msg);
          S.SetStyle(wxLC_LIST | wxLC_SINGLE_SEL | wxLC_HRULES | wxSUNKEN_BORDER);
          wxListCtrl *l = S.AddListControl();
+         l->SetBackgroundStyle(wxBG_STYLE_COLOUR);
+#if defined (__WXGTK__)
+         // setting dlg.GetBackgroundColour does not work as expected in wxGTK
+         l->SetBackgroundColour(wxColour(wxT("wxNullColour")));
+#else
+         l->SetBackgroundColour(dlg.GetBackgroundColour());
+#endif
+         l->Refresh();
          for (size_t i = 0; i < mExported.GetCount(); i++) {
             l->InsertItem(i, mExported[i]);
          }
          
          S.AddStandardButtons(eOkButton);
+         l->SetFocus();
+
+         // this handles double-click and prevents item activation when a list-item is double-clicked
+         MouseEvtHandler *mouseHdlr = new MouseEvtHandler();
+         l->PushEventHandler(mouseHdlr);
       }
       dlg.Fit();
       dlg.Center();
@@ -937,6 +959,23 @@ wxString ExportMultiple::MakeFileName(wxString input)
       newname = dlg.GetValue();
    }  // phew - end of file name sanitisation procedure
    return newname;
+}
+void SuccessDialog::OnKeyDown(wxListEvent& event)
+{
+   if (event.GetKeyCode() == WXK_RETURN)
+      EndModal(1);
+   else
+      event.Skip(); // allow standard behaviour
+}
+
+void SuccessDialog::OnItemActivated(wxListEvent& event)
+{
+   EndModal(1);
+}
+
+void MouseEvtHandler::OnMouse(wxMouseEvent& event)
+{
+   event.Skip(false);
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

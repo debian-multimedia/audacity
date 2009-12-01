@@ -81,13 +81,9 @@ int OpenMixer_Mac_CoreAudio(px_mixer *Px, int index)
    info->output = PaMacCore_GetStreamOutputDevice(Px->pa_stream);
 
    if (info->input == kAudioDeviceUnknown) {
-      outSize = sizeof(AudioDeviceID);
-      err = AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
-                                     &outSize,
-                                     &info->input);
-      if (err) {
-         return cleanup(Px);
-      }
+      /* This probably means it was an output-only stream;
+       * the rest of this fn needs a good input device */
+      return TRUE;
    }
 
    outSize = sizeof(UInt32);
@@ -98,7 +94,8 @@ int OpenMixer_Mac_CoreAudio(px_mixer *Px, int index)
                                     &outSize,
                                     NULL);
    if (err) {
-      return cleanup(Px);
+      /* No input sources available.  Input device may still be usable. */
+      return TRUE;
    }
 
    info->numsrcs  = outSize / sizeof(UInt32);
@@ -253,11 +250,39 @@ static PxVolume get_volume(AudioDeviceID device, Boolean isInput)
    OSStatus err;
    UInt32   outSize;
    Float32  vol, maxvol = 0.0;
-   UInt32   mute, anymuted = 0;
+   UInt32   mute, muted = 0;
    int ch;
    PxVolume max;
 
-   for (ch = 0; ch <= 2; ch++) {
+
+   /* First try adjusting the master volume */
+   outSize = sizeof(Float32);
+   err = AudioDeviceGetProperty(device,
+                                0,
+                                isInput,
+                                kAudioDevicePropertyVolumeScalar,
+                                &outSize,
+                                &vol);
+   if (!err) {
+      outSize = sizeof(UInt32);
+      err = AudioDeviceGetProperty(device,
+                                   0,
+                                   isInput,
+                                   kAudioDevicePropertyMute,
+                                   &outSize,
+                                   &mute);
+
+      if (!err) {
+         if (mute) {
+            vol = 0.0;
+         }
+      }
+
+      return vol;
+   }
+
+   /* Assume no master volume, so find highest volume of individual channels */
+   for (ch = 1; ch <= 2; ch++) {
       outSize = sizeof(Float32);
       err = AudioDeviceGetProperty(device,
                                    ch,
@@ -266,8 +291,9 @@ static PxVolume get_volume(AudioDeviceID device, Boolean isInput)
                                    &outSize,
                                    &vol);
       if (!err) {
-         if (vol > maxvol)
+         if (vol > maxvol) {
             maxvol = vol;
+         }
       }
 
       outSize = sizeof(UInt32);
@@ -279,13 +305,15 @@ static PxVolume get_volume(AudioDeviceID device, Boolean isInput)
                                    &mute);
 
       if (!err) {
-         if (mute)
-            anymuted = 1;
+         if (mute) {
+            muted = 1;
+         }
       }
    }
 
-   if (anymuted)
-         maxvol = 0.0;
+   if (muted) {
+      maxvol = 0.0;
+   }
 
    return maxvol;
 }
@@ -293,7 +321,6 @@ static PxVolume get_volume(AudioDeviceID device, Boolean isInput)
 static void set_volume(AudioDeviceID device, Boolean isInput, PxVolume volume)
 {
    Float32 vol = volume;
-   UInt32 mute = 0;
    int ch;
    OSStatus err;
 
@@ -302,23 +329,45 @@ static void set_volume(AudioDeviceID device, Boolean isInput, PxVolume volume)
       drag the volume down below that, just set the volume,
       don't actually mute.
    */
+   UInt32 mute = (vol <= 0.05);
 
-   for (ch = 0; ch <= 2; ch++) {
-      err =  AudioDeviceSetProperty(device,
-                                    0,
-                                    ch,
-                                    isInput,
-                                    kAudioDevicePropertyVolumeScalar,
-                                    sizeof(Float32),
-                                    &vol);
-      if (vol > 0.05) {
-         err =  AudioDeviceSetProperty(device,
-                                       0,
-                                       ch,
-                                       isInput,
-                                       kAudioDevicePropertyMute,
-                                       sizeof(UInt32),
-                                       &mute);
+   /* Try setting just the master volume first */
+   err = AudioDeviceSetProperty(device,
+                                0,
+                                0,
+                                isInput,
+                                kAudioDevicePropertyVolumeScalar,
+                                sizeof(Float32),
+                                &vol);
+   if (!err) {
+      AudioDeviceSetProperty(device,
+                             0,
+                             0,
+                             isInput,
+                             kAudioDevicePropertyMute,
+                             sizeof(UInt32),
+                             &mute);
+
+      return;
+   }
+
+   /* Assume no master volume, so set individual channels */
+   for (ch = 1; ch <= 2; ch++) {
+      err = AudioDeviceSetProperty(device,
+                                   0,
+                                   ch,
+                                   isInput,
+                                   kAudioDevicePropertyVolumeScalar,
+                                   sizeof(Float32),
+                                   &vol);
+      if (!err) {
+         AudioDeviceSetProperty(device,
+                                0,
+                                ch,
+                                isInput,
+                                kAudioDevicePropertyMute,
+                                sizeof(UInt32),
+                                &mute);
       }
    }
 }

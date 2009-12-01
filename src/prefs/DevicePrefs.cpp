@@ -110,7 +110,7 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(HostID);
-         mHost = S.TieChoice(_("Host") + wxString(wxT(":")),
+         mHost = S.TieChoice(_("&Host") + wxString(wxT(":")),
                              wxT("/AudioIO/Host"), 
                              wxT(""),
                              mHostNames,
@@ -129,7 +129,7 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(PlayID);
-         mPlay = S.AddChoice(_("Device") + wxString(wxT(":")),
+         mPlay = S.AddChoice(_("&Device") + wxString(wxT(":")),
                              wxEmptyString,
                              &empty);
       }
@@ -142,12 +142,12 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(RecordID);
-         mRecord = S.AddChoice(_("Device") + wxString(wxT(":")),
+         mRecord = S.AddChoice(_("De&vice") + wxString(wxT(":")),
                                wxEmptyString,
                                &empty);
 
          S.Id(ChannelsID);
-         mChannels = S.AddChoice(_("Channels") + wxString(wxT(":")),
+         mChannels = S.AddChoice(_("Cha&nnels") + wxString(wxT(":")),
                                  wxEmptyString,
                                  &empty);
       }
@@ -158,7 +158,23 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
 
 void DevicePrefs::OnHost(wxCommandEvent & e)
 {
-   int index = mHost->GetCurrentSelection(); /* the hostAPI index the user has selected */
+   // Find the index for the host API selected
+   int index = -1;
+   wxString apiName = mHostNames[mHost->GetCurrentSelection()];
+   int nHosts = Pa_GetHostApiCount();
+   for (int i = 0; i < nHosts; ++i) {
+      wxString name(Pa_GetHostApiInfo(i)->name, wxConvLocal);
+      if (name == apiName) {
+         index = i;
+         break;
+      }
+   }
+   // We should always find the host!
+   if (index < 0) {
+      wxLogDebug(wxT("DevicePrefs::OnHost(): API index not found"));
+      return;
+   }
+
    int nDevices = Pa_GetDeviceCount();
 
    if (nDevices == 0) {
@@ -204,10 +220,12 @@ void DevicePrefs::OnHost(wxCommandEvent & e)
    if (mPlay->GetCount() == 0) {
       playnames.Add(_("No devices found"));
       mPlay->Append(playnames[0], (void *) NULL);
+      mPlay->SetSelection(0);
    }
    if (mRecord->GetCount() == 0) {
       recordnames.Add(_("No devices found"));
       mRecord->Append(recordnames[0], (void *) NULL);
+      mRecord->SetSelection(0);
    }
 
    /* what if we have no device selected? we should choose the default on 
@@ -216,11 +234,19 @@ void DevicePrefs::OnHost(wxCommandEvent & e)
    if (mPlay->GetCount() && mPlay->GetSelection() == wxNOT_FOUND) {
       wxLogDebug(wxT("DevicePrefs::OnHost(): no play device selected"));
       mPlay->SetStringSelection(GetDefaultPlayDevice(index));
+
+      if (mPlay->GetSelection() == wxNOT_FOUND) {
+         mPlay->SetSelection(0);
+      }
    }
 
    if (mRecord->GetCount() && mRecord->GetSelection() == wxNOT_FOUND) {
       wxLogDebug(wxT("DevicePrefs::OnHost(): no record device selected"));
       mRecord->SetStringSelection(GetDefaultRecordDevice(index));
+
+      if (mPlay->GetSelection() == wxNOT_FOUND) {
+         mPlay->SetSelection(0);
+      }
    }
 
    ShuttleGui S(this, eIsCreating);
@@ -296,8 +322,11 @@ void DevicePrefs::OnDevice(wxCommandEvent & e)
 
 wxString DevicePrefs::GetDefaultPlayDevice(int index)
 {
-   const struct PaHostApiInfo *apiinfo = Pa_GetHostApiInfo(index);
-   // get info on API
+   if (index < 0 || index >= Pa_GetHostApiCount()) {
+      return wxEmptyString;
+   }
+
+   const struct PaHostApiInfo *apiinfo = Pa_GetHostApiInfo(index);   // get info on API
    wxLogDebug(wxT("GetDefaultPlayDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
    wxLogDebug(wxT("GetDefaultPlayDevice() default output %d"), apiinfo->defaultOutputDevice);
    const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultOutputDevice);
@@ -308,8 +337,11 @@ wxString DevicePrefs::GetDefaultPlayDevice(int index)
 
 wxString DevicePrefs::GetDefaultRecordDevice(int index)
 {
-   const struct PaHostApiInfo *apiinfo;   /* info on this API */
-   apiinfo = Pa_GetHostApiInfo(index);   // get info on API
+   if (index < 0 || index >= Pa_GetHostApiCount()) {
+      return wxEmptyString;
+   }
+
+   const struct PaHostApiInfo *apiinfo = Pa_GetHostApiInfo(index);   // get info on API
    wxLogDebug(wxT("GetDefaultRecordDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
    wxLogDebug(wxT("GetDefaultRecordDevice() default input %d"), apiinfo->defaultInputDevice);
    const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultInputDevice);

@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-unicode-1.3.8
+OutputBaseFilename=audacity-win-unicode-1.3.10
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -13,7 +13,7 @@ SolidCompression=yes
 
 ; installer-related directives
 AppName=Audacity 1.3 Beta (Unicode)
-AppVerName=Audacity 1.3.8 (Unicode)
+AppVerName=Audacity 1.3.10 (Unicode)
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
@@ -27,8 +27,8 @@ UninstallDisplayIcon="{app}\audacity.exe"
 ; No longer force them to accept the license, just display it.   LicenseFile=..\LICENSE.txt
 InfoBeforeFile=..\LICENSE.txt
 InfoAfterFile=..\README.txt
-; min versions: Win95, NT 4.0
-MinVersion=4.0,4.0
+; min versions: Win 95, Win 2000 - allow to run on non-Unicode Windows versions in case we ever support this.
+MinVersion=4.0,5.0
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -53,9 +53,9 @@ Name: "slovenian"; MessagesFile: "compiler:Languages\Slovenian.isl"
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Tasks]
-Name: desktopicon; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; MinVersion: 4,4
+Name: desktopicon; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
 ; No longer allow user to choose whether to associate AUP file type with Audacity.
-; Name: associate_aup; Description: "&Associate Audacity project files"; GroupDescription: "Other tasks:"; Flags: checkedonce; MinVersion: 4,4
+; Name: associate_aup; Description: "&Associate Audacity project files"; GroupDescription: "Other tasks:"; Flags: checkedonce
 
 
 [Files]
@@ -94,7 +94,7 @@ Source: "..\win\unicode release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Exclude
 
 [Icons]
 Name: "{commonprograms}\Audacity 1.3 Beta (Unicode)"; Filename: "{app}\audacity.exe"
-Name: "{userdesktop}\Audacity 1.3 Beta (Unicode)"; Filename: "{app}\audacity.exe"; MinVersion: 4,4; Tasks: desktopicon
+Name: "{userdesktop}\Audacity 1.3 Beta (Unicode)"; Filename: "{app}\audacity.exe"; Tasks: desktopicon
 
 [InstallDelete]
 ; Get rid of Audacity 1.0.0 stuff that's no longer used.
@@ -131,4 +131,8 @@ Root: HKCR; Subkey: "Audacity.Project\shell\open\command"; ValueType: string; Va
 
 [Run]
 Filename: "{app}\audacity.exe"; Description: "Launch Audacity"; Flags: nowait postinstall skipifsilent
+
+
+
+
 

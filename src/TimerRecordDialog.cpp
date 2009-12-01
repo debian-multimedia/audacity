@@ -44,7 +44,7 @@ enum { // control IDs
    ID_TIMETEXT_DURATION
 };
 
-const int kTimerInterval = 500; // every 500 ms => 2 updates per second   
+const int kTimerInterval = 50; // ms
 
 static double wxDateTime_to_AudacityTime(wxDateTime& dateTime)
 {
@@ -70,7 +70,7 @@ TimerRecordDialog::TimerRecordDialog(wxWindow* parent)
            wxDefaultSize, wxCAPTION)
 {
    m_DateTime_Start = wxDateTime::UNow(); 
-   m_TimeSpan_Duration = wxTimeSpan::Minutes(5); // default 5 minute duration
+   m_TimeSpan_Duration = wxTimeSpan::Minutes(60); // default 1 hour duration
    m_DateTime_End = m_DateTime_Start + m_TimeSpan_Duration;
 
    m_pDatePickerCtrl_Start = NULL;
@@ -84,9 +84,9 @@ TimerRecordDialog::TimerRecordDialog(wxWindow* parent)
    ShuttleGui S(this, eIsCreating);
    this->PopulateOrExchange(S);
 
-   // Set initial focus to "0" of "05m" in Duration TimeTextCtrl, instead of OK button (default).
+   // Set initial focus to "1" of "01h" in Duration TimeTextCtrl, instead of OK button (default).
    m_pTimeTextCtrl_Duration->SetFocus();
-   m_pTimeTextCtrl_Duration->SetFieldFocus(4);
+   m_pTimeTextCtrl_Duration->SetFieldFocus(3);
 
    m_timer.SetOwner(this, TIMER_ID);
    m_timer.Start(kTimerInterval); 
@@ -243,7 +243,7 @@ void TimerRecordDialog::OnOK(wxCommandEvent& event)
       this->OnTimer(dummyTimerEvent);
 
       // Loop for progress display during recording.
-      while (bIsRecording && updateResult == eProgressSuccess) 
+      while (bIsRecording && (updateResult == eProgressSuccess)) 
       {
          wxMilliSleep(kTimerInterval);
          updateResult = progress.Update();

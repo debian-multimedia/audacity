@@ -129,7 +129,7 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartHorizontalLay(wxALIGN_CENTRE, false);
       {
          S.Id(CategoryID);
-         mCat = S.AddChoice(_("Category:"),
+         mCat = S.AddChoice(_("C&ategory:"),
                             mCats[0],
                             &mCats);
       }
@@ -156,7 +156,7 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
          }
          S.AddWindow(mKey);
 
-         S.Id(SetButtonID).AddButton(_("Se&t"));
+         S.Id(SetButtonID).AddButton(_("Set"));
          S.Id(ClearButtonID).AddButton(_("Cl&ear"));
       }
       S.EndThreeColumn();

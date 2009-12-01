@@ -112,8 +112,8 @@ CommandManager.  It holds the callback for one command.
 CommandManager::CommandManager():
    mCurrentID(0),
    mHiddenID(0),
-   mCurrentMenu(NULL),
    mCurrentMenuName(COMMAND),
+   mCurrentMenu(NULL),
    mOpenMenu(NULL),
    mDefaultFlags(0),
    mDefaultMask(0)
@@ -619,7 +619,7 @@ int CommandManager::NextIdentifier(int ID)
 {
    ID++;
 
-   //Skip the reserved identifiers used by wxWindows
+   //Skip the reserved identifiers used by wxWidgets
    if((ID >= wxID_LOWEST) && (ID <= wxID_HIGHEST))
       ID = wxID_HIGHEST+1;
 

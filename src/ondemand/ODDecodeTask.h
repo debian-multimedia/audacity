@@ -40,13 +40,6 @@ class ODFileDecoder;
 class ODDecodeTask:public ODTask
 {
  public:
-   enum {
-      eODNone,
-      eODFLAC,
-      eODMP3,
-      eODOTHER
-   } ODDecodeTypeEnum;
-
    // Constructor / Destructor
 
    /// Constructs an ODTask
@@ -61,14 +54,14 @@ class ODDecodeTask:public ODTask
    virtual const wxChar* GetTip(){return _("Decoding Waveform");}
    
    ///Subclasses should override to return respective type.
-   virtual int GetDecodeType(){return eODNone;}
+   virtual unsigned int GetODType(){return eODNone;}
    
    ///Creates an ODFileDecoder that decodes a file of filetype the subclass handles.
-   virtual ODFileDecoder* CreateFileDecoder(const char* fileName)=0;
+   virtual ODFileDecoder* CreateFileDecoder(const wxString & fileName)=0;
    
    ///there could be the ODBlockFiles of several FLACs in one track (after copy and pasting)
    ///so we keep a list of decoders that keep track of the file names, etc, and check the blocks against them.
-   ///Blocks that have IsDataAvailable()==false are blockfiles to be decoded.  if BlockFile::GetDecodeType()==ODDecodeTask::GetDecodeType() then
+   ///Blocks that have IsDataAvailable()==false are blockfiles to be decoded.  if BlockFile::GetDecodeType()==ODDecodeTask::GetODType() then
    ///this decoder should handle it.  Decoders are accessible with the methods below.  These aren't thread-safe and should only
    ///be called from the decoding thread.
    virtual ODFileDecoder* GetOrCreateMatchingFileDecoder(ODDecodeBlockFile* blockFile);
@@ -109,25 +102,31 @@ public:
    ///This should handle unicode converted to UTF-8 on mac/linux, but OD TODO:check on windows
    ODFileDecoder(const wxString& fName);
    virtual ~ODFileDecoder();
-	
-	virtual bool Init(){return false;};
-   
-   ///Decodes the samples for this blockfile from the real file into a float buffer.  
-   ///This is file specific, so subclasses must implement this only.
-   ///the buffer was defined like
-   ///samplePtr sampleData = NewSamples(mLen, floatSample);
-   ///this->ReadData(sampleData, floatSample, 0, mLen);
-   ///This class should call ReadHeader() first, so it knows the length, and can prepare 
-   ///the file object if it needs to. 
-   virtual void Decode(samplePtr data, sampleFormat format, sampleCount start, sampleCount len)=0;
    
    ///Read header.  Subclasses must override.  Probably should save the info somewhere.
    ///Ideally called once per decoding of a file.  This complicates the task because 
    virtual bool ReadHeader()=0;  
+	virtual bool Init(){return ReadHeader();}
+   
+   ///Decodes the samples for this blockfile from the real file into a float buffer.  
+   ///This is file specific, so subclasses must implement this only.
+   ///the buffer should be created by the ODFileDecoder implementing this method.
+   ///It should set the format parameter so that the client code can deal with it. 
+   ///This class should call ReadHeader() first, so it knows the length, and can prepare 
+   ///the file object if it needs to. 
+   virtual void Decode(samplePtr & data, sampleFormat & format, sampleCount start, sampleCount len, unsigned int channel)=0;
    
    wxString GetFileName(){return mFName;}
 
+   bool IsInitialized();
+
 protected:   
+   ///Derived classes should call this after they have parsed the header.
+   void MarkInitialized();
+   
+   bool     mInited;
+   ODLock   mInitedLock;
+   
    wxString  mFName;
 	
 	unsigned int mSampleRate;

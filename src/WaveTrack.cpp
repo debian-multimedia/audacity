@@ -438,6 +438,25 @@ bool WaveTrack::Copy(double t0, double t1, Track **dest)
          }
       }
    }
+   
+   // AWD, Oct 2009: If the selection ends in whitespace, create a placeholder
+   // clip representing that whitespace
+   if (newTrack->GetEndTime() + 1.0 / newTrack->GetRate() < t1 - t0)
+   {
+      WaveClip *placeholder = new WaveClip(mDirManager,
+            newTrack->GetSampleFormat(), newTrack->GetRate());
+      placeholder->SetIsPlaceholder(true);
+      if ( ! placeholder->InsertSilence(
+               0, (t1 - t0) - newTrack->GetEndTime()) )
+      {
+         delete placeholder;
+      }
+      else
+      {
+         placeholder->Offset(newTrack->GetEndTime());
+         newTrack->mClips.Append(placeholder);
+      }
+   }
 
    *dest = newTrack;
 
@@ -518,7 +537,10 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
 
    // If duration is 0, then it's just a plain paste
    if (dur == 0.0) {
-      return Paste(t0, src, tracks, relativeLabels);
+      if (useHandlePaste)
+         return HandlePaste(t0, src);
+      else
+         return Paste(t0, src, tracks, relativeLabels);
    }
 
    // If provided time warper was NULL, use a default one that does nothing
@@ -540,16 +562,15 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
       double st;
 
       clip = ic->GetData();
-      st = LongSamplesToTime(TimeToLongSamples(clip->GetStartTime()));
 
-      // Remember split line
-      if (st >= t0 && st <= t1) {
+      // Remember clip boundaries as locations to split
+      st = LongSamplesToTime(TimeToLongSamples(clip->GetStartTime()));
+      if (st >= t0 && st <= t1 && splits.Index(st) == wxNOT_FOUND) {
          splits.Add(st);
       }
 
-      // Also remember the end of the clip
       st = LongSamplesToTime(TimeToLongSamples(clip->GetEndTime()));
-      if (st >= t0 && st <= t1) {
+      if (st >= t0 && st <= t1 && splits.Index(st) == wxNOT_FOUND) {
          splits.Add(st);
       }
 
@@ -686,6 +707,21 @@ bool WaveTrack::SplitDelete(double t0, double t1)
    return HandleClear(t0, t1, addCutLines, split);
 }
 
+WaveClip* WaveTrack::RemoveAndReturnClip(WaveClip* clip)
+{
+   wxWaveClipListNode* node = mClips.Find(clip);
+   WaveClip* clipReturn = node->GetData();
+   mClips.DeleteNode(node);
+   return clipReturn;
+}
+
+void WaveTrack::AddClip(WaveClip* clip)
+{
+   // Uncomment the following line after we correct the problem of zero-length clips
+   //if (CanInsertClip(clip))
+      mClips.Append(clip);
+}
+
 bool WaveTrack::HandleGroupClear(double t0, double t1, bool addCutLines, bool split, TrackList* tracks)
 {
    // get tracks
@@ -737,9 +773,8 @@ bool WaveTrack::HandleClear(double t0, double t1,
       {
          WaveClip *clip = it->GetData();
          
-         if (t1 > clip->GetStartTime() && t0 < clip->GetEndTime() &&
-             (t0 + 1.0/mRate < clip->GetStartTime() ||
-              t1 - 1.0/mRate > clip->GetEndTime()))
+         if (!clip->BeforeClip(t1) && !clip->AfterClip(t0) &&
+               (clip->BeforeClip(t0) || clip->AfterClip(t1)))
          {
             addCutLines = false;
             break;
@@ -751,12 +786,12 @@ bool WaveTrack::HandleClear(double t0, double t1,
    {
       WaveClip *clip = it->GetData();
 
-      if (t0 <= clip->GetStartTime() && t1 >= clip->GetEndTime())
+      if (clip->BeforeClip(t0) && clip->AfterClip(t1))
       {
          // Whole clip must be deleted - remember this
          clipsToDelete.Append(clip);
       } else
-      if (t1 > clip->GetStartTime() && t0 < clip->GetEndTime())
+      if (!clip->BeforeClip(t1) && !clip->AfterClip(t0))
       {
          // Clip data is affected by command
          if (addCutLines)
@@ -768,12 +803,12 @@ bool WaveTrack::HandleClear(double t0, double t1,
             if (split) {
                // Three cases:
 
-               if (t0 <= clip->GetStartTime()) {
+               if (clip->BeforeClip(t0)) {
                   // Delete from the left edge
                   clip->Clear(clip->GetStartTime(), t1);
                   clip->Offset(t1-clip->GetStartTime());
                } else
-               if (t1 >= clip->GetEndTime()) {
+               if (clip->AfterClip(t1)) {
                   // Delete to right edge
                   clip->Clear(t0, clip->GetEndTime());
                } else
@@ -793,7 +828,7 @@ bool WaveTrack::HandleClear(double t0, double t1,
                   clipsToDelete.Append(clip);
                }
             }
-            else {
+            else { // (We are not doing a split cut)
                /* We are going to delete part of the clip here. The clip may
                 * have envelope points, and we need to ensure that the envelope
                 * outside of the cleared region is not affected. This means
@@ -803,13 +838,13 @@ bool WaveTrack::HandleClear(double t0, double t1,
                // clip->Clear keeps points < t0 and >= t1 via Envelope::CollapseRegion
                if (clip->GetEnvelope()->GetNumberOfPoints() > 0) {   // don't insert env pts if none exist
                   double val;
-                  if (t0 > clip->GetStartTime())
-                     {  // start of clip is before start of region to clear
+                  if (clip->WithinClip(t0))
+                     {  // start of region within clip
                      val = clip->GetEnvelope()->GetValue(t0);
                      clip->GetEnvelope()->Insert(t0 - clip->GetOffset() - 1.0/clip->GetRate(), val);
                      }
-                  if (t1 < clip->GetEndTime())
-                     {  // end of clip is after end of region
+                  if (clip->WithinClip(t1))
+                     {  // end of region within clip
                      val = clip->GetEnvelope()->GetValue(t1);
                      clip->GetEnvelope()->Insert(t1 - clip->GetOffset(), val);
                      }
@@ -863,38 +898,74 @@ bool WaveTrack::HandleGroupPaste(double t0, Track *src, TrackList* tracks, bool 
       // the present track is in a project with groups but doesn't belong to any of them
       return HandlePaste(t0, src);
 
+   // False return from this function causes its changes to not be pushed to
+   // the undo stack.  So we paste into this track first, so any failure
+   // (usually from "clips can't move" mode) comes before other changes.
+   // Failures to paste to the group tracks should not cause this function to
+   // return false; the result might be OK with the user, and if not he can
+   // easily undo it
+   if (!HandlePaste(t0, src))
+   {
+      return false;
+   }
+
    for( ; t; t = it.Next() ) {
       if (t->GetKind() == Track::Wave) {
+         WaveTrack *wt = (WaveTrack *)t;
          if (t==this) {
-            //paste in the track
-            if ( !( ((WaveTrack *)t)->HandlePaste(t0, src)) ) return false;
+            // This track has already been pasted; if it's a stereo track skip
+            // over the other channel as well.
             if (t->GetLinked()) t=it.Next();
          }
          else {
             if (! (t->GetSelected()) ) {
                if ( sel_len > length )
-                  // if selection is bigger than the content to add then we need to clear the extra length in the group tracks
-                  ((WaveTrack*)t)->HandleClear(t0+length, t0+sel_len, false, false);
+                  // if selection is bigger than the content to add then we
+                  // need to clear the extra length in the group tracks
+                  wt->HandleClear(t0+length, t0+sel_len, false, false);
                else if (sel_len < length) {               
-                  // if selection is smaller than the content to add then we need to add extra silence in the group tracks
-                  TrackFactory *factory = p->GetTrackFactory();
-                  WaveTrack *tmp = factory->NewWaveTrack( ((WaveTrack*)t)->GetSampleFormat(), ((WaveTrack*)t)->GetRate());
-                  tmp->InsertSilence(0.0, length-sel_len);
-                  tmp->Flush();
-                  if ( !( ((WaveTrack *)t)->HandlePaste(t0+sel_len, tmp)) ) return false;
+                  // if selection is smaller than the content to add then we
+                  // need to add extra space in the group tracks. If the track
+                  // is empty at this point insert whitespace; otherwise,
+                  // silence
+                  if (wt->IsEmpty(t0+sel_len, t0+sel_len))
+                  {
+                     // Have to check if clips can move in this case
+                     bool clipsCanMove = true;
+                     gPrefs->Read(wxT("/GUI/EditClipCanMove"), &clipsCanMove);
+                     if (clipsCanMove)
+                     {
+                        Track *tmp = NULL;
+                        wt->Cut(t0 + sel_len,
+                              wt->GetEndTime()+1.0/wt->GetRate(), &tmp, false);
+                        wt->HandlePaste(t0 + length, tmp);
+                        delete tmp;
+                     }
+                  }
+                  else
+                  {
+                     TrackFactory *factory = p->GetTrackFactory();
+                     WaveTrack *tmp = factory->NewWaveTrack( wt->GetSampleFormat(), wt->GetRate());
+                     tmp->InsertSilence(0.0, length-sel_len);
+                     tmp->Flush();
+                     wt->HandlePaste(t0+sel_len, tmp);
+                  }
                }
             }
          }
       }
       else if (t->GetKind() == Track::Label) {
          LabelTrack *lt = (LabelTrack *)t;
-         if (relativeLabels && (sel_len != 0.0))
-            lt->ScaleLabels(info->sel0, info->sel1, length/sel_len);
-         else {
-            if ((length - sel_len) > 0.0)
-               lt->ShiftLabelsOnInsert(length-sel_len, t0);
-            else if ((length - sel_len) < 0.0)
-               lt->ShiftLabelsOnClear(info->sel0+length, info->sel1);
+         if (!t->GetSelected())
+         {
+            if (relativeLabels && (sel_len != 0.0))
+               lt->ScaleLabels(info->sel0, info->sel1, length/sel_len);
+            else {
+               if ((length - sel_len) > 0.0)
+                  lt->ShiftLabelsOnInsert(length-sel_len, t0);
+               else if ((length - sel_len) < 0.0)
+                  lt->ShiftLabelsOnClear(info->sel0+length, info->sel1);
+            }
          }
       }
    }
@@ -933,17 +1004,21 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
    //   the only behaviour which is different to what was done before, but it
    //   shouldn't confuse users too much.
    //
-   // - If multiple clips should be pasted, these are always pasted as single
-   //   clips, and the current clip is splitted, when necessary. This may seem
-   //   strange at first, but it probably is better than trying to auto-merge
-   //   anything. The user can still merge the clips by hand (which should be
-   //   a simple command reachable by a hotkey or single mouse click).
+   // - If multiple clips should be pasted, or a single clip that does not fill
+   // the duration of the pasted track, these are always pasted as single
+   // clips, and the current clip is splitted, when necessary. This may seem
+   // strange at first, but it probably is better than trying to auto-merge
+   // anything. The user can still merge the clips by hand (which should be a
+   // simple command reachable by a hotkey or single mouse click).
    //
 
    if (other->GetNumClips() == 0)
       return false;
 
    //printf("paste: we have at least one clip\n");
+   
+   bool singleClipMode = (other->GetNumClips() == 1 &&
+         other->GetStartTime() == 0.0);
 
    double insertDuration = other->GetEndTime();
    WaveClipList::compatibility_iterator it;
@@ -952,7 +1027,7 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
    
    // Make room for the pasted data
    if (editClipCanMove) {
-      if (other->GetNumClips() > 1) {
+      if (!singleClipMode) {
          // We need to insert multiple clips, so split the current clip and
          // move everything to the right, then try to paste again
          if (!IsEmpty(t0, GetEndTime())) {
@@ -974,7 +1049,7 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
       }
    }
 
-   if (other->GetNumClips() == 1)
+   if (singleClipMode)
    {
       // Single clip mode
       // printf("paste: checking for single clip mode!\n");
@@ -985,14 +1060,9 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
       {
          WaveClip *clip = it->GetData();
 
-         // The 1.0/mRate is the time for one sample - kind of a fudge factor,
-         // because an overlap of less than a sample should not trigger
-         // traditional behaviour.
-
          if (editClipCanMove)
          {
-            if (t0+src->GetEndTime()-1.0/mRate > clip->GetStartTime() &&
-                t0 < clip->GetEndTime() - 1.0/mRate)
+            if (clip->WithinClip(t0))
             {
                //printf("t0=%.6f: inside clip is %.6f ... %.6f\n",
                //       t0, clip->GetStartTime(), clip->GetEndTime());
@@ -1001,7 +1071,9 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
             }
          } else
          {
-            if (t0 >= clip->GetStartTime() && t0 < clip->GetEndTime())
+            // If clips are immovable we also allow prepending to clips
+            if (clip->WithinClip(t0) ||
+                  TimeToLongSamples(t0) == clip->GetStartSample())
             {
                insideClip = clip;
                break;
@@ -1054,11 +1126,15 @@ bool WaveTrack::HandlePaste(double t0, Track *src)
    {
       WaveClip* clip = it->GetData();
 
-      WaveClip* newClip = new WaveClip(*clip, mDirManager);
-      newClip->Resample(mRate);
-      newClip->Offset(t0);
-      newClip->MarkChanged();
-      mClips.Append(newClip);
+      // AWD Oct. 2009: Don't actually paste in placeholder clips
+      if (!clip->GetIsPlaceholder())
+      {
+         WaveClip* newClip = new WaveClip(*clip, mDirManager);
+         newClip->Resample(mRate);
+         newClip->Offset(t0);
+         newClip->MarkChanged();
+         mClips.Append(newClip);
+      }
    }
    return true;
 }
@@ -1287,6 +1363,26 @@ bool WaveTrack::AppendAlias(wxString fName, sampleCount start,
 {
    return GetLastOrCreateClip()->AppendAlias(fName, start, len, channel,useOD);
 }
+
+
+bool WaveTrack::AppendCoded(wxString fName, sampleCount start,
+                            sampleCount len, int channel, int decodeType)
+{
+   return GetLastOrCreateClip()->AppendCoded(fName, start, len, channel, decodeType);
+}
+
+///gets an int with OD flags so that we can determine which ODTasks should be run on this track after save/open, etc.
+unsigned int WaveTrack::GetODFlags()
+{
+   unsigned int ret = 0;
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   {
+      WaveClip* clip = it->GetData();
+      ret = ret | clip->GetSequence()->GetODFlags();
+   }
+   return ret;
+}
+
 
 sampleCount WaveTrack::GetBestBlockSize(sampleCount s)
 {
@@ -1940,14 +2036,15 @@ bool WaveTrack::SplitAt(double t)
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
    {
       WaveClip* c = it->GetData();
-      if (t > c->GetStartTime() && t < c->GetEndTime())
+
+      if (c->WithinClip(t))
       {
          double val;
          t = LongSamplesToTime(TimeToLongSamples(t)); // put t on a sample
          val = c->GetEnvelope()->GetValue(t);
          //make two envelope points to preserve the value.  
          //handle the case where we split on the 1st sample (without this we hit an assert)
-         if(t != c->GetOffset())
+         if(t - 1.0/c->GetRate() >= c->GetOffset())
             c->GetEnvelope()->Insert(t - c->GetOffset() - 1.0/c->GetRate(), val);  // frame end points
          c->GetEnvelope()->Insert(t - c->GetOffset(), val);
          WaveClip* newClip = new WaveClip(*c, mDirManager);

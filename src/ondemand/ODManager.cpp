@@ -20,6 +20,7 @@
 
 ODLock gODInitedMutex;
 bool gManagerCreated=false;
+bool gPause=false; //to be loaded in and used with Pause/Resume before ODMan init.
 /// a flag that is set if we have loaded some OD blockfiles from PCM.  
 bool sHasLoadedOD=false;
 
@@ -31,7 +32,7 @@ ODLock sLibSndFileMutex;
 DEFINE_EVENT_TYPE(EVT_ODTASK_UPDATE)
 
 //OD files are "greater than" non OD files, to produce a sort that has
-//OD Files at the end.
+//OD Files at the end
 int CompareODFileName(const wxString& first, const wxString& second)
 {
    bool firstIsOD = false;
@@ -94,7 +95,17 @@ int CompareODFirstFileName(const wxString& first, const wxString& second)
     else if(secondIsOD&&!firstIsOD)
       return 1;
    
+   //if they are both OD-files, or both non-OD-files, use a normal string comparison
+   //to get alphabetical sorting
    return first.Cmp(second);
+}
+
+//using this with wxStringArray::Sort will give you a list that 
+//is alphabetical, without depending on case.  If you use the
+//default sort, you will get strings with 'R' before 'a', because it is in caps.
+int CompareNoCaseFileName(const wxString& first, const wxString& second)
+{
+   return first.CmpNoCase(second);
 }
 
 void ODManager::LockLibSndFileMutex()
@@ -113,6 +124,10 @@ ODManager::ODManager()
 {
    mTerminate = false;
    mTerminated = false;
+   mPause= gPause;
+   
+   //must set up the queue condition
+   mQueueNotEmptyCond = new ODCondition(&mQueueNotEmptyCondLock);
 }
 
 //private constructor - delete with static method Quit()
@@ -122,7 +137,8 @@ ODManager::~ODManager()
    //nothing else should be running on OD related threads at this point, so we don't lock.
    for(unsigned int i=0;i<mQueues.size();i++)
       delete mQueues[i];
-      
+
+   delete mQueueNotEmptyCond;
 }
 
 
@@ -133,6 +149,33 @@ void ODManager::AddTask(ODTask* task)
    mTasksMutex.Lock();
    mTasks.push_back(task);
    mTasksMutex.Unlock();
+   //signal the queue not empty condition.   
+   bool paused;
+   
+   mPauseLock.Lock();
+   paused=mPause;
+   mPauseLock.Unlock();
+
+   mQueueNotEmptyCondLock.Lock();
+   //don't signal if we are paused since if we wake up the loop it will start processing other tasks while paused
+   if(!paused)
+      mQueueNotEmptyCond->Signal();
+   mQueueNotEmptyCondLock.Unlock();
+
+}
+
+void ODManager::SignalTaskQueueLoop()
+{
+   bool paused;
+   
+   mPauseLock.Lock();
+   paused=mPause;
+   mPauseLock.Unlock();
+   mQueueNotEmptyCondLock.Lock();
+   //don't signal if we are paused
+   if(!paused)
+      mQueueNotEmptyCond->Signal();
+   mQueueNotEmptyCondLock.Unlock();
 }
 
 ///removes a task from the active task queue
@@ -250,6 +293,8 @@ void ODManager::Start()
 {   
    ODTaskThread* thread;
    bool tasksInArray;
+   bool paused;
+   int  numQueues=0;
    
    mNeedsDraw=0;
 
@@ -273,7 +318,11 @@ void ODManager::Start()
       mTasksMutex.Unlock();
       mCurrentThreadsMutex.Lock();
       
-      while( tasksInArray&& mCurrentThreads < mMaxThreads)
+      mPauseLock.Lock();
+      paused=mPause;
+      mPauseLock.Unlock();
+      
+      while(!paused && tasksInArray&& mCurrentThreads < mMaxThreads)
       {
          mCurrentThreads++;
          mCurrentThreadsMutex.Unlock();
@@ -301,18 +350,23 @@ void ODManager::Start()
       }
 
       mCurrentThreadsMutex.Unlock();
-      wxThread::Sleep(200);
-//wxSleep can't be called from non-main thread.
-//      ::wxMilliSleep(250);
+      //use a conditon variable to block here instead of a sleep.  
+
+      mQueueNotEmptyCondLock.Lock();
+      if(tasksInArray<=0 || paused)
+         mQueueNotEmptyCond->Wait();
+      mQueueNotEmptyCondLock.Unlock();  
       
-      //if there is some ODTask running, then there will be something in the queue.  If so then redraw to show progress
-      
+      //if there is some ODTask running, then there will be something in the queue.  If so then redraw to show progress      
       mQueuesMutex.Lock();
       mNeedsDraw += mQueues.size()>0?1:0;
+      numQueues=mQueues.size();
       mQueuesMutex.Unlock();
 
       //redraw the current project only (ODTasks will send a redraw on complete even if the projects are in the background)
-      if(mNeedsDraw > 11)
+      //we don't want to redraw at a faster rate when we have more queues because
+      //this means the CPU is already taxed.  This if statement normalizes the rate
+      if(mNeedsDraw>numQueues && numQueues)
       {
          mNeedsDraw=0;
          wxCommandEvent event( EVT_ODTASK_UPDATE );
@@ -335,6 +389,30 @@ void ODManager::Start()
 
 }
 
+void ODManager::Pause(bool pause)
+{
+   if(IsInstanceCreated())
+   {
+      ODManager::Instance()->mPauseLock.Lock();
+      ODManager::Instance()->mPause = pause;
+      ODManager::Instance()->mPauseLock.Unlock();
+      
+      //we should check the queue again.
+      ODManager::Instance()->mQueueNotEmptyCondLock.Lock();
+      ODManager::Instance()->mQueueNotEmptyCond->Signal();
+      ODManager::Instance()->mQueueNotEmptyCondLock.Unlock();
+   }
+   else
+   {
+      gPause=pause;
+   }
+}
+
+void ODManager::Resume()
+{
+   Pause(false);
+}
+
 void ODManager::Quit()
 {
    if(IsInstanceCreated())
@@ -348,6 +426,12 @@ void ODManager::Quit()
       {
          ODManager::Instance()->mTerminatedMutex.Unlock();
          wxThread::Sleep(200);
+         
+         //signal the queue not empty condition since the ODMan thread will wait on the queue condition
+         ODManager::Instance()->mQueueNotEmptyCondLock.Lock();
+         ODManager::Instance()->mQueueNotEmptyCond->Signal();
+         ODManager::Instance()->mQueueNotEmptyCondLock.Unlock();
+
          ODManager::Instance()->mTerminatedMutex.Lock();
       }
       ODManager::Instance()->mTerminatedMutex.Unlock();

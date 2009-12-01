@@ -27,6 +27,9 @@
 #ifndef __EXPERIMENTAL__
 #define __EXPERIMENTAL__
 
+//uncomment the next line to enable the feature to link audio tracks to a label track
+//#define EXPERIMENTAL_LINKING
+
 //Uncomment the next #define to enable experimental features.
 #define EXPERIMENTAL_FEATURES
 
@@ -75,6 +78,12 @@
 // Allow keyboard seeking before initial playback position
 //#define EXPERIMENTAL_SEEK_BEHIND_CURSOR
 
+// Michael Chinen, 08.Oct 2009
+// use on-demand importing for FLAC.  If you don't want to recompile the whole src tree
+// just go to the top of ImportFlac.cpp and stick this define there, since currently it
+// is the only one that uses it.
+//#define EXPERIMENTAL_OD_FLAC
+
 // Philip Van Baren 01 July 2009
 // Replace RealFFT() and PowerSpectrum function to use (faster) RealFFTf function
 #define EXPERIMENTAL_USE_REALFFTF
@@ -112,7 +121,7 @@
 
    // A long term plan is to use dso's and dlls for Audacity extensions
    // These are 'WX' plug ins that manage their own displays using
-   // wxWindows.
+   // wxWidgets.
    //#define EXPERIMENTAL_WX_PLUG_INS
 #endif
 

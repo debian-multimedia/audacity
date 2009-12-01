@@ -308,6 +308,7 @@ WaveClip::WaveClip(DirManager *projDirManager, sampleFormat format, int rate)
    mAppendBuffer = NULL;
    mAppendBufferLen = 0;
    mDirty = 0;
+   mIsPlaceholder = false;
 }
 
 WaveClip::WaveClip(WaveClip& orig, DirManager *projDirManager)
@@ -339,6 +340,7 @@ WaveClip::WaveClip(WaveClip& orig, DirManager *projDirManager)
    mAppendBuffer = NULL;
    mAppendBufferLen = 0;
    mDirty = 0;
+   mIsPlaceholder = orig.GetIsPlaceholder();
 }
 
 WaveClip::~WaveClip()
@@ -407,6 +409,24 @@ sampleCount WaveClip::GetStartSample() const
 sampleCount WaveClip::GetEndSample() const
 {
    return GetStartSample() + mSequence->GetNumSamples();
+}
+
+bool WaveClip::WithinClip(double t) const
+{
+   sampleCount ts = (sampleCount)floor(t * mRate + 0.5);
+   return ts > GetStartSample() && ts < GetEndSample() + mAppendBufferLen;
+}
+
+bool WaveClip::BeforeClip(double t) const
+{
+   sampleCount ts = (sampleCount)floor(t * mRate + 0.5);
+   return ts <= GetStartSample();
+}
+
+bool WaveClip::AfterClip(double t) const
+{
+   sampleCount ts = (sampleCount)floor(t * mRate + 0.5);
+   return ts >= GetEndSample() + mAppendBufferLen;
 }
 
 ///Delete the wave cache - force redraw.  Thread-safe
@@ -1074,6 +1094,18 @@ bool WaveClip::AppendAlias(wxString fName, sampleCount start,
    return result;
 }
 
+bool WaveClip::AppendCoded(wxString fName, sampleCount start,
+                            sampleCount len, int channel, int decodeType)
+{
+   bool result = mSequence->AppendCoded(fName, start, len, channel, decodeType);
+   if (result)
+   {
+      UpdateEnvelopeTrackLen();
+      MarkChanged();
+   }
+   return result;
+}
+
 bool WaveClip::Flush()
 {
    //wxLogDebug(wxT("Flush!"));
@@ -1475,6 +1507,13 @@ void WaveClip::Unlock()
    GetSequence()->Unlock();
    for (WaveClipList::compatibility_iterator it = mCutLines.GetFirst(); it; it=it->GetNext())
       it->GetData()->Unlock();
+}
+
+void WaveClip::SetRate(int rate)
+{
+   mRate = rate;
+   UpdateEnvelopeTrackLen();
+   MarkChanged();
 }
 
 bool WaveClip::Resample(int rate, ProgressDialog *progress)

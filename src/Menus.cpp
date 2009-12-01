@@ -71,7 +71,6 @@ simplifies construction of menu items.
 #endif
 #include "Internat.h"
 #include "FileFormats.h"
-#include "FreqWindow.h"
 #include "LoadModules.h"	
 #include "Prefs.h"
 #include "Printing.h"
@@ -110,6 +109,8 @@ simplifies construction of menu items.
 #include "FileDialog.h"
 #include "SplashDialog.h"
 #include "widgets/ErrorDialog.h"
+
+#include "CaptureEvents.h"
 
 #ifdef EXPERIMENTAL_SCOREALIGN
 #include "audioreader.h"
@@ -203,12 +204,12 @@ void AudacityProject::CreateMenusAndCommands()
    c->SetDefaultFlags(AudioIONotBusyFlag, AudioIONotBusyFlag);
 
    c->AddItem(wxT("New"), _("&New"), FN(OnNew), wxT("Ctrl+N"),
-              AlwaysEnabledFlag,
-              AlwaysEnabledFlag);
+              AudioIONotBusyFlag,
+              AudioIONotBusyFlag);
 
    c->AddItem(wxT("Open"), _("&Open..."), FN(OnOpen), wxT("Ctrl+O"),
-              AlwaysEnabledFlag,
-              AlwaysEnabledFlag);
+              AudioIONotBusyFlag,
+              AudioIONotBusyFlag);
 
    /////////////////////////////////////////////////////////////////////////////
 
@@ -346,6 +347,8 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddItem(wxT("Redo"), _("&Redo"), FN(OnRedo), key,
               AudioIONotBusyFlag | RedoAvailableFlag,
               AudioIONotBusyFlag | RedoAvailableFlag);
+              
+   ModifyUndoMenus();
 
    c->AddSeparator();
 
@@ -359,6 +362,8 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddItem(wxT("Paste"), _("&Paste"), FN(OnPaste), wxT("Ctrl+V"),
               AudioIONotBusyFlag | ClipboardFlag,
               AudioIONotBusyFlag | ClipboardFlag);
+   c->AddItem(wxT("PasteNewLabel"), _("Paste Te&xt to New Label"), FN(OnPasteNewLabel), wxT("Ctrl+Alt+V"),
+              AudioIONotBusyFlag, AudioIONotBusyFlag);
    c->AddItem(wxT("Trim"), _("Tri&m"), FN(OnTrim), wxT("Ctrl+T"));
 
    c->AddSeparator();
@@ -394,21 +399,28 @@ void AudacityProject::CreateMenusAndCommands()
    /////////////////////////////////////////////////////////////////////////////
 
    c->BeginSubMenu(_("La&beled Regions"));
-   c->SetDefaultFlags(LabelsSelectedFlag, LabelsSelectedFlag);
+   c->SetDefaultFlags(AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag,
+                      AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag);
 
-   c->AddItem(wxT("CutLabels"), _("&Cut"), FN(OnCutLabels), wxT("Alt+X"));
+   c->AddItem(wxT("CutLabels"), _("&Cut"), FN(OnCutLabels), wxT("Alt+X"),
+              AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | LinkingDisabledFlag,
+              AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | LinkingDisabledFlag);
    c->AddItem(wxT("SplitCutLabels"), _("&Split Cut"), FN(OnSplitCutLabels), wxT("Shift+Alt+X"));
    c->AddItem(wxT("CopyLabels"), _("Co&py"), FN(OnCopyLabels), wxT("Shift+Alt+C"));
 
    c->AddSeparator();
 
-   c->AddItem(wxT("DeleteLabels"), _("&Delete"), FN(OnDeleteLabels), wxT("Alt+K"));
+   c->AddItem(wxT("DeleteLabels"), _("&Delete"), FN(OnDeleteLabels), wxT("Alt+K"),
+              AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | LinkingDisabledFlag,
+              AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | LinkingDisabledFlag);
    c->AddItem(wxT("SplitDeleteLabels"), _("Sp&lit Delete"), FN(OnSplitDeleteLabels), wxT("Shift+Alt+K"));
-   c->AddItem(wxT("SilenceLabels"), _("Sile&nce"), FN(OnSilenceLabels), wxT("Alt+L"));
+   c->AddItem(wxT("SilenceLabels"), _("Silence &Audio"), FN(OnSilenceLabels), wxT("Alt+L"));
 
    c->AddSeparator();
 
-   c->AddItem(wxT("SplitLabels"), _("Spli&t"), FN(OnSplitLabels), wxT("Alt+I"));
+   c->AddItem(wxT("SplitLabels"), _("Spli&t"), FN(OnSplitLabels), wxT("Alt+I"),
+              AudioIONotBusyFlag | LabelsSelectedFlag,
+              AudioIONotBusyFlag | LabelsSelectedFlag);
    c->AddItem(wxT("JoinLabels"), _("&Join"),  FN(OnJoinLabels), wxT("Alt+J"));
    c->AddItem(wxT("DisjoinLabels"), _("Detac&h at Silences"), FN(OnDisjoinLabels), wxT("Shift+Alt+J"));
 
@@ -699,9 +711,11 @@ void AudacityProject::CreateMenusAndCommands()
 
       c->AddSeparator();
 
+#ifdef EXPERIMENTAL_LINKING
       c->AddCheck(wxT("StickyLabels"), _("&Link Audio and Label Tracks"), FN(OnStickyLabel), 0);
 
       c->AddSeparator();
+#endif
 
       c->AddItem(wxT("AddLabel"), _("Add Label At &Selection"), FN(OnAddLabel), wxT("Ctrl+B"),
                  AlwaysEnabledFlag,
@@ -882,7 +896,7 @@ void AudacityProject::CreateMenusAndCommands()
    if (!mCleanSpeechMode) {
 
       //////////////////////////////////////////////////////////////////////////
-      // Effect Menu
+      // Analyze Menu
       //////////////////////////////////////////////////////////////////////////
 
       c->BeginMenu(_("&Analyze"));
@@ -1226,7 +1240,7 @@ void AudacityProject::ModifyUndoMenus()
    }
    else {
       mCommandManager.Modify(wxT("Undo"), 
-                             wxString::Format(_("Can't Undo")));
+                             wxString::Format(_("&Undo")));
       // LL: See above
       mCommandManager.Enable(wxT("Undo"), true);
       mCommandManager.Enable(wxT("Undo"), false);
@@ -1241,7 +1255,7 @@ void AudacityProject::ModifyUndoMenus()
    }
    else {
       mCommandManager.Modify(wxT("Redo"),
-                             wxString::Format(_("Can't Redo")));
+                             wxString::Format(_("&Redo")));
       mCommandManager.Enable(wxT("Redo"), false);
    }
 }
@@ -1359,20 +1373,6 @@ wxUint32 AudacityProject::GetUpdateFlags()
          if (lt->IsTextSelected()) {
             flags |= CutCopyAvailableFlag;
          }
-
-         // See AudacityProject::OnUpdateUI() for an explanation
-         if (mInIdle) {
-            if (lt->IsTextClipSupported()) {
-               flags |= TextClipFlag;
-               mTextClipFlag = TextClipFlag;
-            }
-            else {
-               mTextClipFlag = 0;
-            }
-         }
-         else {
-            flags |= mTextClipFlag;
-         }
       }
       else if (t->GetKind() == Track::Wave) {
          flags |= WaveTracksExistFlag;
@@ -1422,6 +1422,9 @@ wxUint32 AudacityProject::GetUpdateFlags()
    if (GetZoom() > gMinZoom && (flags & TracksExistFlag))
       flags |= ZoomOutAvailableFlag;
 
+   if ((flags & LabelTracksExistFlag) && LabelTrack::IsTextClipSupported())
+      flags |= TextClipFlag;
+
    flags |= GetFocusedFrame();
 
    if (IsPlayRegionLocked())
@@ -1439,6 +1442,9 @@ wxUint32 AudacityProject::GetUpdateFlags()
 
    if (wxGetApp().GetRecentFiles()->GetCount() > 0)
       flags |= HaveRecentFiles;
+
+   if (!IsSticky())
+      flags |= LinkingDisabledFlag;
 
    return flags;
 }
@@ -2943,7 +2949,7 @@ void AudacityProject::OnRedo()
 
 void AudacityProject::OnCut()
 {
-   TrackListIterator iter(mTracks);
+   TrackAndGroupIterator iter(mTracks);
    Track *n = iter.First();
    Track *dest;
 
@@ -2962,7 +2968,7 @@ void AudacityProject::OnCut()
       }
       n = iter.Next();
    }
-   
+
    ClearClipboard();
    n = iter.First();
    while (n) {
@@ -3015,7 +3021,12 @@ void AudacityProject::OnCut()
             break;
          }
       }
-      n = iter.Next();
+      // Selected wave and label tracks may need group iteration
+      if (IsSticky() && n->GetSelected() &&
+            (n->GetKind() == Track::Wave || n->GetKind() == Track::Label))
+         n = iter.NextGroup();
+      else
+         n = iter.Next();
    }
 
    msClipLen = (mViewInfo.sel1 - mViewInfo.sel0);
@@ -3045,7 +3056,8 @@ void AudacityProject::OnSplitCut()
             ((WaveTrack*)n)->SplitCut(mViewInfo.sel0, mViewInfo.sel1, &dest);
          } else
          {
-            n->Cut(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            n->Copy(mViewInfo.sel0, mViewInfo.sel1, &dest);
+            n->Silence(mViewInfo.sel0, mViewInfo.sel1);
          }
          if (dest) {
             dest->SetChannel(n->GetChannel());
@@ -3104,23 +3116,20 @@ void AudacityProject::OnCopy()
 
    msClipLen = (mViewInfo.sel1 - mViewInfo.sel0);
    msClipProject = this;
-   
+
    //Make sure the menus/toolbar states get updated
    mTrackPanel->Refresh(false);
 }
 
 void AudacityProject::OnPaste()
 {
-   // Handle Label tracks first
+   // Handle text pastes (into active labels) first
    TrackListOfKindIterator iterlt(Track::Label, mTracks);
 
    LabelTrack *lt = (LabelTrack *) iterlt.First();
    if (lt) {
 
-      // Look for selected label tracks and active labels
-      bool selected = false;
       while (lt) {
-
          // Does this track have an active label?
          if (lt->IsSelected()) {
 
@@ -3140,63 +3149,8 @@ void AudacityProject::OnPaste()
             }
          }
 
-         // Remember that we found a selected one
-         if (lt->GetSelected()) {
-            selected = true;
-         }
-
          // Find the next one
          lt = (LabelTrack *) iterlt.Next();
-      }
-
-      // Were any Label tracks without active labels selected?
-      if (selected) {
-         LabelTrack *plt = NULL;
-         bool pasted = false;
-
-         // Paste new labels into all selected label tracks
-         lt = (LabelTrack *) iterlt.First();
-         while (lt) {
-            if (lt->GetSelected()) {
-               // Ensure that the last pasted label gets unselected.  This will
-               // leave only one "active" label when we're done.
-               if (plt) {
-                  plt->Unselect();
-               }
-
-               // Add a new label
-               lt->AddLabel(mViewInfo.sel0, mViewInfo.sel1);
-
-               // Now paste the text into it
-               if (lt->PasteSelectedText(mViewInfo.sel0, mViewInfo.sel1)) {
-
-                  // Remember that we pasted something
-                  pasted = true;
-
-                  // Make sure caret is in view
-                  int x;
-                  if (lt->CalcCursorX(this, &x)) {
-                     mTrackPanel->ScrollIntoView(x);
-                  }
-               }
-
-               // Remember this track so we can unselect the new label if its
-               // not the last one pasted
-               plt = lt;
-            }
-
-            // Find the next one
-            lt = (LabelTrack *) iterlt.Next();
-         }
-
-         // We're done if we pasted into any tracks
-         if (pasted) {
-            PushState(_("Pasted from the clipboard"), _("Paste"));
-
-            // Redraw everyting (is that necessary???) and bail
-            RedrawProject();
-            return;
-         }
       }
    }
 
@@ -3208,7 +3162,6 @@ void AudacityProject::OnPaste()
 
    int numSelected = 0;
 
-   // Pastes text into the first label track or counts selected wave tracks
    while (countTrack) {
       if (countTrack->GetSelected()) {
          numSelected++;
@@ -3220,7 +3173,7 @@ void AudacityProject::OnPaste()
    if (numSelected == 0) {
       TrackListIterator clipIter(msClipboard);
       Track *c = clipIter.First();
-      if(c == NULL)  // if there is no audio to paste...
+      if(c == NULL)  // if there is nothing to paste
          return;
       Track *n;
       Track *f = NULL;
@@ -3284,8 +3237,6 @@ void AudacityProject::OnPaste()
 
    // Otherwise, paste into the selected tracks.
 
-   // This old logic is no longer necessary now that we have WaveClips:
-   //
    double t0 = mViewInfo.sel0;
    double t1 = mViewInfo.sel1;
 
@@ -3294,7 +3245,7 @@ void AudacityProject::OnPaste()
 
    Track *n = iter.First();
    Track *c = clipIter.First();
-   if(c == NULL)    // if there is no audio to paste...
+   if (c == NULL)
       return;
    Track *f = NULL;
    Track *tmpSrc = NULL;
@@ -3304,7 +3255,10 @@ void AudacityProject::OnPaste()
    bool pastedSomething = false;
    bool trackTypeMismatch = false;
    bool advanceClipboard = true;
-   double srcLength = c->GetEndTime();
+
+   // Keeps track of whether n would be the first WaveTrack in its group to
+   // receive data from the paste.
+   bool firstInGroup = true;
 
    while (n && c) {
       if (n->GetSelected()) {
@@ -3331,7 +3285,11 @@ void AudacityProject::OnPaste()
          if (!c){
             c = tmpC;
             while (n && (c->GetKind() != n->GetKind()) )
+            {
+               if (n && n->GetKind() == Track::Label)
+                  firstInGroup = true;
                n = iter.Next();
+            }
             if (!n) c = NULL;               
          }
          
@@ -3364,9 +3322,33 @@ void AudacityProject::OnPaste()
             ((WaveTrack *) c)->Lock();
 
          if (c->GetKind() == Track::Wave && n && n->GetKind() == Track::Wave)
-            pastedSomething = ((WaveTrack*)n)->ClearAndPaste(t0, t1, (WaveTrack*)c);
-         else
+         {
+            // If not the first in group we set useHandlePaste to true
+            pastedSomething = ((WaveTrack*)n)->ClearAndPaste(t0, t1,
+                  (WaveTrack*)c, true, true, NULL, false, !firstInGroup);
+            firstInGroup = firstInGroup && !pastedSomething;
+         }
+         else if (c->GetKind() == Track::Label &&
+                  n && n->GetKind() == Track::Label)
+         {
+            // AWD: LabelTrack::Paste() doesn't shift future labels (and
+            // WaveTrack::HandleGroupPaste() doesn't adjust selected group
+            // tracks, so some other track's paste hasn't done it either).  To
+            // be (sort of) consistent with Clear behavior, we'll only shift
+            // them if linking is on and we have already pasted into a wave
+            // track in this group.
+            if (IsSticky() && !firstInGroup)
+            {
+               ((LabelTrack *)n)->ShiftLabelsOnClear(t0, t1);
+               ((LabelTrack *)n)->ShiftLabelsOnInsert(msClipLen, t0);
+            }
+
             pastedSomething = n->Paste(t0, c);
+         }
+         else
+         {
+            pastedSomething = n->Paste(t0, c);
+         }
                  
          // When copying from mono to stereo track, paste the wave form
          // to both channels
@@ -3379,12 +3361,23 @@ void AudacityProject::OnPaste()
                if (!((WaveTrack *) n)->IsEmpty(t0, t1)) {
                   ((WaveTrack *) n)->Clear(t0, t1);
                }
+
+               // firstInGroup should always be false here, unless pasting to
+               // the first channel failed
+               if (firstInGroup)
+               {
+                  pastedSomething = ((WaveTrack *)n)->Paste(t0, c);
+                  firstInGroup = !pastedSomething;
+               }
+               else
+               {
+                  pastedSomething = ((WaveTrack *)n)->HandlePaste(t0, c);
+               }
             }
             else {
-               ((WaveTrack *) n)->Clear(t0, t1);
+               n->Clear(t0, t1);
+               n->Paste(t0, c);
             }
-            
-            n->Paste(t0, c);
          }
          
          if (msClipProject != this && c->GetKind() == Track::Wave)
@@ -3396,6 +3389,8 @@ void AudacityProject::OnPaste()
          }
       }
 
+      if (n && n->GetKind() == Track::Label)
+         firstInGroup = true;
       n = iter.Next();
    }
    
@@ -3403,55 +3398,42 @@ void AudacityProject::OnPaste()
    // than the amount of selected destination tracks. We take the 
    // last wave track, and paste that one into the remaining
    // selected tracks.
-   if ( n && !c ){
-      WaveTrack *tmp;
-      bool foundSrcTrack = false;
-      c = clipIter.Last();
-      // First, we find the last audio track. This is the track 
-      // we'll be pasting into the excess selected tracks.
-      if (c->GetKind() != Track::Wave){
-         Track *last = c;
-         Track *prev = NULL;
-         c = clipIter.First();
-         Track *first = c;
-
-         // LL:  There is an endless loop here if you paste only non-wave track
-         //      data, like midi data.  Not sure exactly what this is supposed
-         //      to do in that case, but it seems that it's making an assumption
-         //      that only wave data can be pasted.
-         while (!foundSrcTrack){
-            prev = c;
-            c = clipIter.Next();
-            if (c == last){
-               if (prev->GetKind()==Track::Wave) {
-                  c = prev;
-                  foundSrcTrack=true;
-               }else{
-                  last = prev;
-                  if (last == first){
-                     c = NULL;
-                     break;
-                  }
-                  c = clipIter.First();
-               }
-            }
-         }
-      }
+   if ( n && !c )
+   {
+      TrackListOfKindIterator clipWaveIter(Track::Wave, msClipboard);
+      c = clipWaveIter.Last();
       
-      // We've found our source track, now we paste it in.
       while (n){
          if (n->GetSelected() && n->GetKind()==Track::Wave){
             if (c && c->GetKind() == Track::Wave){
-               ((WaveTrack *)n)->HandleClear(t0, t1, false, false);
-               ((WaveTrack *)n)->HandlePaste(t0, (WaveTrack *)c);
+               pastedSomething = ((WaveTrack *)n)->ClearAndPaste(t0, t1,
+                     (WaveTrack *)c, true, true, NULL, false, !firstInGroup);
+               firstInGroup = firstInGroup && !pastedSomething;
             }else{
+               WaveTrack *tmp;
                tmp = mTrackFactory->NewWaveTrack( ((WaveTrack*)n)->GetSampleFormat(), ((WaveTrack*)n)->GetRate());
-               tmp->InsertSilence(0.0, srcLength);
+               tmp->InsertSilence(0.0, msClipLen);
                tmp->Flush();
-               ((WaveTrack *)n)->HandlePaste(t0, tmp);
+
+               pastedSomething = ((WaveTrack *)n)->ClearAndPaste(t0, t1,
+                     tmp, true, true, NULL, false, !firstInGroup);
+               firstInGroup = firstInGroup && !pastedSomething;
+
                delete tmp;
             }
          }
+         else if (n->GetSelected() && n->GetKind() == Track::Label)
+         {
+            // Make room in label tracks as necessary
+            if (IsSticky() && !firstInGroup)
+            {
+               ((LabelTrack *)n)->ShiftLabelsOnClear(t0, t1);
+               ((LabelTrack *)n)->ShiftLabelsOnInsert(msClipLen, t0);
+            }
+         }
+
+         if (n && n->GetKind() == Track::Label)
+            firstInGroup = true;
          n = iter.Next();
       }
    }
@@ -3469,6 +3451,76 @@ void AudacityProject::OnPaste()
 
       if (f)
          mTrackPanel->EnsureVisible(f);
+   }
+}
+
+// Creates a new label in each selected label track with text from the system
+// clipboard
+void AudacityProject::OnPasteNewLabel()
+{
+   bool pastedSomething = false;
+
+   SelectedTrackListOfKindIterator iter(Track::Label, mTracks);
+   Track *t = iter.First();
+   if (!t)
+   {
+      // If there are no selected label tracks, try to choose the first label
+      // track after some other selected track
+      TrackListIterator iter1(mTracks);
+      for (Track *t1 = iter1.First(); t1; t1 = iter1.Next()) {
+         if (t1->GetSelected()) {
+            // Look for a label track
+            while ((t1 = iter1.Next())) {
+               if (t1->GetKind() == Track::Label) {
+                  t = t1;
+                  break;
+               }
+            }
+            if (t) break;
+         }
+      }
+
+      // If no match found, add one
+      if (!t) {
+         t = new LabelTrack(mDirManager);
+         mTracks->Add(t);
+      }
+
+      // Select this track so the loop picks it up
+      t->SetSelected(true);
+   }
+
+   LabelTrack *plt = NULL; // the previous track
+   for (Track *t = iter.First(); t; t = iter.Next())
+   {
+      LabelTrack *lt = (LabelTrack *)t;
+
+      // Unselect the last label, so we'll have just one active label when
+      // we're done
+      if (plt)
+         plt->Unselect();
+
+      // Add a new label, paste into it
+      lt->AddLabel(mViewInfo.sel0, mViewInfo.sel1);
+      if (lt->PasteSelectedText(mViewInfo.sel0, mViewInfo.sel1))
+         pastedSomething = true;
+
+      // Set previous track
+      plt = lt;
+   }
+
+   // plt should point to the last label track pasted to -- ensure it's visible
+   // and set focus
+   if (plt) {
+      mTrackPanel->EnsureVisible(plt);
+      mTrackPanel->SetFocus();
+   }
+
+   if (pastedSomething) {
+      PushState(_("Pasted from the clipboard"), _("Paste Text to New Label"));
+
+      // Is this necessary? (carried over from former logic in OnPaste())
+      RedrawProject();
    }
 }
 
@@ -3552,10 +3604,10 @@ void AudacityProject::OnDisjoin()
       n = iter.Next();
    }
 
-   PushState(wxString::Format(_("Disjoined %.2f seconds at t=%.2f"),
+   PushState(wxString::Format(_("Detached %.2f seconds at t=%.2f"),
                               mViewInfo.sel1 - mViewInfo.sel0,
                               mViewInfo.sel0),
-             _("Disjoin"));
+             _("Detach"));
 
    RedrawProject();
 }
@@ -3633,15 +3685,19 @@ void AudacityProject::OnCutLabels()
 {
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
- 
+
+  // Because of grouping the copy may need to operate on different tracks than
+  // the clear, so we do these actions separately.
+  EditClipboardByLabel( &WaveTrack::Copy );
+
   if( gPrefs->Read( wxT( "/GUI/EnableCutLines" ), ( long )0 ) )
-     EditClipboardByLabel( &WaveTrack::CutAndAddCutLine );
+     EditByLabel( &WaveTrack::ClearAndAddCutLine, true );
   else
-     EditClipboardByLabel( &WaveTrack::Cut );
+     EditByLabel( &WaveTrack::Clear, true );
   
   msClipProject = this;
 
-  mViewInfo.sel1 = mViewInfo.sel0 = 0.0;
+  mViewInfo.sel1 = mViewInfo.sel0;
   
   PushState( _( "Cut labeled regions to the clipboard" ), _( "Cut Labels" ) );
 
@@ -3682,7 +3738,9 @@ void AudacityProject::OnDeleteLabels()
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
   
-  EditByLabel( &WaveTrack::Clear );
+  EditByLabel( &WaveTrack::Clear, true );
+
+  mViewInfo.sel1 = mViewInfo.sel0;
   
   PushState( _( "Deleted labeled regions" ), _( "Delete Labels" ) );
 
@@ -3694,7 +3752,7 @@ void AudacityProject::OnSplitDeleteLabels()
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
   
-  EditByLabel( &WaveTrack::SplitDelete );
+  EditByLabel( &WaveTrack::SplitDelete, false );
   
   PushState( _( "Split Deleted labeled regions" ), _( "Split Delete Labels" ) );
 
@@ -3706,7 +3764,7 @@ void AudacityProject::OnSilenceLabels()
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
   
-  EditByLabel( &WaveTrack::Silence );
+  EditByLabel( &WaveTrack::Silence, false );
   
   PushState( _( "Silenced labeled regions" ), _( "Silence Labels" ) );
 
@@ -3715,10 +3773,7 @@ void AudacityProject::OnSilenceLabels()
 
 void AudacityProject::OnSplitLabels()
 {
-  if( mViewInfo.sel0 >= mViewInfo.sel1 )
-     return;
-  
-  EditByLabel( &WaveTrack::Split );
+  EditByLabel( &WaveTrack::Split, false );
   
   PushState( _( "Split labeled regions" ), _( "Split Labels" ) );
 
@@ -3730,7 +3785,7 @@ void AudacityProject::OnJoinLabels()
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
   
-  EditByLabel( &WaveTrack::Join );
+  EditByLabel( &WaveTrack::Join, false );
   
   PushState( _( "Joined labeled regions" ), _( "Join Labels" ) );
 
@@ -3742,9 +3797,9 @@ void AudacityProject::OnDisjoinLabels()
   if( mViewInfo.sel0 >= mViewInfo.sel1 )
      return;
   
-  EditByLabel( &WaveTrack::Disjoin );
+  EditByLabel( &WaveTrack::Disjoin, false );
   
-  PushState( _( "Disjoined labeled regions" ), _( "Disjoin Labels" ) );
+  PushState( _( "Detached labeled regions" ), _( "Detach Labels" ) );
 
   RedrawProject();
 }
@@ -4246,7 +4301,20 @@ void AudacityProject::OnHistory()
 
 void AudacityProject::OnPlotSpectrum()
 {
-   InitFreqWindow(NULL);
+   if (!mFreqWindow) {
+      wxPoint where;
+
+      where.x = 150;
+      where.y = 150;
+
+      mFreqWindow = new FreqWindow(this, -1, _("Frequency Analysis"), where);
+   }
+
+   wxCommandEvent dummy;
+   mFreqWindow->OnReplot(dummy);
+   mFreqWindow->Show(true);
+   mFreqWindow->Raise();
+   mFreqWindow->SetFocus();
 }
 
 void AudacityProject::OnContrast()
@@ -4331,7 +4399,8 @@ void AudacityProject::OnImport()
    gPrefs->Write(wxT("/NewImportingSession"), true);
    //sort selected files by OD status.  Load non OD first so user can edit asap.
    //first sort selectedFiles.
-   selectedFiles.Sort(CompareODFileName);
+   selectedFiles.Sort(CompareNoCaseFileName);
+   ODManager::Pause();
    
    for (size_t ff = 0; ff < selectedFiles.GetCount(); ff++) {
       wxString fileName = selectedFiles[ff];
@@ -4343,6 +4412,7 @@ void AudacityProject::OnImport()
    }
 	
    HandleResize(); // Adjust scrollers for new track sizes.
+   ODManager::Resume();
 }
 
 void AudacityProject::OnImportLabels()

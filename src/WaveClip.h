@@ -82,7 +82,7 @@ public:
    int GetRate() const { return mRate; }
    
    // Set rate without resampling. This will change the length of the clip
-   void SetRate(int rate) { mRate = rate; MarkChanged(); }
+   void SetRate(int rate);
    
    // Resample clip. This also will set the rate, but without changing
    // the length of the clip
@@ -96,6 +96,13 @@ public:
    sampleCount GetStartSample() const;
    sampleCount GetEndSample() const;
    sampleCount GetNumSamples() const { return mSequence->GetNumSamples(); }
+
+   // One and only one of the following is true for a given t (unless the clip
+   // has zero length -- then BeforeClip() and AfterClip() can both be true).
+   // Within() is true if the time is substantially within the clip
+   bool WithinClip(double t) const;
+   bool BeforeClip(double t) const;
+   bool AfterClip(double t) const;
 
    bool GetSamples(samplePtr buffer, sampleFormat format,
                    sampleCount start, sampleCount len) const;
@@ -149,6 +156,9 @@ public:
 
    bool AppendAlias(wxString fName, sampleCount start,
                     sampleCount len, int channel,bool useOD);
+                    
+   bool AppendCoded(wxString fName, sampleCount start,
+                            sampleCount len, int channel, int decodeType);
 
    /// This name is consistent with WaveTrack::Clear. It performs a "Cut"
    /// operation (but without putting the cutted audio to the clipboard)
@@ -210,6 +220,10 @@ public:
    // Cache of values to colour pixels of Spectrogram - used by TrackArtist
    SpecPxCache    *mSpecPxCache;
 
+   // AWD, Oct 2009: for pasting whitespace at the end of selection
+   bool GetIsPlaceholder() { return mIsPlaceholder; };
+   void SetIsPlaceholder(bool val) { mIsPlaceholder = val; };
+
 protected:
    wxRect mDisplayRect;
 
@@ -236,6 +250,9 @@ protected:
    // Cut Lines are nothing more than ordinary wave clips, with the
    // offset relative to the start of the clip.
    WaveClipList mCutLines;
+
+   // AWD, Oct. 2009: for whitespace-at-end-of-selection pasting
+   bool mIsPlaceholder;
 };
 
 #endif

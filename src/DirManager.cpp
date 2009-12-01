@@ -68,6 +68,7 @@
 #include "blockfile/SilentBlockFile.h"
 #include "blockfile/PCMAliasBlockFile.h"
 #include "blockfile/ODPCMAliasBlockFile.h"
+#include "blockfile/ODDecodeBlockFile.h"
 #include "DirManager.h"
 #include "Internat.h"
 #include "Project.h"
@@ -77,6 +78,12 @@
 
 #include "prefs/PrefsDialog.h"
 #include "ondemand/ODManager.h"
+
+#if defined(__WXMAC__)
+#include <mach/mach.h>
+#include <mach/vm_statistics.h>
+#endif
+
 // Static class variables
 
 int DirManager::numDirManagers = 0;
@@ -797,6 +804,23 @@ BlockFile *DirManager::NewODAliasBlockFile(
    return newBlockFile;
 }
 
+BlockFile *DirManager::NewODDecodeBlockFile(
+                                 wxString aliasedFile, sampleCount aliasStart,
+                                 sampleCount aliasLen, int aliasChannel, int decodeType)
+{
+   wxFileName fileName = MakeBlockFileName();
+
+   BlockFile *newBlockFile =
+       new ODDecodeBlockFile(fileName,
+                             aliasedFile, aliasStart, aliasLen, aliasChannel, decodeType);
+
+   blockFileHash[fileName.GetName()]=newBlockFile;
+   aliasList.Add(aliasedFile); //OD TODO: check to see if we need to remove this when done decoding.
+                               //I don't immediately see a place where alias files remove when a file is closed.
+
+   return newBlockFile;
+}
+
 // Adds one to the reference count of the block file,
 // UNLESS it is "locked", then it makes a new copy of
 // the BlockFile.
@@ -807,7 +831,11 @@ BlockFile *DirManager::CopyBlockFile(BlockFile *b)
 		//mchinen:July 13 2009 - not sure about this, but it needs to be added to the hash to be able to save if not locked.
 		//note that this shouldn't hurt blockFileHash's that already contain the filename, since it should just overwrite.
 		//but it's something to watch out for.
-		blockFileHash[b->GetFileName().GetName()]=b;
+      //
+      // LLL: Except for silent block files which have no filename.
+      if (!b->GetFileName().GetName().IsEmpty()) {
+         blockFileHash[b->GetFileName().GetName()]=b;
+      }
       return b;
    }
 
@@ -860,6 +888,11 @@ bool DirManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
       //in the case of loading an OD file, we need to schedule the ODManager to begin OD computing of summary
       //However, because we don't have access to the track or even the Sequence from this call, we mark a flag
       //in the ODMan and check it later.
+      ODManager::MarkLoadedODFlag();
+   }
+   else if( !wxStricmp(tag, wxT("oddecodeblockfile")) )
+   {
+      pBlockFile = ODDecodeBlockFile::BuildFromXML(*this, attrs);
       ODManager::MarkLoadedODFlag();
    }
    else if( !wxStricmp(tag, wxT("blockfile")) ||
@@ -1137,6 +1170,19 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
          //ODBlocks access the aliased file on another thread, so we need to pause them before this continues.
          ab->LockRead();
       }
+      
+      //now for encoded OD blocks  (e.g. flac)
+      // don't worry, we don't rely on this cast unless ISDataAvailable is false
+      // which means that it still needs to access the file.
+      ODDecodeBlockFile *db = (ODDecodeBlockFile*)b;
+      if (!b->IsDataAvailable() && db->GetEncodedAudioFilename() == fName) {
+         needToRename = true;
+         //wxPrintf(_("Changing block %s\n"), b->GetFileName().GetFullName().c_str());
+         //ab->ChangeAliasedFile(renamedFile);
+         
+         //ODBlocks access the aliased file on another thread, so we need to pause them before this continues.
+         db->LockRead();
+      }
 
       it++;
    }
@@ -1156,10 +1202,15 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
          while(it != blockFileHash.end()) {
             BlockFile *b = it->second;
             AliasBlockFile *ab = (AliasBlockFile*)b;
+            ODDecodeBlockFile *db = (ODDecodeBlockFile*)b;
+
 
             if (b->IsAlias() && ab->GetAliasedFile() == fName)
             {
                ab->UnlockRead();
+            }
+            if (!b->IsDataAvailable() && db->GetEncodedAudioFilename() == fName) {
+               db->UnlockRead();
             }
             it++;
          }
@@ -1177,6 +1228,7 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
          while(it != blockFileHash.end()) {
             BlockFile *b = it->second;
             AliasBlockFile *ab = (AliasBlockFile*)b;
+            ODDecodeBlockFile *db = (ODDecodeBlockFile*)b;
 
             if (b->IsAlias() && ab->GetAliasedFile() == fName)
             {
@@ -1184,6 +1236,10 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
                ab->UnlockRead();
                wxPrintf(_("Changed block %s to new alias name\n"), b->GetFileName().GetFullName().c_str());
                
+            }
+            if (!b->IsDataAvailable() && db->GetEncodedAudioFilename() == fName) {
+               db->ChangeAudioFile(renamedFile);
+               db->UnlockRead();
             }
             it++;
          }
@@ -1596,7 +1652,7 @@ void DirManager::FillBlockfilesCache()
    while (i != blockFileHash.end())
    {
       BlockFile *b = i->second;
-      if (b->GetNeedFillCache() && (wxGetFreeMemory() > lowMem)) {
+      if (b->GetNeedFillCache() && (GetFreeMemory() > lowMem)) {
          b->FillCache();
       }
 
@@ -1642,6 +1698,27 @@ void DirManager::WriteCacheToDisk()
    }
 }
 
+wxMemorySize GetFreeMemory()
+{
+   wxMemorySize avail;
+
+#if defined(__WXMAC__)
+   mach_port_t port = mach_host_self();
+   mach_msg_type_number_t cnt = HOST_VM_INFO_COUNT;
+   vm_statistics_data_t	stats;
+   vm_size_t pagesize = 0;
+   
+   memset(&stats, 0, sizeof(stats));
+
+   host_page_size(port, &pagesize);
+   host_statistics(port, HOST_VM_INFO, (host_info_t) &stats, &cnt);
+   avail = stats.free_count * pagesize;
+#else
+   avail = wxGetFreeMemory();
+#endif
+
+   return avail;
+}
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a
 // version control system. Please do not modify past this point.

@@ -76,6 +76,7 @@ various graphing code, such as provided by FreqWindow and FilterPanel.
 #include "../AllThemeResources.h"
 #include "../WaveTrack.h"
 #include "float_cast.h"
+#include <vector>
 
 #include <wx/bitmap.h>
 #include <wx/button.h>
@@ -596,10 +597,67 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
 
       // now move the appropriate bit of the output back to the track
       // (this could be enhanced in the future to use the tails)
-      float *bigBuffer = new float[originalLen];
-      output->Get((samplePtr)bigBuffer, floatSample, offset, originalLen);
-      t->Set((samplePtr)bigBuffer, floatSample, start, originalLen);
-      delete[] bigBuffer;
+      double offsetT0 = t->LongSamplesToTime((sampleCount)offset);
+      double lenT = t->LongSamplesToTime(originalLen);
+      // 'start' is the sample offset in 't', the passed in track
+      // 'startT' is the equivalent time value
+      // 'output' starts at zero
+      double startT = t->LongSamplesToTime(start);
+      
+      //output has one waveclip for the total length, even though 
+      //t might have whitespace seperating multiple clips
+      //we want to maintain the original clip structure, so
+      //only paste the intersections of the new clip.
+      
+      //Find the bits of clips that need replacing
+      std::vector<std::pair<double, double> > clipStartEndTimes;
+      std::vector<std::pair<double, double> > clipRealStartEndTimes; //the above may be truncated due to a clip being partially selected
+      for (WaveClipList::compatibility_iterator it=t->GetClipIterator(); it; it=it->GetNext())
+      {
+         WaveClip *clip;
+         double clipStartT;
+         double clipEndT;
+         
+         clip = it->GetData();
+         clipStartT = clip->GetStartTime();
+         clipEndT = clip->GetEndTime();
+         if( clipEndT <= startT )
+            continue;   // clip is not within selection
+         if( clipStartT >= startT + lenT )
+            continue;   // clip is not within selection
+            
+         //save the actual clip start/end so that we can rejoin them after we paste.
+         clipRealStartEndTimes.push_back(std::pair<double,double>(clipStartT,clipEndT));            
+            
+         if( clipStartT < startT )  // does selection cover the whole clip?
+            clipStartT = startT; // don't copy all the new clip
+         if( clipEndT > startT + lenT )  // does selection cover the whole clip?
+            clipEndT = startT + lenT; // don't copy all the new clip
+         
+         //save them
+         clipStartEndTimes.push_back(std::pair<double,double>(clipStartT,clipEndT));
+      }
+      //now go thru and replace the old clips with new
+      for(unsigned int i=0;i<clipStartEndTimes.size();i++)
+      {
+         Track *toClipOutput;
+         //remove the old audio and get the new
+         t->Clear(clipStartEndTimes[i].first,clipStartEndTimes[i].second);
+         output->Copy(clipStartEndTimes[i].first-startT+offsetT0,clipStartEndTimes[i].second-startT+offsetT0, &toClipOutput);   
+         if(toClipOutput)
+         {
+            //put the processed audio in
+            t->Paste(clipStartEndTimes[i].first,toClipOutput);
+            //if the clip was only partially selected, the Paste will have created a split line.  Join is needed to take care of this
+            //This is not true when the selection is fully contained within one clip (second half of conditional)
+            if( (clipRealStartEndTimes[i].first  != clipStartEndTimes[i].first || 
+                 clipRealStartEndTimes[i].second != clipStartEndTimes[i].second) &&
+                 !(clipRealStartEndTimes[i].first <= startT &&  
+                 clipRealStartEndTimes[i].second >= startT+lenT) )
+               t->Join(clipRealStartEndTimes[i].first,clipRealStartEndTimes[i].second);
+            delete toClipOutput;
+         }
+      }
    }
 
    delete[] buffer;
@@ -862,7 +920,7 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
 
    memDC.SetPen(*wxBLACK_PEN);
    if( mParent->mFaderOrDraw[0]->GetValue() )
-      mEnvelope->Draw(memDC, mEnvRect, 0.0, mEnvRect.width, false, dBMin, dBMax);
+      mEnvelope->DrawPoints(memDC, mEnvRect, 0.0, mEnvRect.width, false, dBMin, dBMax);
 
    if( mParent->drawGrid )
    {
@@ -881,12 +939,14 @@ void EqualizationPanel::OnMouseEvent(wxMouseEvent & event)
       CaptureMouse();
    }
 
-   if (mEnvelope->MouseEvent(event, mEnvRect, 0.0, mEnvRect.width, false,
-                             dBMin, dBMax, dBMin, dBMax))
-   {
-      mParent->EnvelopeUpdated();
-      RecalcRequired = true;
-      Refresh(false);
+   if (mEnvRect.Contains(event.GetPosition())) {
+      if (mEnvelope->MouseEvent(event, mEnvRect, 0.0, mEnvRect.width, false,
+               dBMin, dBMax, dBMin, dBMax))
+      {
+         mParent->EnvelopeUpdated();
+         RecalcRequired = true;
+         Refresh(false);
+      }
    }
 
    if (event.ButtonUp() && HasCapture())
@@ -2740,7 +2800,6 @@ void EqualizationDialog::OnDelete(wxCommandEvent &event)
 
 void EqualizationDialog::OnClear(wxCommandEvent &event)
 {
-   EnvelopeUpdated();
    mLogEnvelope->Flatten(0.);
    mLogEnvelope->SetTrackLen(1.0);
    mLinEnvelope->Flatten(0.);
@@ -2756,6 +2815,7 @@ void EqualizationDialog::OnClear(wxCommandEvent &event)
          m_EQVals[i] = 0.;
       }
    }
+   EnvelopeUpdated();
 }
 
 void EqualizationDialog::OnErase(wxEraseEvent &event)

@@ -57,6 +57,7 @@ OBJS = \
 	BatchCommands.o \
 	BatchProcessDialog.o \
 	Benchmark.o \
+	CaptureEvents.o \
 	Dependencies.o \
 	Envelope.o \
 	FFmpeg.o \
@@ -194,7 +195,6 @@ OBJS = \
 	import/ImportRaw.o \
 	import/RawAudioGuess.o \
 	ondemand/ODComputeSummaryTask.o \
-	ondemand/ODDecodeFlacTask.o \
 	ondemand/ODDecodeTask.o \
 	ondemand/ODManager.o \
 	ondemand/ODTask.o \

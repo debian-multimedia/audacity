@@ -40,6 +40,7 @@ void ODDecodeTask::DoSomeInternal()
    }
    
    ODDecodeBlockFile* bf;
+   ODFileDecoder* decoder;
    sampleCount blockStartSample;
    sampleCount blockEndSample;
    bool success =false;
@@ -54,8 +55,17 @@ void ODDecodeTask::DoSomeInternal()
       if(bf->RefCount()>=2)
       {
          //OD TODO: somehow pass the bf a reference to the decoder that manages it's file.
-         bf->SetODFileDecoder(GetOrCreateMatchingFileDecoder(bf));
+         //we need to ensure that the filename won't change or be moved.  We do this by calling LockRead(),
+         //which the dirmanager::EnsureSafeFilename also does.
+         bf->LockRead();
+         //Get the decoder.  If the file was moved, we need to create another one and init it.
+         decoder=GetOrCreateMatchingFileDecoder(bf);
+         if(!decoder->IsInitialized())
+            decoder->Init();
+         bf->SetODFileDecoder(decoder);
          bf->DoWriteBlockFile();
+         bf->UnlockRead();
+         
          success = true;
          blockStartSample = bf->GetStart();
          blockEndSample = blockStartSample + bf->GetLength();
@@ -134,7 +144,7 @@ void ODDecodeTask::Update()
             for(i=0; i<(int)blocks->GetCount(); i++)
             {
                //since we have more than one ODBlockFile, we will need type flags to cast.
-               if(!blocks->Item(i)->f->IsDataAvailable() && ((ODDecodeBlockFile*)blocks->Item(i)->f)->GetDecodeType()==this->GetDecodeType())
+               if(!blocks->Item(i)->f->IsDataAvailable() && ((ODDecodeBlockFile*)blocks->Item(i)->f)->GetDecodeType()==this->GetODType())
                {
                   blocks->Item(i)->f->Ref();
                   ((ODDecodeBlockFile*)blocks->Item(i)->f)->SetStart(blocks->Item(i)->start);
@@ -221,7 +231,7 @@ void ODDecodeTask::ODUpdate()
 
 ///there could be the ODBlockFiles of several FLACs in one track (after copy and pasting)
 ///so we keep a list of decoders that keep track of the file names, etc, and check the blocks against them.
-///Blocks that have IsDataAvailable()==false are blockfiles to be decoded.  if BlockFile::GetDecodeType()==ODDecodeTask::GetDecodeType() then
+///Blocks that have IsDataAvailable()==false are blockfiles to be decoded.  if BlockFile::GetDecodeType()==ODDecodeTask::GetODType() then
 ///this decoder should handle it.  Decoders are accessible with the methods below.  These aren't thread-safe and should only
 ///be called from the decoding thread.
 ODFileDecoder* ODDecodeTask::GetOrCreateMatchingFileDecoder(ODDecodeBlockFile* blockFile)
@@ -240,8 +250,7 @@ ODFileDecoder* ODDecodeTask::GetOrCreateMatchingFileDecoder(ODDecodeBlockFile* b
    //otherwise, create and add one, and return it.
    if(!ret)
    {
-      ret=CreateFileDecoder(blockFile->GetFileName().GetFullPath().mb_str());
-      mDecoders.push_back(ret);
+      ret=CreateFileDecoder(blockFile->GetAudioFileName().GetFullPath());
    }
    return ret;
 }
@@ -256,8 +265,27 @@ int ODDecodeTask::GetNumFileDecoders()
 ODFileDecoder::ODFileDecoder(const wxString & fName)
 {
 	mFName = fName;
+   mInited = false;
 }
 
 ODFileDecoder::~ODFileDecoder()
 {
 }
+
+bool ODFileDecoder::IsInitialized()
+{
+   bool ret;
+   mInitedLock.Lock();
+   ret = mInited;
+   mInitedLock.Unlock();   
+   return ret;
+}
+
+///Derived classes should call this after they have parsed the header.
+void ODFileDecoder::MarkInitialized()
+{
+   mInitedLock.Lock();
+   mInited=true;
+   mInitedLock.Unlock();   
+}
+
