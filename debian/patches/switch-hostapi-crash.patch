@@ -4,10 +4,10 @@ Description: Protect against Pa_GetDeviceInfo returning null sometimes.
 Bug-Ubuntu: https://launchpad.net/bugs/436990
 Forwarded: yes
 Author: David Henningsson <launchpad.web@epost.diwic.se>
-diff -Nur -x '*.orig' -x '*~' audacity-1.3.9/src/prefs/DevicePrefs.cpp audacity-1.3.9.new/src/prefs/DevicePrefs.cpp
---- audacity-1.3.9/src/prefs/DevicePrefs.cpp	2009-08-31 12:45:38.000000000 +0200
-+++ audacity-1.3.9.new/src/prefs/DevicePrefs.cpp	2009-09-26 10:30:10.717880112 +0200
-@@ -301,6 +301,10 @@
+diff --git a/src/prefs/DevicePrefs.cpp b/src/prefs/DevicePrefs.cpp
+--- a/src/prefs/DevicePrefs.cpp
++++ b/src/prefs/DevicePrefs.cpp
+@@ -330,6 +330,10 @@ wxString DevicePrefs::GetDefaultPlayDevice(int index)
     wxLogDebug(wxT("GetDefaultPlayDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
     wxLogDebug(wxT("GetDefaultPlayDevice() default output %d"), apiinfo->defaultOutputDevice);
     const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultOutputDevice);
@@ -18,7 +18,7 @@ diff -Nur -x '*.orig' -x '*~' audacity-1.3.9/src/prefs/DevicePrefs.cpp audacity-
     wxString name(devinfo->name, wxConvLocal);
     wxLogDebug(wxT("GetDefaultPlayDevice() default output device name %s"), name.c_str());
     return name;
-@@ -313,6 +317,10 @@
+@@ -345,6 +349,10 @@ wxString DevicePrefs::GetDefaultRecordDevice(int index)
     wxLogDebug(wxT("GetDefaultRecordDevice(): HostAPI index %d, name %s"), index, wxString(apiinfo->name, wxConvLocal).c_str());
     wxLogDebug(wxT("GetDefaultRecordDevice() default input %d"), apiinfo->defaultInputDevice);
     const PaDeviceInfo* devinfo = Pa_GetDeviceInfo(apiinfo->defaultInputDevice);
