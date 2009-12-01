@@ -65,6 +65,7 @@ enum {
    TrackID,
    ByNameID,
    ByNumberID,
+   ByNameAndNumberID,
    PrefixID,
    OverwriteID
 };
@@ -307,13 +308,21 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
          {
             // Row 1
             S.SetBorder(1);
-            mByName = S.Id(ByNameID)
+            mByNumberAndName = S.Id(ByNameAndNumberID)
                .AddRadioButton(wxT(""));
+            mByNumberAndName->SetName(_("Consecutively numbered Label/Track Name"));
+            S.SetBorder(3);
+            mByNumberAndNameLabel = S.AddVariableText(_("Consecutively numbered Label/Track Name"), false);
+
+            // Row 2
+            S.SetBorder(1);
+            mByName = S.Id(ByNameID)
+               .AddRadioButtonToGroup(wxT(""));
             mByName->SetName(_("Using Label/Track Name"));
             S.SetBorder(3);
             mByNameLabel = S.AddVariableText(_("Using Label/Track Name"), false);
 
-            // Row 2
+            // Row 3
             S.SetBorder(1);
             mByNumber = S.Id(ByNumberID)
                .AddRadioButtonToGroup(wxT(""));
@@ -321,7 +330,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
             S.SetBorder(3);
             mByNumberLabel = S.AddVariableText(_("Numbering consecutively"), false);
 
-            // Row 3
+            // Row 4
             S.AddVariableText(wxT(""), false);
             S.StartHorizontalLay(wxEXPAND, false);
             {
@@ -365,7 +374,7 @@ void ExportMultiple::EnableControls()
    mFirst->Enable(mLabel->GetValue());
    
    enable = mLabel->GetValue() &&
-            mByName->GetValue() &&
+            (mByName->GetValue() || mByNumberAndName->GetValue()) &&
             mFirst->GetValue();
    mFirstFileLabel->Enable(enable);
    mFirstFileName->Enable(enable);
@@ -518,8 +527,10 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
    mExported.Empty();
 
    if (mLabel->GetValue()) {
-      ok = ExportMultipleByLabel(mByName->GetValue(),
-                                 mPrefix->GetValue());
+      // TODO
+      ok = ExportMultipleByLabel(mByName->GetValue() || mByNumberAndName->GetValue(),
+                                 mPrefix->GetValue(),
+                                 mByNumberAndName->GetValue());
    }
    else {
       ok = ExportMultipleByTrack(mByName->GetValue(),
@@ -602,7 +613,7 @@ bool ExportMultiple::DirOk()
    return fn.Mkdir(0777, wxPATH_MKDIR_FULL);
 }
 
-int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
+int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix, bool addNumber)
 {
    wxASSERT(mProject);
    bool tagsPrompt = mProject->GetShowId3Dialog();
@@ -669,9 +680,14 @@ int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
             name.Printf(wxT("%s-%02d"), prefix.c_str(), l+1);
          else
             name.Printf(wxT("%s-%d"), prefix.c_str(), l+1);
+      } else if (addNumber) {
+         if (numFiles > 9)
+            name.Prepend(wxString::Format(wxT("%02d "), l+1));
+         else
+            name.Prepend(wxString::Format(wxT("%d "), l+1));
       }
 
-      // store sanitised and user checjed name in object
+      // store sanitised and user checked name in object
       setting.destfile.SetName(MakeFileName(name));
 
       wxASSERT(setting.destfile.IsOk());     // scream if file name is broke
