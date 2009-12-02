@@ -9,7 +9,7 @@ Uploaders: Free Ekanayaka <freee@debian.org>,
 Standards-Version: 3.8.3
 Build-Depends: autotools-dev,
                cdbs (>= 0.4.4),
-               debhelper (>= 5),
+               debhelper (>= 7),
                gettext,
                libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64 !hurd-i386],
                libavcodec-dev (>= 3:0.svn20090204),
