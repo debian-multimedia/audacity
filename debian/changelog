@@ -1,3 +1,20 @@
+audacity (1.3.10-1) unstable; urgency=low
+
+  * New upstream release.
+  * Drop patches, which are accepted or applied upstream:
+    - closing-2nd-while-recording-in-1st.patch
+    - crash-on-get-default-device.patch
+    - ffmpeg-0.5-compatibility.diff
+    - gsocket.patch
+    - labeltrack-crash.patch
+    - stopstream-on-close.patch
+  * Refresh remaining patches.
+  * Switch to new source format 3.0 (quilt).
+  * debian/rules: Use autotools class instead of gnome class.
+  * Bump debhelper version to 7.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 02 Dec 2009 01:45:30 +0100
+
 audacity (1.3.9-7) unstable; urgency=low
 
   [ David Henningsson ]
