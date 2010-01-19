@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-unicode-1.3.10
+OutputBaseFilename=audacity-win-unicode-1.3.11
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -13,13 +13,17 @@ SolidCompression=yes
 
 ; installer-related directives
 AppName=Audacity 1.3 Beta (Unicode)
-AppVerName=Audacity 1.3.10 (Unicode)
+AppVerName=Audacity 1.3.11 (Unicode)
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
 AppUpdatesURL=http://audacity.sourceforge.net
 ChangesAssociations=yes
+
+; For a beta release, e.g.:   DefaultDirName={pf}\Audacity 1.3 Beta (Unicode)
+; For a stable release:   DefaultDirName={pf}\Audacity
 DefaultDirName={pf}\Audacity 1.3 Beta (Unicode)
+
 ; Always warn if dir exists, because we'll overwrite previous Audacity.
 DirExistsWarning=yes
 DisableProgramGroupPage=yes
@@ -56,7 +60,6 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: desktopicon; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
 ; No longer allow user to choose whether to associate AUP file type with Audacity.
 ; Name: associate_aup; Description: "&Associate Audacity project files"; GroupDescription: "Other tasks:"; Flags: checkedonce
-
 
 [Files]
 ; Don't display in separate window, rather as InfoAfterFile.   Source: "..\README.txt"; DestDir: "{app}"; Flags: ignoreversion isreadme
@@ -106,6 +109,9 @@ Type: files; Name: "{app}\Microsoft.VC80.CRT.manifest"
 Type: files; Name: "{app}\msvcp80.dll"
 Type: files; Name: "{app}\msvcr80.dll"
 
+; Get rid of previous help folder.
+Type: filesandordirs; Name: "{app}\help"
+
 ; Don't want to do this because user may have stored their own.
 ;   Type: filesandordirs; Name: "{app}\vst"
 
@@ -131,6 +137,10 @@ Root: HKCR; Subkey: "Audacity.Project\shell\open\command"; ValueType: string; Va
 
 [Run]
 Filename: "{app}\audacity.exe"; Description: "Launch Audacity"; Flags: nowait postinstall skipifsilent
+
+
+
+
 
 
 

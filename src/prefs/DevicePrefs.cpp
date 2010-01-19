@@ -158,6 +158,10 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
 
 void DevicePrefs::OnHost(wxCommandEvent & e)
 {
+   // Bail if we have no hosts
+   if (mHostNames.size() < 1)
+      return;
+
    // Find the index for the host API selected
    int index = -1;
    wxString apiName = mHostNames[mHost->GetCurrentSelection()];
@@ -355,15 +359,21 @@ bool DevicePrefs::Apply()
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
 
-   const PaDeviceInfo *info;
+   const PaDeviceInfo *info = NULL;
 
-   info = (const PaDeviceInfo *) mPlay->GetClientData(mPlay->GetSelection());
+   if (mPlay->GetCount() > 0) {
+      info = (const PaDeviceInfo *) mPlay->GetClientData(
+            mPlay->GetSelection());
+   }
    if (info) {
       gPrefs->Write(wxT("/AudioIO/PlaybackDevice"),
                     DeviceName(info));
    }
 
-   info = (const PaDeviceInfo *) mRecord->GetClientData(mRecord->GetSelection());
+   info = NULL;
+   if (mRecord->GetCount() > 0) {
+      info = (const PaDeviceInfo *) mRecord->GetClientData(mRecord->GetSelection());
+   }
    if (info) {
       gPrefs->Write(wxT("/AudioIO/RecordingDevice"),
                     DeviceName(info));

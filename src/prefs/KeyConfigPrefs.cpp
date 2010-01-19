@@ -136,6 +136,7 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
       S.EndHorizontalLay();
                                     
       mList = S.Id(CommandsListID).AddListControlReportMode();
+      mList->SetName(_("Key Bindings"));
 
       S.StartThreeColumn();
       {
@@ -339,6 +340,20 @@ void KeyConfigPrefs::OnDefaults(wxCommandEvent & e)
 void KeyConfigPrefs::OnCaptureKeyDown(wxKeyEvent & e)
 {
    wxTextCtrl *t = (wxTextCtrl *)e.GetEventObject();
+
+#if defined(__WXMAC__)
+   if (e.GetKeyCode() == WXK_TAB) {
+      wxNavigationKeyEvent nevent;
+      nevent.SetWindowChange(e.ControlDown());
+      nevent.SetDirection(!e.ShiftDown());
+      nevent.SetEventObject(t);
+      nevent.SetCurrentFocus(t);
+      t->GetParent()->ProcessEvent(nevent);
+
+      return;
+   }
+#endif
+
    t->SetValue(KeyStringDisplay(KeyEventToKeyString(e)));
 }
 
@@ -395,6 +410,21 @@ void KeyConfigPrefs::OnClear(wxCommandEvent& event)
 
 void KeyConfigPrefs::OnKeyDown(wxListEvent & e)
 {
+// the code in this function allows the user to seek to the next
+// command which begins with the letter that is pressed
+#ifdef __WXMAC__
+   // I (Ed) have no way of telling what code will work on
+   // the Mac but the following code does not
+   return;
+#endif
+
+#ifdef __WXMSW__
+   // Windows seems to have this built-in
+   // and does not need the following code
+   return;
+#endif
+
+   // The following code seems to work well on at least some versions of Linux
    int keycode = e.GetKeyCode();
    int selected = mList->GetNextItem(-1, wxLIST_NEXT_ALL,  wxLIST_STATE_SELECTED);
    int cnt = mList->GetItemCount();

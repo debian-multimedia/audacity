@@ -59,7 +59,7 @@ static ExposedFormat fmts[] =
 #if FFMPEG_STABLE
    {FMT_AMRWB,       wxT("AMRWB"),   wxT("amr"),  wxT("amr"),  1,   false,false,_("AMR (wide band) Files (FFmpeg)"),   CODEC_ID_AMR_WB, true},
 #endif
-   {FMT_WMA2,        wxT("WMA"),     wxT("wma"),  wxT("asf"),  2,   true ,false,_("WMA (version 2) Files (FFmpeg)"),   CODEC_ID_WMAV2,  true},
+   {FMT_WMA2,        wxT("WMA"),     wxT("wma"),  wxT("asf"),  2,   false,false,_("WMA (version 2) Files (FFmpeg)"),   CODEC_ID_WMAV2,  true},
    {FMT_OTHER,       wxT("FFMPEG"),  wxT(""),     wxT(""),     255, true ,true ,_("Custom FFmpeg Export"),             CODEC_ID_NONE,   true}
 };
 
@@ -375,7 +375,7 @@ static CompatibilityEntry CompatibilityList[] =
 static int iAACProfileValues[] = { FF_PROFILE_AAC_LOW, FF_PROFILE_AAC_MAIN, /*FF_PROFILE_AAC_SSR,*/ FF_PROFILE_AAC_LTP };
 
 /// Names of AAC profiles to be displayed
-static const wxChar *iAACProfileNames[] = { _("Low Complexity"), _("Main profile"), /*_("SSR"),*/ _("LTP") }; //SSR is not supported
+static const wxChar *iAACProfileNames[] = { _("LC"), _("Main"), /*_("SSR"),*/ _("LTP") }; //SSR is not supported
 
 /// Sample rates supported by AAC encoder (must end with zero-element)
 static const int iAACSampleRates[] = { 7350, 8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 38000, 64000, 88200, 0 };
