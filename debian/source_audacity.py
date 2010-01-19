@@ -14,7 +14,7 @@ def add_info(report):
 	# of the user's soundcards would be nice.
 	report['AlsaCards'] = command_output(['cat', '/proc/asound/cards'])
 
-        cfgfilename = os.path.expanduser('~/.audacity-data/audacity.cfg')
+	cfgfilename = os.path.expanduser('~/.audacity-data/audacity.cfg')
 	if os.path.exists(cfgfilename):
 		s = open(cfgfilename).read()
 		# give the user some privacy by removing MRU file list
