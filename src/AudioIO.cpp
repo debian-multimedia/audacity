@@ -2178,10 +2178,16 @@ void AudioIO::FillBuffers()
                // The mixer here isn't actually mixing: it's just doing
                // resampling, format conversion, and possibly time track
                // warping
-               int processed =
-                  mPlaybackMixers[i]->Process(lrint(deltat * mRate));
-               samplePtr warpedSamples = mPlaybackMixers[i]->GetBuffer();
-               mPlaybackBuffers[i]->Put(warpedSamples, floatSample, processed);
+               int processed = 0;
+               samplePtr warpedSamples;
+               //don't do anything if we have no length.  In particular, Process() will fail an wxAssert
+               //that causes a crash since this is not the GUI thread and wxASSERT is a GUI call.
+               if(deltat > 0.0)
+               { 
+                  processed = mPlaybackMixers[i]->Process(lrint(deltat * mRate));
+                  warpedSamples = mPlaybackMixers[i]->GetBuffer();
+                  mPlaybackBuffers[i]->Put(warpedSamples, floatSample, processed);
+               }
                //if looping and processed is less than the full chunk/block/buffer that gets pulled from
                //other longer tracks, then we still need to advance the ring buffers or
                //we'll trip up on ourselves when we start them back up again.
@@ -2252,8 +2258,11 @@ void AudioIO::FillBuffers()
                samplePtr temp1 = NewSamples(avail, floatSample);
                samplePtr temp2 = NewSamples(size, floatSample);
                mCaptureBuffers[i]->Get(temp1, floatSample, avail);
-
-               size = mResample[i]->Process(mFactor, (float *)temp1, avail, true,
+               /* we are re-sampling on the fly. The last resampling call
+                * must flush any samples left in the rate conversion buffer
+                * so that they get recorded
+                */
+               size = mResample[i]->Process(mFactor, (float *)temp1, avail, !IsStreamActive(),
                                             &size, (float *)temp2, size);
                mCaptureTracks[i]-> Append(temp2, floatSample, size, 1, 
                                           &appendLog);
@@ -2997,7 +3006,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
    }  // end recording VU meter update
 
    // Stop recording if 'silence' is detected
-   if(gAudioIO->mPauseRec && inputBuffer) {
+   if(gAudioIO->mPauseRec && inputBuffer && gAudioIO->mInputMeter) {
       if(gAudioIO->mInputMeter->GetMaxPeak() < gAudioIO->mSilenceLevel ) {
          if(!gAudioIO->IsPaused()) {
             AudacityProject *p = GetActiveProject();

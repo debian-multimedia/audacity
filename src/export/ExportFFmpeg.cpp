@@ -313,20 +313,22 @@ bool ExportFFmpeg::Init(const char *shortname, AudacityProject *project, Tags *m
    if (!InitCodecs(project))
       return false;
 
+   if (metadata == NULL) metadata = project->GetTags();
+
+   // Add metadata BEFORE writing the header.
+   // At the moment that works with ffmpeg-git and ffmpeg-0.5 for MP4.
+   if (fmts[mSubFormat].canmetadata)
+   {
+      mSupportsUTF8 = fmts[mSubFormat].canutf8;
+      AddTags(metadata);
+   }
+
    // Write headers to the output file.
    if ((err = FFmpegLibsInst->av_write_header(mEncFormatCtx)) < 0)
    {
       wxLogMessage(wxT("FFmpeg : ERROR - Can't write headers to output file \"%s\". Error code is %d."), mName.c_str(),err);
 
       return false;
-   }
-
-   if (metadata == NULL) metadata = project->GetTags();
-
-   if (fmts[mSubFormat].canmetadata)
-   {
-      mSupportsUTF8 = fmts[mSubFormat].canutf8;
-      AddTags(metadata);
    }
 
    return true;
@@ -389,14 +391,13 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
       mEncAudioCodecCtx->flags2 |= CODEC_FLAG2_BIT_RESERVOIR | 0x0004;
       break;
    case FMT_OTHER:
-      memcpy(mEncAudioStream->language,gPrefs->Read(wxT("/FileFormats/FFmpegLanguage"),wxT("")).c_str(),4);
+      strncpy(mEncAudioStream->language,gPrefs->Read(wxT("/FileFormats/FFmpegLanguage"),wxT("")).mb_str(wxConvUTF8),4);
       mEncAudioCodecCtx->sample_rate = gPrefs->Read(wxT("/FileFormats/FFmpegSampleRate"),(long)0);
       if (mEncAudioCodecCtx->sample_rate != 0) mSampleRate = mEncAudioCodecCtx->sample_rate;
       mEncAudioCodecCtx->bit_rate = gPrefs->Read(wxT("/FileFormats/FFmpegBitRate"), (long)0);
-      memcpy(&mEncAudioCodecCtx->codec_tag,gPrefs->Read(wxT("/FileFormats/FFmpegTag"),wxT("")).c_str(),4);
+      strncpy((char *)&mEncAudioCodecCtx->codec_tag,gPrefs->Read(wxT("/FileFormats/FFmpegTag"),wxT("")).mb_str(wxConvUTF8),4);
       mEncAudioCodecCtx->global_quality = gPrefs->Read(wxT("/FileFormats/FFmpegQuality"),(long)-99999);
       mEncAudioCodecCtx->cutoff = gPrefs->Read(wxT("/FileFormats/FFmpegCutOff"),(long)0);
-      mEncAudioCodecCtx->use_lpc = gPrefs->Read(wxT("/FileFormats/FFmpegUseLPC"),true);
       mEncAudioCodecCtx->flags2 = 0;
       if (gPrefs->Read(wxT("/FileFormats/FFmpegBitReservoir"),true)) mEncAudioCodecCtx->flags2 |= CODEC_FLAG2_BIT_RESERVOIR;
       if (gPrefs->Read(wxT("/FileFormats/FFmpegVariableBlockLen"),true)) mEncAudioCodecCtx->flags2 |= 0x0004; //WMA only?

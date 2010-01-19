@@ -939,14 +939,12 @@ void EqualizationPanel::OnMouseEvent(wxMouseEvent & event)
       CaptureMouse();
    }
 
-   if (mEnvRect.Contains(event.GetPosition())) {
-      if (mEnvelope->MouseEvent(event, mEnvRect, 0.0, mEnvRect.width, false,
-               dBMin, dBMax, dBMin, dBMax))
-      {
-         mParent->EnvelopeUpdated();
-         RecalcRequired = true;
-         Refresh(false);
-      }
+   if (mEnvelope->MouseEvent(event, mEnvRect, 0.0, mEnvRect.width, false,
+            dBMin, dBMax, dBMin, dBMax))
+   {
+      mParent->EnvelopeUpdated();
+      RecalcRequired = true;
+      Refresh(false);
    }
 
    if (event.ButtonUp() && HasCapture())
@@ -990,6 +988,9 @@ BEGIN_EVENT_TABLE(EqualizationDialog,wxDialog)
    EVT_BUTTON( ID_SAVEAS, EqualizationDialog::OnSaveAs )
    EVT_BUTTON( ID_DELETE, EqualizationDialog::OnDelete )
    EVT_BUTTON( ID_CLEAR, EqualizationDialog::OnClear )
+#ifdef EXPERIMENTAL_EQ_INVERT
+   EVT_BUTTON( ID_INVERT, EqualizationDialog::OnInvert )
+#endif
 
    EVT_BUTTON( ID_EFFECT_PREVIEW, EqualizationDialog::OnPreview )
    EVT_BUTTON( wxID_OK, EqualizationDialog::OnOk )
@@ -1400,6 +1401,10 @@ void EqualizationDialog::MakeEqualizationDialog()
 
    btn = new wxButton( this, ID_CLEAR, _("Flat"));
    szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
+#ifdef EXPERIMENTAL_EQ_INVERT
+   btn = new wxButton( this, ID_INVERT, _("Invert"));
+   szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
+#endif
    mGridOnOff = new wxCheckBox(this, GridOnOffID, _("Grids"),
                             wxDefaultPosition, wxDefaultSize,
                             wxALIGN_RIGHT);
@@ -2113,6 +2118,15 @@ void EqualizationDialog::LayoutEQSliders()
    wxSize rulerSize = ruler->GetSize();   //and the ruler
    wxSizerItem *EQslider = szrG->GetItem((size_t)1);
    wxSize EQsliderSize = EQslider->GetSize();   //size of the sliders
+
+#if defined(__WXMAC__)
+   // LL: 2010-01-04 - Don't know why, but on the Mac, the rightmost sliders
+   // will wind up off the edge of the window since they get spaced out too
+   // much.  Somewhere, there's an extra 2 pixels in slider width that's not
+   // being accounted for.  (I guess)
+   EQsliderSize.x += 2;
+#endif
+
    int start, w, range, so_far;
    start = szr2Size.x + rulerSize.x + 12;   //inc ruler & mPanel border (4+4 + 4)
    szrG->SetItemMinSize((size_t)0, start - EQsliderSize.x/2, -1);   //set 1st spacer so that 1st slider aligned with ruler
@@ -2132,6 +2146,7 @@ void EqualizationDialog::LayoutEQSliders()
       szrG->SetItemMinSize((size_t)(i*2), w, -1);   //set spacers so that sliders aligned with ruler
       so_far += (w + EQsliderSize.x);
    }
+
    RefreshRect(wxRect(szrG->GetPosition(),szrGSize));
 }
 
@@ -2818,6 +2833,82 @@ void EqualizationDialog::OnClear(wxCommandEvent &event)
    EnvelopeUpdated();
 }
 
+#ifdef EXPERIMENTAL_EQ_INVERT
+void EqualizationDialog::OnInvert(wxCommandEvent &event) // Inverts any curve
+{
+   if(!drawMode)   // Graphic (Slider) mode. Invert the sliders.
+   {
+      for (int i = 0; thirdOct[i] <= mHiFreq; ++i)
+      {
+         if( i == NUMBER_OF_BANDS )
+            break;
+         m_EQVals[i] = -m_EQVals[i];
+         int newPosn = (int)m_EQVals[i];
+         m_sliders[i]->SetValue( newPosn );
+         m_sliders_old[i] = newPosn;
+   #if wxUSE_TOOLTIPS
+         wxString tip;
+         if( thirdOct[i] < 1000.)
+            tip.Printf( wxT("%dHz\n%.1fdB"), (int)thirdOct[i], m_EQVals[i] );
+         else
+            tip.Printf( wxT("%gkHz\n%.1fdB"), thirdOct[i]/1000., m_EQVals[i] );
+         m_sliders[i]->SetToolTip(tip);
+   #endif
+      }
+      GraphicEQ(mLogEnvelope);
+   }
+   else  // Draw mode.  Invert the points.
+   {
+      bool lin;   // refers to the 'log' or 'lin' of the frequency scale, not the amplitude
+      int numPoints; // number of points in the curve/envelope
+
+      // determine if log or lin curve is the current one
+      // and find out how many points are in the curve
+      if(mLinFreq->IsChecked())  // lin freq scale and so envelope
+      {
+         lin = true;
+         numPoints = mLinEnvelope->GetNumberOfPoints();
+      }
+      else
+      {
+         lin = false;
+         numPoints = mLogEnvelope->GetNumberOfPoints();
+      }
+
+      if( numPoints == 0 )
+         return;
+
+      double *when = new double[ numPoints ];
+      double *value = new double[ numPoints ];
+
+      if(lin)
+         mLinEnvelope->GetPoints( when, value, numPoints );
+      else
+         mLogEnvelope->GetPoints( when, value, numPoints );
+
+      // invert the curve
+      for( int i=0; i < numPoints; i++)
+      {
+         if(lin)
+            mLinEnvelope->Move(when[i] , -value[i]);
+         else
+            mLogEnvelope->Move(when[i] , -value[i]);
+      }
+
+      // copy it back to the other one (just in case)
+      if(lin)
+         EnvLinToLog();
+      else
+         EnvLogToLin();
+   }
+
+   // and update the display etc
+   mPanel->Recalc();
+   mPanel->Refresh(false);
+   EnvelopeUpdated();
+}
+#endif
+
 void EqualizationDialog::OnErase(wxEraseEvent &event)
 {
    // Ignore it
@@ -2851,8 +2942,9 @@ void EqualizationDialog::OnPreview(wxCommandEvent &event)
    TransferDataFromWindow();
    m_pEffect->Preview();
    mPanel->RecalcRequired = true;
-   wxPaintEvent dummyEvent;
-   OnPaint(dummyEvent);
+   //redraw the window.
+   Refresh();
+   Update();
    //v Restore previous values?
 }
 

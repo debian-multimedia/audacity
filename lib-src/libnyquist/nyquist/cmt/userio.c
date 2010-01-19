@@ -133,6 +133,7 @@ extern struct condition a_cond, a_in_cond;
 
 #ifdef UNIX
 #include <sys/param.h>
+#include <sys/resource.h>
 #include "cmtio.h"
 #ifdef _IBMR2
 #define NBBY 8
@@ -1205,6 +1206,7 @@ public int wait_ascii()
 #endif /* !UNIX_MACH */
 #endif
     char c;
+    struct rlimit file_limit;
 
     if (abort_flag == ABORT_LEVEL) return ABORT_CHAR;
     if (abort_flag == BREAK_LEVEL) return BREAK_CHAR;
@@ -1233,7 +1235,8 @@ public int wait_ascii()
         FD_ZERO(&readfds);
         FD_SET(IOinputfd, &readfds);
         gflush();
-        select(NOFILE+1, &readfds, 0, 0, NULL);
+        getrlimit(RLIMIT_NOFILE, &file_limit);
+        select(file_limit.rlim_max+1, &readfds, 0, 0, NULL);
 #endif /* !UNIX_MACH */
 #endif /* ifdef UNIX */
     }

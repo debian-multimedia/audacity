@@ -819,7 +819,14 @@ void AudacityProject::CreateMenusAndCommands()
    c->SetDefaultFlags(AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
                       AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
 
-   c->AddItem(wxT("RepeatLastEffect"), mLastEffectDesc, FN(OnRepeatLastEffect), wxT("Ctrl+R"),
+   wxString buildMenuLabel;
+   if (mLastEffectType != 0) {
+      buildMenuLabel.Printf(_("Repeat %s"), mLastEffect->GetEffectName().c_str());
+   }
+   else 
+      buildMenuLabel.Printf(_("Repeat Last Effect"));
+
+   c->AddItem(wxT("RepeatLastEffect"), buildMenuLabel, FN(OnRepeatLastEffect), wxT("Ctrl+R"),
               AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag | HasLastEffectFlag,
               AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag | HasLastEffectFlag);
 
@@ -1750,11 +1757,43 @@ void AudacityProject::OnPlayStop()
 {
    ControlToolBar *toolbar = GetControlToolBar();
 
-   //If busy, stop playing, make sure everything is unpaused.
+   //If this project is playing, stop playing, make sure everything is unpaused.
    if (gAudioIO->IsStreamActive(GetAudioIOToken())) {
       toolbar->SetPlay(false);        //Pops
       toolbar->SetStop(true);         //Pushes stop down
       toolbar->StopPlaying();
+   }
+   else if (gAudioIO->IsStreamActive()) {
+      //If this project isn't playing, but another one is, stop playing the old and start the new.
+
+      //find out which project we need;
+      AudacityProject* otherProject = NULL;
+      for(unsigned i=0; i<gAudacityProjects.GetCount(); i++) {
+         if(gAudioIO->IsStreamActive(gAudacityProjects[i]->GetAudioIOToken())) {
+            otherProject=gAudacityProjects[i];
+            break;
+         }
+      }
+      
+      //stop playing the other project
+      if(otherProject) {
+         ControlToolBar *otherToolbar = otherProject->GetControlToolBar();
+         otherToolbar->SetPlay(false);        //Pops
+         otherToolbar->SetStop(true);         //Pushes stop down
+         otherToolbar->StopPlaying();
+      }
+      
+      //play the front project
+      if (!gAudioIO->IsBusy()) {
+         //update the playing area
+         TP_DisplaySelection(); 
+         //Otherwise, start playing (assuming audio I/O isn't busy)
+         toolbar->SetPlay(true);
+         toolbar->SetStop(false);
+
+         // Will automatically set mLastPlayMode
+         toolbar->PlayCurrentRegion(false);
+      }
    }
    else if (!gAudioIO->IsBusy()) {
       //Otherwise, start playing (assuming audio I/O isn't busy)
@@ -2548,8 +2587,11 @@ bool AudacityProject::OnEffect(int type,
          if ((f->GetEffectFlags() & (INSERT_EFFECT | ANALYZE_EFFECT))==0) {
             mLastEffect = f;
             mLastEffectType = type;
-            mLastEffectDesc.Printf(_("Repeat %s"), shortDesc.c_str());
-            mCommandManager.Modify(wxT("RepeatLastEffect"), mLastEffectDesc);
+            wxString lastEffectDesc;
+            /* i18n-hint: %s will be the name of the effect which will be
+             * repeated if this menu item is chosen */
+            lastEffectDesc.Printf(_("Repeat %s"), shortDesc.c_str());
+            mCommandManager.Modify(wxT("RepeatLastEffect"), lastEffectDesc);
          }
       }
       //STM:
@@ -4950,12 +4992,24 @@ void AudacityProject::OnNewTimeTrack()
 
 void AudacityProject::OnTimerRecord()
 {
+   //we break the prompting and waiting dialogs into two sections
+   //because they both give the user a chance to click cancel
+   //and therefore remove the newly inserted track.
+
    TimerRecordDialog dialog(this /* parent */ );
    int modalResult = dialog.ShowModal();
-   if (modalResult == eProgressCancelled)
+   if (modalResult == wxID_CANCEL)
    {
-      // Cancelled while the recording, so throw out the fresh track.
-      OnUndo();
+      // Cancelled before recording - don't need to do anyting.
+   }
+   else if(!dialog.RunWaitDialog())
+   {
+      //RunWaitDialog() shows the "wait for start" as well as "recording" dialog
+      //if it returned false it means the user cancelled while the recording, so throw out the fresh track.
+      //However, we can't undo it here because the PushState() is called in TrackPanel::OnTimer(),
+      //which is blocked by this function.
+      //so instead we mark a flag to undo it there.
+      mTimerRecordCanceled = true;
    }
 }
 
