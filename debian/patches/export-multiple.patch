@@ -2,9 +2,9 @@ Description: Add "Consecutively numbered Label/Track Name" option
 Bug-Ubuntu: https://launchpad.net/bugs/276043
 Forwarded: yes
 Author: Benjamin Drung <bdrung@ubuntu.com>
-diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
---- a/src/export/ExportMultiple.cpp
-+++ b/src/export/ExportMultiple.cpp
+
+--- audacity-1.3.11.orig/src/export/ExportMultiple.cpp
++++ audacity-1.3.11/src/export/ExportMultiple.cpp
 @@ -65,6 +65,7 @@ enum {
     TrackID,
     ByNameID,
@@ -13,7 +13,7 @@ diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
     PrefixID,
     OverwriteID
  };
-@@ -307,13 +308,21 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
+@@ -307,13 +308,21 @@ void ExportMultiple::PopulateOrExchange(
           {
              // Row 1
              S.SetBorder(1);
@@ -37,7 +37,7 @@ diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
              S.SetBorder(1);
              mByNumber = S.Id(ByNumberID)
                 .AddRadioButtonToGroup(wxT(""));
-@@ -321,7 +330,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
+@@ -321,7 +330,7 @@ void ExportMultiple::PopulateOrExchange(
              S.SetBorder(3);
              mByNumberLabel = S.AddVariableText(_("Numbering consecutively"), false);
  
@@ -55,19 +55,25 @@ diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
              mFirst->GetValue();
     mFirstFileLabel->Enable(enable);
     mFirstFileName->Enable(enable);
-@@ -518,8 +527,10 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
+@@ -518,12 +527,14 @@ void ExportMultiple::OnExport(wxCommandE
     mExported.Empty();
  
     if (mLabel->GetValue()) {
 -      ok = ExportMultipleByLabel(mByName->GetValue(),
 -                                 mPrefix->GetValue());
-+      // TODO
 +      ok = ExportMultipleByLabel(mByName->GetValue() || mByNumberAndName->GetValue(),
 +                                 mPrefix->GetValue(),
 +                                 mByNumberAndName->GetValue());
     }
     else {
-       ok = ExportMultipleByTrack(mByName->GetValue(),
+-      ok = ExportMultipleByTrack(mByName->GetValue(),
+-                                 mPrefix->GetValue());
++      ok = ExportMultipleByTrack(mByName->GetValue() || mByNumberAndName->GetValue(),
++                                 mPrefix->GetValue(),
++                                 mByNumberAndName->GetValue());
+    }
+ 
+    // Give 'em the result
 @@ -602,7 +613,7 @@ bool ExportMultiple::DirOk()
     return fn.Mkdir(0777, wxPATH_MKDIR_FULL);
  }
@@ -77,7 +83,7 @@ diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
  {
     wxASSERT(mProject);
     bool tagsPrompt = mProject->GetShowId3Dialog();
-@@ -669,9 +680,14 @@ int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix)
+@@ -669,9 +680,14 @@ int ExportMultiple::ExportMultipleByLabe
              name.Printf(wxT("%s-%02d"), prefix.c_str(), l+1);
           else
              name.Printf(wxT("%s-%d"), prefix.c_str(), l+1);
@@ -93,9 +99,32 @@ diff --git a/src/export/ExportMultiple.cpp b/src/export/ExportMultiple.cpp
        setting.destfile.SetName(MakeFileName(name));
  
        wxASSERT(setting.destfile.IsOk());     // scream if file name is broke
-diff --git a/src/export/ExportMultiple.h b/src/export/ExportMultiple.h
---- a/src/export/ExportMultiple.h
-+++ b/src/export/ExportMultiple.h
+@@ -715,7 +731,8 @@ int ExportMultiple::ExportMultipleByLabe
+ }
+ 
+ int ExportMultiple::ExportMultipleByTrack(bool byName,
+-                                          wxString prefix)
++                                          wxString prefix,
++                                          bool addNumber)
+ {
+    wxASSERT(mProject);
+    bool tagsPrompt = mProject->GetShowId3Dialog();
+@@ -793,6 +810,13 @@ int ExportMultiple::ExportMultipleByTrac
+       title = tr->GetName();
+       if (byName) {
+          name = title;
++         if (addNumber) {
++            if (numTracks > 9) {
++               name.Prepend(wxString::Format(wxT("%02d "), l+1));
++            } else {
++               name.Prepend(wxString::Format(wxT("%d "), l+1));
++            }
++         }
+       }
+       else {
+          if (numTracks > 9) {
+--- audacity-1.3.11.orig/src/export/ExportMultiple.h
++++ audacity-1.3.11/src/export/ExportMultiple.h
 @@ -52,7 +52,7 @@ private:
      * labels that define them (true), or just numbered (false).
      * @param prefix The string used to prefix the file number if files are being
@@ -104,6 +133,15 @@ diff --git a/src/export/ExportMultiple.h b/src/export/ExportMultiple.h
 +   int ExportMultipleByLabel(bool byName, wxString prefix, bool addNumber);
  
     /** \brief Export each track in the project to a separate file
+     *
+@@ -60,7 +60,7 @@ private:
+     * (true), or just numbered (false).
+     * @param prefix The string used to prefix the file number if files are being
+     * numbered rather than named */
+-   int ExportMultipleByTrack(bool byName, wxString prefix);
++   int ExportMultipleByTrack(bool byName, wxString prefix, bool addNumber);
+ 
+    /** Export one file of an export multiple set
      *
 @@ -155,6 +155,9 @@ private:
     wxRadioButton *mByNumber;  /**< button to choose numbering exported files */

@@ -527,14 +527,14 @@ void ExportMultiple::OnExport(wxCommandEvent& event)
    mExported.Empty();
 
    if (mLabel->GetValue()) {
-      // TODO
       ok = ExportMultipleByLabel(mByName->GetValue() || mByNumberAndName->GetValue(),
                                  mPrefix->GetValue(),
                                  mByNumberAndName->GetValue());
    }
    else {
-      ok = ExportMultipleByTrack(mByName->GetValue(),
-                                 mPrefix->GetValue());
+      ok = ExportMultipleByTrack(mByName->GetValue() || mByNumberAndName->GetValue(),
+                                 mPrefix->GetValue(),
+                                 mByNumberAndName->GetValue());
    }
 
    // Give 'em the result
@@ -731,7 +731,8 @@ int ExportMultiple::ExportMultipleByLabel(bool byName, wxString prefix, bool add
 }
 
 int ExportMultiple::ExportMultipleByTrack(bool byName,
-                                          wxString prefix)
+                                          wxString prefix,
+                                          bool addNumber)
 {
    wxASSERT(mProject);
    bool tagsPrompt = mProject->GetShowId3Dialog();
@@ -809,6 +810,13 @@ int ExportMultiple::ExportMultipleByTrack(bool byName,
       title = tr->GetName();
       if (byName) {
          name = title;
+         if (addNumber) {
+            if (numTracks > 9) {
+               name.Prepend(wxString::Format(wxT("%02d "), l+1));
+            } else {
+               name.Prepend(wxString::Format(wxT("%d "), l+1));
+            }
+         }
       }
       else {
          if (numTracks > 9) {

@@ -60,7 +60,7 @@ private:
     * (true), or just numbered (false).
     * @param prefix The string used to prefix the file number if files are being
     * numbered rather than named */
-   int ExportMultipleByTrack(bool byName, wxString prefix);
+   int ExportMultipleByTrack(bool byName, wxString prefix, bool addNumber);
 
    /** Export one file of an export multiple set
     *
