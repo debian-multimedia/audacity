@@ -3,6 +3,8 @@ Bug-Debian: http://bugs.debian.org/481424
 Bug-Ubuntu: https://launchpad.net/bugs/292168
 Forwarded: yes
 Author: Benjamin Drung <bdrung@ubuntu.com>
+Accepted-upstream: http://code.google.com/p/audacity/source/detail?r=10067
+
 diff --git a/src/AudacityApp.cpp b/src/AudacityApp.cpp
 index 21be5ac..de36ecc 100644
 --- a/src/AudacityApp.cpp

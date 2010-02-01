@@ -4,6 +4,8 @@ Description: Protect against Pa_GetDeviceInfo returning null sometimes.
 Bug-Ubuntu: https://launchpad.net/bugs/436990
 Forwarded: yes
 Author: David Henningsson <launchpad.web@epost.diwic.se>
+Accepted-upstream: http://code.google.com/p/audacity/source/detail?r=10066
+
 diff --git a/src/prefs/DevicePrefs.cpp b/src/prefs/DevicePrefs.cpp
 --- a/src/prefs/DevicePrefs.cpp
 +++ b/src/prefs/DevicePrefs.cpp
