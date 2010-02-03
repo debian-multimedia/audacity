@@ -6,7 +6,7 @@ Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian@debian-unofficial.org>,
            Benjamin Drung <bdrung@ubuntu.com>,
            David Henningsson <diwic@ubuntu.com>
-Standards-Version: 3.8.3
+Standards-Version: 3.8.4
 Build-Depends: autotools-dev,
                cdbs (>= 0.4.4),
                debhelper (>= 7),
