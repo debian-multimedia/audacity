@@ -1,3 +1,4 @@
 version=3
-http://code.google.com/p/audacity/downloads/list \
-	http://audacity.googlecode.com/files/audacity-minsrc-(.+)\.tar\.bz2
+opts="uversionmangle=s/-beta//" \
+  http://code.google.com/p/audacity/downloads/list \
+  http://audacity.googlecode.com/files/audacity-minsrc-(.+)\.tar\.bz2
