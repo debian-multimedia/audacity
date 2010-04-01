@@ -126,8 +126,6 @@ bool EffectsPrefs::Apply()
 
    // If language has changed, we want to change it now, not on the next reboot.
    wxString lang = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
-   if (lang == wxT(""))
-      lang = GetSystemLanguageCode();
    wxGetApp().InitLang(lang);
 
    return true;

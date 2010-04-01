@@ -529,7 +529,6 @@ int ExportPCM::Export(AudacityProject *project,
                        formatStr.c_str()));
 
    while(updateResult == eProgressSuccess) {
-      sampleCount samplesWritten;
       sampleCount numSamples = mixer->Process(maxBlockLen);
 
       if (numSamples == 0)
@@ -539,19 +538,10 @@ int ExportPCM::Export(AudacityProject *project,
 
       ODManager::LockLibSndFileMutex();
       if (format == int16Sample)
-         samplesWritten = sf_writef_short(sf, (short *)mixed, numSamples);
+         sf_writef_short(sf, (short *)mixed, numSamples);
       else
-         samplesWritten = sf_writef_float(sf, (float *)mixed, numSamples);
+         sf_writef_float(sf, (float *)mixed, numSamples);
       ODManager::UnlockLibSndFileMutex();
-
-      if (samplesWritten != numSamples) {
-        char buffer2[1000];
-        sf_error_str(sf, buffer2, 1000);
-        /* Tried the format %s variant (like below) but got garbage, probably it depends on 
-           Audacity and/or libsndfile being compiled with unicode or not */
-        wxMessageBox(_("Error while writing file (disk full?): ") + wxString::FromAscii(buffer2));
-        break;
-      }
 
       updateResult = progress->Update(mixer->MixGetCurrentTime()-t0, t1-t0);
    }

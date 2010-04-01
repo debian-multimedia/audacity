@@ -52,7 +52,7 @@ private:
     * labels that define them (true), or just numbered (false).
     * @param prefix The string used to prefix the file number if files are being
     * numbered rather than named */
-   int ExportMultipleByLabel(bool byName, wxString prefix, bool addNumber);
+   int ExportMultipleByLabel(bool byName, wxString prefix);
 
    /** \brief Export each track in the project to a separate file
     *
@@ -60,7 +60,7 @@ private:
     * (true), or just numbered (false).
     * @param prefix The string used to prefix the file number if files are being
     * numbered rather than named */
-   int ExportMultipleByTrack(bool byName, wxString prefix, bool addNumber);
+   int ExportMultipleByTrack(bool byName, wxString prefix);
 
    /** Export one file of an export multiple set
     *
@@ -154,9 +154,6 @@ private:
 
    wxRadioButton *mByNumber;  /**< button to choose numbering exported files */
    wxStaticText  *mByNumberLabel;
-
-   wxRadioButton *mByNumberAndName;
-   wxStaticText  *mByNumberAndNameLabel;
 
    wxStaticText  *mPrefixLabel;
    wxTextCtrl    *mPrefix;
