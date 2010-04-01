@@ -36,7 +36,6 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 	--with-portaudio=v19 \
 	--with-portmixer \
 	--with-soundtouch=system \
-	--with-taglib=system \
 	$(null)
 
 # Do not link against unused libraries (make dpkg-shlibdeps happy).
