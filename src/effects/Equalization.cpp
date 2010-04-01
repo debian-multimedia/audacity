@@ -170,8 +170,8 @@ const float EffectEqualization::curvey[][nCurvePoints] =
    },
    {
    // Decca FFRR 78
-      22.0,   21.5,  14.0,  11.2,   9.8,   6.0,   2,0,   1.5,   1.0,   0.5,
-      0.0,     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0   -0.5,
+      22.0,   21.5,  14.0,  11.2,   9.8,   6.0,   2.0,   1.5,   1.0,   0.5,
+      0.0,     0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   -0.5,
       -1.0,   -2.0,  -2.5,  -3.5,  -4.0,  -4.5,  -7.0,  -7.5
    },
    {
@@ -179,6 +179,12 @@ const float EffectEqualization::curvey[][nCurvePoints] =
       18.6,   18.5,  16.9,  15.9,  15.3,  13.1,  11.6,   8.2,   6.7,   5.5,
       3.8,     2.6,   1.8,   1.2,   0.8,   0.3,   0.0,  -2.6,  -4.7,  -6.6,
       -8.2,   -9.6, -10.8, -11.9, -12.9, -13.7, -17.2, -17.7
+   },
+   {    
+   // Inverse RIAA
+      -18.6,  -18.5, -16.9, -15.9, -15.3, -13.1, -11.6, -8.2,  -6.7,  -5.5,
+      -3.8,   -2.6,  -1.8,   -1.2, -0.8,  -0.3,    0.0,  2.6,   4.7,   6.6,
+       8.2,    9.6,  10.8,   11.9, 12.9,  13.7,   17.2, 17.7
    },
    {
    // Col 78
@@ -297,6 +303,7 @@ const wxChar * EffectEqualization::curveNames[] =
     wxT("Decca FFRR Micro"),
     wxT("Decca FFRR 78"),
     wxT("RIAA"),
+    wxT("Inverse RIAA"),
     wxT("Columbia 78"),
     wxT("Decca FFRR LP"),
     wxT("EMI 78"),
@@ -817,7 +824,7 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
    memDC.DrawRectangle(border);
 
    mEnvRect = border;
-   mEnvRect.Deflate(2, 2);
+   mEnvRect.Deflate(PANELBORDER, PANELBORDER);
 
    // Pure blue x-axis line
    memDC.SetPen(wxPen(theTheme.Colour( clrGraphLines ), 1, wxSOLID));
@@ -825,6 +832,13 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
    AColor::Line(memDC,
                 mEnvRect.GetLeft(), mEnvRect.y + center,
                 mEnvRect.GetRight(), mEnvRect.y + center);
+
+   // Draw the grid, if asked for.  Do it now so it's underneath the main plots.
+   if( mParent->drawGrid )
+   {
+      mParent->freqRuler->ruler.DrawGrid(memDC, mEnvRect.height, true, true, PANELBORDER, PANELBORDER);
+      mParent->dBRuler->ruler.DrawGrid(memDC, mEnvRect.width, true, true, PANELBORDER, PANELBORDER);
+   }
 
    // Med-blue envelope line
    memDC.SetPen(wxPen(theTheme.Colour( clrGraphLines ), 3, wxSOLID));
@@ -920,13 +934,7 @@ void EqualizationPanel::OnPaint(wxPaintEvent & evt)
 
    memDC.SetPen(*wxBLACK_PEN);
    if( mParent->mFaderOrDraw[0]->GetValue() )
-      mEnvelope->DrawPoints(memDC, mEnvRect, 0.0, mEnvRect.width, false, dBMin, dBMax);
-
-   if( mParent->drawGrid )
-   {
-      mParent->freqRuler->ruler.DrawGrid(memDC, mEnvRect.height+2, true, true, 0, 1);
-      mParent->dBRuler->ruler.DrawGrid(memDC, mEnvRect.width+2, true, true, 1, 2);
-   }
+      mEnvelope->DrawPoints(memDC, mEnvRect, 0.0, mEnvRect.width-1, false, dBMin, dBMax);
 
    dc.Blit(0, 0, mWidth, mHeight,
            &memDC, 0, 0, wxCOPY, FALSE);
@@ -988,9 +996,7 @@ BEGIN_EVENT_TABLE(EqualizationDialog,wxDialog)
    EVT_BUTTON( ID_SAVEAS, EqualizationDialog::OnSaveAs )
    EVT_BUTTON( ID_DELETE, EqualizationDialog::OnDelete )
    EVT_BUTTON( ID_CLEAR, EqualizationDialog::OnClear )
-#ifdef EXPERIMENTAL_EQ_INVERT
    EVT_BUTTON( ID_INVERT, EqualizationDialog::OnInvert )
-#endif
 
    EVT_BUTTON( ID_EFFECT_PREVIEW, EqualizationDialog::OnPreview )
    EVT_BUTTON( wxID_OK, EqualizationDialog::OnOk )
@@ -1255,14 +1261,15 @@ void EqualizationDialog::MakeEqualizationDialog()
    dBRuler->ruler.SetFormat(Ruler::LinearDBFormat);
    dBRuler->ruler.SetUnits(_("dB"));
    dBRuler->ruler.SetLabelEdges(true);
+   dBRuler->ruler.mbTicksAtExtremes = true;
    int w, h;
    dBRuler->ruler.GetMaxSize(&w, NULL);
    dBRuler->SetSize(wxSize(w, 150));  // height needed for wxGTK
 
    szr4 = new wxBoxSizer( wxVERTICAL );
-   szr4->AddSpacer(2); // vertical space for panel border and thickness of line
+   szr4->AddSpacer(PANELBORDER); // vertical space for panel border
    szr4->Add( dBRuler, 1, wxEXPAND|wxALIGN_LEFT|wxALL );
-   szr4->AddSpacer(1); // vertical space for thickness of line
+   szr4->AddSpacer(PANELBORDER); // vertical space for panel border
    szr1->Add( szr4, 0, wxEXPAND|wxALIGN_LEFT|wxALL );
 
    mPanel = new EqualizationPanel( mLoFreq, mHiFreq,
@@ -1270,7 +1277,7 @@ void EqualizationDialog::MakeEqualizationDialog()
                                    this,
                                    mFilterFuncR, mFilterFuncI, mWindowSize,
                                    ID_FILTERPANEL);
-   szr1->Add( mPanel, 1, wxEXPAND|wxALIGN_CENTRE|wxRIGHT, 4);
+   szr1->Add( mPanel, 1, wxEXPAND|wxALIGN_CENTRE);
    szr3 = new wxBoxSizer( wxVERTICAL );
    szr1->Add( szr3, 0, wxALIGN_CENTRE|wxRIGHT, 0);   //spacer for last EQ
 
@@ -1287,9 +1294,14 @@ void EqualizationDialog::MakeEqualizationDialog()
    freqRuler->ruler.SetUnits(_("Hz"));
    freqRuler->ruler.SetFlip(true);
    freqRuler->ruler.SetLabelEdges(true);
+   freqRuler->ruler.mbTicksAtExtremes = true;
    freqRuler->ruler.GetMaxSize(NULL, &h);
    freqRuler->SetMinSize(wxSize(-1, h));
-   szr1->Add( freqRuler, 0, wxEXPAND|wxALIGN_LEFT|wxRIGHT, 4 );
+   szr5 = new wxBoxSizer( wxHORIZONTAL );
+   szr5->AddSpacer(PANELBORDER); // horizontal space for panel border
+   szr5->Add( freqRuler, 1, wxEXPAND|wxALIGN_LEFT);
+   szr5->AddSpacer(PANELBORDER); // horizontal space for panel border
+   szr1->Add( szr5, 0, wxEXPAND|wxALIGN_LEFT|wxALL );
 
    szrV->Add( szr1, 1, wxEXPAND|wxALIGN_CENTER|wxALL, 0 );
 
@@ -1399,12 +1411,10 @@ void EqualizationDialog::MakeEqualizationDialog()
    mDelete = new wxButton( this, ID_DELETE, _("Delete") );
    szrC->Add( mDelete, 0, wxALIGN_CENTRE|wxLEFT, 4 );
 
-   btn = new wxButton( this, ID_CLEAR, _("Flat"));
+   btn = new wxButton( this, ID_CLEAR, _("Flatten"));
    szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
-#ifdef EXPERIMENTAL_EQ_INVERT
    btn = new wxButton( this, ID_INVERT, _("Invert"));
    szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
-#endif
    mGridOnOff = new wxCheckBox(this, GridOnOffID, _("Grids"),
                             wxDefaultPosition, wxDefaultSize,
                             wxALIGN_RIGHT);
@@ -2833,7 +2843,6 @@ void EqualizationDialog::OnClear(wxCommandEvent &event)
    EnvelopeUpdated();
 }
 
-#ifdef EXPERIMENTAL_EQ_INVERT
 void EqualizationDialog::OnInvert(wxCommandEvent &event) // Inverts any curve
 {
    if(!drawMode)   // Graphic (Slider) mode. Invert the sliders.
@@ -2907,7 +2916,6 @@ void EqualizationDialog::OnInvert(wxCommandEvent &event) // Inverts any curve
    mPanel->Refresh(false);
    EnvelopeUpdated();
 }
-#endif
 
 void EqualizationDialog::OnErase(wxEraseEvent &event)
 {

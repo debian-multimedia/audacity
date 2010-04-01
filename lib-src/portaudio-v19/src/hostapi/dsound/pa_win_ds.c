@@ -1,5 +1,5 @@
 /*
- * $Id: pa_win_ds.c,v 1.12 2009/05/25 21:40:16 richardash1981 Exp $
+ * $Id: pa_win_ds.c,v 1.12 2009-05-25 21:40:16 richardash1981 Exp $
  * Portable Audio I/O Library DirectSound implementation
  *
  * Authors: Phil Burk, Robert Marsanyi & Ross Bencina

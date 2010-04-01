@@ -18,7 +18,7 @@
     <foaf:maker>Chris Sutton</foaf:maker>
     <foaf:maker>Yves Raimond</foaf:maker>
     <foaf:maker>David Pastor Escuredo</foaf:maker>
-    <dc:date>$Date: 2008/12/29 22:00:31 $</dc:date>
+    <dc:date>$Date: 2008-12-29 22:00:31 $</dc:date>
   </owl:Ontology>
   <owl:AnnotationProperty rdf:about="http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"/>
   <owl:Class rdf:about="Plugin">

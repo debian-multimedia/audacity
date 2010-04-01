@@ -13,6 +13,7 @@
 #define __AUDACITY_EFFECT_EQUALIZATION__
 #define NUMBER_OF_BANDS 31
 #define NUM_PTS 180
+#define PANELBORDER 1   // only increase from '1' for testing purposes - MJS
 
 #include <wx/button.h>
 #include <wx/panel.h>
@@ -137,7 +138,7 @@ public:
    enum curveType {
      amradio, acoustic,
      nab, lp, aes, deccaffrrmicro, deccaffrr78, riaa,
-     col78, deccaffrrlp, emi78, rcavictor1938, rcavictor1947,
+     inverseriaa, col78, deccaffrrlp, emi78, rcavictor1938, rcavictor1947,
      nCurveTypes
    };
 
@@ -282,9 +283,7 @@ private:
       ID_SAVEAS,
       ID_DELETE,
       ID_CLEAR,
-#ifdef EXPERIMENTAL_EQ_INVERT
       ID_INVERT,
-#endif
       drawRadioID,
       sliderRadioID,
       ID_INTERP,
@@ -314,9 +313,7 @@ private:
    void OnSaveAs( wxCommandEvent &event );
    void OnDelete( wxCommandEvent &event );
    void OnClear( wxCommandEvent &event );
-#ifdef EXPERIMENTAL_EQ_INVERT
    void OnInvert( wxCommandEvent &event );
-#endif
    void OnPreview(wxCommandEvent &event);
    void OnOk( wxCommandEvent &event );
    void OnCancel( wxCommandEvent &event );
@@ -353,10 +350,11 @@ private:
    wxBoxSizer *szrH;
    wxBoxSizer *szrI;
    wxBoxSizer *szrL;
+   wxFlexGridSizer *szr1;
+   wxBoxSizer *szr2;
    wxBoxSizer *szr3;
    wxBoxSizer *szr4;
-   wxBoxSizer *szr2;
-   wxFlexGridSizer *szr1;
+   wxBoxSizer *szr5;
    wxSize size;
    wxCheckBox *mGridOnOff;
 

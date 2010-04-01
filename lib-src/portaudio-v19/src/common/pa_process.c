@@ -1,5 +1,5 @@
 /*
- * $Id: pa_process.c,v 1.9 2009/05/25 21:40:16 richardash1981 Exp $
+ * $Id: pa_process.c,v 1.9 2009-05-25 21:40:16 richardash1981 Exp $
  * Portable Audio I/O Library
  * streamCallback <-> host buffer processing adapter
  *

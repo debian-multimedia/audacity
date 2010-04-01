@@ -104,7 +104,7 @@ class AUDACITY_DLL_API Track: public XMLTagHandler
       MonoChannel = 2
    };
 
-   enum
+   enum TrackKindEnum
    {
       None,
       Wave,
@@ -114,7 +114,7 @@ class AUDACITY_DLL_API Track: public XMLTagHandler
       Label,
       Time,
       All
-   } TrackKindEnum;
+   };
 
    Track(DirManager * projDirManager);
    Track(const Track &orig);
@@ -162,6 +162,10 @@ class AUDACITY_DLL_API Track: public XMLTagHandler
    virtual bool Clear(double t0, double t1) {return false;}
    virtual bool Paste(double t, Track * src) {return false;}
 
+   // This can be used to adjust a synchro-selected track when the selection
+   // is replaced by one of a different length.
+   virtual bool SyncAdjust(double oldT1, double newT1);
+
    virtual bool Silence(double t0, double t1) {return false;}
    virtual bool InsertSilence(double t, double len) {return false;}
 
@@ -179,6 +183,9 @@ class AUDACITY_DLL_API Track: public XMLTagHandler
 
    virtual double GetStartTime() { return 0.0; }
    virtual double GetEndTime() { return 0.0; }
+
+   // Checks if linking is on and any track in its group is selected
+   bool IsSynchroSelected();
 };
 
 struct TrackListNode
@@ -298,7 +305,7 @@ class AUDACITY_DLL_API TrackGroupIterator: public TrackListIterator
    Track *Last(bool skiplinked = false);
 
  private:
-   bool mEndOfGroup;
+   bool mInLabelSection;
 };
 
 //

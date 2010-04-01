@@ -1,5 +1,5 @@
 /*
- * $Id: pa_cpuload.c,v 1.8 2008/12/31 15:38:31 richardash1981 Exp $
+ * $Id: pa_cpuload.c,v 1.8 2008-12-31 15:38:31 richardash1981 Exp $
  * Portable Audio I/O Library CPU Load measurement functions
  * Portable CPU load measurement facility.
  *

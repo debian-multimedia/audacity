@@ -47,6 +47,9 @@ public:
    void DrawTextBox( wxDC & dc, const wxRect & r);
    void DrawHighlight( wxDC & dc, int xPos1, int xPos2, int charHeight);
    void getXPos( wxDC & dc, int * xPos1, int cursorPos);
+   double getDuration(){return t1-t;};
+   void AdjustEdge( int iEdge, double fNewTime);
+   void MoveLabel( int iEdge, double fNewTime);
    
 public:
    double t;  /// Time for left hand of label.
@@ -169,8 +172,13 @@ class LabelTrack:public Track {
    bool CalcCursorX(wxWindow * parent, int * x);
    int getCurrentCursorPosition() const { return mCurrentCursorPos; };
    
-   void ShiftLabelsOnClear(double b, double e);
-   void ChangeLabelsOnClear(double b, double e);
+   void MayAdjustLabel( int iLabel, int iEdge, bool bAllowSwapping, double fNewTime);
+   void MayMoveLabel( int iLabel, int iEdge, double fNewTime);
+
+   // This pastes labels without shifting existing ones
+   bool PasteOver(double t, Track *src);
+   bool SplitCut(double b, double e, Track **dest);
+   bool SplitDelete(double b, double e);
    void ShiftLabelsOnInsert(double length, double pt);
    void ChangeLabelsOnReverse(double b, double e);
    void ScaleLabels(double b, double e, double change);
@@ -215,7 +223,7 @@ class LabelTrack:public Track {
    bool mRightDragging;                /// flag to tell if it's a valid dragging
    bool mDrawCursor;                   /// flag to tell if drawing the cursor or not
    
-   // Used only for a LabelTrack on the clipboard
+   // Set in copied label tracks
    double mClipLen;
 
    void ComputeLayout(const wxRect & r, double h, double pps);
@@ -226,6 +234,7 @@ class LabelTrack:public Track {
    void RemoveSelectedText();
 
    bool mIsAdjustingLabel;
+   bool mbIsMoving;
 
    static wxFont msFont;
 };

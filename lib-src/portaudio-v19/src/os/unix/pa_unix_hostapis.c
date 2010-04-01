@@ -1,5 +1,5 @@
 /*
- * $Id: pa_unix_hostapis.c,v 1.9 2009/05/25 21:40:17 richardash1981 Exp $
+ * $Id: pa_unix_hostapis.c,v 1.9 2009-05-25 21:40:17 richardash1981 Exp $
  * Portable Audio I/O Library UNIX initialization table
  *
  * Based on the Open Source API proposed by Ross Bencina

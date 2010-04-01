@@ -4,7 +4,7 @@
 // Author:      Vadim Zeitlin
 // Modified by: Leland Lucius
 // Created:     12.03.02
-// RCS-ID:      $Id: private.h,v 1.3 2008/05/24 02:57:39 llucius Exp $
+// RCS-ID:      $Id: private.h,v 1.3 2008-05-24 02:57:39 llucius Exp $
 // Copyright:   (c) 2002 Vadim Zeitlin <vadim@wxwidgets.org>
 // Licence:     wxWindows licence
 //

@@ -54,8 +54,10 @@ wxBrush AColor::labelTextNormalBrush;
 wxBrush AColor::labelTextEditBrush;
 wxBrush AColor::labelUnselectedBrush;
 wxBrush AColor::labelSelectedBrush;
+wxBrush AColor::labelSyncSelBrush;
 wxPen AColor::labelUnselectedPen;
 wxPen AColor::labelSelectedPen;
+wxPen AColor::labelSyncSelPen;
 wxPen AColor::labelSurroundPen;
 wxPen AColor::trackFocusPens[3];
 wxPen AColor::snapGuidePen;
@@ -273,7 +275,7 @@ void AColor::Medium(wxDC * dc, bool selected)
 void AColor::MediumTrackInfo(wxDC * dc, bool selected)
 {
 #ifdef EXPERIMENTAL_THEMING
-   UseThemeColour( dc, selected ? clrTrackInfoSelected : clrTrackInfo);
+   UseThemeColour( dc, selected ? clrTrackInfoSelected : clrTrackInfo );
 #else
    Medium( dc, selected );
 #endif
@@ -397,8 +399,10 @@ void AColor::Init()
    theTheme.SetBrushColour( labelTextEditBrush,   clrLabelTextEditBrush );
    theTheme.SetBrushColour( labelUnselectedBrush, clrLabelUnselectedBrush );
    theTheme.SetBrushColour( labelSelectedBrush,   clrLabelSelectedBrush );
+   theTheme.SetBrushColour( labelSyncSelBrush,    clrSyncSel );
    theTheme.SetPenColour( labelUnselectedPen,   clrLabelUnselectedPen );
    theTheme.SetPenColour( labelSelectedPen,     clrLabelSelectedPen );
+   theTheme.SetPenColour( labelSyncSelPen,      clrSyncSel );
    theTheme.SetPenColour( labelSurroundPen,     clrLabelSurroundPen );
 
    // These colors were modified to avoid using reserved colors red and green

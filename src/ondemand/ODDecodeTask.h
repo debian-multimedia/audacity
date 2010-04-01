@@ -48,6 +48,14 @@ class ODDecodeTask:public ODTask
    
    virtual ODTask* Clone()=0;
    
+   /// subclasses need to override this if they cannot always seek.
+   /// seeking will be enabled once this is true.
+   virtual bool SeekingAllowed(){return true;}
+   
+   ///changes the tasks associated with this Waveform to process the task from a different point in the track
+   ///this is overridden from ODTask because certain classes don't allow users to seek sometimes, or not at all.
+   virtual void DemandTrackUpdate(WaveTrack* track, double seconds);
+   
    ///Return the task name
    virtual const char* GetTaskName(){return "ODDecodeTask";}
    
@@ -80,9 +88,6 @@ protected:
    ///Then it updates in the OD manner.
    virtual void Update();
    
-   ///Readjusts the blockfile order to start at the new cursor.
-   virtual void ODUpdate();
-
    ///Orders the input as either On-Demand or default layered order.
    void OrderBlockFiles(std::vector<ODDecodeBlockFile*> &unorderedBlocks);
 

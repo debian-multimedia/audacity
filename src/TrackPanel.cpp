@@ -215,6 +215,7 @@ is time to refresh some aspect of the screen.
 
 #include "widgets/ASlider.h"
 #include "widgets/Ruler.h"
+#include "widgets/TimeTextCtrl.h"
 
 #include <wx/arrimpl.cpp>
 
@@ -443,6 +444,7 @@ TrackPanel::TrackPanel(wxWindow * parent, wxWindowID id,
      mBacking(NULL),
      mRefreshBacking(false),
      mAutoScrolling(false),
+     mVertScrollRemainder(0),
      vrulerSize(36,0)
 #ifndef __WXGTK__   //Get rid if this pragma for gtk
 #pragma warning( default: 4355 )
@@ -1787,11 +1789,14 @@ void TrackPanel::SelectionHandleClick(wxMouseEvent & event,
    bool startNewSelection = true;
    mMouseCapture=IsSelecting;
 
+   // We create a new snap manager in case any snap-points have changed
    if (mSnapManager)
       delete mSnapManager;
+
    mSnapManager = new SnapManager(mTracks, NULL,
                                   mViewInfo->zoom,
                                   4); // pixel tolerance
+
    mSnapLeft = -1;
    mSnapRight = -1;
 
@@ -1932,8 +1937,11 @@ void TrackPanel::StartSelection(int mouseXCoordinate, int trackLeftEdge)
    if (mSnapManager) {
       mSnapLeft = -1;
       mSnapRight = -1;
-      if (mSnapManager->Snap(mCapturedTrack, mSelStart, false, &s)) {
-         mSnapLeft = TimeToPosition(s, trackLeftEdge);
+      bool snappedPoint, snappedTime;
+      if (mSnapManager->Snap(mCapturedTrack, mSelStart, false,
+                             &s, &snappedPoint, &snappedTime)) {
+         if (snappedPoint)
+            mSnapLeft = TimeToPosition(s, trackLeftEdge);
       }
    }
 
@@ -1972,15 +1980,22 @@ void TrackPanel::ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
    if (mSnapManager) {
       mSnapLeft = -1;
       mSnapRight = -1;
-      if (mSnapManager->Snap(mCapturedTrack, sel0, false, &sel0)) {
-         mSnapLeft = TimeToPosition(sel0, trackLeftEdge);
+      bool snappedPoint, snappedTime;
+      if (mSnapManager->Snap(mCapturedTrack, sel0, false,
+                             &sel0, &snappedPoint, &snappedTime)) {
+         if (snappedPoint)
+            mSnapLeft = TimeToPosition(sel0, trackLeftEdge);
       }
-      if (mSnapManager->Snap(mCapturedTrack, sel1, true, &sel1)) {
-         mSnapRight = TimeToPosition(sel1, trackLeftEdge);
+      if (mSnapManager->Snap(mCapturedTrack, sel1, true,
+                             &sel1, &snappedPoint, &snappedTime)) {
+         if (snappedPoint)
+            mSnapRight = TimeToPosition(sel1, trackLeftEdge);
       }
 
-      if (mSnapLeft >= 0 && mSnapRight >= 0 && mSnapRight - mSnapLeft < 3) {
-         // Too close together.  Better not to snap at all.
+      // Check if selection endpoints are too close together to snap (unless
+      // using snap-to-time -- then we always accept the snap results)
+      if (mSnapLeft >= 0 && mSnapRight >= 0 && mSnapRight - mSnapLeft < 3 &&
+            !snappedTime) {
          sel0 = origSel0;
          sel1 = origSel1;
          mSnapLeft = -1;
@@ -2323,72 +2338,58 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
          (wt->GetSelected() &&
           clickTime > mViewInfo->sel0 &&
           clickTime < mViewInfo->sel1);
-
+      
+      // First, if click was in selection, capture selected clips; otherwise
+      // just the clicked-on clip
       if (clickedInSelection) {
-         // Loop through every clip and include it if it overlaps the
-         // selection.  This will get mCapturedClip (and its stereo pair)
-         // automatically
-
          mCapturedClipIsSelection = true;
 
-         TrackAndGroupIterator iter(mTracks);
-         Track *t = iter.First();
-
-         while (t) // must iterate t in all possible branches
-         {
+         TrackListIterator iter(mTracks);
+         for (Track *t = iter.First(); t; t = iter.Next()) {
             if (t->GetSelected()) {
-               // If this track is in a group, move all clips in the group that
-               // overlap the selection region
-               TrackGroupIterator gIter(mTracks);
-               Track *gt = gIter.First(t);
-               if (GetProject()->IsSticky() && gt) {
-                  while (gt) {
-                     AddClipsToCaptured(gt, true);
-                     gt = gIter.Next();
-                  }
-
-                  // iteration for t: we're done with this group.
-                  t = iter.NextGroup();
-               }
-               else {
-                  AddClipsToCaptured(t, true);
-                  
-                  // iteration for t
-                  t = iter.Next();
-               }
-            }
-            else {
-               // iteration for t
-               t = iter.Next();
+               AddClipsToCaptured(t, true);
             }
          }
       }
       else {
          mCapturedClipIsSelection = false;
-         TrackGroupIterator iter(mTracks);
-         Track *t;
-         if (GetProject()->IsSticky() && (t = iter.First(wt))) {
-            // Captured clip is in a group -- move all group tracks
-            while (t) {
-               AddClipsToCaptured(t, false);
-               t = iter.Next();
+         mCapturedClipArray.Add(TrackClip(wt, mCapturedClip));
+
+         // Check for stereo partner
+         Track *partner = mTracks->GetLink(wt);
+         if (partner && partner->GetKind() == Track::Wave) {
+            WaveClip *clip = ((WaveTrack *)partner)->GetClipAtX(event.m_x);
+            if (clip) {
+               mCapturedClipArray.Add(TrackClip(partner, clip));
             }
          }
-         else {
-            // Only add mCapturedClip, and possibly its stereo partner,
-            // to the list of clips to move.
+      }
 
-            mCapturedClipArray.Add(TrackClip(wt, mCapturedClip));
-
-            Track *partner = mTracks->GetLink(wt);
-            if (partner && partner->GetKind()==Track::Wave) {
-               WaveClip *clip = ((WaveTrack *)partner)->GetClipAtX(event.m_x);
-               if (clip) {
-                  mCapturedClipArray.Add(TrackClip(partner, clip));
+      // Now, if linking is enabled, capture any clip that's linked to a
+      // captured clip
+      if (GetProject()->IsSticky()) {
+         // AWD: mCapturedClipArray expands as the loop runs, so newly-added
+         // clips are considered (the effect is like recursion and terminates
+         // because AddClipsToCapture doesn't add duplicate clips); to remove
+         // this behavior just store the array size beforehand.
+         for (unsigned int i = 0; i < mCapturedClipArray.GetCount(); ++i) {
+            // Only capture based on tracks that have clips -- that means we
+            // don't capture based on links to label tracks for now (until
+            // we can treat individual labels as clips)
+            if (mCapturedClipArray[i].clip) {
+               // Iterate over group tracks
+               TrackGroupIterator git(mTracks);
+               for ( Track *t = git.First(mCapturedClipArray[i].track);
+                     t; t = git.Next() )
+               {   
+                  AddClipsToCaptured(t,
+                        mCapturedClipArray[i].clip->GetStartTime(),
+                        mCapturedClipArray[i].clip->GetEndTime() );
                }
             }
          }
       }
+
    } else {
       mCapturedClip = NULL;
       mCapturedClipArray.Clear();
@@ -2409,7 +2410,8 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
    mSnapManager = new SnapManager(mTracks,
                                   &mCapturedClipArray,
                                   mViewInfo->zoom,
-                                  4); // pixel tolerance
+                                  4,     // pixel tolerance
+                                  true); // don't snap to time
    mSnapLeft = -1;
    mSnapRight = -1;
    mSnapPreferRightEdge = false;
@@ -2426,6 +2428,15 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
 // duplication of this logic)
 void TrackPanel::AddClipsToCaptured(Track *t, bool withinSelection)
 {
+   if (withinSelection)
+      AddClipsToCaptured(t, mViewInfo->sel0, mViewInfo->sel1);
+   else
+      AddClipsToCaptured(t, t->GetStartTime(), t->GetEndTime());
+}
+
+// Adds a track's clips to mCapturedClipArray within a specified time
+void TrackPanel::AddClipsToCaptured(Track *t, double t0, double t1)
+{
    if (t->GetKind() == Track::Wave)
    {
       WaveClipList::compatibility_iterator it =
@@ -2433,12 +2444,20 @@ void TrackPanel::AddClipsToCaptured(Track *t, bool withinSelection)
       while (it)
       {
          WaveClip *clip = it->GetData();
-         if (!withinSelection || (
-                  // Overlap of the selection must be at least one sample
-                  clip->GetStartTime()+1.0/clip->GetRate() <= mViewInfo->sel1 &&
-                  clip->GetEndTime()-1.0/clip->GetRate() >= mViewInfo->sel0) )
+
+         if ( ! clip->AfterClip(t0) && ! clip->BeforeClip(t1) )
          {
-            mCapturedClipArray.Add(TrackClip(t, clip));
+            // Avoid getting clips that were already captured
+            bool newClip = true;
+            for (unsigned int i = 0; i < mCapturedClipArray.GetCount(); ++i) {
+               if (mCapturedClipArray[i].clip == clip) {
+                  newClip = false;
+                  break;
+               }
+            }
+
+            if (newClip)
+               mCapturedClipArray.Add(TrackClip(t, clip));
          }
          it = it->GetNext();
       }
@@ -2447,7 +2466,18 @@ void TrackPanel::AddClipsToCaptured(Track *t, bool withinSelection)
    {
       // This handles label tracks rather heavy-handedly -- it would be nice to
       // treat individual labels like clips
-      mCapturedClipArray.Add(TrackClip(t, NULL));
+      
+      // Avoid adding a track twice
+      bool newClip = true;
+      for (unsigned int i = 0; i < mCapturedClipArray.GetCount(); ++i) {
+         if (mCapturedClipArray[i].track == t) {
+            newClip = false;
+            break;
+         }
+      }
+
+      if (newClip)
+         mCapturedClipArray.Add(TrackClip(t, NULL));
    }
 }
 
@@ -2504,8 +2534,11 @@ void TrackPanel::DoSlide(wxMouseEvent & event)
       double newClipLeft = clipLeft;
       double newClipRight = clipRight;
 
-      mSnapManager->Snap(mCapturedTrack, clipLeft, false, &newClipLeft);
-      mSnapManager->Snap(mCapturedTrack, clipRight, false, &newClipRight);
+      bool dummy1, dummy2;
+      mSnapManager->Snap(mCapturedTrack, clipLeft, false, &newClipLeft,
+                         &dummy1, &dummy2);
+      mSnapManager->Snap(mCapturedTrack, clipRight, false, &newClipRight,
+                         &dummy1, &dummy2);
 
       // Only one of them is allowed to snap
       if (newClipLeft != clipLeft && newClipRight != clipRight) {
@@ -3762,7 +3795,7 @@ void TrackPanel::HandleLabelClick(wxMouseEvent & event)
    //  the selection on this track.
    if (event.ShiftDown()) {
       mTracks->Select(t, !t->GetSelected());
-      RefreshTrack(t);
+      Refresh(false);
       #ifdef EXPERIMENTAL_MIXER_BOARD
          MixerBoard* pMixerBoard = this->GetMixerBoard();
          if (pMixerBoard && (t->GetKind() == Track::Wave))
@@ -4139,8 +4172,8 @@ void TrackPanel::HandleResize(wxMouseEvent & event)
 /// Handle mouse wheel rotation (for zoom in/out and vertical scrolling)
 void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
 {
-   int steps = event.m_wheelRotation /
-      (event.m_wheelDelta > 0 ? event.m_wheelDelta : 120);
+   double steps = event.m_wheelRotation /
+      (event.m_wheelDelta > 0 ? (double)event.m_wheelDelta : 120.0);
 
    if (event.ShiftDown())
    {
@@ -4155,10 +4188,7 @@ void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
       int trackLeftEdge = GetLeftOffset();
       
       double center_h = PositionToTime(event.m_x, trackLeftEdge);
-      if (steps < 0)
-         mViewInfo->zoom = wxMax(mViewInfo->zoom / (2.0 * -steps), gMinZoom);
-      else
-         mViewInfo->zoom = wxMin(mViewInfo->zoom * (2.0 * steps), gMaxZoom);
+      mViewInfo->zoom = wxMin(mViewInfo->zoom * pow(2.0, steps), gMaxZoom);
 
       double new_center_h = PositionToTime(event.m_x, trackLeftEdge);
       mViewInfo->h += (center_h - new_center_h);
@@ -4168,7 +4198,10 @@ void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
    } else
    {
       // MM: Zoom up/down when used without modifier keys
-      mListener->TP_ScrollUpDown(-steps * 4);
+      double lines = steps * 4 + mVertScrollRemainder;
+      mVertScrollRemainder = lines - floor(lines);
+      lines = floor(lines);
+      mListener->TP_ScrollUpDown((int)-lines);
    }
 }
 
@@ -5117,6 +5150,14 @@ void TrackPanel::DrawOutside(Track * t, wxDC * dc, const wxRect rec,
 
    mTrackInfo.DrawBackground(dc, r, t->GetSelected(), bIsWave, labelw, vrul);
 
+   // Draw in linked tiles in ruler area
+   if (t->IsSynchroSelected()) {
+      wxRect tileFill = r;
+      tileFill.x = GetVRulerOffset();
+      tileFill.width = GetVRulerWidth();
+      TrackArtist::DrawLinkTiles(dc, tileFill);
+   }
+
    DrawBordersAroundTrack(t, dc, r, labelw, vrul);
    DrawShadow(t, dc, r);
 
@@ -5512,11 +5553,18 @@ void TrackPanel::OnCursorLeft( bool shift, bool ctrl )
    // Get currently focused track if there is one
    t = GetFocusedTrack();
 
+   bool snapToTime = (gPrefs->Read(wxT("/SnapTo"), 0L) != 0);
+
    // Contract selection from the right to the left
    if( shift && ctrl )
    {
       // Reduce and constrain (counter-intuitive)
-      mViewInfo->sel1 -= multiplier / mViewInfo->zoom;
+      if (snapToTime) {
+         mViewInfo->sel1 = GridMove(mViewInfo->sel1, -multiplier);
+      }
+      else {
+         mViewInfo->sel1 -= multiplier / mViewInfo->zoom;
+      }
       if( mViewInfo->sel1 < mViewInfo->sel0 )
       {
          mViewInfo->sel1 = mViewInfo->sel0;
@@ -5540,7 +5588,12 @@ void TrackPanel::OnCursorLeft( bool shift, bool ctrl )
       }
 
       // Expand and constrain
-      mViewInfo->sel0 -= multiplier / mViewInfo->zoom;
+      if (snapToTime) {
+         mViewInfo->sel0 = GridMove(mViewInfo->sel0, -multiplier);
+      }
+      else {
+         mViewInfo->sel0 -= multiplier / mViewInfo->zoom;
+      }
       if( mViewInfo->sel0 < 0.0 )
       {
          mViewInfo->sel0 = 0.0;
@@ -5567,7 +5620,12 @@ void TrackPanel::OnCursorLeft( bool shift, bool ctrl )
       if( mViewInfo->sel0 == mViewInfo->sel1 )
       {
          // Move and constrain
-         mViewInfo->sel0 -= multiplier / mViewInfo->zoom;
+         if (snapToTime) {
+            mViewInfo->sel0 = GridMove(mViewInfo->sel0, -multiplier);
+         }
+         else {
+            mViewInfo->sel0 -= multiplier / mViewInfo->zoom;
+         }
          if( mViewInfo->sel0 < 0.0 )
          {
             mViewInfo->sel0 = 0.0;
@@ -5610,11 +5668,18 @@ void TrackPanel::OnCursorRight( bool shift, bool ctrl )
    // Get currently focused track if there is one
    t = GetFocusedTrack();
 
+   bool snapToTime = (gPrefs->Read(wxT("/SnapTo"), 0L) != 0);
+
    // Contract selection from the left to the right
    if( shift && ctrl )
    {
       // Reduce and constrain (counter-intuitive)
-      mViewInfo->sel0 += multiplier / mViewInfo->zoom;
+      if (snapToTime) {
+         mViewInfo->sel0 = GridMove(mViewInfo->sel0, multiplier);
+      }
+      else {
+         mViewInfo->sel0 += multiplier / mViewInfo->zoom;
+      }
       if( mViewInfo->sel0 > mViewInfo->sel1 )
       {
          mViewInfo->sel0 = mViewInfo->sel1;
@@ -5638,7 +5703,12 @@ void TrackPanel::OnCursorRight( bool shift, bool ctrl )
       }
 
       // Expand and constrain
-      mViewInfo->sel1 += multiplier/mViewInfo->zoom;
+      if (snapToTime) {
+         mViewInfo->sel1 = GridMove(mViewInfo->sel1, multiplier);
+      }
+      else {
+         mViewInfo->sel1 += multiplier/mViewInfo->zoom;
+      }
       double end = mTracks->GetEndTime();
       if( mViewInfo->sel1 > end )
       {
@@ -5666,7 +5736,12 @@ void TrackPanel::OnCursorRight( bool shift, bool ctrl )
       if (mViewInfo->sel0 == mViewInfo->sel1)
       {
          // Move and constrain
-         mViewInfo->sel1 += multiplier / mViewInfo->zoom;
+         if (snapToTime) {
+            mViewInfo->sel1 = GridMove(mViewInfo->sel1, multiplier);
+         }
+         else {
+            mViewInfo->sel1 += multiplier / mViewInfo->zoom;
+         }
          double end = mTracks->GetEndTime();
          if( mViewInfo->sel1 > end )
          {
@@ -5691,6 +5766,34 @@ void TrackPanel::OnCursorRight( bool shift, bool ctrl )
    }
 
    MakeParentModifyState();
+}
+
+// Handles moving a selection edge with the keyboard in snap-to-time mode;
+// returns the moved value.
+// Will move at least minPix pixels -- set minPix positive to move forward,
+// negative to move backward.
+double TrackPanel::GridMove(double t, int minPix)
+{
+   TimeTextCtrl ttc(this, wxID_ANY, wxT(""), 0.0, GetProject()->GetRate());
+   wxString formatName;
+   gPrefs->Read(wxT("/SelectionFormat"), &formatName);
+   ttc.SetFormatString(ttc.GetBuiltinFormat(formatName));
+   ttc.SetTimeValue(t);
+
+   // Try incrementing/decrementing the value; if we've moved far enough we're
+   // done
+   double result;
+   minPix >= 0 ? ttc.Increment() : ttc.Decrement();
+   result = ttc.GetTimeValue();
+   if (fabs(result - t) * mViewInfo->zoom >= fabs((double)minPix)) {
+      return result;
+   }
+
+   // Otherwise, move minPix pixels, then snap to the time.
+   result = t + minPix / mViewInfo->zoom;
+   ttc.SetTimeValue(result);
+   result = ttc.GetTimeValue();
+   return result;
 }
 
 void TrackPanel::OnBoundaryMove(bool left, bool boundaryContract)
@@ -7229,10 +7332,18 @@ void TrackInfo::DrawTitleBar(wxDC * dc, const wxRect r, Track * t,
    GetTitleBarRect(r, bev);
    bev.Inflate(-1, -1);
 
+   // Load small link icon bitmap for future use
+   wxBitmap link(theTheme.Image(bmpLinkTP));
+
    // Draw title text
    SetTrackInfoFont(dc);
    wxString titleStr = t->GetName();
    int allowableWidth = GetTitleWidth() - 38 - kLeftInset;
+
+   // Make room for the link icon if necessary
+   if (t->IsSynchroSelected())
+      allowableWidth -= link.GetWidth() - 2; // let it closer than to the arrow
+
    long textWidth, textHeight;
    dc->GetTextExtent(titleStr, &textWidth, &textHeight);
    while (textWidth > allowableWidth) {
@@ -7263,6 +7374,17 @@ void TrackInfo::DrawTitleBar(wxDC * dc, const wxRect r, Track * t,
                  bev.y + ((bev.height - (s / 2)) / 2),
                  s);
 
+   // Link icon: drawn to the left of the dropdown arrow
+   if (t->IsSynchroSelected()) {
+      wxBitmap link(theTheme.Image(bmpLinkTP));
+      dc->DrawBitmap(link,
+                     // Arrow's left minus our width and an extra px
+                     bev.GetRight() - s - 3 - link.GetWidth() - 1,
+                     bev.y + 1,
+                     true);
+   }
+
+
    AColor::BevelTrackInfo(*dc, !down, bev);
 }
 
@@ -7279,7 +7401,7 @@ void TrackInfo::DrawMuteSolo(wxDC * dc, const wxRect r, Track * t,
    if (bev.y + bev.height >= r.y + r.height - 19)
       return; // don't draw mute and solo buttons, because they don't fit into track label
       
-   AColor::MediumTrackInfo( dc, t->GetSelected() );
+   AColor::MediumTrackInfo( dc, t->GetSelected());
    if( solo )
    {
       if( t->GetSolo() )

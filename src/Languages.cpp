@@ -100,6 +100,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("ar")] = wxT("Arabic");
    localLanguageName[wxT("bg")] = wxT("Balgarski");
    localLanguageName[wxT("bs")] = wxT("Bosnian");
+   localLanguageName[wxT("my")] = wxT("Burmese");
    localLanguageName[wxT("ca")] = wxT("Catalan");
    localLanguageName[wxT("cs")] = wxT("Czech");
    localLanguageName[wxT("da")] = wxT("Dansk");
@@ -222,6 +223,10 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
       reverseHash[tempNames[j]] = tempCodes[j];
 
    tempNames.Sort();
+
+   // Add system language
+   langNames.Add(wxT("System"));
+   langCodes.Add(wxT(""));
 
    for(j=0; j<tempNames.GetCount(); j++) {
       langNames.Add(tempNames[j]);

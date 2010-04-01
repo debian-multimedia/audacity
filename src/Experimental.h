@@ -83,6 +83,8 @@
 // have not been fully imported in builds without FLAC support, so disabled for
 // 2.0 release
 //#define EXPERIMENTAL_OD_FLAC
+// similarly for FFmpeg:
+//#define EXPERIMENTAL_OD_FFMPEG
 
 // Philip Van Baren 01 July 2009
 // Replace RealFFT() and PowerSpectrum function to use (faster) RealFFTf function
@@ -126,7 +128,7 @@
 #endif
 
 //If you want any of these files, ask JKC.  They are not
-//yet checked in to Audacity CVS as of 10-Oct-2004
+//yet checked in to Audacity SVN as of 12-Feb-2010
 #ifdef EXPERIMENTAL_NOTEBOOK
 #include "widgets/GuiFactory.h"
 #include "widgets/APanel.h"
@@ -148,7 +150,8 @@ extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebo
    //#define AUTOMATED_INPUT_LEVEL_ADJUSTMENT
 #endif
 
-//#define EXPERIMENTAL_EQ_INVERT // MJS, 30th Dec 2009.  Add a button to EQ to allow inverting of any curve.
+// AWD: new Truncate Silence code
+//#define EXPERIMENTAL_TRUNC_SILENCE
 
 #endif
 

@@ -55,6 +55,7 @@ for drawing different aspects of the label and its text box.
 #include "AllThemeResources.h"
 #include "AColor.h"
 #include "Project.h"
+#include "TrackArtist.h"
 #include "commands/CommandManager.h"
 
 #include "CaptureEvents.h"
@@ -89,6 +90,7 @@ LabelTrack::LabelTrack(DirManager * projDirManager):
    mSelIndex(-1),
    mMouseOverLabelLeft(-1),
    mMouseOverLabelRight(-1),
+   mClipLen(0.0),
    mIsAdjustingLabel(false)
 {
    SetDefaultName(_("Label Track"));
@@ -113,6 +115,7 @@ LabelTrack::LabelTrack(const LabelTrack &orig) :
    mSelIndex(-1),
    mMouseOverLabelLeft(-1),
    mMouseOverLabelRight(-1),
+   mClipLen(0.0),
    mIsAdjustingLabel(false)
 {
    int len = orig.mLabels.Count();
@@ -148,7 +151,7 @@ void LabelTrack::SetOffset(double dOffset)
    }
 }
 
-void LabelTrack::ShiftLabelsOnClear(double b, double e)
+bool LabelTrack::Clear(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++){
       if (mLabels[i]->t >= e){//label is after deletion region
@@ -168,10 +171,12 @@ void LabelTrack::ShiftLabelsOnClear(double b, double e)
          //nothing
       }
    }
+
+   return true;
 }
 
 //used when we want to use clear only on the labels
-void LabelTrack::ChangeLabelsOnClear(double b, double e)
+bool LabelTrack::SplitDelete(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++) {
       if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
@@ -185,6 +190,8 @@ void LabelTrack::ChangeLabelsOnClear(double b, double e)
          mLabels[i]->t1 = b;
       }
    }
+
+   return true;
 }
 void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 {
@@ -212,6 +219,7 @@ void LabelTrack::ChangeLabelsOnReverse(double b, double e)
          mLabels[i]->t  = aux;
       }
    }
+   SortLabels();
 }
 
 void LabelTrack::ScaleLabels(double b, double e, double change)
@@ -242,7 +250,7 @@ double LabelTrack::AdjustTimeStampOnScale(double t, double b, double e, double c
 // (If necessary this could be optimised by ignoring labels that occur before a
 // specified time, as in most cases they don't need to move.)
 void LabelTrack::WarpLabels(const TimeWarper &warper) {
-   for (int i = 0; i < mLabels.GetCount(); ++i) {
+   for (int i = 0; i < (int)mLabels.GetCount(); ++i) {
       double &labelT0 = mLabels[i]->t; labelT0 = warper.Warp(labelT0);
       double &labelT1 = mLabels[i]->t1; labelT1 = warper.Warp(labelT1);
    }
@@ -561,9 +569,9 @@ void LabelStruct::DrawGlyphs(wxDC & dc, const wxRect & r, int GlyphLeft, int Gly
 
    if((x  >= r.x) && (x  <= (r.x+r.width)))
       dc.DrawBitmap(LabelTrack::GetGlyph(GlyphLeft), x-xHalfWidth,yStart, true);
-   // The extra test here suppresses right hand markers when they overlap
-   // the left hand marker (e.g. zoomed out) or are to the left.
-   if((x1 >= r.x) && (x1 <= (r.x+r.width)) && (x1>x+LabelTrack::mIconWidth))
+   // The extra test commented out here would suppress right hand markers 
+   // when they overlap the left hand marker (e.g. zoomed out) or to the left.
+   if((x1 >= r.x) && (x1 <= (r.x+r.width)) /*&& (x1>x+LabelTrack::mIconWidth)*/)
       dc.DrawBitmap(LabelTrack::GetGlyph(GlyphRight), x1-xHalfWidth,yStart, true);
 }
 
@@ -725,9 +733,23 @@ void LabelTrack::Draw(wxDC & dc, const wxRect & r, double h, double pps,
    wxRect selr = r;
    selr.x += before.width;
    selr.width = int ((dsel1 - dsel0) * pps);
-   dc.SetBrush(AColor::labelSelectedBrush);
-   dc.SetPen(AColor::labelSelectedPen);
+   
+   // If selection is synchro use synchro colors
+   if (IsSynchroSelected() && !GetSelected()) {
+      dc.SetBrush(AColor::labelSyncSelBrush);
+      dc.SetPen(AColor::labelSyncSelPen);
+   }
+   else {
+      dc.SetBrush(AColor::labelSelectedBrush);
+      dc.SetPen(AColor::labelSelectedPen);
+   }
+
    dc.DrawRectangle(selr);
+
+   // If selection is synchro, draw in linked graphics
+   if (IsSynchroSelected() && !GetSelected() && selr.width > 0) {
+      TrackArtist::DrawLinkTiles(&dc, selr);
+   }
 
    wxRect after = r;
    after.x += (before.width + selr.width);
@@ -1163,24 +1185,35 @@ int LabelTrack::OverGlyph(int x, int y)
       pLabel = mLabels[i];
       
       //over left or right selection bound
-      if(   abs(pLabel->y - (y - (LabelTrack::mTextHeight+3)/2)) < d1 &&
+      //Check right bound first, since it is drawn after left bound,
+      //so give it precedence for matching/highlighting.
+      if( abs(pLabel->y - (y - (LabelTrack::mTextHeight+3)/2)) < d1 &&
+               abs(pLabel->x1 - d2 -x) < d1)
+      {
+         mMouseOverLabelRight = i;
+         if(abs(pLabel->x1 - x) < d2 )
+         {
+            mbHitCenter = true;
+            // If left and right co-incident at this resolution, then we drag both.
+            // We could be a little less stringent about co-incidence here if we liked.
+            if( abs(pLabel->x1-pLabel->x) < 1.0 )
+            {
+               result |=1;
+               mMouseOverLabelLeft = i;
+            }
+         }
+         result |= 2;
+         mInBox = false;     // to disable the dragging for selecting the text in text box
+      }
+      // Use else-if here rather than else to avoid detecting left and right 
+      // of the same label.
+      else if(   abs(pLabel->y - (y - (LabelTrack::mTextHeight+3)/2)) < d1 &&
             abs(pLabel->x + d2 - x) < d1 )
       {
          mMouseOverLabelLeft = i;
          if(abs(pLabel->x - x) < d2 )
             mbHitCenter = true;
          result |= 1;
-         mInBox = false;     // to disable the dragging for selecting the text in text box
-      }
-      // use else-if so that we don't detect left and right 
-      // of the same label.
-      else if( abs(pLabel->y - (y - (LabelTrack::mTextHeight+3)/2)) < d1 &&
-               abs(pLabel->x1 - d2 -x) < d1)
-      {
-         mMouseOverLabelRight = i;
-         if(abs(pLabel->x1 - x) < d2 )
-            mbHitCenter = true;
-         result |= 2;
          mInBox = false;     // to disable the dragging for selecting the text in text box
       }
 
@@ -1204,6 +1237,92 @@ bool LabelTrack::OverTextBox(const LabelStruct *pLabel, int x, int y)
       return true;
    }
    return false;
+}
+
+// Adjust label's left or right boundary, depending which is requested.
+void LabelStruct::AdjustEdge( int iEdge, double fNewTime)
+{
+   if( iEdge < 0 )
+      t = fNewTime;
+   else
+      t1 = fNewTime;
+   updated = true;
+}
+
+// We're moving the label.  Adjust both left and right edge.
+void LabelStruct::MoveLabel( int iEdge, double fNewTime)
+{
+   double width = getDuration();
+
+   if( iEdge < 0 )
+   {
+      t  = fNewTime;
+      t1 = fNewTime+width;
+   }
+   else
+   {
+      t  = fNewTime-width;
+      t1 = fNewTime;
+   }
+   updated = true;
+}
+
+/// If the index is for a real label, adjust its left or right boundary.
+/// @iLabel - index of label, -1 for none.
+/// @iEdge - which edge is requested to move, -1 for left +1 for right.
+/// @bAllowSwapping - if we can switch which edge is being dragged.
+/// fNewTime - the new time for this edge of the label.
+void LabelTrack::MayAdjustLabel( int iLabel, int iEdge, bool bAllowSwapping, double fNewTime)
+{
+   if( iLabel < 0 )
+      return;
+   LabelStruct * pLabel = mLabels[ iLabel ];
+
+   // Adjust the requested edge.
+   pLabel->AdjustEdge( iEdge, fNewTime );
+   // If the label is not inverted, then we are done.
+   if( pLabel->t <= pLabel->t1 )
+      return;
+
+   // If swapping's not allowed we must also move the edge
+   // we didn't move.  Then we're done.
+   if( !bAllowSwapping )
+   {
+      pLabel->AdjustEdge( -iEdge, fNewTime );
+      return;
+   }
+
+   // Swapping's allowed and we moved the 'wrong' edge.
+   // Swap the edges.
+   double fTemp = pLabel->t;
+   pLabel->t = pLabel->t1;
+   pLabel->t1 = fTemp;
+
+   // Swap our record of what we are dragging.
+   int Temp = mMouseOverLabelLeft;
+   mMouseOverLabelLeft = mMouseOverLabelRight;
+   mMouseOverLabelRight = Temp;
+}
+
+// If the index is for a real label, adjust its left and right boundary.
+void LabelTrack::MayMoveLabel( int iLabel, int iEdge, double fNewTime)
+{
+   if( iLabel < 0 )
+      return;
+   mLabels[ iLabel ]->MoveLabel( iEdge, fNewTime );
+}
+
+// Constrain function, as in processing/arduino.
+// returned value will be between min and max (inclusive).
+int Constrain( int value, int min, int max )
+{
+   wxASSERT( min <= max );
+   int result=value;
+   if( result < min )
+      result=min;
+   if( result > max )
+      result=max;
+   return result;
 }
 
 /// HandleMouse gets called with every mouse move or click.
@@ -1253,34 +1372,26 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
       {
          // LL:  Constrain to inside track rectangle for now.  Should be changed
          //      to allow scrolling while dragging labels
-         int x = evt.m_x + mxMouseDisplacement - r.x;
-         if (x < 0) {
-            x = 0;
-         }
-         else if (x > r.width - 2) {
-            x = r.width - 2;
-         }
+         int x = Constrain( evt.m_x + mxMouseDisplacement - r.x, 0, r.width - 2);
 
-         //Adjust boundary and make sure that t < t1 on any dragged labels.
-         //This code pushes both of them in one direction, instead of swapping
-         //bounds like happens for the selection region.
-         if(mMouseOverLabelLeft>=0)
+         // If exactly one edge is selected we allow swapping
+         bool bAllowSwapping = (mMouseOverLabelLeft >=0 ) ^ ( mMouseOverLabelRight >= 0);
+         // If we're on the 'dot' and nowe're moving,
+         // Though shift-down inverts that.
+         // and if both edges the same, then we're always moving the label.
+         bool bLabelMoving = mbIsMoving;
+         bLabelMoving ^= evt.ShiftDown();
+         bLabelMoving |= mMouseOverLabelLeft==mMouseOverLabelRight;
+         double fNewX = h + x / pps;
+         if( bLabelMoving )
          {
-            mLabels[mMouseOverLabelLeft]->t  = h + x / pps;
-            if( mLabels[mMouseOverLabelLeft]->t > mLabels[mMouseOverLabelLeft]->t1)
-            {
-               mLabels[mMouseOverLabelLeft]->t1  = mLabels[mMouseOverLabelLeft]->t;
-            }
-            mLabels[mMouseOverLabelLeft]->updated = true;
+            MayMoveLabel( mMouseOverLabelLeft,  -1, fNewX );
+            MayMoveLabel( mMouseOverLabelRight, +1, fNewX );
          }
-         if (mMouseOverLabelRight>=0)
+         else
          {
-            mLabels[mMouseOverLabelRight]->t1 = h + x / pps;
-            if( mLabels[mMouseOverLabelRight]->t > mLabels[mMouseOverLabelRight]->t1)
-            {
-               mLabels[mMouseOverLabelRight]->t  = mLabels[mMouseOverLabelRight]->t1;
-            }
-            mLabels[mMouseOverLabelRight]->updated = true;
+            MayAdjustLabel( mMouseOverLabelLeft,  -1, bAllowSwapping, fNewX );
+            MayAdjustLabel( mMouseOverLabelRight, +1, bAllowSwapping, fNewX );
          }
 
          if( mSelIndex >=0 )
@@ -1299,7 +1410,8 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
    if( evt.ButtonDown())
    {
       //OverGlyph sets mMouseOverLabel to be the chosen label.         
-      mIsAdjustingLabel = OverGlyph(evt.m_x, evt.m_y) != 0;   
+      int iGlyph = OverGlyph(evt.m_x, evt.m_y);
+      mIsAdjustingLabel = iGlyph != 0;
       
       // reset mouseXPos if the mouse is pressed in the text box
       mMouseXPos = -1;
@@ -1335,19 +1447,30 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
       if (mIsAdjustingLabel)
       {
          float t = 0.0;
+         // We move if we hit the centre, we adjust one edge if we hit a chevron.
+         // This is if we are moving just one edge.
+         mbIsMoving = mbHitCenter;
          // When we start dragging the label(s) we don't want them to jump.
          // so we calculate the displacement of the mouse from the drag center
          // and use that in subsequent dragging calculations.  The mouse stays 
          // at the same relative displacement throughout dragging.
 
-         // However, if two labels are being dragged, then the displacement 
-         // is relative to the initial average position of them, and in that 
-         // case there can be a jump of at most a few pixels to bring the 
-         // two label boundaries to exactly the same position when we start
-         // dragging.
-         if((mMouseOverLabelRight >=0) && (mMouseOverLabelLeft >=0))
+         // However, if two label's edges are being dragged
+         // then the displacement is relative to the initial average 
+         // position of them, and in that case there can be a jump of at most 
+         // a few pixels to bring the two label boundaries to exactly the same 
+         // position when we start dragging.
+
+         // Dragging of three label edges at the same time is not supported (yet).
+         if( (mMouseOverLabelRight >=0) && 
+             (mMouseOverLabelLeft >=0) 
+           )
          {
             t = (mLabels[mMouseOverLabelRight]->t1+mLabels[mMouseOverLabelLeft]->t)/2.0f;
+            // If we're moving two edges, then it's a move (label size preserved) 
+            // if both edges are the same label, and it's an adjust (label sizes change)
+            // if we're on a boundary between two different labels.
+            mbIsMoving = (mMouseOverLabelLeft == mMouseOverLabelRight);
          }
          else if(mMouseOverLabelRight >=0)
          {
@@ -2027,7 +2150,17 @@ bool LabelTrack::Save(wxTextFile * out, bool overwrite)
 }
 #endif
 
-bool LabelTrack::Cut(double t0, double t1, Track ** dest)
+bool LabelTrack::Cut(double t0, double t1, Track **dest)
+{
+   if (!SplitCut(t0, t1, dest))
+      return false;
+   if (!Clear(t0, t1))
+      return false;
+
+   return true;
+}
+
+bool LabelTrack::SplitCut(double t0, double t1, Track ** dest)
 {
    *dest = new LabelTrack(GetDirManager());
    int len = mLabels.Count();
@@ -2074,7 +2207,7 @@ bool LabelTrack::Copy(double t0, double t1, Track ** dest)
 }
 
 
-bool LabelTrack::Paste(double t, Track * src)
+bool LabelTrack::PasteOver(double t, Track * src)
 {
    if (src->GetKind() != Track::Label)
       return false;
@@ -2098,17 +2231,29 @@ bool LabelTrack::Paste(double t, Track * src)
    return true;
 }
 
+bool LabelTrack::Paste(double t, Track *src)
+{
+   if (src->GetKind() != Track::Label)
+      return false;
+
+   LabelTrack *lt = (LabelTrack *)src;
+
+   double shiftAmt = lt->mClipLen > 0.0 ? lt->mClipLen : lt->GetEndTime();
+
+   ShiftLabelsOnInsert(shiftAmt, t);
+   return PasteOver(t, src);
+}
+
 // This repeats the labels in a time interval a specified number of times.
-// Like Paste(), it does not shift existing labels over
-//  - It assumes that you've already called ShiftLabelsOnInsert(), because
-//  sometimes with linking enabled that's hard to avoid.
-//  - It assumes that you inserted the necessary extra time at t1, not t0.
 bool LabelTrack::Repeat(double t0, double t1, int n)
 {
    // Sanity-check the arguments
    if (n < 0 || t1 < t0) return false;
 
    double tLen = t1 - t0;
+
+   // Insert space for the repetitions
+   ShiftLabelsOnInsert(tLen * n, t1);
 
    for (unsigned int i = 0; i < mLabels.GetCount(); i++)
    {
@@ -2142,30 +2287,6 @@ bool LabelTrack::Repeat(double t0, double t1, int n)
       
       // Other cases have already been handled by ShiftLabelsOnInsert()
    }
-
-   return true;
-}
-
-bool LabelTrack::Clear(double t0, double t1)
-{
-   AudacityProject *p = GetActiveProject();   
-   if (p && p->IsSticky()){
-      TrackGroupIterator grpIter(p->GetTracks());
-      Track *t = grpIter.First(this);
-      // If this track is part of a group, find a Wave track in the group and do
-      // the clear from there to ensure proper group behavior
-      while (t) {
-         if (t->GetKind() == Track::Wave) {
-            return t->Clear(t0, t1);
-         }
-         t = grpIter.Next();
-      }
-
-      // Fallback: shift labels in this track
-      ShiftLabelsOnClear(t0, t1);
-   }
-   else
-      ChangeLabelsOnClear(t0, t1);
 
    return true;
 }

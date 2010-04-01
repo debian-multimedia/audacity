@@ -2,7 +2,7 @@
 // Name:        filedlg.h
 // Purpose:
 // Author:      Robert Roebling
-// Id:          $Id: FileDialogPrivate.h,v 1.2 2008/05/24 02:57:39 llucius Exp $
+// Id:          $Id: FileDialogPrivate.h,v 1.2 2008-05-24 02:57:39 llucius Exp $
 // Copyright:   (c) 1998 Robert Roebling
 // Licence:     wxWindows licence
 //

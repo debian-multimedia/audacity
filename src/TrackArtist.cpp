@@ -662,7 +662,7 @@ void TrackArtist::DrawWaveformBackground(wxDC &dc, const wxRect &r, const double
                                          float zoomMin, float zoomMax, bool dB,
                                          const sampleCount where[],
                                          sampleCount ssel0, sampleCount ssel1,
-                                         bool drawEnvelope)
+                                         bool drawEnvelope, bool synchroSelection)
 {
    // Visually (one vertical slice of the waveform background, on its side;
    // the "*" is the actual waveform background we're drawing
@@ -711,7 +711,8 @@ void TrackArtist::DrawWaveformBackground(wxDC &dc, const wxRect &r, const double
          mintop = halfHeight;
       }
 
-      sel = (ssel0 <= where[x] && where[x + 1] < ssel1);
+      // We don't draw selection color for sync-sel tracks
+      sel = (ssel0 <= where[x] && where[x + 1] < ssel1) && !synchroSelection;
 
       if (lmaxtop == maxtop &&
           lmintop == mintop &&
@@ -750,6 +751,17 @@ void TrackArtist::DrawWaveformBackground(wxDC &dc, const wxRect &r, const double
    }
    else {
       dc.DrawRectangle(l, r.y + lmaxtop, w, lminbot - lmaxtop);
+   }
+
+   // If sync-selected, draw in linked graphics
+   if (synchroSelection && ssel0 < ssel1) {
+      // Find the beginning/end of the selection
+      int begin, end;
+      for (x = 0; x < r.width && where[x] < ssel0; ++x);
+      begin = x;
+      for (; x < r.width && where[x] < ssel1; ++x);
+      end = x;
+      DrawLinkTiles(&dc, wxRect(r.x + begin, r.y, end - 1 - begin, r.height));
    }
 
    //OK, the display bounds are between min and max, which
@@ -1136,7 +1148,7 @@ void TrackArtist::DrawClipWaveform(WaveTrack *track,
    double sps = 1./rate;            //seconds-per-sample
 
    //If the track isn't selected, make the selection empty
-   if (!track->GetSelected()) {
+   if (!track->GetSelected() && !track->IsSynchroSelected()) {
       sel0 = sel1 = 0.0;
    }
 
@@ -1281,7 +1293,8 @@ void TrackArtist::DrawClipWaveform(WaveTrack *track,
    // the envelope and using a colored pen for the selected
    // part of the waveform
    DrawWaveformBackground(dc, mid, envValues, zoomMin, zoomMax, dB,
-                          where, ssel0, ssel1, drawEnvelope);
+                          where, ssel0, ssel1, drawEnvelope,
+                          !track->GetSelected());
 
    if (!showIndividualSamples) {
       DrawMinMaxRMS(dc, mid, envValues, zoomMin, zoomMax, dB,
@@ -1477,7 +1490,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack *track,
    double sel0 = viewInfo->sel0;
    double sel1 = viewInfo->sel1;
 
-   sampleCount numSamples = clip->GetNumSamples();
    double tOffset = clip->GetOffset();
    double rate = clip->GetRate();
    double sps = 1./rate;
@@ -1645,10 +1657,11 @@ void TrackArtist::DrawClipSpectrum(WaveTrack *track,
  
    const float 
 //      e=exp(1.0f), 
-      log2=log(2.0f),
       f=rate/2.0f/half, 
       lmin=log(float(minFreq)),
       lmax=log(float(maxFreq)),
+#ifdef EXPERIMENTAL_FIND_NOTES
+      log2=log(2.0f),
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
       lmins=log(float(minFreq)/(mFftSkipPoints+1)),
       lmaxs=log(float(maxFreq)/(mFftSkipPoints+1)),
@@ -1656,12 +1669,15 @@ void TrackArtist::DrawClipSpectrum(WaveTrack *track,
       lmins=lmin,
       lmaxs=lmax,
 #endif //EXPERIMENTAL_FFT_SKIP_POINTS
-      scale=lmax-lmin, 
-      scale2=(lmax-lmin)/log2, 
-      lmin2=lmin/log2 /*,
+#endif //EXPERIMENTAL_FIND_NOTES
+      scale=lmax-lmin /*, 
       expo=exp(scale)*/ ;
 
 #ifdef EXPERIMENTAL_FFT_Y_GRID
+   const float
+      scale2=(lmax-lmin)/log2,
+      lmin2=lmin/log2;
+
    bool *yGrid;
    yGrid=new bool[mid.height];
    for (int y = 0; y < mid.height; y++) {
@@ -2281,7 +2297,7 @@ void TrackArtist::DrawNoteTrack(NoteTrack *track,
    //for every event
    Alg_event_ptr evt;
    printf ("go time\n");
-   while (evt = iterator.next()) {
+   while ( (evt = iterator.next()) ) {
    
       //printf ("one note");
 
@@ -2522,7 +2538,7 @@ void TrackArtist::DrawLabelTrack(LabelTrack *track,
    double sel0 = viewInfo->sel0;
    double sel1 = viewInfo->sel1;
    
-   if (!track->GetSelected())
+   if (!track->GetSelected() && !track->IsSynchroSelected())
       sel0 = sel1 = 0.0;
    
    track->Draw(dc, r, viewInfo->h, viewInfo->zoom, sel0, sel1);
@@ -2621,6 +2637,45 @@ void TrackArtist::SetSpectrumLogMinFreq(int freq)
 void TrackArtist::SetSpectrumLogMaxFreq(int freq)
 {
    mLogMaxFreq = freq;
+}
+
+// Draws the link bitmap, tiled; always draws stationary relative to the DC
+void TrackArtist::DrawLinkTiles(wxDC *dc, wxRect r)
+{
+   wxBitmap sync(theTheme.Image(bmpLinkSelect));
+
+   int xOffset = r.x % sync.GetWidth();
+   if (xOffset < 0) xOffset += sync.GetWidth();
+   int width;
+   for (int x = 0; x < r.width; x += width) {
+      width = sync.GetWidth() - xOffset;
+      if (x + width > r.width)
+         width = r.width - x;
+
+      int yOffset = r.y % sync.GetHeight();
+      if (yOffset < 0) yOffset += sync.GetWidth();
+      int height;
+      for (int y = 0; y < r.height; y += height) {
+         height = sync.GetHeight() - yOffset;
+         if (y + height > r.height)
+            height = r.height - y;
+
+         // Do we need to get a sub-bitmap?
+         if (width != sync.GetWidth() || height != sync.GetHeight()) {
+            wxBitmap subSync = sync.GetSubBitmap(wxRect(
+                     xOffset, yOffset, width, height));
+            dc->DrawBitmap(subSync, r.x + x, r.y + y, true);
+         }
+         else {
+            dc->DrawBitmap(sync, r.x + x, r.y + y, true);
+         }
+
+         // Only offset first row
+         yOffset = 0;
+      }
+      // Only offset first column
+      xOffset = 0;
+   }
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

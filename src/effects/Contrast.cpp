@@ -240,14 +240,13 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
                          wxDefaultSize,
                          true);
             mForegroundStartT->SetName(_("Foreground start time"));
-            mForegroundStartT->SetFormatString(mForegroundStartT->GetBuiltinFormat(wxT("hh:mm:ss + hundredths")));
+            mForegroundStartT->SetFormatString(mForegroundStartT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mForegroundStartT->EnableMenu(false);
          }
          S.AddWindow(mForegroundStartT);
 
          if (mForegroundEndT == NULL)
          {
-            AudacityProject *p = GetActiveProject();
             mForegroundEndT = new
             TimeTextCtrl(this,
                          ID_FOREGROUNDEND_T,
@@ -258,7 +257,7 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
                          wxDefaultSize,
                          true);
             mForegroundEndT->SetName(_("Foreground end time"));
-            mForegroundEndT->SetFormatString(mForegroundEndT->GetBuiltinFormat(wxT("hh:mm:ss + hundredths")));
+            mForegroundEndT->SetFormatString(mForegroundEndT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mForegroundEndT->EnableMenu(false);
          }
          S.AddWindow(mForegroundEndT);
@@ -271,7 +270,6 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
          S.AddFixedText(_("Background:"));
          if (mBackgroundStartT == NULL)
          {
-            AudacityProject *p = GetActiveProject();
             mBackgroundStartT = new
             TimeTextCtrl(this,
                          ID_BACKGROUNDSTART_T,
@@ -282,14 +280,13 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
                          wxDefaultSize,
                          true);
             mBackgroundStartT->SetName(_("Background start time"));
-            mBackgroundStartT->SetFormatString(mBackgroundStartT->GetBuiltinFormat(wxT("hh:mm:ss + hundredths")));
+            mBackgroundStartT->SetFormatString(mBackgroundStartT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mBackgroundStartT->EnableMenu(false);
          }
          S.AddWindow(mBackgroundStartT);
 
          if (mBackgroundEndT == NULL)
          {
-            AudacityProject *p = GetActiveProject();
             mBackgroundEndT = new
             TimeTextCtrl(this,
                          ID_BACKGROUNDEND_T,
@@ -300,7 +297,7 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
                          wxDefaultSize,
                          true);
             mBackgroundEndT->SetName(_("Background end time"));
-            mBackgroundEndT->SetFormatString(mBackgroundEndT->GetBuiltinFormat(wxT("hh:mm:ss + hundredths")));
+            mBackgroundEndT->SetFormatString(mBackgroundEndT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mBackgroundEndT->EnableMenu(false);
          }
          S.AddWindow(mBackgroundEndT);

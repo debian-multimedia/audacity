@@ -254,6 +254,8 @@ class TrackPanel:public wxPanel {
    void SelectTracksByLabel( LabelTrack *t );
    void SelectTrackLength(Track *t);
 
+   // Helper for moving by keyboard with snap-to-grid enabled
+   double GridMove(double t, int minPix);
 
    // AS: Cursor handling
    bool SetCursorByActivity( );
@@ -275,6 +277,7 @@ class TrackPanel:public wxPanel {
    void StartSlide(wxMouseEvent &event);
    void DoSlide(wxMouseEvent &event);
    void AddClipsToCaptured(Track *t, bool withinSelection);
+   void AddClipsToCaptured(Track *t, double t0, double t1);
 
    // AS: Handle zooming into tracks
    void HandleZoom(wxMouseEvent & event);
@@ -577,6 +580,9 @@ private:
    TrackPanelAx *mAx;
 
    wxString mSoloPref;
+
+   // Keeps track of extra fractional vertical scroll steps
+   double mVertScrollRemainder;
 
  private:
 

@@ -37,6 +37,8 @@ void AddEffectsToMenu(CommandManager* c, const EffectSet& effects);
 void CreateRecentFilesMenu(CommandManager *c);
 void ModifyUndoMenus();
 void ModifyToolbarMenus();
+// Calls ModifyToolbarMenus() on all projects
+void ModifyAllProjectToolbarMenus();
 
 int GetFocusedFrame();
 wxUint32 GetUpdateFlags();
@@ -226,6 +228,8 @@ void OnSelectAll();
 void OnSelectNone();
 void OnSelectCursorEnd();
 void OnSelectStartCursor();
+void OnSelectSyncSel();
+void OnSelectAllTracks();
 
         // View Menu
 

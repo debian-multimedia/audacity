@@ -37,7 +37,7 @@ void FileDialog::ClickButton(int index)
 // Author:      John Labenski
 // Modified by: Leland Lucius
 // Created:     14.06.03 (extracted from src/*/filedlg.cpp)
-// RCS-ID:      $Id: FileDialog.cpp,v 1.8 2008/10/05 14:48:59 richardash1981 Exp $
+// RCS-ID:      $Id: FileDialog.cpp,v 1.8 2008-10-05 14:48:59 richardash1981 Exp $
 // Copyright:   (c) Robert Roebling
 // Licence:     wxWindows licence
 //
