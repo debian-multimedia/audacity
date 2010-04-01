@@ -28,7 +28,7 @@
 #define __EXPERIMENTAL__
 
 //uncomment the next line to enable the feature to link audio tracks to a label track
-//#define EXPERIMENTAL_LINKING
+#define EXPERIMENTAL_LINKING
 
 //Uncomment the next #define to enable experimental features.
 #define EXPERIMENTAL_FEATURES

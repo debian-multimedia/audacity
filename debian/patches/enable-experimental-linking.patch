@@ -1,0 +1,17 @@
+Description: Enable the feature to link audio tracks to a label track
+Forwarded: not-needed
+Author: Benjamin Drung <bdrung@ubuntu.com>
+
+diff --git a/src/Experimental.h b/src/Experimental.h
+index 33b30c1..7d5d7c3 100644
+--- a/src/Experimental.h
++++ b/src/Experimental.h
+@@ -28,7 +28,7 @@
+ #define __EXPERIMENTAL__
+ 
+ //uncomment the next line to enable the feature to link audio tracks to a label track
+-//#define EXPERIMENTAL_LINKING
++#define EXPERIMENTAL_LINKING
+ 
+ //Uncomment the next #define to enable experimental features.
+ #define EXPERIMENTAL_FEATURES
