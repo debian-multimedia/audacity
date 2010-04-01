@@ -418,6 +418,7 @@ int ExportCL::Export(AudacityProject *project,
 
    // Display output on error or if the user wants to see it
    if (p->GetStatus() != 0 || show) {
+      // TODO use ShowInfoDialog() instead.
       wxDialog dlg(NULL,
                    wxID_ANY,
                    wxString(_("Command Output")),
@@ -426,7 +427,7 @@ int ExportCL::Export(AudacityProject *project,
                    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
       ShuttleGui S(&dlg, eIsCreating);
-      wxTextCtrl *tc = S.AddTextWindow(output);
+      S.AddTextWindow(output);
       S.StartHorizontalLay(wxALIGN_CENTER, false);
       {
          S.Id(wxID_OK).AddButton(_("&OK"))->SetDefault();

@@ -4,7 +4,7 @@
 // Author:      Julian Smart
 // Modified by: Leland Lucius
 // Created:     01/02/97
-// RCS-ID:      $Id: FileDialogPrivate.h,v 1.6 2009/04/11 05:53:09 llucius Exp $
+// RCS-ID:      $Id: FileDialogPrivate.h,v 1.6 2009-04-11 05:53:09 llucius Exp $
 // Copyright:   (c) Julian Smart
 // Licence:     wxWindows licence
 //

@@ -13,7 +13,9 @@
 \brief An ImportFileHandle for LOF data
 
   Supports the opening of ".lof" files which are text files that contain
-  a list of individual files to open in audacity in specific formats.
+  a list of individual files to open in audacity in specific formats. Files may
+  be file names (in the same directory as the LOF file), absolute paths or
+  relative paths relative to the directory of the LOF file.
 
   (In BNF) The syntax for an LOF file, denoted by <lof>:
 
@@ -35,6 +37,7 @@
   file "C:\folder1\sample1.wav"    # sample1.wav is displayed
   file "C:\sample2.wav" offset 5   # sample2 is displayed with a 5s offset
   File "C:\sample3.wav"            # sample3 is displayed with no offset
+  File "foo.aiff" # foo is loaded from the same directory as the LOF file
   window offset 5 duration 10      # open a new window, zoom to display 
   # 10 seconds total starting at 5 (ending at 15) seconds
   file "C:\sample3.wav" offset 2.5
@@ -138,6 +141,8 @@ private:
    void doScrollOffset();
 
    wxTextFile *mTextFile;
+   wxFileName *mLOFFileName;  /**< The name of the LOF file, which is used to
+                                interpret relative paths in it */
    AudacityProject *mProject;
 
    // In order to know whether or not to create a new window
@@ -157,6 +162,7 @@ LOFImportFileHandle::LOFImportFileHandle(const wxString & name, wxTextFile *file
    mTextFile(file)
 {
    mProject = GetActiveProject();
+   mLOFFileName = new wxFileName(name);
    windowCalledOnce = false;
    callDurationFactor = false;
    durationFactor = 1;
@@ -272,6 +278,12 @@ static int CountNumTracks(AudacityProject *proj)
    return count;
 }
 
+/** @brief Processes a single line from a LOF text file, doing whatever is
+ * indicated on the line.
+ *
+ * This function should just return for lines it cannot deal with, and the
+ * caller will continue to the next line of the input file
+ */
 void LOFImportFileHandle::lofOpenFiles(wxString* ln)
 {  
    wxStringTokenizer tok(*ln, wxT(" "));
@@ -344,7 +356,7 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
             tok = wxStringTokenizer(wxT(""), wxT(" "));
          }
       }     // End while loop
-   }        // End if statement
+   }        // End if statement handling "window" lines
    
    else if (tokenholder.IsSameAs(wxT("file"), false))
    {
@@ -352,6 +364,15 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
       // To identify filename and open it
       tokenholder = temptok1.GetNextToken();
       targetfile = temptok1.GetNextToken();
+
+      // If path is relative, make absolute path from LOF path
+      if(!wxIsAbsolutePath(targetfile)) {
+         wxFileName fName(targetfile);
+         fName.Normalize(wxPATH_NORM_ALL, mLOFFileName->GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR));
+         if(fName.FileExists()) {
+            targetfile = fName.GetFullPath();
+         }
+      }
      
       #ifdef USE_MIDI
       // If file is a midi
@@ -399,7 +420,8 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
             if (tok.HasMoreTokens())
                tokenholder = tok.GetNextToken();
             double offset;
-            
+           
+            // handle an "offset" specifier
             if (Internat::CompatibleToDouble(tokenholder, &offset))
             {
                Track *t;
@@ -410,6 +432,10 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
                for (int i = 1; i < CountNumTracks(mProject) - 1; i++)
                   t = iter.Next();
 
+               // t is now the last track in the project, unless the import of
+               // all tracks failed, in which case it will be null. In that
+               // case we return because we cannot offset a non-existent track.
+               if (t == NULL) return;
 #ifdef USE_MIDI
                if (targetfile.AfterLast(wxT('.')).IsSameAs(wxT("mid"), false) ||
                    targetfile.AfterLast(wxT('.')).IsSameAs(wxT("midi"), false))
@@ -431,16 +457,16 @@ void LOFImportFileHandle::lofOpenFiles(wxString* ln)
                      t->SetOffset(offset);
                   }
                }
-            }            
+            } // end of converting "offset" argument
             else
             {
                /* i18n-hint: You do not need to translate "LOF" */
                wxMessageBox(_("Invalid track offset in LOF file."),
                             _("LOF Error"), wxOK | wxCENTRE);
             }
-         }     // End if statement
-      }     // End if statement
-   }     // End if statement
+         }     // End if statement for "offset" parameters
+      }     // End if statement (more tokens after file name)
+   }     // End if statement "file" lines
    
    else if (tokenholder.IsSameAs(wxT("#")))
    {
@@ -480,6 +506,9 @@ LOFImportFileHandle::~LOFImportFileHandle()
       if (mTextFile->IsOpened())
          mTextFile->Close();
       delete mTextFile;
+   }
+   if(mLOFFileName) {
+      delete mLOFFileName;
    }
 }
 

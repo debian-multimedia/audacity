@@ -2364,6 +2364,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\ondemand\ODDecodeFFmpegTask.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\ondemand\ODDecodeFFmpegTask.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\ondemand\ODDecodeFlacTask.cpp"
 				>
 			</File>
@@ -2465,6 +2473,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\plug-ins\SilenceMarker.ny"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\plug-ins\SoundFinder.ny"
 				>
 			</File>
 			<File

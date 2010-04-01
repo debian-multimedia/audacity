@@ -1,5 +1,5 @@
 /*
- * $Id: pa_converters.c,v 1.8 2008/12/31 15:38:31 richardash1981 Exp $
+ * $Id: pa_converters.c,v 1.8 2008-12-31 15:38:31 richardash1981 Exp $
  * Portable Audio I/O Library sample conversion mechanism
  *
  * Based on the Open Source API proposed by Ross Bencina

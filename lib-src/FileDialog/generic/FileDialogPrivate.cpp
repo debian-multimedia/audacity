@@ -4,7 +4,7 @@
 // Author:      Robert Roebling
 // Modified by: Leland Lucius
 // Created:     12/12/98
-// RCS-ID:      $Id: FileDialogPrivate.cpp,v 1.4 2009/09/29 00:28:07 msmeyer Exp $
+// RCS-ID:      $Id: FileDialogPrivate.cpp,v 1.4 2009-09-29 00:28:07 msmeyer Exp $
 // Copyright:   (c) Robert Roebling
 // Licence:     wxWindows licence
 //

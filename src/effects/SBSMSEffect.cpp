@@ -156,14 +156,14 @@ bool EffectSBSMS::ProcessLabelTrack(Track *t)
    TimeWarper *warper = NULL;
    if (rateStart == rateEnd)
    {
-      warper = new LinearTimeWarper(mCurT0, mCurT0,
-            mCurT1, mCurT0+(mCurT1-mCurT0)*mTotalStretch);
+      warper = new LinearTimeWarper(mT0, mT0,
+            mT1, mT0+(mT1-mT0)*mTotalStretch);
    } else
    {
-      warper = new LogarithmicTimeWarper(mCurT0, mCurT1,
+      warper = new LogarithmicTimeWarper(mT0, mT1,
             rateStart, rateEnd);
    }
-   SetTimeWarper(new RegionTimeWarper(mCurT0, mCurT1, warper));
+   SetTimeWarper(new RegionTimeWarper(mT0, mT1, warper));
    LabelTrack *lt = (LabelTrack*)t;
    if (lt == NULL) return false;
    lt->WarpLabels(*GetTimeWarper());
@@ -183,16 +183,9 @@ bool EffectSBSMS::Process()
    //Track::All is needed because this effect needs to introduce silence in the group tracks to keep sync
    this->CopyInputTracks(Track::All); // Set up mOutputTracks.
    TrackListIterator iter(mOutputTracks);
-   // go to first wavetrack
    Track* t;
-   for (t = iter.First(); t->GetKind() != Track::Wave; t = iter.Next());
-   if (!t)
-      return false;
-   WaveTrack* leftTrack = (WaveTrack*)t;
-   WaveTrack* saveLeft = leftTrack;
    mCurTrackNum = 0;
 
-   double len = leftTrack->GetEndTime() - leftTrack->GetStartTime();   
    double maxDuration = 0.0;
 
    if(rateStart == rateEnd)
@@ -200,21 +193,21 @@ bool EffectSBSMS::Process()
    else
       mTotalStretch = 1.0/(rateEnd-rateStart)*log(rateEnd/rateStart);
 
+   // Must sync if selection length will change
+   bool mustSync = (mTotalStretch != 1.0);
 
-   // we only do a "group change" in the first selected track of the group. 
-   // ClearAndPaste has a call to Paste that does changes to the group tracks
-   bool first = true;
-
+   t = iter.First();
    while (t != NULL) {
-      if (t->GetKind() == Track::Label) {
-         first = true;
-         if (t->GetSelected() && !ProcessLabelTrack(t))
-         {
+      if (t->GetKind() == Track::Label && 
+            (t->GetSelected() || (mustSync && t->IsSynchroSelected())) )
+      {
+         if (!ProcessLabelTrack(t)) {
             bGoodResult = false;
             break;
          }
       }
-      else if (t->GetKind() == Track::Wave && t->GetSelected()) {
+      else if (t->GetKind() == Track::Wave && t->GetSelected() )
+      {
          WaveTrack* leftTrack = (WaveTrack*)t;
 
          //Get start and end times from track
@@ -347,7 +340,6 @@ bool EffectSBSMS::Process()
                long pos = 0;
                long lastPos = 0;
                long ret = 0;
-               bool stopped = false;
                while(lastPos<samplesToProcess) {
                   ret = sbsms_pre_analyze(&samplesCB,&si,rb.sbsmser);
                   lastPos = pos;
@@ -400,15 +392,19 @@ bool EffectSBSMS::Process()
             if(rightTrack)
                rb.outputRightTrack->Flush();
             
-            leftTrack->ClearAndPaste(mCurT0, mCurT1, rb.outputLeftTrack, true, false, NULL, true, first, GetTimeWarper());
+            leftTrack->ClearAndPaste(mCurT0, mCurT1, rb.outputLeftTrack,
+                  true, false, GetTimeWarper());
 
             if(rightTrack) {
-               rightTrack->ClearAndPaste(mCurT0, mCurT1, rb.outputRightTrack, true, false, NULL, true, false, GetTimeWarper());
+               rightTrack->ClearAndPaste(mCurT0, mCurT1, rb.outputRightTrack,
+                     true, false, GetTimeWarper());
             }
-
-            first = false;
          }
          mCurTrackNum++;
+      }
+      else if (mustSync && t->IsSynchroSelected())
+      {
+         t->SyncAdjust(mCurT1, mCurT0 + (mCurT1 - mCurT0) * mTotalStretch);
       }
       //Iterate to the next track
       t = iter.Next();

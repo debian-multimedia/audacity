@@ -1,5 +1,5 @@
 /*
- * $Id: test_w_saw8.c,v 1.10 2008/12/31 15:38:31 richardash1981 Exp $
+ * $Id: test_w_saw8.c,v 1.10 2008-12-31 15:38:31 richardash1981 Exp $
  * test_w_saw8.c
  * Generate stereo 8 bit sawtooth waveforms.
  *

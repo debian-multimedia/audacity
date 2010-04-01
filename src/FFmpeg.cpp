@@ -153,7 +153,15 @@ void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
    case 2: cpt = wxT("Debug"); break;
    default: cpt = wxT("Log"); break;
    }
-   wxLogMessage(wxT("%s: %s"),cpt.c_str(),printstring.c_str());
+#ifdef EXPERIMENTAL_OD_FFMPEG
+//if the decoding happens thru OD then this gets called from a non main thread, which means wxLogMessage
+//will crash.  
+//TODO:find some workaround for the log.  perhaps use ODManager as a bridge. for now just print
+   if(!wxThread::IsMain())
+      printf("%s: %s\n",(char*)cpt.char_str(),(char*)printstring.char_str());
+   else
+#endif
+      wxLogMessage(wxT("%s: %s"),cpt.c_str(),printstring.c_str());
 }
 
 //======================= Unicode aware uri protocol for FFmpeg
@@ -315,6 +323,13 @@ int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name)
 
       // Read up to a "probe_size" worth of data
       pd.buf_size = FFmpegLibsInst->get_buffer(pb, pd.buf, probe_size);
+
+      // AWD: with zero-length input files buf_size can come back negative;
+      // this causes problems so we might as well just fail
+      if (pd.buf_size < 0) {
+         err = AVERROR_INVALIDDATA;
+         goto fail;
+      }
 
       // Clear up to a "AVPROBE_PADDING_SIZE" worth of unused buffer
       memset(pd.buf + pd.buf_size, 0, AVPROBE_PADDING_SIZE);

@@ -49,7 +49,7 @@ WX_DEFINE_LIST(AboutDialogCreditItemsList);
 #include "Theme.h"
 #include "AllThemeResources.h"
 
-//#include "../images/AudacityLogo.xpm"
+#include "../images/AudacityLogoWithName.xpm"
 
 void AboutDialog::CreateCreditsList()
 {
@@ -57,7 +57,7 @@ void AboutDialog::CreateCreditsList()
    // These will be split into two separate categories
 
    AddCredit(wxT("Gale Andrews"), roleTeamSupport);
-   AddCredit(wxT("Richard Ash"), roleTeamSupport);
+   AddCredit(wxT("Richard Ash"), roleTeamDeveloper);
    AddCredit(wxT("Christian Brochec"), roleTeamSupport);
    AddCredit(wxT("Michael Chinen"), roleTeamDeveloper);
    AddCredit(wxT("James Crook"), roleTeamDeveloper);
@@ -65,9 +65,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Ruslan Ijbulatov"), roleTeamDeveloper);
    AddCredit(wxT("Vaughan Johnson"), roleTeamDeveloper);
    AddCredit(wxT("Greg Kozikowski"), roleTeamSupport);
-   AddCredit(wxT("Leland Lucius"), roleTeamDeveloper);
    AddCredit(wxT("Dominic Mazzoni"), roleTeamDeveloper);
-   AddCredit(wxT("Markus Meyer"), roleTeamDeveloper);
    AddCredit(wxT("Alexandre Prokoudine"), roleTeamSupport);
    AddCredit(wxT("Peter Sampson"), roleTeamSupport);
    AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
@@ -79,6 +77,8 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Matt Brubeck"), roleEmeritusDeveloper);
    AddCredit(wxT("Roger Dannenberg"), roleEmeritusDeveloper);
    AddCredit(wxT("Joshua Haberman"), roleEmeritusDeveloper);
+   AddCredit(wxT("Leland Lucius"), roleTeamDeveloper);
+   AddCredit(wxT("Markus Meyer"), roleTeamDeveloper);
    AddCredit(wxT("Monty Montgomery"), roleEmeritusDeveloper);
    AddCredit(wxT("Shane Mueller"), roleEmeritusDeveloper);
    AddCredit(wxT("Tony Oetzmann"), roleEmeritusSupport);
@@ -99,6 +99,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Paul Nasca"), roleContributor);
    AddCredit(wxT("Andr\u00e9 Pinto"), roleContributor);
    AddCredit(wxT("Augustus Saunders"), roleContributor);
+   AddCredit(wxT("David R. Sky"), roleContributor);
    AddCredit(wxT("Mike Underwood"), roleContributor);
    AddCredit(wxT("Jun Wan"), roleContributor);
    AddCredit(wxT("Tom Woodhams"), roleContributor);
@@ -137,7 +138,6 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Jonathan Ryshpan"), roleThanks);
    AddCredit(wxT("Michael Schwendt"), roleThanks);
    AddCredit(wxT("Patrick Shirkey"), roleThanks);
-   AddCredit(wxT("David R. Sky"), roleThanks);
    AddCredit(wxT("Tuomas Suutari"), roleThanks);
    AddCredit(wxT("Mark Tomlinson"), roleThanks);
    AddCredit(wxT("David Topper"), roleThanks);
@@ -189,7 +189,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    
 
    wxString par1Str = _(
-     "Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a>. We thank <a href=\"http://sourceforge.net\">SourceForge.net</a> and <a href=\"http://code.google.com\">Google Code</a> for our project hosting. Audacity is available for Windows 98 and later, Mac OS X, Linux and other Unix-like systems. For Windows 98/ME, use version 1.2.6 or 1.3.7 Beta; for Mac OS 9, version 1.0.0.");
+     "Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a>. We thank <a href=\"http://sourceforge.net\">SourceForge.net</a> and <a href=\"http://code.google.com\">Google Code</a> for our project hosting. Audacity is available for Windows 98 and later, Mac OS X, Linux and other Unix-like systems. For Mac OS 9, use version 1.0.0.");
 
    #if IS_BETA // Is this beta or not?
    wxString par2Str = _(

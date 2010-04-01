@@ -159,6 +159,8 @@ scroll information.  It also has some status flags.
 
 #include "CaptureEvents.h"
 
+#include "../images/AudacityLogoAlpha.xpm"
+
 TrackList *AudacityProject::msClipboard = new TrackList();
 double AudacityProject::msClipLen = 0.0;
 AudacityProject *AudacityProject::msClipProject = NULL;
@@ -663,7 +665,6 @@ void GetNextWindowPlacement(wxRect *nextRect, bool *pMaximized, bool *pIconized)
       nextRect->y  -= inc;
       bottomRight = nextRect->GetBottomRight();
       if (bottomRight.y > screenRect.GetBottom()) {
-         int newheight = screenRect.GetHeight() - nextRect->GetBottom();
          nextRect->SetBottom(screenRect.GetBottom());
       }
    }
@@ -724,7 +725,6 @@ AudacityProject::AudacityProject(wxWindow * parent, wxWindowID id,
                                  const wxSize & size)
    : wxFrame(parent, id, wxT("Audacity"), pos, size),
      mLastPlayMode(normalPlay),
-     mFreqWindow(NULL),
      mRate((double) gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleRate"), AudioIO::GetOptimalSupportedSampleRate())),
      mDefaultFormat((sampleFormat) gPrefs->
            Read(wxT("/SamplingRate/DefaultProjectSampleFormat"), floatSample)),
@@ -742,6 +742,7 @@ AudacityProject::AudacityProject(wxWindow * parent, wxWindowID id,
         mMixerBoard(NULL),
         mMixerBoardFrame(NULL),
      #endif
+     mFreqWindow(NULL),
      mToolManager(NULL),
      mAudioIOToken(-1),
      mIsDeleting(false),
@@ -812,7 +813,9 @@ AudacityProject::AudacityProject(wxWindow * parent, wxWindowID id,
    mViewInfo.bRedrawWaveform = false;
 
    mLockPlayRegion = false;
-   SetStickyFlag(true);
+   bool linkTracks;
+   gPrefs->Read(wxT("/GUI/LinkTracks"), &linkTracks, true);
+   SetStickyFlag(linkTracks);
 
    CreateMenusAndCommands();
 
@@ -2135,10 +2138,8 @@ wxArrayString AudacityProject::ShowOpenDialog(wxString extraformat, wxString ext
 
    dlog.SetFilterIndex(index);
 
-   if (dlog.ShowModal() != wxID_OK) {
-      return selected;
-   }
-
+   int dialogResult = dlog.ShowModal();
+   
    // Convert the filter index to type and save
    index = dlog.GetFilterIndex();
    for (int i = 0; i < index; i++) {
@@ -2147,8 +2148,10 @@ wxArrayString AudacityProject::ShowOpenDialog(wxString extraformat, wxString ext
    gPrefs->Write(wxT("/DefaultOpenType"), mask.BeforeFirst(wxT('|')));
    gPrefs->Write(wxT("/LastOpenType"), mask.BeforeFirst(wxT('|')));
 
-   // Return the selected files
-   dlog.GetPaths(selected);
+   if (dialogResult == wxID_OK) {
+      // Return the selected files
+      dlog.GetPaths(selected);
+   }
    return selected;
 }
 
@@ -2161,6 +2164,7 @@ void AudacityProject::OpenFiles(AudacityProject *proj)
     * now be added automatically for the Save Projects dialogues).*/
    wxArrayString selectedFiles = ShowOpenDialog(_("Audacity projects"), wxT("*.aup"));
    if (selectedFiles.GetCount() == 0) {
+      gPrefs->Write(wxT("/LastOpenType"),wxT(""));
       return;
    }
    
@@ -2214,6 +2218,8 @@ void AudacityProject::OpenFiles(AudacityProject *proj)
       // and it's okay to open a new project inside this window.
       proj->OpenFile(fileName);
    }
+   
+   gPrefs->Write(wxT("/LastOpenType"),wxT(""));
    
    ODManager::Resume();
 
@@ -3389,14 +3395,22 @@ bool AudacityProject::SaveAs(bool bWantSaveCompressed /*= false*/)
    }
    else
    {
+      wxString DialogTitle;
       if (bWantSaveCompressed)
+      {
          ShowWarningDialog(this, wxT("FirstProjectSave"),
                            _("Audacity compressed project files (.aup) save your work in a smaller, compressed (.ogg) format. \nCompressed project files are a good way to transmit your project online, because they are much smaller. \nTo open a compressed project takes longer than usual, as it imports each compressed track. \n\nMost other programs can't open Audacity project files.\nWhen you want to save a file that can be opened by other programs, select one of the\nExport commands."));
+         DialogTitle = _("Save Compressed Project As...");
+      }
       else
+      {
          ShowWarningDialog(this, wxT("FirstProjectSave"),
                            _("You are saving an Audacity project file (.aup).\n\nSaving a project creates a file that only Audacity can open.\n\nTo save an audio file for other programs, use one of the \"File > Export\" commands.\n"));
+         DialogTitle = _("Save Project As...");
+      }
 
-      fName = FileSelector(_("Save Project As..."),
+      fName = FileSelector(
+         DialogTitle,
          path, fName, wxT(""),
          _("Audacity projects") + static_cast<wxString>(wxT(" (*.aup)|*.aup")),
       // JKC: I removed 'wxFD_OVERWRITE_PROMPT' because we are checking 
@@ -3662,18 +3676,15 @@ void AudacityProject::ClearClipboard()
 
 void AudacityProject::Clear()
 {
-   TrackAndGroupIterator iter(mTracks);
+   TrackListIterator iter(mTracks);
 
    Track *n = iter.First();
 
    while (n) {
-      if (n->GetSelected()) {
+      if (n->GetSelected() || n->IsSynchroSelected()) {
          n->Clear(mViewInfo.sel0, mViewInfo.sel1);
-         // Wave and Label tracks have group behaviour
-         if (IsSticky() && (n->GetKind() == Track::Wave || n->GetKind() == Track::Label)) n = iter.NextGroup();
-         else n = iter.Next();
       }
-      else n = iter.Next();
+      n = iter.Next();
    }
 
    double seconds = mViewInfo.sel1 - mViewInfo.sel0;
@@ -3972,10 +3983,11 @@ void AudacityProject::GetRegionsByLabel( Regions &regions )
 //Executes the edit function on all selected wave tracks with
 //regions specified by selected labels
 //If No tracks selected, function is applied on all tracks
-//If the function deletes audio, groupIteration should probably be set to true,
-// so it won't delete too many times.
+//If the function replaces the selection with audio of a different length
+// syncTracks should be set true to perform the same action on sync-selected
+// tracks.
 void AudacityProject::EditByLabel( WaveTrack::EditFunction action,
-                                   bool groupIteration )
+                                   bool syncTracks )
 { 
    Regions regions;
    
@@ -3983,7 +3995,7 @@ void AudacityProject::EditByLabel( WaveTrack::EditFunction action,
    if( regions.GetCount() == 0 )
       return;
 
-   TrackAndGroupIterator iter( mTracks );
+   TrackListIterator iter( mTracks );
    Track *n;
    bool allTracks = true;
 
@@ -4002,23 +4014,14 @@ void AudacityProject::EditByLabel( WaveTrack::EditFunction action,
    n = iter.First();
    while (n)
    {
-      if( n->GetKind() == Track::Wave && ( allTracks || n->GetSelected() ) )
+      if( n->GetKind() == Track::Wave && ( allTracks || n->GetSelected() ||
+                                    (syncTracks && n->IsSynchroSelected()) ) )
       {
          WaveTrack *wt = ( WaveTrack* )n;
          for( int i = ( int )regions.GetCount() - 1; i >= 0; i-- )
             ( wt->*action )( regions.Item( i )->start, regions.Item( i )->end );
-
-         // Tracks operated on may need group iteration
-         if (IsSticky() && groupIteration)
-            n = iter.NextGroup();
-         else
-            n = iter.Next();
       }
-      else
-      {
-         // Tracks not operated on need normal iteration
-         n = iter.Next();
-      }
+      n = iter.Next();
    }
 
    //delete label regions
@@ -4140,10 +4143,6 @@ void AudacityProject::TP_DisplaySelection()
    }
 
    GetSelectionBar()->SetTimes(mViewInfo.sel0, mViewInfo.sel1, audioTime);
-   if( mSnapTo ) {
-      mViewInfo.sel0 = GetSelectionBar()->GetLeftTime();
-      mViewInfo.sel1 = GetSelectionBar()->GetRightTime();
-   }
 
    if (!gAudioIO->IsBusy() && !mLockPlayRegion)
       mRuler->SetPlayRegion(mViewInfo.sel0, mViewInfo.sel1);
@@ -4435,10 +4434,19 @@ bool AudacityProject::GetSnapTo()
 bool AudacityProject::IsSticky()
 {
 #ifdef EXPERIMENTAL_LINKING
-   return (GetStickyFlag() && (mLastFlags & LabelTracksExistFlag));
+   return GetStickyFlag();
 #else
    return false;
 #endif
+}
+
+void AudacityProject::SetStickyFlag(bool flag)
+{
+   if (flag != mStickyFlag) {
+      mStickyFlag = flag;
+      if (GetTrackPanel())
+         GetTrackPanel()->Refresh(false);
+   }
 }
 
 void AudacityProject::HandleTrackMute(Track *t, const bool exclusive)

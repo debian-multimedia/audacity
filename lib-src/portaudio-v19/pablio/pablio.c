@@ -1,5 +1,5 @@
 /*
- * $Id: pablio.c,v 1.10 2008/12/31 15:38:31 richardash1981 Exp $
+ * $Id: pablio.c,v 1.10 2008-12-31 15:38:31 richardash1981 Exp $
  * pablio.c
  * Portable Audio Blocking Input/Output utility.
  *

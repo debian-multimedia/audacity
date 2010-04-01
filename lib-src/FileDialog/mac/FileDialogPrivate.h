@@ -4,7 +4,7 @@
 // Author:      Stefan Csomor
 // Modified by: Leland Lucius
 // Created:     1998-01-01
-// RCS-ID:      $Id: FileDialogPrivate.h,v 1.3 2008/05/24 02:57:39 llucius Exp $
+// RCS-ID:      $Id: FileDialogPrivate.h,v 1.3 2008-05-24 02:57:39 llucius Exp $
 // Copyright:   (c) Stefan Csomor
 // Licence:     wxWindows licence
 //

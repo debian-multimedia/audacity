@@ -1,5 +1,5 @@
 /*
- * $Id: pa_debugprint.c,v 1.10 2009/01/01 22:31:28 martynshaw Exp $
+ * $Id: pa_debugprint.c,v 1.10 2009-01-01 22:31:28 martynshaw Exp $
  * Portable Audio I/O Library Multi-Host API front end
  * Validate function parameters and manage multiple host APIs.
  *
