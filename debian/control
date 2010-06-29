@@ -6,7 +6,7 @@ Uploaders: Free Ekanayaka <freee@debian.org>,
            Fabian Greffrath <fabian+debian@greffrath.com>,
            Benjamin Drung <bdrung@ubuntu.com>,
            David Henningsson <diwic@ubuntu.com>
-Standards-Version: 3.8.4
+Standards-Version: 3.9.0
 Build-Depends: autotools-dev,
                debhelper (>= 7.0.50~),
                gettext,
