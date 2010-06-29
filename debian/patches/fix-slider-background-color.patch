@@ -1,6 +1,6 @@
 Description: Fix background color of sliders
 Author: Benjamin Drung <bdrung@ubuntu.com>
-Forwarded: yes
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=175
 
 --- audacity-1.3.12.orig/src/widgets/ASlider.cpp
 +++ audacity-1.3.12/src/widgets/ASlider.cpp
