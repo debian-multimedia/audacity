@@ -1,9 +1,5 @@
 #!/usr/bin/make -f
 
-include /usr/share/cdbs/1/rules/debhelper.mk
-include /usr/share/cdbs/1/class/autotools.mk
-include /usr/share/cdbs/1/rules/utils.mk
-
 # only enable jack on i386 and powerpc (See #406754)
 ifeq (i386,$(DEB_HOST_ARCH))
 WITH_JACK_CONFFLAG := --with-jack=yes
@@ -41,6 +37,10 @@ DEB_CONFIGURE_EXTRA_FLAGS := \
 # Do not link against unused libraries (make dpkg-shlibdeps happy).
 LDFLAGS += -Wl,-z,defs -Wl,--as-needed
 
-common-install-impl::
+%:
+	dh --parallel $@
+
+override_dh_auto_install:
+	dh_auto_install
 	# Don't package unnecessary copy of GPL
 	rm -f debian/tmp/usr/share/doc/audacity/LICENSE.txt
