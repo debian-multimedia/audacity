@@ -1,18 +1,11 @@
 #!/usr/bin/make -f
 
 # only enable jack on i386 and powerpc (See #406754)
-ifeq (i386,$(DEB_HOST_ARCH))
+DEB_HOST_ARCH_CPU ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
+ifeq (,$(filter $(DEB_HOST_ARCH_CPU),i386 amd64 powerpc))
 WITH_JACK_CONFFLAG := --with-jack=yes
 else
- ifeq (powerpc,$(DEB_HOST_ARCH))
-WITH_JACK_CONFFLAG := --with-jack=yes
- else
-  ifeq (amd64,$(DEB_HOST_ARCH))
-WITH_JACK_CONFFLAG := --with-jack=yes
-  else
 WITH_JACK_CONFFLAG := --with-jack=no
-  endif
- endif
 endif
 
 DEB_CONFIGURE_EXTRA_FLAGS := \
