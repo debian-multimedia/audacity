@@ -8,30 +8,26 @@ else
 WITH_JACK_CONFFLAG := --with-jack=no
 endif
 
-DEB_CONFIGURE_EXTRA_FLAGS := \
-	$(WITH_JACK_CONFFLAG) \
-	--enable-unicode \
-	--with-expat=system \
-	--with-ffmpeg=system \
-	--with-libflac=system \
-	--with-libid3tag=system \
-	--with-libmad=system \
-	--with-libsamplerate=system \
-	--without-libresample \
-	--with-libsndfile=system \
-	--with-libtwolame=system \
-	--with-libvamp=system \
-	--with-libvorbis=system \
-	--with-portaudio=v19 \
-	--with-portmixer \
-	--with-soundtouch=system \
-	$(null)
-
 # Do not link against unused libraries (make dpkg-shlibdeps happy).
 LDFLAGS += -Wl,-z,defs -Wl,--as-needed
 
 %:
 	dh --parallel $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- $(WITH_JACK_CONFFLAG) \
+		--with-expat=system \
+		--with-ffmpeg=system \
+		--with-libflac=system \
+		--with-libid3tag=system \
+		--with-libmad=system \
+		--with-libsamplerate=system \
+		--without-libresample \
+		--with-libsndfile=system \
+		--with-libtwolame=system \
+		--with-libvamp=system \
+		--with-libvorbis=system \
+		--with-soundtouch=system
 
 override_dh_auto_install:
 	dh_auto_install
