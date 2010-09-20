@@ -1,13 +1,5 @@
 #!/usr/bin/make -f
 
-# only enable jack on i386 and powerpc (See #406754)
-DEB_HOST_ARCH_CPU ?= $(shell dpkg-architecture -qDEB_HOST_ARCH_CPU)
-ifeq (,$(filter $(DEB_HOST_ARCH_CPU),i386 amd64 powerpc))
-WITH_JACK_CONFFLAG := --with-jack=yes
-else
-WITH_JACK_CONFFLAG := --with-jack=no
-endif
-
 # Do not link against unused libraries (make dpkg-shlibdeps happy).
 LDFLAGS += -Wl,-z,defs -Wl,--as-needed
 
@@ -15,7 +7,7 @@ LDFLAGS += -Wl,-z,defs -Wl,--as-needed
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- $(WITH_JACK_CONFFLAG) \
+	dh_auto_configure -- \
 		--with-expat=system \
 		--with-ffmpeg=system \
 		--with-libflac=system \
