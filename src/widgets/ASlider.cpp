@@ -62,7 +62,6 @@ of an LWSlider or ASlider.
 #include <wx/button.h>
 #include <wx/statline.h>
 #include <wx/sizer.h>
-#include <wx/settings.h>
 
 #if defined(__WXMSW__) && !defined(__CYGWIN__)
 #define USE_POPUPWIN 1
@@ -675,7 +674,7 @@ void LWSlider::Draw()
    TransparentColour = theTheme.Colour( clrTrackInfo );
 #endif
 
-   dc->SetBackground( wxBrush( wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND ) ) );
+   dc->SetBackground( wxBrush( TransparentColour  ) );
    dc->Clear();
 
    // Draw the line along which the thumb moves.
