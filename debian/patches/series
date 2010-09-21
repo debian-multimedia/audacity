@@ -1,3 +1,5 @@
 enable-experimental-linking.patch
 fix-slider-background-color.patch
 open-mixer.patch
+fix-ftbfs-with-gcc-4.5.patch
+autoreconf.patch
