@@ -21,7 +21,7 @@ Developers:
   Vaughan Johnson
   Greg Mekkes
   Vince Busam
-  Augustus Saunders  
+  Augustus Saunders
   Tony Oetzmann
   Paul Nasca
   Roger Dannenberg
@@ -61,7 +61,7 @@ General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program (in a file called LICENSE.txt); if not, go
-to http://www.gnu.org/copyleft/gpl.html or write to 
+to http://www.gnu.org/copyleft/gpl.html or write to
 
   Free Software Foundation, Inc.
   51 Franklin St, Fifth Floor
@@ -111,8 +111,8 @@ list of conditions, and the disclaimer, all three of which appear below under
 "COPYRIGHT AND LICENSE INFORMATION FOR XLISP," in the documentation and/or
 other materials provided with the distribution.
 
-Neither the name of Roger B. Dannenberg, Carnegie Mellon University, nor the 
-names of any contributors may be used to endorse or promote products derived 
+Neither the name of Roger B. Dannenberg, Carnegie Mellon University, nor the
+names of any contributors may be used to endorse or promote products derived
 from this software without specific prior written permission.
 
 COPYRIGHT AND LICENSE INFORMATION FOR XLISP (part of Nyquist):
@@ -124,7 +124,7 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer. 
+this list of conditions and the following disclaimer.
 
 Redistributions in binary form must reproduce the above copyright notice, this
 list of conditions and the following disclaimer in the documentation and/or
@@ -283,5 +283,5 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 for more details.
 
 You should have received a copy of the GNU General Public License along
-with this program; if not, write to the Free Software Foundation, Inc., 
+with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
