@@ -11,8 +11,8 @@ Build-Depends: autotools-dev,
                debhelper (>= 7.0.50~),
                gettext,
                libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64 !hurd-i386],
-               libavcodec-dev (>= 3:0.svn20090204),
-               libavformat-dev (>= 3:0.svn20090204),
+               libavcodec-dev (>= 4:0.6),
+               libavformat-dev (>= 4:0.6),
                libexpat1-dev,
                libflac++-dev,
                libgtk2.0-dev,
@@ -38,8 +38,8 @@ Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
 Package: audacity
 Architecture: any
 Depends: audacity-data (= ${source:Version}), ${misc:Depends}, ${shlibs:Depends}
-Recommends: libavcodec52 | libavcodec-extra-52,
-            libavformat52 | libavformat-extra-52
+Recommends: libavcodec52 (>= 4:0.6) | libavcodec-extra-52 (>= 4:0.6),
+            libavformat52 (>= 4:0.6) | libavformat-extra-52 (>= 4:0.6)
 Suggests: ladspa-plugin, libmp3lame0
 Description: A fast, cross-platform audio editor
  Audacity is a multi-track audio editor for Linux/Unix, MacOS and
