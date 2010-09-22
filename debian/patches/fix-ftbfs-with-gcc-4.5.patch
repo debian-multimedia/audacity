@@ -1,8 +1,8 @@
 Description: Fix build failure with GCC 4.5
 Author: Benjamin Drung <bdrung@ubuntu.com>
-Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=176
-Bug-Debian: http://bugs.debian.org/593162
-Bug-Ubuntu: https://launchpad.net/bugs/602934
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=221
+Bug-Debian: http://bugs.debian.org/564865
+Bug-Ubuntu: https://launchpad.net/bugs/629955
 
 --- a/lib-src/portmixer/configure.ac
 +++ b/lib-src/portmixer/configure.ac
