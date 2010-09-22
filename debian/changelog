@@ -1,3 +1,10 @@
+audacity (1.3.12-7) experimental; urgency=low
+
+  * Fix interchanged bug numbers from previous upload.
+  * Support FFmpeg >= 0.6 (Closes: #593162, LP: #602934).
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 22 Sep 2010 02:37:52 +0200
+
 audacity (1.3.12-6) unstable; urgency=low
 
   * Build with jack on all architectures (Due to a bug, jack was already
