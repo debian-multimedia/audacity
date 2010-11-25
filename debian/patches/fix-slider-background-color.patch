@@ -12,12 +12,17 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=175
  
  #if defined(__WXMSW__) && !defined(__CYGWIN__)
  #define USE_POPUPWIN 1
-@@ -674,7 +675,7 @@ void LWSlider::Draw()
-    TransparentColour = theTheme.Colour( clrTrackInfo );
+@@ -572,6 +573,13 @@ void LWSlider::OnPaint(wxDC &dc, bool se
+       dc.Clear();
+    }
  #endif
++#if defined(__WXGTK__)
++   if (mHW)
++   {
++      dc.SetBackground(wxSystemSettings::GetColour(wxSYS_COLOUR_BACKGROUND));
++      dc.Clear();
++   }
++#endif
  
--   dc->SetBackground( wxBrush( TransparentColour  ) );
-+   dc->SetBackground( wxBrush( wxSystemSettings::GetColour( wxSYS_COLOUR_BACKGROUND ) ) );
-    dc->Clear();
- 
-    // Draw the line along which the thumb moves.
+    dc.DrawBitmap(*mBitmap, mLeft, mTop, true);
+    if (mOrientation == wxHORIZONTAL)
