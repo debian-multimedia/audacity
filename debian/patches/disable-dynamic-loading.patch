@@ -3,9 +3,9 @@ Description: Add configure option to disable dynamic loading of FFmpeg
 Author: Benjamin Drung <bdrung@ubuntu.com>
 Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 
---- audacity-1.3.12.orig/configure.in
-+++ audacity-1.3.12/configure.in
-@@ -138,7 +138,7 @@ AC_DEFINE(BUILDING_AUDACITY, 1,
+--- a/configure.in
++++ b/configure.in
+@@ -138,7 +138,7 @@
  # plug-ins. This might not work on all architectures / compilers, so we need
  # to check if it does or not.
  AX_LD_CHECK_FLAG([-rdynamic],[],[],
@@ -14,7 +14,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  if test "x$have_dynamic_link" = "xyes" ; then
     BUILD_LDFLAGS="${BUILD_LDFLAGS} -rdynamic "
  else
-@@ -173,6 +173,12 @@ AC_ARG_WITH(lib-preference,
+@@ -173,6 +173,12 @@
              lib_preference=$withval,
              lib_preference="system local")
  
@@ -27,7 +27,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  dnl AC_ARG_WITH(wx-version,
  dnl            [AS_HELP_STRING([--with-wx-version],
  dnl                            [select wxWidgets version (if both installed) [2.8,]])],
-@@ -286,7 +292,7 @@ dnl LOCAL_LIBS="$LOCAL_LIBS allegro.a"
+@@ -286,7 +292,7 @@
  dnl CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/allegro"
  
  dnl Include FileDialog
@@ -37,16 +37,16 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/FileDialog"
  
 --- /dev/null
-+++ audacity-1.3.12/autogen.sh
++++ b/autogen.sh
 @@ -0,0 +1,5 @@
 +#!/bin/sh
 +
 +aclocal -I m4
 +autoconf
 +rm -rf aclocal.m4 autom4te.cache
---- audacity-1.3.12.orig/m4/audacity_checklib_ffmpeg.m4
-+++ audacity-1.3.12/m4/audacity_checklib_ffmpeg.m4
-@@ -2,7 +2,7 @@ dnl Todo: Add Audacity / FFmpeg license
+--- a/m4/audacity_checklib_ffmpeg.m4
++++ b/m4/audacity_checklib_ffmpeg.m4
+@@ -2,7 +2,7 @@
  dnl
  dnl Please increment the serial number below whenever you alter this macro
  dnl for the benefit of automatic macro update systems
@@ -55,7 +55,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  dnl Check for a copy of ffmpeg, whoose headers we will use for the importer
  AC_DEFUN([AUDACITY_CHECKLIB_FFMPEG], [
     AC_ARG_WITH(ffmpeg,
-@@ -33,6 +33,10 @@ AC_DEFUN([AUDACITY_CHECKLIB_FFMPEG], [
+@@ -33,6 +33,10 @@
  	     FFMPEG_SYSTEM_AVAILABLE="yes"
           FFMPEG_SYSTEM_CXXFLAGS="$AVCODEC_CFLAGS $AVFORMAT_CFLAGS"
           FFMPEG_SYSTEM_CPPSYMBOLS="USE_FFMPEG"
@@ -66,9 +66,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  		 dnl build the extra object files needed to use FFmpeg. Paths inside
  		 dnl the audacity src/ dir, as this is subsitiuted into src/Makefile.in
  		 FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
---- audacity-1.3.12.orig/src/FFmpeg.cpp
-+++ audacity-1.3.12/src/FFmpeg.cpp
-@@ -40,6 +40,8 @@ wxString GetFFmpegVersion(wxWindow *pare
+--- a/src/FFmpeg.cpp
++++ b/src/FFmpeg.cpp
+@@ -40,6 +40,8 @@
  
  #else
  
@@ -77,7 +77,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  /** This pointer to the shared object has global scope and is used to track the
   * singleton object which wraps the FFmpeg codecs */
  FFmpegLibs *FFmpegLibsInst = NULL;
-@@ -122,6 +124,8 @@ wxString GetFFmpegVersion(wxWindow *pare
+@@ -122,6 +124,8 @@
     return versionString;
  }
  
@@ -86,7 +86,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
  {
     //Most of this stuff is taken from FFmpeg tutorials and FFmpeg itself
-@@ -204,7 +208,12 @@ static int ufile_read(URLContext *h, uns
+@@ -204,7 +208,12 @@
     return ret;
  }
  
@@ -99,7 +99,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  {
     return (int) ((wxFile *) h->priv_data)->Write(buf, size);
  }
-@@ -265,15 +274,15 @@ int ufile_fopen(ByteIOContext **s, const
+@@ -265,15 +274,15 @@
     // Open the file using our custom protocol and passing the (possibly) Unicode
     // filename.  This is playing a slight trick since our ufile_open() routine above
     // knows that the "char *" name may actually be wide characters.
@@ -118,7 +118,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        return err;
     }
  
-@@ -307,7 +316,7 @@ int ufile_fopen_input(AVFormatContext **
+@@ -307,7 +316,7 @@
     // Initialize probe data...go ahead and preallocate the maximum buffer size.
     pd.filename = filename;
     pd.buf_size = 0;
@@ -127,7 +127,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (pd.buf == NULL) {
        err = AVERROR_NOMEM;
        goto fail;
-@@ -322,7 +331,7 @@ int ufile_fopen_input(AVFormatContext **
+@@ -322,7 +331,7 @@
        int score_max = probe_size < PROBE_BUF_MAX ? AVPROBE_SCORE_MAX / 4 : 0;
  
        // Read up to a "probe_size" worth of data
@@ -136,7 +136,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
        // AWD: with zero-length input files buf_size can come back negative;
        // this causes problems so we might as well just fail
-@@ -335,14 +344,14 @@ int ufile_fopen_input(AVFormatContext **
+@@ -335,14 +344,14 @@
        memset(pd.buf + pd.buf_size, 0, AVPROBE_PADDING_SIZE);
  
        // Reposition file for succeeding scan
@@ -153,7 +153,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           int score = 0;
  
           // Ignore the ones that are not file based
-@@ -356,7 +365,11 @@ int ufile_fopen_input(AVFormatContext **
+@@ -356,7 +365,11 @@
           }
           // Otherwize, resort to extension matching if available
           else if (fmt1->extensions) {
@@ -166,7 +166,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
                 score = 50;
              }
           }
-@@ -379,23 +392,23 @@ int ufile_fopen_input(AVFormatContext **
+@@ -379,23 +392,23 @@
     }
  
     // And finally, attempt to associate an input stream with the file
@@ -194,7 +194,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     }
  
     *ic_ptr = NULL;
-@@ -405,6 +418,8 @@ fail:
+@@ -405,6 +418,8 @@
  
  /*******************************************************/
  
@@ -203,7 +203,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  class FFmpegNotFoundDialog;
  
  //----------------------------------------------------------------------------
-@@ -820,8 +835,13 @@ bool FFmpegLibs::InitLibs(wxString libpa
+@@ -820,8 +835,13 @@
     INITDYN(avformat,url_fclose);
     INITDYN(avformat,url_fsize);
     INITDYN(avformat,av_new_stream);
@@ -217,7 +217,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     INITDYN(avformat,av_write_trailer);
     INITDYN(avformat,av_codec_get_id);
     INITDYN(avformat,av_codec_get_tag);
-@@ -829,7 +849,11 @@ bool FFmpegLibs::InitLibs(wxString libpa
+@@ -829,7 +849,11 @@
     INITDYN(avformat,av_open_input_file);
     INITDYN(avformat,av_open_input_stream);
     INITDYN(avformat,get_buffer);
@@ -229,16 +229,28 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  #if FFMPEG_STABLE
     INITDYN(avformat,av_init_packet);
-@@ -939,4 +963,6 @@ void FFmpegLibs::FreeLibs()
+@@ -939,4 +963,6 @@
     return;
  }
  
 +#endif // USE_SYSTEM_FFMPEG
 +
  #endif //USE_FFMPEG
---- audacity-1.3.12.orig/src/FFmpeg.h
-+++ audacity-1.3.12/src/FFmpeg.h
-@@ -90,6 +90,13 @@ int modify_file_url_to_utf8(char* buffer
+--- a/src/FFmpeg.h
++++ b/src/FFmpeg.h
+@@ -39,6 +39,11 @@
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #include <libavutil/fifo.h>
++
++#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 60, 0)
++   // Declare internal FFmpeg function
++   int match_ext(const char *filename, const char *extensions);
++#endif
+ }
+ #endif
+ 
+@@ -90,6 +95,13 @@
  int modify_file_url_to_utf8(char* buffer, size_t buffer_size, const wchar_t* url);
  #endif
  
@@ -252,7 +264,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  //----------------------------------------------------------------------------
  // Attempt to load and enable/disable FFmpeg at startup
  //----------------------------------------------------------------------------
-@@ -222,9 +229,18 @@ public:
+@@ -222,9 +234,18 @@
     int               (*url_fclose)                    (ByteIOContext *s);
     int               (*url_fsize)                     (ByteIOContext *s);
     AVStream*         (*av_new_stream)                 (AVFormatContext *s, int id);
@@ -271,7 +283,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     int               (*av_write_trailer)              (AVFormatContext *s);
     int               (*av_interleaved_write_frame)    (AVFormatContext *s, AVPacket *pkt);
     int               (*av_write_frame)                (AVFormatContext *s, AVPacket *pkt);
-@@ -396,6 +412,10 @@ FFmpegLibs *PickFFmpegLibs();
+@@ -396,6 +417,10 @@
  ///! anymore, or just decrements it's reference count
  void        DropFFmpegLibs();
  
@@ -282,8 +294,8 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  int ufile_fopen(ByteIOContext **s, const wxString & name, int flags);
  int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name);
  
---- audacity-1.3.12.orig/src/configtemplate.h
-+++ audacity-1.3.12/src/configtemplate.h
+--- a/src/configtemplate.h
++++ b/src/configtemplate.h
 @@ -84,6 +84,9 @@
     */
  #undef USE_FFMPEG
@@ -294,9 +306,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  /* Define if LADSPA plug-ins are enabled */
  #undef USE_LADSPA
  
---- audacity-1.3.12.orig/src/AudacityApp.cpp
-+++ audacity-1.3.12/src/AudacityApp.cpp
-@@ -1117,7 +1117,13 @@ bool AudacityApp::OnInit()
+--- a/src/AudacityApp.cpp
++++ b/src/AudacityApp.cpp
+@@ -1117,7 +1117,13 @@
     mLogger->SetLogLevel(wxLOG_Max);
  
     #ifdef USE_FFMPEG
@@ -310,7 +322,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     #endif
  
     #ifdef USE_GSTREAMER
-@@ -1707,7 +1713,9 @@ int AudacityApp::OnExit()
+@@ -1707,7 +1713,9 @@
     FinishPreferences();
  
     #ifdef USE_FFMPEG
@@ -320,9 +332,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     #endif
  
     UnloadEffects();
---- audacity-1.3.12.orig/src/export/ExportFFmpeg.cpp
-+++ audacity-1.3.12/src/export/ExportFFmpeg.cpp
-@@ -50,8 +50,7 @@ function.
+--- a/src/export/ExportFFmpeg.cpp
++++ b/src/export/ExportFFmpeg.cpp
+@@ -50,8 +50,7 @@
  
  #if defined(USE_FFMPEG)
  
@@ -332,7 +344,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  static bool CheckFFmpegPresence()
  {
     bool result = true;
-@@ -64,6 +63,7 @@ static bool CheckFFmpegPresence()
+@@ -64,6 +63,7 @@
     DropFFmpegLibs();
     return result;
  }
@@ -340,7 +352,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  static int AdjustFormatIndex(int format)
  {
-@@ -178,18 +178,28 @@ ExportFFmpeg::ExportFFmpeg()
+@@ -178,18 +178,28 @@
     mSampleRate = 0;
     mSupportsUTF8 = true;
  
@@ -371,7 +383,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           if (avoformat == NULL || avcodec == NULL)
           {
              ExportFFmpegOptions::fmts[newfmt].compiledIn = false;
-@@ -223,7 +233,9 @@ ExportFFmpeg::ExportFFmpeg()
+@@ -223,7 +233,9 @@
  
  void ExportFFmpeg::Destroy()
  {
@@ -381,7 +393,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     delete this;
  }
  
-@@ -239,10 +251,12 @@ bool ExportFFmpeg::CheckFileName(wxFileN
+@@ -239,10 +251,12 @@
     }
     else
  #endif
@@ -394,7 +406,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     return result;
  }
  
-@@ -251,23 +265,33 @@ bool ExportFFmpeg::Init(const char *shor
+@@ -251,23 +265,33 @@
     int err;
     //FFmpegLibsInst->LoadLibs(NULL,true); //Loaded at startup or from Prefs now
  
@@ -431,7 +443,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't allocate output format context."));
        return false;
-@@ -278,7 +302,7 @@ bool ExportFFmpeg::Init(const char *shor
+@@ -278,7 +302,7 @@
     memcpy(mEncFormatCtx->filename, OSINPUT(mName), strlen(OSINPUT(mName))+1);
     
     // At the moment Audacity can export only one audio stream
@@ -440,7 +452,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't add audio stream to output file \"%s\"."), mName.c_str());
        return false;
-@@ -299,7 +323,7 @@ bool ExportFFmpeg::Init(const char *shor
+@@ -299,7 +323,7 @@
  
     // Set default parameters on the format context.
     memset(&fpOutFile, 0, sizeof(AVFormatParameters));
@@ -449,7 +461,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't set output parameters for output file \"%s\". Error code is %d."), mName.c_str(),err);
        return false;
-@@ -324,7 +348,7 @@ bool ExportFFmpeg::Init(const char *shor
+@@ -324,7 +348,7 @@
     }
  
     // Write headers to the output file.
@@ -458,7 +470,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't write headers to output file \"%s\". Error code is %d."), mName.c_str(),err);
  
-@@ -349,11 +373,11 @@ bool ExportFFmpeg::InitCodecs(AudacityPr
+@@ -349,11 +373,11 @@
     // Configure the audio stream's codec context.
     mEncAudioCodecCtx = mEncAudioStream->codec;
    
@@ -472,7 +484,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     mSampleRate = (int)project->GetRate();
     mEncAudioCodecCtx->global_quality = -99999; //quality mode is off by default;
  
-@@ -448,7 +472,7 @@ bool ExportFFmpeg::InitCodecs(AudacityPr
+@@ -448,7 +472,7 @@
     //mEncAudioCodecCtx->strict_std_compliance = FF_COMPLIANCE_STRICT;
  
     // Is the required audio codec compiled into libavcodec?
@@ -481,7 +493,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't find audio codec 0x%x."),mEncAudioCodecCtx->codec_id);
        wxMessageBox(wxString::Format(_("FFmpeg cannot find audio codec 0x%x.\nSupport for this codec is probably not compiled in."),mEncAudioCodecCtx->codec_id));
-@@ -462,7 +486,7 @@ bool ExportFFmpeg::InitCodecs(AudacityPr
+@@ -462,7 +486,7 @@
     }
  
     // Open the codec.
@@ -490,7 +502,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't open audio codec 0x%x."),mEncAudioCodecCtx->codec_id);
        return false;
-@@ -475,7 +499,7 @@ bool ExportFFmpeg::InitCodecs(AudacityPr
+@@ -475,7 +499,7 @@
        mEncAudioEncodedBufSiz = FF_MIN_BUFFER_SIZE;
     }
     // Allocate a buffer for the encoder to store encoded audio frames into.
@@ -499,7 +511,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't allocate buffer to hold encoded audio."));
        return false;
-@@ -485,13 +509,13 @@ bool ExportFFmpeg::InitCodecs(AudacityPr
+@@ -485,13 +509,13 @@
     // guarantee we'll get this minimum each time an audio frame is decoded from the input file so 
     // we use a FIFO to store up incoming raw samples until we have enough for one call to the codec.
  #if FFMPEG_STABLE
@@ -516,7 +528,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        wxLogMessage(wxT("FFmpeg : ERROR - Can't allocate buffer to read into from audio FIFO."));
        return false;
-@@ -509,9 +533,9 @@ bool ExportFFmpeg::Finalize()
+@@ -509,9 +533,9 @@
     {
        AVPacket	pkt;
  #if FFMPEG_STABLE
@@ -528,7 +540,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #endif
  
        nEncodedBytes = 0;
-@@ -550,15 +574,15 @@ bool ExportFFmpeg::Finalize()
+@@ -550,15 +574,15 @@
  
              // Pull the bytes out from the FIFO and feed them to the encoder.
  #if FFMPEG_STABLE
@@ -548,7 +560,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
              }
  
              mEncAudioCodecCtx->frame_size = nFrameSizeTmp;		// restore the native frame size
-@@ -567,13 +591,13 @@ bool ExportFFmpeg::Finalize()
+@@ -567,13 +591,13 @@
  
        // Now flush the encoder.
        if (nEncodedBytes <= 0)
@@ -564,7 +576,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
        pkt.stream_index = mEncAudioStream->index;
        pkt.data = mEncAudioEncodedBuf;
-@@ -582,9 +606,9 @@ bool ExportFFmpeg::Finalize()
+@@ -582,9 +606,9 @@
  
        // Set presentation time of frame (currently in the codec's timebase) in the stream timebase.
        if(mEncAudioCodecCtx->coded_frame && mEncAudioCodecCtx->coded_frame->pts != int64_t(AV_NOPTS_VALUE))
@@ -576,7 +588,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        {
           wxLogMessage(wxT("FFmpeg : ERROR - Couldn't write last audio frame to output file."));
           break;
-@@ -593,34 +617,34 @@ bool ExportFFmpeg::Finalize()
+@@ -593,34 +617,34 @@
  
     // Close the codecs.
     if (mEncAudioStream != NULL)
@@ -621,7 +633,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     mEncAudioFifo = NULL;
  #endif
     return true;
-@@ -638,33 +662,33 @@ bool ExportFFmpeg::EncodeAudioFrame(int1
+@@ -638,33 +662,33 @@
     nBytesToWrite = frameSize;
     pRawSamples  = (uint8_t*)pFrame;
  #if FFMPEG_STABLE
@@ -666,7 +678,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        if (mEncAudioCodecCtx->frame_size == 1) { wxASSERT(pkt.size == mEncAudioEncodedBufSiz); }
        if (pkt.size < 0)
        {
-@@ -674,7 +698,7 @@ bool ExportFFmpeg::EncodeAudioFrame(int1
+@@ -674,7 +698,7 @@
  
        // Rescale from the codec time_base to the AVStream time_base.
        if (mEncAudioCodecCtx->coded_frame && mEncAudioCodecCtx->coded_frame->pts != int64_t(AV_NOPTS_VALUE))
@@ -675,7 +687,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        //wxLogMessage(wxT("FFmpeg : (%d) Writing audio frame with PTS: %lld."), mEncAudioCodecCtx->frame_number, pkt.pts);
  
        pkt.stream_index = mEncAudioStream->index;
-@@ -682,7 +706,7 @@ bool ExportFFmpeg::EncodeAudioFrame(int1
+@@ -682,7 +706,7 @@
        pkt.flags |= PKT_FLAG_KEY;
  
        // Write the encoded audio frame to the output file.
@@ -684,7 +696,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        {
           wxLogMessage(wxT("FFmpeg : ERROR - Failed to write audio frame to file."));
           return false;
-@@ -696,8 +720,10 @@ int ExportFFmpeg::Export(AudacityProject
+@@ -696,8 +720,10 @@
                         int channels, wxString fName,
                         bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata, int subformat)
  {
@@ -695,7 +707,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     mChannels = channels;
     // subformat index may not correspond directly to fmts[] index, convert it
     mSubFormat = AdjustFormatIndex(subformat);
-@@ -871,8 +897,10 @@ int ExportFFmpeg::AskResample(int bitrat
+@@ -871,8 +897,10 @@
  
  bool ExportFFmpeg::DisplayOptions(wxWindow *parent, int format)
  {
@@ -706,8 +718,8 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     // subformat index may not correspond directly to fmts[] index, convert it
     mSubFormat = AdjustFormatIndex(format);
     if (mSubFormat == FMT_M4A)
---- audacity-1.3.12.orig/src/export/ExportFFmpegDialogs.cpp
-+++ audacity-1.3.12/src/export/ExportFFmpegDialogs.cpp
+--- a/src/export/ExportFFmpegDialogs.cpp
++++ b/src/export/ExportFFmpegDialogs.cpp
 @@ -73,8 +73,6 @@
  
  #if defined(USE_FFMPEG)
@@ -717,7 +729,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  /// This construction defines a enumeration of UI element IDs, and a static
  /// array of their string representations (this way they're always synchronized).
  /// Do not store the enumerated values in external files, as they may change;
-@@ -1291,7 +1289,9 @@ ExportFFmpegOptions::~ExportFFmpegOption
+@@ -1291,7 +1289,9 @@
  {
     delete mPresets;
     delete mPresetNames;
@@ -727,7 +739,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  }
  
  ExportFFmpegOptions::ExportFFmpegOptions(wxWindow *parent)
-@@ -1299,13 +1299,17 @@ ExportFFmpegOptions::ExportFFmpegOptions
+@@ -1299,13 +1299,17 @@
              wxString(_("Specify Other Options")))
  {
     ShuttleGui S(this, eIsCreatingFromPrefs);
@@ -745,7 +757,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        FetchFormatList();
        FetchCodecList();
-@@ -1329,7 +1333,7 @@ ExportFFmpegOptions::ExportFFmpegOptions
+@@ -1329,7 +1333,7 @@
        DoOnFormatList();
  
        //Select the codec that was selected last time this dialog was closed
@@ -754,7 +766,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        if (codec != NULL) mCodecList->Select(mCodecList->FindString(wxString::FromUTF8(codec->name)));
        DoOnCodecList();
     }
-@@ -1342,7 +1346,7 @@ void ExportFFmpegOptions::FetchFormatLis
+@@ -1342,7 +1346,7 @@
  {
     // Enumerate all output formats
     AVOutputFormat *ofmt = NULL;
@@ -763,7 +775,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        // Any audio-capable format has default audio codec.
        // If it doesn't, then it doesn't supports any audio codecs
-@@ -1363,7 +1367,7 @@ void ExportFFmpegOptions::FetchCodecList
+@@ -1363,7 +1367,7 @@
  {
     // Enumerate all codecs
     AVCodec *codec = NULL;
@@ -772,7 +784,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        // We're only interested in audio and only in encoders
        if (codec->type == CODEC_TYPE_AUDIO && codec->encode)
-@@ -1604,7 +1608,7 @@ int ExportFFmpegOptions::FetchCompatible
+@@ -1604,7 +1608,7 @@
              break;
           }
           // Find the codec, that is claimed to be compatible
@@ -781,7 +793,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           // If it exists, is audio and has encoder
           if (codec != NULL && (codec->type == CODEC_TYPE_AUDIO) && codec->encode)
           {
-@@ -1619,7 +1623,7 @@ int ExportFFmpegOptions::FetchCompatible
+@@ -1619,7 +1623,7 @@
     if (found == 2)
     {
        AVCodec *codec = NULL;
@@ -790,7 +802,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        {
           if (codec->type == CODEC_TYPE_AUDIO && codec->encode)
           {
-@@ -1637,10 +1641,14 @@ int ExportFFmpegOptions::FetchCompatible
+@@ -1637,10 +1641,14 @@
     else if (found == 0)
     {
        wxCharBuffer buf = str.ToUTF8();
@@ -807,7 +819,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           if (codec != NULL && (codec->type == CODEC_TYPE_AUDIO) && codec->encode)
           {
              if ((id >= 0) && codec->id == id) index = mShownCodecNames.GetCount();
-@@ -1674,7 +1682,11 @@ int ExportFFmpegOptions::FetchCompatible
+@@ -1674,7 +1682,11 @@
           if ((selfmt != NULL) && (selfmt->Cmp(CompatibilityList[i].fmt) == 0)) index = mShownFormatNames.GetCount();
           FromList.Add(CompatibilityList[i].fmt);
           mShownFormatNames.Add(CompatibilityList[i].fmt);
@@ -820,7 +832,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           if (tofmt != NULL) mShownFormatLongNames.Add(wxString::Format(wxT("%s - %s"),CompatibilityList[i].fmt,wxString::FromUTF8(tofmt->long_name).c_str()));
        }
     }
-@@ -1694,7 +1706,7 @@ int ExportFFmpegOptions::FetchCompatible
+@@ -1694,7 +1706,7 @@
     if (found)
     {
        // Find all formats which have this codec as default and which are not in the list yet and add them too
@@ -829,7 +841,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        {
           if (ofmt->audio_codec == id)
           {
-@@ -1879,7 +1891,11 @@ void ExportFFmpegOptions::DoOnFormatList
+@@ -1879,7 +1891,11 @@
     wxString *selcdclong = NULL;
     FindSelectedCodec(&selcdc, &selcdclong);
  
@@ -842,7 +854,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (fmt == NULL)
     {
        //This shouldn't really happen
-@@ -1891,7 +1907,7 @@ void ExportFFmpegOptions::DoOnFormatList
+@@ -1891,7 +1907,7 @@
  
     if (selcdc != NULL)
     {
@@ -851,7 +863,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        if (cdc != NULL)
        {
           selcdcid = cdc->id;
-@@ -1902,7 +1918,7 @@ void ExportFFmpegOptions::DoOnFormatList
+@@ -1902,7 +1918,7 @@
  
     AVCodec *cdc = NULL;
     if (selcdc != NULL)
@@ -860,7 +872,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     EnableDisableControls(cdc, selfmt);
     Layout();
     Fit();
-@@ -1923,7 +1939,7 @@ void ExportFFmpegOptions::DoOnCodecList(
+@@ -1923,7 +1939,7 @@
     wxString *selfmtlong = NULL;
     FindSelectedFormat(&selfmt, &selfmtlong);
  
@@ -869,7 +881,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (cdc == NULL)
     {
        //This shouldn't really happen
-@@ -1934,7 +1950,11 @@ void ExportFFmpegOptions::DoOnCodecList(
+@@ -1934,7 +1950,11 @@
  
     if (selfmt != NULL)
     {
@@ -882,7 +894,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        if (fmt == NULL)
        {
           selfmt = NULL;
-@@ -1971,7 +1991,7 @@ void ExportFFmpegOptions::OnOK(wxCommand
+@@ -1971,7 +1991,7 @@
  {
     int selcdc = mCodecList->GetSelection();
     int selfmt = mFormatList->GetSelection();
@@ -891,9 +903,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (selfmt > -1) gPrefs->Write(wxT("/FileFormats/FFmpegFormat"),mFormatList->GetString(selfmt));
     ShuttleGui S(this, eIsSavingToPrefs);
     PopulateOrExchange(S);
---- audacity-1.3.12.orig/src/import/ImportFFmpeg.cpp
-+++ audacity-1.3.12/src/import/ImportFFmpeg.cpp
-@@ -159,8 +159,6 @@ static const wxChar *exts[] =
+--- a/src/import/ImportFFmpeg.cpp
++++ b/src/import/ImportFFmpeg.cpp
+@@ -159,8 +159,6 @@
  #include "../ondemand/ODDecodeFFmpegTask.h"
  #endif
  
@@ -902,7 +914,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  class FFmpegImportFileHandle;
  //moving from ImportFFmpeg.cpp to FFMpeg.h so other cpp files can use this struct.
  #ifndef EXPERIMENTAL_OD_FFMPEG
-@@ -319,6 +317,7 @@ ImportFileHandle *FFmpegImportPlugin::Op
+@@ -319,6 +317,7 @@
        //insdead of usual wxMessageBox()
        bool newsession = false;
        gPrefs->Read(wxT("/NewImportingSession"), &newsession);
@@ -910,7 +922,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        if (!FFmpegLibsInst->ValidLibsLoaded())
        {
           int dontShowDlg;
-@@ -332,12 +331,15 @@ ImportFileHandle *FFmpegImportPlugin::Op
+@@ -332,12 +331,15 @@
              delete dlg;
           }         
        }
@@ -926,7 +938,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     // Open the file for import  
     bool success = handle->Init();
-@@ -353,7 +355,9 @@ ImportFileHandle *FFmpegImportPlugin::Op
+@@ -353,7 +355,9 @@
  FFmpegImportFileHandle::FFmpegImportFileHandle(const wxString & name)
  :  ImportFileHandle(name)
  {
@@ -936,7 +948,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     mStreamInfo = new wxArrayString();
     mFormatContext = NULL;
-@@ -371,9 +375,11 @@ bool FFmpegImportFileHandle::Init()
+@@ -371,9 +375,11 @@
  {
     //FFmpegLibsInst->LoadLibs(NULL,false); //Loaded at startup or from Prefs now
  
@@ -949,7 +961,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     int err = ufile_fopen_input(&mFormatContext, mName);
     if (err < 0)
-@@ -382,7 +388,7 @@ bool FFmpegImportFileHandle::Init()
+@@ -382,7 +388,7 @@
        return false;
     }
  
@@ -958,7 +970,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (err < 0)
     {
        wxLogMessage(wxT("FFmpeg : av_find_stream_info() failed for file %s"),mName.c_str());
-@@ -410,7 +416,7 @@ bool FFmpegImportFileHandle::InitCodecs(
+@@ -410,7 +416,7 @@
           sc->m_stream = mFormatContext->streams[i];
           sc->m_codecCtx = sc->m_stream->codec;
  
@@ -967,7 +979,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           if (codec == NULL)
           {
              wxLogMessage(wxT("FFmpeg : avcodec_find_decoder() failed. Index[%02d], Codec[%02x - %s]"),i,sc->m_codecCtx->codec_id,sc->m_codecCtx->codec_name);
-@@ -426,7 +432,7 @@ bool FFmpegImportFileHandle::InitCodecs(
+@@ -426,7 +432,7 @@
              continue;
           }
  
@@ -976,7 +988,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           {
              wxLogMessage(wxT("FFmpeg : avcodec_open() failed. Index[%02d], Codec[%02x - %s]"),i,sc->m_codecCtx->codec_id,sc->m_codecCtx->codec_name);
              //Can't open decoder - skip this stream
-@@ -631,7 +637,7 @@ int FFmpegImportFileHandle::Import(Track
+@@ -631,7 +637,7 @@
  #if FFMPEG_STABLE
              av_free_packet(&sc->m_pkt);
  #else
@@ -985,7 +997,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #endif
              sc->m_pktValid = 0;
           }    
-@@ -652,7 +658,7 @@ int FFmpegImportFileHandle::Import(Track
+@@ -652,7 +658,7 @@
  #if FFMPEG_STABLE
                 av_free_packet(&mScs[i]->m_pkt);
  #else
@@ -994,7 +1006,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #endif
                 mScs[i]->m_pktValid = 0;
              }				
-@@ -707,7 +713,7 @@ streamContext *FFmpegImportFileHandle::R
+@@ -707,7 +713,7 @@
     streamContext *sc = NULL;
     AVPacket pkt;
  
@@ -1003,7 +1015,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        return NULL;
     }
-@@ -726,7 +732,7 @@ streamContext *FFmpegImportFileHandle::R
+@@ -726,7 +732,7 @@
  #if FFMPEG_STABLE
        av_free_packet(&pkt);
  #else
@@ -1012,7 +1024,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #endif
        return (streamContext*)1;
     }
-@@ -772,10 +778,10 @@ int FFmpegImportFileHandle::DecodeFrame(
+@@ -772,10 +778,10 @@
        //\warning { for some reason using the following macro call right in the function call
        // causes Audacity to crash in some unknown place. With "newsize" it works fine }
        int newsize = FFMAX(sc->m_pkt.size*sizeof(*sc->m_decodedAudioSamples), AVCODEC_MAX_AUDIO_FRAME_SIZE);
@@ -1025,7 +1037,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
        if (sc->m_decodedAudioSamples == NULL)
        {
-@@ -787,10 +793,10 @@ int FFmpegImportFileHandle::DecodeFrame(
+@@ -787,10 +793,10 @@
     // avcodec_decode_audio2() expects the size of the output buffer as the 3rd parameter but
     // also returns the number of bytes it decoded in the same parameter.
     sc->m_decodedAudioSamplesValidSiz = sc->m_decodedAudioSamplesSiz;
@@ -1038,7 +1050,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     if (nBytesDecoded < 0)
     {
-@@ -866,7 +872,7 @@ int FFmpegImportFileHandle::WriteData(st
+@@ -866,7 +872,7 @@
     // Try to update the progress indicator (and see if user wants to cancel)
     int updateResult = eProgressSuccess;
     // PTS (presentation time) is the proper way of getting current position
@@ -1047,7 +1059,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     {
        mProgressPos = sc->m_pkt.pts * sc->m_stream->time_base.num / sc->m_stream->time_base.den;
        mProgressLen = (mFormatContext->duration > 0 ? mFormatContext->duration / AV_TIME_BASE: 1);
-@@ -912,16 +918,18 @@ FFmpegImportFileHandle::~FFmpegImportFil
+@@ -912,16 +918,18 @@
     if(!mUsingOD)
     {
  #endif
@@ -1069,7 +1081,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
        delete mScs[i];
     }
-@@ -933,7 +941,9 @@ FFmpegImportFileHandle::~FFmpegImportFil
+@@ -933,7 +941,9 @@
  
     delete mStreamInfo;
  
@@ -1079,9 +1091,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  }
  
  #endif //USE_FFMPEG
---- audacity-1.3.12.orig/src/prefs/LibraryPrefs.cpp
-+++ audacity-1.3.12/src/prefs/LibraryPrefs.cpp
-@@ -129,6 +129,10 @@ void LibraryPrefs::PopulateOrExchange(Sh
+--- a/src/prefs/LibraryPrefs.cpp
++++ b/src/prefs/LibraryPrefs.cpp
+@@ -129,6 +129,10 @@
           S.Id(ID_FFMPEG_DOWN_BUTTON);
           wxButton *bdwn = S.AddButton(_("Dow&nload"),
                                        wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL);
@@ -1092,7 +1104,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #if !defined(USE_FFMPEG)
           bdwn->Enable(FALSE);
           bfnd->Enable(FALSE);
-@@ -163,12 +167,22 @@ void LibraryPrefs::OnMP3DownButton(wxCom
+@@ -163,12 +167,22 @@
  
  void LibraryPrefs::SetFFmpegVersionText()
  {
@@ -1116,7 +1128,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     FFmpegLibs* FFmpegLibsInst = PickFFmpegLibs();
     bool showerrs =
  #if defined(__WXDEBUG__)
-@@ -200,7 +214,7 @@ void LibraryPrefs::OnFFmpegFindButton(wx
+@@ -200,7 +214,7 @@
     SetFFmpegVersionText();
  
     DropFFmpegLibs();
