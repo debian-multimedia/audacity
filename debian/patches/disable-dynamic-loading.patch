@@ -55,17 +55,42 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  dnl Check for a copy of ffmpeg, whoose headers we will use for the importer
  AC_DEFUN([AUDACITY_CHECKLIB_FFMPEG], [
     AC_ARG_WITH(ffmpeg,
-@@ -33,6 +33,10 @@
- 	     FFMPEG_SYSTEM_AVAILABLE="yes"
-          FFMPEG_SYSTEM_CXXFLAGS="$AVCODEC_CFLAGS $AVFORMAT_CFLAGS"
-          FFMPEG_SYSTEM_CPPSYMBOLS="USE_FFMPEG"
-+	     if test "x$dynamic_loading" = "xno"; then
-+	        FFMPEG_SYSTEM_LIBS="$AVCODEC_LIBS $AVFORMAT_LIBS"
-+	        AC_DEFINE(USE_SYSTEM_FFMPEG, 1, [Use system FFmpeg library and disable dynamic loading of it.])
-+	     fi
- 		 dnl build the extra object files needed to use FFmpeg. Paths inside
- 		 dnl the audacity src/ dir, as this is subsitiuted into src/Makefile.in
- 		 FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
+@@ -26,18 +26,27 @@
+    PKG_CHECK_MODULES(AVFORMAT, libavformat >= 52.12,
+                      avformat_available_system="yes",
+                      avformat_available_system="no")
++   PKG_CHECK_MODULES(AVUTIL, libavutil,
++                     libavutil_available_system="yes",
++                     libavutil_available_system="no")
+ 
+    FFMPEG_SYSTEM_AVAILABLE="no"
+    if test "x$avcodec_available_system" = "xyes" ; then
+       if test "x$avformat_available_system" = "xyes" ; then
+-	     FFMPEG_SYSTEM_AVAILABLE="yes"
+-         FFMPEG_SYSTEM_CXXFLAGS="$AVCODEC_CFLAGS $AVFORMAT_CFLAGS"
+-         FFMPEG_SYSTEM_CPPSYMBOLS="USE_FFMPEG"
+-		 dnl build the extra object files needed to use FFmpeg. Paths inside
+-		 dnl the audacity src/ dir, as this is subsitiuted into src/Makefile.in
+-		 FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
+-		 	export/ExportFFmpegDialogs.o"
+-         AC_MSG_NOTICE([FFmpeg library available as system library])
++         if test "x$libavutil_available_system" = "xyes" ; then
++            FFMPEG_SYSTEM_AVAILABLE="yes"
++            FFMPEG_SYSTEM_CXXFLAGS="$AVCODEC_CFLAGS $AVFORMAT_CFLAGS $AVUTIL_CFLAGS"
++            FFMPEG_SYSTEM_CPPSYMBOLS="USE_FFMPEG"
++            if test "x$dynamic_loading" = "xno"; then
++               FFMPEG_SYSTEM_LIBS="$AVCODEC_LIBS $AVFORMAT_LIBS $AVUTIL_LIBS"
++               AC_DEFINE(USE_SYSTEM_FFMPEG, 1, [Use system FFmpeg library and disable dynamic loading of it.])
++            fi
++            dnl build the extra object files needed to use FFmpeg. Paths inside
++            dnl the audacity src/ dir, as this is subsitiuted into src/Makefile.in
++            FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
++               export/ExportFFmpegDialogs.o"
++            AC_MSG_NOTICE([FFmpeg library available as system library])
++         fi
+       fi
+    fi
+    if test "x$FFMPEG_SYSTEM_AVAILABLE" = "xno" ; then
 --- a/src/FFmpeg.cpp
 +++ b/src/FFmpeg.cpp
 @@ -40,6 +40,8 @@
