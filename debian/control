@@ -31,7 +31,6 @@ Build-Depends: autotools-dev,
                zip
 Build-Conflicts: libwxbase2.6-dev,
                  wx2.6-headers
-DM-Upload-Allowed: yes
 Homepage: http://audacity.sourceforge.net/
 Vcs-Git: git://git.debian.org/git/pkg-multimedia/audacity.git
 Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
