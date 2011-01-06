@@ -1,10 +1,10 @@
-audacity (1.3.12-9) UNRELEASED; urgency=low
+audacity (1.3.12-9) unstable; urgency=low
 
   * Drop ffmpeg-av-match-ext.patch in favor of disable-dynamic-loading.patch.
   * Update my email address.
   * Drop DM-Upload-Allowed from debian/control.
 
- -- Benjamin Drung <bdrung@debian.org>  Thu, 30 Dec 2010 00:01:14 +0100
+ -- Benjamin Drung <bdrung@debian.org>  Thu, 06 Jan 2011 22:04:37 +0100
 
 audacity (1.3.12-8) experimental; urgency=low
 
