@@ -1,3 +1,10 @@
+audacity (1.3.12-10) experimental; urgency=low
+
+  * debian/gbp.conf: Set debian-branch to experimental
+  * Rebuild against the latest upstream release in experimental.
+
+ -- Alessio Treglia <alessio@debian.org>  Mon, 17 Jan 2011 17:59:47 +0100
+
 audacity (1.3.12-9) unstable; urgency=low
 
   * Drop ffmpeg-av-match-ext.patch in favor of disable-dynamic-loading.patch.
