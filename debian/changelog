@@ -1,5 +1,6 @@
 audacity (1.3.12-10) experimental; urgency=low
 
+  * Team upload.
   * debian/gbp.conf: Set debian-branch to experimental
   * Rebuild against the latest upstream release in experimental.
 
