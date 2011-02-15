@@ -3,24 +3,27 @@
 # Do not link against unused libraries (make dpkg-shlibdeps happy).
 LDFLAGS += -Wl,-z,defs -Wl,--as-needed
 
+configure_flags := \
+	--disable-dynamic-loading \
+	--with-expat=system \
+	--with-ffmpeg=system \
+	--with-libflac=system \
+	--with-libid3tag=system \
+	--with-libmad=system \
+	--without-libresample \
+	--with-libsamplerate=system \
+	--with-libsndfile=system \
+	--with-libtwolame=system \
+	--with-libvamp=system \
+	--with-libvorbis=system \
+	--with-soundtouch=system \
+	$(NULL)
+
 %:
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	dh_auto_configure -- \
-		--disable-dynamic-loading \
-		--with-expat=system \
-		--with-ffmpeg=system \
-		--with-libflac=system \
-		--with-libid3tag=system \
-		--with-libmad=system \
-		--with-libsamplerate=system \
-		--without-libresample \
-		--with-libsndfile=system \
-		--with-libtwolame=system \
-		--with-libvamp=system \
-		--with-libvorbis=system \
-		--with-soundtouch=system
+	dh_auto_configure -- $(configure_flags)
 
 override_dh_auto_install:
 	dh_auto_install
