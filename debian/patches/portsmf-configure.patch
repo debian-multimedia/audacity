@@ -1,0 +1,113 @@
+Description: Support using system portSMF.
+Author: Benjamin Drung <bdrung@ubuntu.com>
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=284
+
+--- /dev/null
++++ b/m4/audacity_checklib_portsmf.m4
+@@ -0,0 +1,61 @@
++dnl Add Audacity / portSMF license?
++dnl
++dnl Please increment the serial number below whenever you alter this macro
++dnl for the benefit of automatic macro update systems
++# audacity_checklib_portsmf.m4 serial 1
++
++AC_DEFUN([AUDACITY_CHECKLIB_PORTSMF], [
++
++   AC_ARG_WITH(midi,
++               [AS_HELP_STRING([--with-midi],
++                               [use portSMF for Midi support])],
++               PORTSMF_ARGUMENT=$withval,
++               PORTSMF_ARGUMENT="unspecified")
++
++   if false ; then
++      AC_DEFINE(USE_MIDI, 1,
++                [Define if midi support should be enabled])
++   fi
++
++   dnl see if libportsmf is installed on the system
++
++   PKG_CHECK_MODULES(PORTSMF, portSMF,
++                     portsmf_available_system="yes",
++                     portsmf_available_system="no")
++
++   if test "x$portsmf_available_system" = "xyes" ; then
++      PORTSMF_SYSTEM_AVAILABLE="yes"
++      PORTSMF_SYSTEM_LIBS=$PORTSMF_LIBS
++      PORTSMF_SYSTEM_CXXFLAGS=$PORTSMF_CFLAGS
++      PORTSMF_SYSTEM_CPPSYMBOLS="USE_MIDI"
++      AC_MSG_NOTICE([portSMF library is available as system library])
++   else
++      PORTSMF_SYSTEM_AVAILABLE="no"
++      AC_MSG_NOTICE([portSMF library is NOT available as system library])
++   fi
++
++   dnl we need to configure portSMF if there is a local copy
++   if test -d ${srcdir}/lib-src/portsmf ; then
++      AX_CONFIG_DIR(["${srcdir}/lib-src/portsmf"])
++   fi
++   dnl having done that we get a pkg-config file we can use
++   dnl add the directory with portSMF in to the pkg-config search path
++   PKG_CONFIG_PATH="${srcdir}/lib-src/portsmf/:$PKG_CONFIG_PATH"
++   export PKG_CONFIG_PATH
++   PKG_CHECK_MODULES(PORTSMF, portSMF,
++                     portsmf_available="yes",
++                     portsmf_available="no")
++
++   if test "x$portsmf_available" = "xyes" ; then
++      PORTSMF_LOCAL_AVAILABLE="yes"
++      PORTSMF_LOCAL_LDFLAGS=$PORTSMF_LIBS
++      PORTSMF_LOCAL_CXXFLAGS=$PORTSMF_CFLAGS
++      PORTSMF_LOCAL_CPPSYMBOLS="USE_MIDI"
++      dnl extra objects we can now compile
++      PORTSMF_LOCAL_OPTOBJS="NoteTrack.o import/ImportMIDI.o"
++      dnl this bit makes sure that we compile the lib-src copy
++      PORTSMF_LOCAL_BUILD="portSMF"
++   else
++      PORTSMF_LOCAL_AVAILABLE="no"
++   fi
++])
+--- a/m4/audacity_checklib_widgetextra.m4
++++ b/m4/audacity_checklib_widgetextra.m4
+@@ -35,42 +35,3 @@
+    dnl otherwise good - got it. Flags will be available for use in
+    dnl WIDGETEXTRA_LIBS and friends
+ ])
+-
+-AC_DEFUN([AUDACITY_CHECKLIB_PORTSMF], [
+-
+-   AC_ARG_WITH(midi,
+-               [AS_HELP_STRING([--with-midi],
+-                               [use portSMF for Midi support ])],
+-               PORTSMF_ARGUMENT=$withval,
+-               PORTSMF_ARGUMENT="unspecified")
+-   if false ; then
+-      AC_DEFINE(USE_MIDI, 1,
+-                [Define if midi support should be enabled])
+-   fi
+-
+-   dnl we need to configure portSMF if there is a local copy
+-   if test -d ${srcdir}/lib-src/portsmf ; then
+-      AX_CONFIG_DIR(["${srcdir}/lib-src/portsmf"])
+-   fi
+-   dnl having done that we get a pkg-config file we can use
+-   dnl add the directory with portSMF in to the pkg-config search path
+-   PKG_CONFIG_PATH="${srcdir}/lib-src/portsmf/:$PKG_CONFIG_PATH"
+-   export PKG_CONFIG_PATH
+-   PKG_CHECK_MODULES(PORTSMF, portSMF,
+-                     portsmf_available="yes",
+-                     portsmf_available="no")
+-
+-   if test "x$portsmf_available" = "xyes" ; then
+-      PORTSMF_LOCAL_AVAILABLE="yes"
+-      PORTSMF_LOCAL_LDFLAGS=$PORTSMF_LIBS
+-      PORTSMF_LOCAL_CXXFLAGS=$PORTSMF_CFLAGS
+-      PORTSMF_LOCAL_CPPSYMBOLS="USE_MIDI"
+-	  dnl extra objects we can now compile
+-      PORTSMF_LOCAL_OPTOBJS="NoteTrack.o import/ImportMIDI.o"
+-	  dnl this bit makes sure that we compile the lib-src copy
+-	  PORTSMF_LOCAL_BUILD="portSMF"
+-   else
+-	  PORTSMF_LOCAL_AVAILABLE="no"
+-   fi
+-])
+-
