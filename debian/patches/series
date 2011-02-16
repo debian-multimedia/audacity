@@ -6,3 +6,4 @@ autoreconf.patch
 disable-dynamic-loading.patch
 portsmf-configure.patch
 configure.patch
+fix-const-char-conversion.patch
