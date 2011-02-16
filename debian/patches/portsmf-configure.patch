@@ -4,7 +4,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=284
 
 --- /dev/null
 +++ b/m4/audacity_checklib_portsmf.m4
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,63 @@
 +dnl Add Audacity / portSMF license?
 +dnl
 +dnl Please increment the serial number below whenever you alter this macro
@@ -32,9 +32,11 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=284
 +
 +   if test "x$portsmf_available_system" = "xyes" ; then
 +      PORTSMF_SYSTEM_AVAILABLE="yes"
-+      PORTSMF_SYSTEM_LIBS=$PORTSMF_LIBS
-+      PORTSMF_SYSTEM_CXXFLAGS=$PORTSMF_CFLAGS
++      PORTSMF_SYSTEM_LIBS="$PORTSMF_LIBS"
++      PORTSMF_SYSTEM_CXXFLAGS="$PORTSMF_CFLAGS"
 +      PORTSMF_SYSTEM_CPPSYMBOLS="USE_MIDI"
++      dnl extra objects we can now compile
++      PORTSMF_SYSTEM_OPTOBJS="NoteTrack.o import/ImportMIDI.o"
 +      AC_MSG_NOTICE([portSMF library is available as system library])
 +   else
 +      PORTSMF_SYSTEM_AVAILABLE="no"
