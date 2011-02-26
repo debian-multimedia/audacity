@@ -2,6 +2,7 @@ Description: Fix segfault with multiple ALSA devices
 Bug-Debian: http://bugs.debian.org/584605
 Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=174
 Author: Dave Witbrodt <dawitbro@sbcglobal.net>
+Applied-Upstream: 1.3.13
 
 --- a/lib-src/portmixer/src/px_linux_alsa.c
 +++ b/lib-src/portmixer/src/px_linux_alsa.c
