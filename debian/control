@@ -27,6 +27,7 @@ Build-Depends: autotools-dev,
                libtwolame-dev (>= 0.3.9),
                libvorbis-dev (>= 1.0.0-3),
                libwxgtk2.8-dev,
+               portaudio19-dev (>= 19+svn20101113-3~),
                vamp-plugin-sdk (>= 2.0),
                zip
 Build-Conflicts: libwxbase2.6-dev, wx2.6-headers

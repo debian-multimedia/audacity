@@ -17,6 +17,7 @@ configure_flags := \
 	--with-libvamp=system \
 	--with-libvorbis=system \
 	--with-midi=local \
+	--with-portaudio=system \
 	--with-sbsms=local \
 	--with-soundtouch=system \
 	$(NULL)
