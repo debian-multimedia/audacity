@@ -1053,7 +1053,7 @@ Forwarded: not-needed
                you have headers in a nonstandard directory <include dir>
    CXX         C++ compiler command
    CXXFLAGS    C++ compiler flags
-@@ -1528,96 +1488,547 @@
+@@ -1528,10 +1488,17 @@
                C compiler flags for AVFORMAT, overriding pkg-config
    AVFORMAT_LIBS
                linker flags for AVFORMAT, overriding pkg-config
@@ -1071,13 +1071,10 @@ Forwarded: not-needed
    GTK_CFLAGS  C compiler flags for GTK, overriding pkg-config
    GTK_LIBS    linker flags for GTK, overriding pkg-config
    JACK_CFLAGS C compiler flags for JACK, overriding pkg-config
-   JACK_LIBS   linker flags for JACK, overriding pkg-config
+@@ -1540,84 +1507,528 @@
+ Use these variables to override the choices made by `configure' or to help
+ it to find libraries and programs with nonstandard names/locations.
  
--Use these variables to override the choices made by `configure' or to help
--it to find libraries and programs with nonstandard names/locations.
-+Use these variables to override the choices made by `configure' or to help
-+it to find libraries and programs with nonstandard names/locations.
-+
 +Report bugs to the package provider.
 +_ACEOF
 +ac_status=$?
@@ -1311,7 +1308,7 @@ Forwarded: not-needed
 +  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
 +  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
 +  as_fn_set_status $ac_retval
- 
++
 +} # ac_fn_cxx_try_link
 +
 +# ac_fn_cxx_check_type LINENO TYPE VAR INCLUDES
@@ -1338,8 +1335,7 @@ Forwarded: not-needed
 +  ;
 +  return 0;
 +}
- _ACEOF
--ac_status=$?
++_ACEOF
 +if ac_fn_cxx_try_compile "$LINENO"; then :
 +  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 +/* end confdefs.h.  */
@@ -1359,33 +1355,16 @@ Forwarded: not-needed
 +  eval "$3=yes"
 +fi
 +rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
- fi
++fi
 +rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 +fi
 +eval ac_res=\$$3
 +	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 +$as_echo "$ac_res" >&6; }
 +  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
- 
--if test "$ac_init_help" = "recursive"; then
--  # If there are subdirs, report their specific --help.
--  for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
--    test -d "$ac_dir" ||
--      { cd "$srcdir" && ac_pwd=`pwd` && srcdir=. && test -d "$ac_dir"; } ||
--      continue
--    ac_builddir=.
++
 +} # ac_fn_cxx_check_type
- 
--case "$ac_dir" in
--.) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
--*)
--  ac_dir_suffix=/`$as_echo "$ac_dir" | sed 's|^\.[\\/]||'`
--  # A ".." for each directory in $ac_dir_suffix.
--  ac_top_builddir_sub=`$as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
--  case $ac_top_builddir_sub in
--  "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
--  *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
--  esac ;;
++
 +# ac_fn_cxx_try_run LINENO
 +# ------------------------
 +# Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
@@ -1397,25 +1376,7 @@ Forwarded: not-needed
 +case "(($ac_try" in
 +  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
 +  *) ac_try_echo=$ac_try;;
- esac
--ac_abs_top_builddir=$ac_pwd
--ac_abs_builddir=$ac_pwd$ac_dir_suffix
--# for backward compatibility:
--ac_top_builddir=$ac_top_build_prefix
--
--case $srcdir in
--  .)  # We are building in place.
--    ac_srcdir=.
--    ac_top_srcdir=$ac_top_builddir_sub
--    ac_abs_top_srcdir=$ac_pwd ;;
--  [\\/]* | ?:[\\/]* )  # Absolute name.
--    ac_srcdir=$srcdir$ac_dir_suffix;
--    ac_top_srcdir=$srcdir
--    ac_abs_top_srcdir=$srcdir ;;
--  *) # Relative name.
--    ac_srcdir=$ac_top_build_prefix$srcdir$ac_dir_suffix
--    ac_top_srcdir=$ac_top_build_prefix$srcdir
--    ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
++esac
 +eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
 +$as_echo "$ac_try_echo"; } >&5
 +  (eval "$ac_link") 2>&5
@@ -1425,8 +1386,7 @@ Forwarded: not-needed
 +  { { case "(($ac_try" in
 +  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
 +  *) ac_try_echo=$ac_try;;
- esac
--ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
++esac
 +eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
 +$as_echo "$ac_try_echo"; } >&5
 +  (eval "$ac_try") 2>&5
@@ -1438,37 +1398,15 @@ Forwarded: not-needed
 +  $as_echo "$as_me: program exited with status $ac_status" >&5
 +       $as_echo "$as_me: failed program was:" >&5
 +sed 's/^/| /' conftest.$ac_ext >&5
- 
--    cd "$ac_dir" || { ac_status=$?; continue; }
--    # Check for guested configure.
--    if test -f "$ac_srcdir/configure.gnu"; then
--      echo &&
--      $SHELL "$ac_srcdir/configure.gnu" --help=recursive
--    elif test -f "$ac_srcdir/configure"; then
--      echo &&
--      $SHELL "$ac_srcdir/configure" --help=recursive
--    else
--      $as_echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
--    fi || ac_status=$?
--    cd "$ac_pwd" || { ac_status=$?; break; }
--  done
++
 +       ac_retval=$ac_status
- fi
++fi
 +  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
 +  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
 +  as_fn_set_status $ac_retval
- 
--test -n "$ac_init_help" && exit $ac_status
--if $ac_init_version; then
--  cat <<\_ACEOF
--configure
--generated by GNU Autoconf 2.63
++
 +} # ac_fn_cxx_try_run
- 
--Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
--2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
--This configure script is free software; the Free Software Foundation
--gives unlimited permission to copy, distribute and modify it.
++
 +# ac_fn_cxx_check_header_compile LINENO HEADER VAR INCLUDES
 +# ---------------------------------------------------------
 +# Tests whether HEADER exists and can be compiled using the include files in
@@ -1485,8 +1423,7 @@ Forwarded: not-needed
 +/* end confdefs.h.  */
 +$4
 +#include <$2>
- _ACEOF
--  exit
++_ACEOF
 +if ac_fn_cxx_try_compile "$LINENO"; then :
 +  eval "$3=yes"
 +else
@@ -1526,7 +1463,8 @@ Forwarded: not-needed
 +/* end confdefs.h.  */
 +$4
 +#include <$2>
-+_ACEOF
+ _ACEOF
+-ac_status=$?
 +if ac_fn_cxx_try_compile "$LINENO"; then :
 +  ac_header_compiler=yes
 +else
@@ -1535,7 +1473,14 @@ Forwarded: not-needed
 +rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_compiler" >&5
 +$as_echo "$ac_header_compiler" >&6; }
-+
+ 
+-if test "$ac_init_help" = "recursive"; then
+-  # If there are subdirs, report their specific --help.
+-  for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
+-    test -d "$ac_dir" ||
+-      { cd "$srcdir" && ac_pwd=`pwd` && srcdir=. && test -d "$ac_dir"; } ||
+-      continue
+-    ac_builddir=.
 +# Is the header present?
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: checking $2 presence" >&5
 +$as_echo_n "checking $2 presence... " >&6; }
@@ -1551,7 +1496,17 @@ Forwarded: not-needed
 +rm -f conftest.err conftest.i conftest.$ac_ext
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_header_preproc" >&5
 +$as_echo "$ac_header_preproc" >&6; }
-+
+ 
+-case "$ac_dir" in
+-.) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
+-*)
+-  ac_dir_suffix=/`$as_echo "$ac_dir" | sed 's|^\.[\\/]||'`
+-  # A ".." for each directory in $ac_dir_suffix.
+-  ac_top_builddir_sub=`$as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
+-  case $ac_top_builddir_sub in
+-  "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
+-  *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
+-  esac ;;
 +# So?  What about this header?
 +case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in #((
 +  yes:no: )
@@ -1572,7 +1527,11 @@ Forwarded: not-needed
 +    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $2: proceeding with the compiler's result" >&5
 +$as_echo "$as_me: WARNING: $2: proceeding with the compiler's result" >&2;}
 +    ;;
-+esac
+ esac
+-ac_abs_top_builddir=$ac_pwd
+-ac_abs_builddir=$ac_pwd$ac_dir_suffix
+-# for backward compatibility:
+-ac_top_builddir=$ac_top_build_prefix
 +  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $2" >&5
 +$as_echo_n "checking for $2... " >&6; }
 +if eval "test \"\${$3+set}\"" = set; then :
@@ -1585,9 +1544,38 @@ Forwarded: not-needed
 +$as_echo "$ac_res" >&6; }
 +fi
 +  eval $as_lineno_stack; test "x$as_lineno_stack" = x && { as_lineno=; unset as_lineno;}
-+
+ 
+-case $srcdir in
+-  .)  # We are building in place.
+-    ac_srcdir=.
+-    ac_top_srcdir=$ac_top_builddir_sub
+-    ac_abs_top_srcdir=$ac_pwd ;;
+-  [\\/]* | ?:[\\/]* )  # Absolute name.
+-    ac_srcdir=$srcdir$ac_dir_suffix;
+-    ac_top_srcdir=$srcdir
+-    ac_abs_top_srcdir=$srcdir ;;
+-  *) # Relative name.
+-    ac_srcdir=$ac_top_build_prefix$srcdir$ac_dir_suffix
+-    ac_top_srcdir=$ac_top_build_prefix$srcdir
+-    ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
+-esac
+-ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
 +} # ac_fn_cxx_check_header_mongrel
-+
+ 
+-    cd "$ac_dir" || { ac_status=$?; continue; }
+-    # Check for guested configure.
+-    if test -f "$ac_srcdir/configure.gnu"; then
+-      echo &&
+-      $SHELL "$ac_srcdir/configure.gnu" --help=recursive
+-    elif test -f "$ac_srcdir/configure"; then
+-      echo &&
+-      $SHELL "$ac_srcdir/configure" --help=recursive
+-    else
+-      $as_echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2
+-    fi || ac_status=$?
+-    cd "$ac_pwd" || { ac_status=$?; break; }
+-  done
+-fi
 +# ac_fn_cxx_check_func LINENO FUNC VAR
 +# ------------------------------------
 +# Tests whether FUNC exists, setting the cache variable VAR accordingly
@@ -1604,12 +1592,21 @@ Forwarded: not-needed
 +/* Define $2 to an innocuous variant, in case <limits.h> declares $2.
 +   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
 +#define $2 innocuous_$2
-+
+ 
+-test -n "$ac_init_help" && exit $ac_status
+-if $ac_init_version; then
+-  cat <<\_ACEOF
+-configure
+-generated by GNU Autoconf 2.63
 +/* System header to define __stub macros and hopefully few prototypes,
 +    which can conflict with char $2 (); below.
 +    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
 +    <limits.h> exists even on freestanding compilers.  */
-+
+ 
+-Copyright (C) 1992, 1993, 1994, 1995, 1996, 1998, 1999, 2000, 2001,
+-2002, 2003, 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+-This configure script is free software; the Free Software Foundation
+-gives unlimited permission to copy, distribute and modify it.
 +#ifdef __STDC__
 +# include <limits.h>
 +#else
@@ -1639,12 +1636,13 @@ Forwarded: not-needed
 +  ;
 +  return 0;
 +}
-+_ACEOF
+ _ACEOF
+-  exit
 +if ac_fn_cxx_try_link "$LINENO"; then :
 +  eval "$3=yes"
 +else
 +  eval "$3=no"
-+fi
+ fi
 +rm -f core conftest.err conftest.$ac_objext \
 +    conftest$ac_exeext conftest.$ac_ext
 +fi
@@ -2468,26 +2466,17 @@ Forwarded: not-needed
  else
 -  { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
 +  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
- $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
--{ { $as_echo "$as_me:$LINENO: error: cannot compute suffix of executables: cannot compile and link
--See \`config.log' for more details." >&5
--$as_echo "$as_me: error: cannot compute suffix of executables: cannot compile and link
--See \`config.log' for more details." >&2;}
--   { (exit 1); exit 1; }; }; }
++$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 +as_fn_error $? "cannot compute suffix of executables: cannot compile and link
 +See \`config.log' for more details" "$LINENO" 5 ; }
- fi
--
--rm -f conftest$ac_cv_exeext
--{ $as_echo "$as_me:$LINENO: result: $ac_cv_exeext" >&5
++fi
 +rm -f conftest conftest$ac_cv_exeext
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_exeext" >&5
- $as_echo "$ac_cv_exeext" >&6; }
- 
- rm -f conftest.$ac_ext
- EXEEXT=$ac_cv_exeext
- ac_exeext=$EXEEXT
--{ $as_echo "$as_me:$LINENO: checking for suffix of object files" >&5
++$as_echo "$ac_cv_exeext" >&6; }
++
++rm -f conftest.$ac_ext
++EXEEXT=$ac_cv_exeext
++ac_exeext=$EXEEXT
 +cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 +/* end confdefs.h.  */
 +#include <stdio.h>
@@ -2535,16 +2524,29 @@ Forwarded: not-needed
 +	cross_compiling=yes
 +    else
 +	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+-{ { $as_echo "$as_me:$LINENO: error: cannot compute suffix of executables: cannot compile and link
+-See \`config.log' for more details." >&5
+-$as_echo "$as_me: error: cannot compute suffix of executables: cannot compile and link
+-See \`config.log' for more details." >&2;}
+-   { (exit 1); exit 1; }; }; }
 +as_fn_error $? "cannot run C compiled programs.
 +If you meant to cross compile, use \`--host'.
 +See \`config.log' for more details" "$LINENO" 5 ; }
 +    fi
 +  fi
-+fi
+ fi
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $cross_compiling" >&5
 +$as_echo "$cross_compiling" >&6; }
-+
+ 
+-rm -f conftest$ac_cv_exeext
+-{ $as_echo "$as_me:$LINENO: result: $ac_cv_exeext" >&5
+-$as_echo "$ac_cv_exeext" >&6; }
+-
+-rm -f conftest.$ac_ext
+-EXEEXT=$ac_cv_exeext
+-ac_exeext=$EXEEXT
+-{ $as_echo "$as_me:$LINENO: checking for suffix of object files" >&5
 +rm -f conftest.$ac_ext conftest$ac_cv_exeext conftest.out
 +ac_clean_files=$ac_clean_files_save
 +{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for suffix of object files" >&5
@@ -4334,11 +4336,11 @@ Forwarded: not-needed
 -  $as_echo "$as_me: failed program was:" >&5
 -sed 's/^/| /' conftest.$ac_ext >&5
 -
--
--fi
 +ac_fn_cxx_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
 +if test "x$ac_cv_type_size_t" = x""yes; then :
  
+-fi
+-
 -rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 -fi
 -{ $as_echo "$as_me:$LINENO: result: $ac_cv_type_size_t" >&5
@@ -5049,17 +5051,17 @@ Forwarded: not-needed
    *)
    wx_list=`${WX_CONFIG} --list`
 -  { { $as_echo "$as_me:$LINENO: error: Unable to locate a suitable configuration of wxWidgets v2.8.x or higher.
+-The currently available configurations are listed below.  If necessary, either
+-install the package for your distribution or download the latest version of
+-wxWidgets
+-from http://wxwidgets.org.
+-${wx_list}" >&5
+-$as_echo "$as_me: error: Unable to locate a suitable configuration of wxWidgets v2.8.x or higher.
 +  as_fn_error $? "Unable to locate a suitable configuration of wxWidgets v2.8.x or higher.
  The currently available configurations are listed below.  If necessary, either
  install the package for your distribution or download the latest version of
  wxWidgets
  from http://wxwidgets.org.
--${wx_list}" >&5
--$as_echo "$as_me: error: Unable to locate a suitable configuration of wxWidgets v2.8.x or higher.
--The currently available configurations are listed below.  If necessary, either
--install the package for your distribution or download the latest version of
--wxWidgets
--from http://wxwidgets.org.
 -${wx_list}" >&2;}
 -   { (exit 1); exit 1; }; }
 +${wx_list}" "$LINENO" 5
@@ -6368,12 +6370,10 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  /* Override any GCC internal prototype to avoid an error.
-@@ -6793,45 +5859,20 @@
- return mad_decoder_init ();
-   ;
+@@ -6795,43 +5861,18 @@
    return 0;
--}
--_ACEOF
+ }
+ _ACEOF
 -rm -f conftest.$ac_objext conftest$ac_exeext
 -if { (ac_try="$ac_link"
 -case "(($ac_try" in
@@ -6395,8 +6395,6 @@ Forwarded: not-needed
 -	 test "$cross_compiling" = yes ||
 -	 $as_test_x conftest$ac_exeext
 -       }; then
-+}
-+_ACEOF
 +if ac_fn_cxx_try_link "$LINENO"; then :
    ac_cv_lib_mad_mad_decoder_init=yes
  else
@@ -6556,34 +6554,28 @@ Forwarded: not-needed
 -	 test "$cross_compiling" = yes ||
 -	 $as_test_x conftest$ac_exeext
 -       }; then
-+if ac_fn_cxx_try_link "$LINENO"; then :
-   ac_cv_lib_FLAC_FLAC__stream_decoder_new=yes
- else
+-  ac_cv_lib_FLAC_FLAC__stream_decoder_new=yes
+-else
 -  $as_echo "$as_me: failed program was:" >&5
 -sed 's/^/| /' conftest.$ac_ext >&5
 -
 -	ac_cv_lib_FLAC_FLAC__stream_decoder_new=no
-+  ac_cv_lib_FLAC_FLAC__stream_decoder_new=no
- fi
+-fi
 -
 -rm -rf conftest.dSYM
 -rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 -      conftest$ac_exeext conftest.$ac_ext
-+rm -f core conftest.err conftest.$ac_objext \
-+    conftest$ac_exeext conftest.$ac_ext
- LIBS=$ac_check_lib_save_LIBS
- fi
+-LIBS=$ac_check_lib_save_LIBS
+-fi
 -{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&5
-+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&5
- $as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&6; }
+-$as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&6; }
 -if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_new" = x""yes; then
-+if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_new" = x""yes; then :
-   lib_found="yes"
- else
-   lib_found="no"
- fi
- 
- 
+-  lib_found="yes"
+-else
+-  lib_found="no"
+-fi
+-
+-
 -   if test "${ac_cv_header_FLAC_format_h+set}" = set; then
 -  { $as_echo "$as_me:$LINENO: checking for FLAC/format.h" >&5
 -$as_echo_n "checking for FLAC/format.h... " >&6; }
@@ -6664,12 +6656,15 @@ Forwarded: not-needed
 -	 test ! -s conftest.err
 -       }; then
 -  ac_header_preproc=yes
--else
++if ac_fn_cxx_try_link "$LINENO"; then :
++  ac_cv_lib_FLAC_FLAC__stream_decoder_new=yes
+ else
 -  $as_echo "$as_me: failed program was:" >&5
 -sed 's/^/| /' conftest.$ac_ext >&5
 -
 -  ac_header_preproc=no
--fi
++  ac_cv_lib_FLAC_FLAC__stream_decoder_new=no
+ fi
 -
 -rm -f conftest.err conftest.$ac_ext
 -{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
@@ -6704,14 +6699,24 @@ Forwarded: not-needed
 -$as_echo_n "checking for FLAC/format.h... " >&6; }
 -if test "${ac_cv_header_FLAC_format_h+set}" = set; then
 -  $as_echo_n "(cached) " >&6
--else
++rm -f core conftest.err conftest.$ac_objext \
++    conftest$ac_exeext conftest.$ac_ext
++LIBS=$ac_check_lib_save_LIBS
++fi
++{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&5
++$as_echo "$ac_cv_lib_FLAC_FLAC__stream_decoder_new" >&6; }
++if test "x$ac_cv_lib_FLAC_FLAC__stream_decoder_new" = x""yes; then :
++  lib_found="yes"
+ else
 -  ac_cv_header_FLAC_format_h=$ac_header_preproc
--fi
++  lib_found="no"
+ fi
 -{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_FLAC_format_h" >&5
 -$as_echo "$ac_cv_header_FLAC_format_h" >&6; }
--
+ 
 -fi
 -if test "x$ac_cv_header_FLAC_format_h" = x""yes; then
++
 +   ac_fn_cxx_check_header_mongrel "$LINENO" "FLAC/format.h" "ac_cv_header_FLAC_format_h" "$ac_includes_default"
 +if test "x$ac_cv_header_FLAC_format_h" = x""yes; then :
    header_found="yes"
@@ -7345,16 +7350,85 @@ Forwarded: not-needed
    pkg_cv_SOUNDTOUCH_LIBS=`$PKG_CONFIG --libs "soundtouch-1.0 >= 1.3.0" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -7794,7 +6492,7 @@
+@@ -7794,7 +6492,76 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$SOUNDTOUCH_PKG_ERRORS" >&5
  
 -	{ $as_echo "$as_me:$LINENO: result: no" >&5
 +	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++                soundtouch_available_system="no"
++elif test $pkg_failed = untried; then
++	soundtouch_available_system="no"
++else
++	SOUNDTOUCH_CFLAGS=$pkg_cv_SOUNDTOUCH_CFLAGS
++	SOUNDTOUCH_LIBS=$pkg_cv_SOUNDTOUCH_LIBS
++        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++	soundtouch_available_system="yes"
++fi
++   fi
++   if test "x$soundtouch_available_system" = "xno" ; then
++
++pkg_failed=no
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SOUNDTOUCH" >&5
++$as_echo_n "checking for SOUNDTOUCH... " >&6; }
++
++if test -n "$SOUNDTOUCH_CFLAGS"; then
++    pkg_cv_SOUNDTOUCH_CFLAGS="$SOUNDTOUCH_CFLAGS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"soundtouch >= 1.3.0\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "soundtouch >= 1.3.0") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_SOUNDTOUCH_CFLAGS=`$PKG_CONFIG --cflags "soundtouch >= 1.3.0" 2>/dev/null`
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++if test -n "$SOUNDTOUCH_LIBS"; then
++    pkg_cv_SOUNDTOUCH_LIBS="$SOUNDTOUCH_LIBS"
++ elif test -n "$PKG_CONFIG"; then
++    if test -n "$PKG_CONFIG" && \
++    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"soundtouch >= 1.3.0\""; } >&5
++  ($PKG_CONFIG --exists --print-errors "soundtouch >= 1.3.0") 2>&5
++  ac_status=$?
++  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
++  test $ac_status = 0; }; then
++  pkg_cv_SOUNDTOUCH_LIBS=`$PKG_CONFIG --libs "soundtouch >= 1.3.0" 2>/dev/null`
++else
++  pkg_failed=yes
++fi
++ else
++    pkg_failed=untried
++fi
++
++
++
++if test $pkg_failed = yes; then
++
++if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
++        _pkg_short_errors_supported=yes
++else
++        _pkg_short_errors_supported=no
++fi
++        if test $_pkg_short_errors_supported = yes; then
++	        SOUNDTOUCH_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "soundtouch >= 1.3.0" 2>&1`
++        else
++	        SOUNDTOUCH_PKG_ERRORS=`$PKG_CONFIG --print-errors "soundtouch >= 1.3.0" 2>&1`
++        fi
++	# Put the nasty error message in config.log where it belongs
++	echo "$SOUNDTOUCH_PKG_ERRORS" >&5
++
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
  $as_echo "no" >&6; }
                  soundtouch_available_system="no"
  elif test $pkg_failed = untried; then
-@@ -7802,7 +6500,7 @@
+@@ -7802,7 +6569,7 @@
  else
  	SOUNDTOUCH_CFLAGS=$pkg_cv_SOUNDTOUCH_CFLAGS
  	SOUNDTOUCH_LIBS=$pkg_cv_SOUNDTOUCH_LIBS
@@ -7363,7 +7437,7 @@ Forwarded: not-needed
  $as_echo "yes" >&6; }
  	soundtouch_available_system="yes"
  fi
-@@ -7813,38 +6511,33 @@
+@@ -7813,38 +6580,33 @@
        LIBSOUNDTOUCH_SYSTEM_LIBS=$SOUNDTOUCH_LIBS
        LIBSOUNDTOUCH_SYSTEM_CXXFLAGS=$SOUNDTOUCH_CFLAGS
        LIBSOUNDTOUCH_SYSTEM_CPPSYMBOLS="USE_SOUNDTOUCH"
@@ -7410,7 +7484,7 @@ Forwarded: not-needed
    soundtouch_h_found="yes"
  else
    soundtouch_h_found="no"
-@@ -7857,18 +6550,18 @@
+@@ -7857,18 +6619,18 @@
        LIBSOUNDTOUCH_LOCAL_CXXFLAGS='-I$(top_srcdir)/lib-src/soundtouch/include'
        LIBSOUNDTOUCH_LOCAL_CPPSYMBOLS="USE_SOUNDTOUCH"
        LIBSOUNDTOUCH_LOCAL_CONFIG_SUBDIRS="lib-src/soundtouch"
@@ -7432,7 +7506,7 @@ Forwarded: not-needed
    enableval=$enable_nyquist; LIBNYQUIST_ARGUMENT=$enableval
  else
    LIBNYQUIST_ARGUMENT="unspecified"
-@@ -7877,9 +6570,7 @@
+@@ -7877,9 +6639,7 @@
  
     if false ; then
  
@@ -7443,7 +7517,7 @@ Forwarded: not-needed
  
     fi
  
-@@ -7887,28 +6578,23 @@
+@@ -7887,28 +6647,23 @@
  
  
     as_ac_File=`$as_echo "ac_cv_file_${srcdir}/lib-src/libnyquist/nyx.h" | $as_tr_sh`
@@ -7478,7 +7552,7 @@ Forwarded: not-needed
    nyx_h_found="yes"
  else
    nyx_h_found="no"
-@@ -7925,18 +6611,18 @@
+@@ -7925,18 +6680,18 @@
  
        LIBNYQUIST_LOCAL_CONFIG_SUBDIRS="lib-src/libnyquist"
  
@@ -7500,7 +7574,7 @@ Forwarded: not-needed
    withval=$with_libvamp; LIBVAMP_ARGUMENT=$withval
  else
    LIBVAMP_ARGUMENT="unspecified"
-@@ -7945,27 +6631,25 @@
+@@ -7945,27 +6700,25 @@
  
     if false ; then
  
@@ -7533,7 +7607,7 @@ Forwarded: not-needed
    pkg_cv_VAMP_CFLAGS=`$PKG_CONFIG --cflags "vamp-hostsdk >= 2.0" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -7977,11 +6661,11 @@
+@@ -7977,11 +6730,11 @@
      pkg_cv_VAMP_LIBS="$VAMP_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -7548,7 +7622,7 @@ Forwarded: not-needed
    pkg_cv_VAMP_LIBS=`$PKG_CONFIG --libs "vamp-hostsdk >= 2.0" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8007,7 +6691,7 @@
+@@ -8007,7 +6760,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$VAMP_PKG_ERRORS" >&5
  
@@ -7557,7 +7631,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  vamp_available_system="no"
  elif test $pkg_failed = untried; then
-@@ -8015,7 +6699,7 @@
+@@ -8015,7 +6768,7 @@
  else
  	VAMP_CFLAGS=$pkg_cv_VAMP_CFLAGS
  	VAMP_LIBS=$pkg_cv_VAMP_LIBS
@@ -7566,7 +7640,7 @@ Forwarded: not-needed
  $as_echo "yes" >&6; }
  	vamp_available_system="yes"
  fi
-@@ -8026,38 +6710,33 @@
+@@ -8026,38 +6779,33 @@
        LIBVAMP_SYSTEM_CXXFLAGS=$VAMP_CFLAGS
  	        LIBVAMP_SYSTEM_OPTOBJS="effects/vamp/VampEffect.o effects/vamp/LoadVamp.o"
        LIBVAMP_SYSTEM_CPPSYMBOLS="USE_VAMP"
@@ -7613,7 +7687,7 @@ Forwarded: not-needed
    vamp_h_found="yes"
  else
    vamp_h_found="no"
-@@ -8074,18 +6753,18 @@
+@@ -8074,18 +6822,18 @@
  	        LIBVAMP_LOCAL_CONFIG_SUBDIRS="lib-src/libvamp"
  	  ac_configure_args="$ac_configure_args --disable-programs"
  
@@ -7635,7 +7709,7 @@ Forwarded: not-needed
    withval=$with_libtwolame; LIBTWOLAME_ARGUMENT=$withval
  else
    LIBTWOLAME_ARGUMENT="unspecified"
-@@ -8094,27 +6773,25 @@
+@@ -8094,27 +6842,25 @@
  
     if false ; then
  
@@ -7668,7 +7742,7 @@ Forwarded: not-needed
    pkg_cv_LIBTWOLAME_CFLAGS=`$PKG_CONFIG --cflags "twolame >= 0.3.9" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8126,11 +6803,11 @@
+@@ -8126,11 +6872,11 @@
      pkg_cv_LIBTWOLAME_LIBS="$LIBTWOLAME_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -7683,7 +7757,7 @@ Forwarded: not-needed
    pkg_cv_LIBTWOLAME_LIBS=`$PKG_CONFIG --libs "twolame >= 0.3.9" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8156,7 +6833,7 @@
+@@ -8156,7 +6902,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$LIBTWOLAME_PKG_ERRORS" >&5
  
@@ -7692,7 +7766,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  twolame_available_system="no"
  elif test $pkg_failed = untried; then
-@@ -8164,7 +6841,7 @@
+@@ -8164,7 +6910,7 @@
  else
  	LIBTWOLAME_CFLAGS=$pkg_cv_LIBTWOLAME_CFLAGS
  	LIBTWOLAME_LIBS=$pkg_cv_LIBTWOLAME_LIBS
@@ -7701,7 +7775,7 @@ Forwarded: not-needed
  $as_echo "yes" >&6; }
  	twolame_available_system="yes"
  fi
-@@ -8174,38 +6851,33 @@
+@@ -8174,38 +6920,33 @@
        LIBTWOLAME_SYSTEM_LIBS=$LIBTWOLAME_LIBS
        LIBTWOLAME_SYSTEM_CXXFLAGS=$LIBTWOLAME_CFLAGS
        LIBTWOLAME_SYSTEM_CPPSYMBOLS="USE_LIBTWOLAME"
@@ -7748,7 +7822,7 @@ Forwarded: not-needed
    twolame_h_found="yes"
  else
    twolame_h_found="no"
-@@ -8221,18 +6893,18 @@
+@@ -8221,18 +6962,18 @@
  	        LIBTWOLAME_LOCAL_CONFIG_SUBDIRS="lib-src/twolame"
  	  	  ac_configure_args="$ac_configure_args --disable-programs"
  
@@ -7770,7 +7844,7 @@ Forwarded: not-needed
    withval=$with_ffmpeg; FFMPEG_ARGUMENT=$withval
  else
    FFMPEG_ARGUMENT="unspecified"
-@@ -8241,27 +6913,25 @@
+@@ -8241,27 +6982,25 @@
  
     if false ; then
  
@@ -7803,7 +7877,7 @@ Forwarded: not-needed
    pkg_cv_AVCODEC_CFLAGS=`$PKG_CONFIG --cflags "libavcodec >= 51.53" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8273,11 +6943,11 @@
+@@ -8273,11 +7012,11 @@
      pkg_cv_AVCODEC_LIBS="$AVCODEC_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -7818,7 +7892,7 @@ Forwarded: not-needed
    pkg_cv_AVCODEC_LIBS=`$PKG_CONFIG --libs "libavcodec >= 51.53" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8303,7 +6973,7 @@
+@@ -8303,7 +7042,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$AVCODEC_PKG_ERRORS" >&5
  
@@ -7827,7 +7901,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  avcodec_available_system="no"
  elif test $pkg_failed = untried; then
-@@ -8311,24 +6981,24 @@
+@@ -8311,24 +7050,24 @@
  else
  	AVCODEC_CFLAGS=$pkg_cv_AVCODEC_CFLAGS
  	AVCODEC_LIBS=$pkg_cv_AVCODEC_LIBS
@@ -7857,7 +7931,7 @@ Forwarded: not-needed
    pkg_cv_AVFORMAT_CFLAGS=`$PKG_CONFIG --cflags "libavformat >= 52.12" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8340,11 +7010,11 @@
+@@ -8340,11 +7079,11 @@
      pkg_cv_AVFORMAT_LIBS="$AVFORMAT_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -7872,7 +7946,7 @@ Forwarded: not-needed
    pkg_cv_AVFORMAT_LIBS=`$PKG_CONFIG --libs "libavformat >= 52.12" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8370,7 +7040,7 @@
+@@ -8370,7 +7109,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$AVFORMAT_PKG_ERRORS" >&5
  
@@ -7881,7 +7955,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  avformat_available_system="no"
  elif test $pkg_failed = untried; then
-@@ -8378,52 +7048,122 @@
+@@ -8378,52 +7117,122 @@
  else
  	AVFORMAT_CFLAGS=$pkg_cv_AVFORMAT_CFLAGS
  	AVFORMAT_LIBS=$pkg_cv_AVFORMAT_LIBS
@@ -8023,7 +8097,7 @@ Forwarded: not-needed
    avcodec_h_found="yes"
  else
    avcodec_h_found="no"
-@@ -8431,28 +7171,23 @@
+@@ -8431,28 +7240,23 @@
  
  
     as_ac_File=`$as_echo "ac_cv_file_${srcdir}/lib-src/ffmpeg/libavformat/avformat.h" | $as_tr_sh`
@@ -8058,7 +8132,7 @@ Forwarded: not-needed
    avformat_h_found="yes"
  else
    avformat_h_found="no"
-@@ -8467,12 +7202,12 @@
+@@ -8467,12 +7271,12 @@
           FFMPEG_LOCAL_CPPSYMBOLS="USE_FFMPEG"
                             FFMPEG_LOCAL_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
              export/ExportFFmpegDialogs.o"
@@ -8073,7 +8147,7 @@ Forwarded: not-needed
  $as_echo "$as_me: ffmpeg library is NOT available in the local tree" >&6;}
     fi
  
-@@ -8480,18 +7215,100 @@
+@@ -8480,18 +7284,100 @@
  
  
  # Check whether --with-midi was given.
@@ -8181,7 +8255,7 @@ Forwarded: not-needed
     fi
  
        if test -d ${srcdir}/lib-src/portsmf ; then
-@@ -8547,49 +7364,9 @@
+@@ -8547,49 +7433,9 @@
    fi
  
    ax_popdir=`pwd`
@@ -8233,7 +8307,7 @@ Forwarded: not-needed
        ac_builddir=.
  
  case ""${srcdir}/lib-src/portsmf"" in
-@@ -8635,7 +7412,7 @@
+@@ -8635,7 +7481,7 @@
      # This should be Cygnus configure.
  	ax_sub_configure=$ac_aux_dir/configure
    else
@@ -8242,7 +8316,7 @@ Forwarded: not-needed
  $as_echo "$as_me: WARNING: no configuration information is in \"${srcdir}/lib-src/portsmf\"" >&2;}
      ax_sub_configure=
    fi
-@@ -8649,7 +7426,7 @@
+@@ -8649,7 +7495,7 @@
  	ax_sub_cache_file=$ac_top_build_prefix$cache_file ;;
      esac
  
@@ -8251,7 +8325,7 @@ Forwarded: not-needed
  $as_echo "$as_me: running $SHELL $ax_sub_configure $ax_sub_configure_args --cache-file=$ax_sub_cache_file --srcdir=$ac_srcdir" >&6;}
      # The eval makes quoting arguments work.
      eval "\$SHELL \"\$ax_sub_configure\" $ax_sub_configure_args \
-@@ -8657,7 +7434,7 @@
+@@ -8657,7 +7503,7 @@
    fi
  
    cd "$ax_popdir"
@@ -8260,7 +8334,7 @@ Forwarded: not-needed
  $as_echo "$as_me: Done configuring in \"${srcdir}/lib-src/portsmf\"" >&6;}
  
     fi
-@@ -8665,18 +7442,18 @@
+@@ -8665,18 +7511,18 @@
     export PKG_CONFIG_PATH
  
  pkg_failed=no
@@ -8283,7 +8357,7 @@ Forwarded: not-needed
    pkg_cv_PORTSMF_CFLAGS=`$PKG_CONFIG --cflags "portSMF" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8688,11 +7465,11 @@
+@@ -8688,11 +7534,11 @@
      pkg_cv_PORTSMF_LIBS="$PORTSMF_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -8298,7 +8372,7 @@ Forwarded: not-needed
    pkg_cv_PORTSMF_LIBS=`$PKG_CONFIG --libs "portSMF" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -8718,7 +7495,7 @@
+@@ -8718,7 +7564,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$PORTSMF_PKG_ERRORS" >&5
  
@@ -8307,7 +8381,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  portsmf_available="no"
  elif test $pkg_failed = untried; then
-@@ -8726,7 +7503,7 @@
+@@ -8726,7 +7572,7 @@
  else
  	PORTSMF_CFLAGS=$pkg_cv_PORTSMF_CFLAGS
  	PORTSMF_LIBS=$pkg_cv_PORTSMF_LIBS
@@ -8316,7 +8390,7 @@ Forwarded: not-needed
  $as_echo "yes" >&6; }
  	portsmf_available="yes"
  fi
-@@ -8736,15 +7513,168 @@
+@@ -8736,15 +7582,168 @@
        PORTSMF_LOCAL_LDFLAGS=$PORTSMF_LIBS
        PORTSMF_LOCAL_CXXFLAGS=$PORTSMF_CFLAGS
        PORTSMF_LOCAL_CPPSYMBOLS="USE_MIDI"
@@ -8489,7 +8563,7 @@ Forwarded: not-needed
  $as_echo "$as_me: Figuring out what libraries to enable" >&6;}
  
  lib_preference=`echo $lib_preference | tr [:lower:], "[:upper:] "`
-@@ -8761,43 +7691,37 @@
+@@ -8761,43 +7760,37 @@
           if test "$AVAILABLE" = "yes" ; then
              eval ${lib}_USE_${sys_or_local}="yes"
              lib_activated="yes"
@@ -8541,7 +8615,7 @@ Forwarded: not-needed
        fi
     fi
  done
-@@ -8809,39 +7733,41 @@
+@@ -8809,39 +7802,41 @@
  #     liblrdf
  
  if test "$LIBSNDFILE_USE_LOCAL" != "yes" && test "$LIBSNDFILE_USE_SYSTEM" != "yes" ; then
@@ -8596,7 +8670,7 @@ Forwarded: not-needed
  $as_echo "$as_me: Using libsamplerate as requested" >&6;}
     fi
  fi
-@@ -8892,7 +7818,7 @@
+@@ -8892,7 +7887,7 @@
  
  
  # Check whether --enable-audiounits was given.
@@ -8605,7 +8679,7 @@ Forwarded: not-needed
    enableval=$enable_audiounits; use_audiounits=$enableval
  else
    use_audiounits="auto"
-@@ -8900,7 +7826,7 @@
+@@ -8900,7 +7895,7 @@
  
  
  # Check whether --enable-ladspa was given.
@@ -8614,7 +8688,7 @@ Forwarded: not-needed
    enableval=$enable_ladspa; use_ladspa=$enableval
  else
    use_ladspa="yes"
-@@ -8908,7 +7834,7 @@
+@@ -8908,7 +7903,7 @@
  
  
  # Check whether --enable-quicktime was given.
@@ -8623,7 +8697,7 @@ Forwarded: not-needed
    enableval=$enable_quicktime; use_quicktime=$enableval
  else
    use_quicktime="auto"
-@@ -8918,7 +7844,7 @@
+@@ -8918,7 +7913,7 @@
  
  
  # Check whether --with-portmixer was given.
@@ -8632,7 +8706,7 @@ Forwarded: not-needed
    withval=$with_portmixer; use_portmixer=$withval
  else
    use_portmixer="yes"
-@@ -8927,35 +7853,27 @@
+@@ -8927,35 +7922,27 @@
  
  # Make sure we can run config.sub.
  $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
@@ -8675,7 +8749,7 @@ Forwarded: not-needed
  esac
  build=$ac_cv_build
  ac_save_IFS=$IFS; IFS='-'
-@@ -8971,28 +7889,24 @@
+@@ -8971,28 +7958,24 @@
  case $build_os in *\ *) build_os=`echo "$build_os" | sed 's/ /-/g'`;; esac
  
  
@@ -8709,7 +8783,7 @@ Forwarded: not-needed
  esac
  host=$ac_cv_host
  ac_save_IFS=$IFS; IFS='-'
-@@ -9031,14 +7945,10 @@
+@@ -9031,14 +8014,10 @@
        CONFIGHEADER="configwin.h"
  
  
@@ -8726,7 +8800,7 @@ Forwarded: not-needed
  
  
        AFTERBUILD=""
-@@ -9050,17 +7960,13 @@
+@@ -9050,17 +8029,13 @@
        EXTRAINSTALLTARGETS="$EXTRAINSTALLTARGETS install-extra-data"
        EXTRAUNINSTALLTARGETS="$EXTRAUNINSTALLTARGETS uninstall-extra-data"
  
@@ -8747,7 +8821,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  /* Override any GCC internal prototype to avoid an error.
-@@ -9085,79 +7991,50 @@
+@@ -9085,79 +8060,50 @@
      ac_res=-l$ac_lib
      LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
    fi
@@ -8840,7 +8914,7 @@ Forwarded: not-needed
    pkg_cv_GTK_CFLAGS=`$PKG_CONFIG --cflags "gtk+-2.0" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -9169,11 +8046,11 @@
+@@ -9169,11 +8115,11 @@
      pkg_cv_GTK_LIBS="$GTK_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -8855,7 +8929,7 @@ Forwarded: not-needed
    pkg_cv_GTK_LIBS=`$PKG_CONFIG --libs "gtk+-2.0" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -9199,7 +8076,7 @@
+@@ -9199,7 +8145,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$GTK_PKG_ERRORS" >&5
  
@@ -8864,7 +8938,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  have_gtk=no
  elif test $pkg_failed = untried; then
-@@ -9207,16 +8084,14 @@
+@@ -9207,16 +8153,14 @@
  else
  	GTK_CFLAGS=$pkg_cv_GTK_CFLAGS
  	GTK_LIBS=$pkg_cv_GTK_LIBS
@@ -8883,7 +8957,7 @@ Forwarded: not-needed
  
           CPPFLAGS="$CPPFLAGS $GTK_CFLAGS"
           LIBS="$LIBS $GTK_LIBS"
-@@ -9225,13 +8100,6 @@
+@@ -9225,13 +8169,6 @@
  esac
  
  
@@ -8897,7 +8971,7 @@ Forwarded: not-needed
  case "${host_os}" in
     darwin* | rhapsody*)
        LIBS="-framework AudioUnit -framework AudioToolbox $LIBS"
-@@ -9240,18 +8108,14 @@
+@@ -9240,18 +8177,14 @@
     cygwin*)
        ;;
     *)
@@ -8919,7 +8993,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  /* Override any GCC internal prototype to avoid an error.
-@@ -9269,43 +8133,18 @@
+@@ -9269,43 +8202,18 @@
    return 0;
  }
  _ACEOF
@@ -8969,7 +9043,7 @@ Forwarded: not-needed
    have_alsa=yes
  else
    have_alsa=no
-@@ -9316,18 +8155,18 @@
+@@ -9316,18 +8224,18 @@
        fi
  
  pkg_failed=no
@@ -8992,7 +9066,7 @@ Forwarded: not-needed
    pkg_cv_JACK_CFLAGS=`$PKG_CONFIG --cflags "jack" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -9339,11 +8178,11 @@
+@@ -9339,11 +8247,11 @@
      pkg_cv_JACK_LIBS="$JACK_LIBS"
   elif test -n "$PKG_CONFIG"; then
      if test -n "$PKG_CONFIG" && \
@@ -9007,7 +9081,7 @@ Forwarded: not-needed
    pkg_cv_JACK_LIBS=`$PKG_CONFIG --libs "jack" 2>/dev/null`
  else
    pkg_failed=yes
-@@ -9369,7 +8208,7 @@
+@@ -9369,7 +8277,7 @@
  	# Put the nasty error message in config.log where it belongs
  	echo "$JACK_PKG_ERRORS" >&5
  
@@ -9016,7 +9090,7 @@ Forwarded: not-needed
  $as_echo "no" >&6; }
                  have_jack=no
  elif test $pkg_failed = untried; then
-@@ -9377,25 +8216,21 @@
+@@ -9377,25 +8285,21 @@
  else
  	JACK_CFLAGS=$pkg_cv_JACK_CFLAGS
  	JACK_LIBS=$pkg_cv_JACK_LIBS
@@ -9046,7 +9120,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  /* Override any GCC internal prototype to avoid an error.
-@@ -9413,43 +8248,18 @@
+@@ -9413,43 +8317,18 @@
    return 0;
  }
  _ACEOF
@@ -9096,7 +9170,7 @@ Forwarded: not-needed
    have_asihpi=yes
  else
    have_asihpi=no
-@@ -9458,18 +8268,14 @@
+@@ -9458,18 +8337,14 @@
        if [ $have_asihpi = "yes" ] ; then
           LIBS="$LIBS -lhpi"
        fi
@@ -9118,7 +9192,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  /* Override any GCC internal prototype to avoid an error.
-@@ -9485,144 +8291,29 @@
+@@ -9485,144 +8360,29 @@
  return clock_gettime ();
    ;
    return 0;
@@ -9283,7 +9357,7 @@ Forwarded: not-needed
    cat >>confdefs.h <<_ACEOF
  #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
  _ACEOF
-@@ -9636,9 +8327,7 @@
+@@ -9636,9 +8396,7 @@
  
  if [ "$use_portmixer" = "yes" ] ; then
  
@@ -9294,7 +9368,7 @@ Forwarded: not-needed
  
  
     CXXFLAGS="-I\$(top_srcdir)/lib-src/portmixer/include $CXXFLAGS"
-@@ -9646,19 +8335,14 @@
+@@ -9646,19 +8404,14 @@
  
     subdirs="$subdirs lib-src/portmixer"
  
@@ -9317,7 +9391,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  #define		_ISOC9X_SOURCE	1
-@@ -9674,54 +8358,27 @@
+@@ -9674,54 +8427,27 @@
    return 0;
  }
  _ACEOF
@@ -9379,7 +9453,7 @@ Forwarded: not-needed
  /* end confdefs.h.  */
  
  #define		_ISOC9X_SOURCE	1
-@@ -9737,41 +8394,18 @@
+@@ -9737,41 +8463,18 @@
    return 0;
  }
  _ACEOF
@@ -9425,7 +9499,7 @@ Forwarded: not-needed
  
  fi
  
-@@ -9782,9 +8416,7 @@
+@@ -9782,9 +8485,7 @@
     OPTOBJS="$OPTOBJS effects/ladspa/LadspaEffect.o"
  
  
@@ -9436,7 +9510,7 @@ Forwarded: not-needed
  
  
        case "$host_os" in
-@@ -9801,9 +8433,7 @@
+@@ -9801,9 +8502,7 @@
     OPTOBJS="$OPTOBJS effects/audiounits/AudioUnitEffect.o"
  
  
@@ -9447,7 +9521,7 @@ Forwarded: not-needed
  
  fi
  
-@@ -9812,9 +8442,7 @@
+@@ -9812,9 +8511,7 @@
     OPTOBJS="$OPTOBJS import/ImportQTWrapper.o"
  
  
@@ -9458,7 +9532,7 @@ Forwarded: not-needed
  
  fi
  
-@@ -9869,13 +8497,13 @@
+@@ -9869,13 +8566,13 @@
      case $ac_val in #(
      *${as_nl}*)
        case $ac_var in #(
@@ -9474,7 +9548,7 @@ Forwarded: not-needed
        esac ;;
      esac
    done
-@@ -9883,8 +8511,8 @@
+@@ -9883,8 +8580,8 @@
    (set) 2>&1 |
      case $as_nl`(ac_space=' '; set) 2>&1` in #(
      *${as_nl}ac_space=\ *)
@@ -9485,7 +9559,7 @@ Forwarded: not-needed
        sed -n \
  	"s/'/'\\\\''/g;
  	  s/^\\([_$as_cr_alnum]*_cv_[_$as_cr_alnum]*\\)=\\(.*\\)/\\1='\\2'/p"
-@@ -9907,11 +8535,11 @@
+@@ -9907,11 +8604,11 @@
  if diff "$cache_file" confcache >/dev/null 2>&1; then :; else
    if test -w "$cache_file"; then
      test "x$cache_file" != "x/dev/null" &&
@@ -9499,7 +9573,7 @@ Forwarded: not-needed
  $as_echo "$as_me: not updating unwritable cache $cache_file" >&6;}
    fi
  fi
-@@ -9925,14 +8553,15 @@
+@@ -9925,14 +8622,15 @@
  
  ac_libobjs=
  ac_ltlibobjs=
@@ -9517,7 +9591,7 @@ Forwarded: not-needed
  done
  LIBOBJS=$ac_libobjs
  
-@@ -9944,9 +8573,10 @@
+@@ -9944,9 +8642,10 @@
  ac_write_fail=0
  ac_clean_files_save=$ac_clean_files
  ac_clean_files="$ac_clean_files $CONFIG_STATUS"
@@ -9530,7 +9604,7 @@ Forwarded: not-needed
  #! $SHELL
  # Generated by $as_me.
  # Run this file to recreate the current configuration.
-@@ -9956,17 +8586,18 @@
+@@ -9956,17 +8655,18 @@
  debug=false
  ac_cs_recheck=false
  ac_cs_silent=false
@@ -9556,7 +9630,7 @@ Forwarded: not-needed
    emulate sh
    NULLCMD=:
    # Pre-4.2 versions of Zsh do word splitting on ${1+"$@"}, which
-@@ -9974,23 +8605,15 @@
+@@ -9974,23 +8674,15 @@
    alias -g '${1+"$@"}'='"$@"'
    setopt NO_GLOB_SUBST
  else
@@ -9585,7 +9659,7 @@ Forwarded: not-needed
  as_nl='
  '
  export as_nl
-@@ -9998,7 +8621,13 @@
+@@ -9998,7 +8690,13 @@
  as_echo='\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\'
  as_echo=$as_echo$as_echo$as_echo$as_echo$as_echo
  as_echo=$as_echo$as_echo$as_echo$as_echo$as_echo$as_echo
@@ -9600,7 +9674,7 @@ Forwarded: not-needed
    as_echo='printf %s\n'
    as_echo_n='printf %s'
  else
-@@ -10009,7 +8638,7 @@
+@@ -10009,7 +8707,7 @@
      as_echo_body='eval expr "X$1" : "X\\(.*\\)"'
      as_echo_n_body='eval
        arg=$1;
@@ -9609,7 +9683,7 @@ Forwarded: not-needed
        *"$as_nl"*)
  	expr "X$arg" : "X\\(.*\\)$as_nl";
  	arg=`expr "X$arg" : ".*$as_nl\\(.*\\)"`;;
-@@ -10032,13 +8661,6 @@
+@@ -10032,13 +8730,6 @@
    }
  fi
  
@@ -9623,7 +9697,7 @@ Forwarded: not-needed
  
  # IFS
  # We need space, tab and new line, in precisely that order.  Quoting is
-@@ -10048,15 +8670,15 @@
+@@ -10048,15 +8739,15 @@
  IFS=" ""	$as_nl"
  
  # Find who we are.  Look in the path if we contain no directory separator.
@@ -9642,7 +9716,7 @@ Forwarded: not-needed
  IFS=$as_save_IFS
  
       ;;
-@@ -10068,12 +8690,16 @@
+@@ -10068,12 +8759,16 @@
  fi
  if test ! -f "$as_myself"; then
    $as_echo "$as_myself: error: cannot find myself; rerun with an absolute file name" >&2
@@ -9663,7 +9737,7 @@ Forwarded: not-needed
  done
  PS1='$ '
  PS2='> '
-@@ -10085,7 +8711,89 @@
+@@ -10085,7 +8780,89 @@
  LANGUAGE=C
  export LANGUAGE
  
@@ -9754,7 +9828,7 @@ Forwarded: not-needed
  if expr a : '\(a\)' >/dev/null 2>&1 &&
     test "X`expr 00001 : '.*\(...\)'`" = X001; then
    as_expr=expr
-@@ -10099,8 +8807,12 @@
+@@ -10099,8 +8876,12 @@
    as_basename=false
  fi
  
@@ -9768,7 +9842,7 @@ Forwarded: not-needed
  as_me=`$as_basename -- "$0" ||
  $as_expr X/"$0" : '.*/\([^/][^/]*\)/*$' \| \
  	 X"$0" : 'X\(//\)$' \| \
-@@ -10120,76 +8832,25 @@
+@@ -10120,76 +8901,25 @@
  	  }
  	  s/.*/./; q'`
  
@@ -9856,7 +9930,7 @@ Forwarded: not-needed
  
  rm -f conf$$ conf$$.exe conf$$.file
  if test -d conf$$.dir; then
-@@ -10218,8 +8879,56 @@
+@@ -10218,8 +8948,56 @@
  rm -f conf$$ conf$$.exe conf$$.dir/conf$$.file conf$$.file
  rmdir conf$$.dir 2>/dev/null
  
@@ -9914,7 +9988,7 @@ Forwarded: not-needed
  else
    test -d ./-p && rmdir ./-p
    as_mkdir_p=false
-@@ -10238,10 +8947,10 @@
+@@ -10238,10 +9016,10 @@
        if test -d "$1"; then
  	test -d "$1/.";
        else
@@ -9927,7 +10001,7 @@ Forwarded: not-needed
  	???[sx]*):;;*)false;;esac;fi
      '\'' sh
    '
-@@ -10256,13 +8965,19 @@
+@@ -10256,13 +9034,19 @@
  
  
  exec 6>&1
@@ -9949,7 +10023,7 @@ Forwarded: not-needed
  
    CONFIG_FILES    = $CONFIG_FILES
    CONFIG_HEADERS  = $CONFIG_HEADERS
-@@ -10293,13 +9008,15 @@
+@@ -10293,13 +9077,15 @@
  
  cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
  ac_cs_usage="\
@@ -9968,7 +10042,7 @@ Forwarded: not-needed
    -q, --quiet, --silent
                     do not print progress messages
    -d, --debug      don't remove temporary files
-@@ -10315,16 +9032,17 @@
+@@ -10315,16 +9101,17 @@
  Configuration headers:
  $config_headers
  
@@ -9990,7 +10064,7 @@ Forwarded: not-needed
  This config.status script is free software; the Free Software Foundation
  gives unlimited permission to copy, distribute and modify it."
  
-@@ -10340,11 +9058,16 @@
+@@ -10340,11 +9127,16 @@
  while test $# != 0
  do
    case $1 in
@@ -10008,7 +10082,7 @@ Forwarded: not-needed
    *)
      ac_option=$1
      ac_optarg=$2
-@@ -10358,27 +9081,29 @@
+@@ -10358,27 +9150,29 @@
      ac_cs_recheck=: ;;
    --version | --versio | --versi | --vers | --ver | --ve | --v | -V )
      $as_echo "$ac_cs_version"; exit ;;
@@ -10043,7 +10117,7 @@ Forwarded: not-needed
    --help | --hel | -h )
      $as_echo "$ac_cs_usage"; exit ;;
    -q | -quiet | --quiet | --quie | --qui | --qu | --q \
-@@ -10386,11 +9111,10 @@
+@@ -10386,11 +9180,10 @@
      ac_cs_silent=: ;;
  
    # This is an error.
@@ -10058,7 +10132,7 @@ Forwarded: not-needed
       ac_need_defaults=false ;;
  
    esac
-@@ -10445,9 +9169,7 @@
+@@ -10445,9 +9238,7 @@
      "lib-src/expat/Makefile") CONFIG_FILES="$CONFIG_FILES lib-src/expat/Makefile" ;;
      "tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
  
@@ -10069,7 +10143,7 @@ Forwarded: not-needed
    esac
  done
  
-@@ -10473,7 +9195,7 @@
+@@ -10473,7 +9264,7 @@
    trap 'exit_status=$?
    { test -z "$tmp" || test ! -d "$tmp" || rm -fr "$tmp"; } && exit $exit_status
  ' 0
@@ -10078,7 +10152,7 @@ Forwarded: not-needed
  }
  # Create a (secure) tmp directory for tmp files.
  
-@@ -10484,11 +9206,7 @@
+@@ -10484,11 +9275,7 @@
  {
    tmp=./conf$$-$RANDOM
    (umask 077 && mkdir "$tmp")
@@ -10091,7 +10165,7 @@ Forwarded: not-needed
  
  # Set up the scripts for CONFIG_FILES section.
  # No need to generate them if there are no CONFIG_FILES.
-@@ -10496,7 +9214,13 @@
+@@ -10496,7 +9283,13 @@
  if test -n "$CONFIG_FILES"; then
  
  
@@ -10106,7 +10180,7 @@ Forwarded: not-needed
  ac_cs_awk_cr=`$AWK 'BEGIN { print "a\rb" }' </dev/null 2>/dev/null`
  if test "$ac_cs_awk_cr" = "a${ac_cr}b"; then
    ac_cs_awk_cr='\\r'
-@@ -10513,24 +9237,18 @@
+@@ -10513,24 +9306,18 @@
    echo "$ac_subst_vars" | sed 's/.*/&!$&$ac_delim/' &&
    echo "_ACEOF"
  } >conf$$subs.sh ||
@@ -10135,7 +10209,7 @@ Forwarded: not-needed
    else
      ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
    fi
-@@ -10552,7 +9270,7 @@
+@@ -10552,7 +9339,7 @@
  t delim
  :nl
  h
@@ -10144,7 +10218,7 @@ Forwarded: not-needed
  t more1
  s/["\\]/\\&/g; s/^/"/; s/$/\\n"\\/
  p
-@@ -10566,7 +9284,7 @@
+@@ -10566,7 +9353,7 @@
  t nl
  :delim
  h
@@ -10153,7 +10227,7 @@ Forwarded: not-needed
  t more2
  s/["\\]/\\&/g; s/^/"/; s/$/"/
  p
-@@ -10619,22 +9337,28 @@
+@@ -10619,22 +9406,28 @@
  else
    cat
  fi < "$tmp/subs1.awk" > "$tmp/subs.awk" \
@@ -10192,7 +10266,7 @@ Forwarded: not-needed
  s/^[^=]*=[	 ]*$//
  }'
  fi
-@@ -10662,9 +9386,7 @@
+@@ -10662,9 +9455,7 @@
    if test -z "$ac_t"; then
      break
    elif $ac_last_try; then
@@ -10203,7 +10277,7 @@ Forwarded: not-needed
    else
      ac_delim="$ac_delim!$ac_delim _$ac_delim!! "
    fi
-@@ -10749,9 +9471,7 @@
+@@ -10749,9 +9540,7 @@
  _ACAWK
  _ACEOF
  cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -10214,7 +10288,7 @@ Forwarded: not-needed
  fi # test -n "$CONFIG_HEADERS"
  
  
-@@ -10764,9 +9484,7 @@
+@@ -10764,9 +9553,7 @@
    esac
    case $ac_mode$ac_tag in
    :[FHL]*:*);;
@@ -10225,7 +10299,7 @@ Forwarded: not-needed
    :[FH]-) ac_tag=-:-;;
    :[FH]*) ac_tag=$ac_tag:$ac_tag.in;;
    esac
-@@ -10794,12 +9512,10 @@
+@@ -10794,12 +9581,10 @@
  	   [\\/$]*) false;;
  	   *) test -f "$srcdir/$ac_f" && ac_f="$srcdir/$ac_f";;
  	   esac ||
@@ -10240,7 +10314,7 @@ Forwarded: not-needed
      done
  
      # Let's still pretend it is `configure' which instantiates (i.e., don't
-@@ -10810,7 +9526,7 @@
+@@ -10810,7 +9595,7 @@
  	`' by configure.'
      if test x"$ac_file" != x-; then
        configure_input="$ac_file.  $configure_input"
@@ -10249,7 +10323,7 @@ Forwarded: not-needed
  $as_echo "$as_me: creating $ac_file" >&6;}
      fi
      # Neutralize special characters interpreted by sed in replacement strings.
-@@ -10823,9 +9539,7 @@
+@@ -10823,9 +9608,7 @@
  
      case $ac_tag in
      *:-:* | *:-) cat >"$tmp/stdin" \
@@ -10260,7 +10334,7 @@ Forwarded: not-needed
      esac
      ;;
    esac
-@@ -10853,47 +9567,7 @@
+@@ -10853,47 +9636,7 @@
  	    q
  	  }
  	  s/.*/./; q'`
@@ -10309,7 +10383,7 @@ Forwarded: not-needed
    ac_builddir=.
  
  case "$ac_dir" in
-@@ -10945,7 +9619,6 @@
+@@ -10945,7 +9688,6 @@
  # If the template does not know about datarootdir, expand it.
  # FIXME: This hack should be removed a few years after 2.60.
  ac_datarootdir_hack=; ac_datarootdir_seen=
@@ -10317,7 +10391,7 @@ Forwarded: not-needed
  ac_sed_dataroot='
  /datarootdir/ {
    p
-@@ -10955,12 +9628,11 @@
+@@ -10955,12 +9697,11 @@
  /@docdir@/p
  /@infodir@/p
  /@localedir@/p
@@ -10332,7 +10406,7 @@ Forwarded: not-needed
  $as_echo "$as_me: WARNING: $ac_file_inputs seems to ignore the --datarootdir setting" >&2;}
  _ACEOF
  cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
-@@ -10970,7 +9642,7 @@
+@@ -10970,7 +9711,7 @@
    s&@infodir@&$infodir&g
    s&@localedir@&$localedir&g
    s&@mandir@&$mandir&g
@@ -10341,7 +10415,7 @@ Forwarded: not-needed
  esac
  _ACEOF
  
-@@ -10998,26 +9670,22 @@
+@@ -10998,26 +9739,22 @@
  $ac_datarootdir_hack
  "
  eval sed \"\$ac_sed_extra\" "$ac_file_inputs" | $AWK -f "$tmp/subs.awk" >$tmp/out \
@@ -10373,7 +10447,7 @@ Forwarded: not-needed
   ;;
    :H)
    #
-@@ -11028,25 +9696,19 @@
+@@ -11028,25 +9765,19 @@
        $as_echo "/* $configure_input  */" \
        && eval '$AWK -f "$tmp/defines.awk"' "$ac_file_inputs"
      } >"$tmp/config.h" \
@@ -10403,7 +10477,7 @@ Forwarded: not-needed
    fi
   ;;
  
-@@ -11056,15 +9718,12 @@
+@@ -11056,15 +9787,12 @@
  done # for ac_tag
  
  
@@ -10421,7 +10495,7 @@ Forwarded: not-needed
  
  
  # configure is writing to config.log, and then calls config.status.
-@@ -11085,7 +9744,7 @@
+@@ -11085,7 +9813,7 @@
    exec 5>>config.log
    # Use ||, not &&, to avoid exiting from the if with $? = 1, which
    # would make configure fail if this is the last instruction.
@@ -10430,7 +10504,7 @@ Forwarded: not-needed
  fi
  
  #
-@@ -11129,7 +9788,7 @@
+@@ -11129,7 +9857,7 @@
        case $ac_arg in
        *\'*) ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
        esac
@@ -10439,7 +10513,7 @@ Forwarded: not-needed
      esac
    done
  
-@@ -11158,49 +9817,9 @@
+@@ -11158,49 +9886,9 @@
      test -d "$srcdir/$ac_dir" || continue
  
      ac_msg="=== configuring in $ac_dir (`pwd`/$ac_dir)"
@@ -10491,7 +10565,7 @@ Forwarded: not-needed
      ac_builddir=.
  
  case "$ac_dir" in
-@@ -11247,7 +9866,7 @@
+@@ -11247,7 +9935,7 @@
        # This should be Cygnus configure.
        ac_sub_configure=$ac_aux_dir/configure
      else
@@ -10500,7 +10574,7 @@ Forwarded: not-needed
  $as_echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2;}
        ac_sub_configure=
      fi
-@@ -11261,29 +9880,23 @@
+@@ -11261,29 +9949,23 @@
  	ac_sub_cache_file=$ac_top_build_prefix$cache_file ;;
        esac
  

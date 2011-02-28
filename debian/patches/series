@@ -7,5 +7,6 @@ portsmf-configure.patch
 fix-const-char-conversion.patch
 system-portaudio.patch
 portmixer-include-directory.patch
+soundtouch-pkgconfig-file.patch
 autoreconf.patch
 configure.patch
