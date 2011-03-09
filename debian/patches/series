@@ -8,5 +8,6 @@ fix-const-char-conversion.patch
 system-portaudio.patch
 portmixer-include-directory.patch
 soundtouch-pkgconfig-file.patch
+fix-wma-export-crash.patch
 autoreconf.patch
 configure.patch

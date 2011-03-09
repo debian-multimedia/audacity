@@ -1,0 +1,24 @@
+Description: Fix crash on WMA export.
+Author: Leland Lucius <leland@audacityteam.org>
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=274
+Bug-Ubuntu: https://launchpad.net/bugs/695648
+
+--- audacity-1.3.12.orig/src/export/ExportFFmpeg.cpp
++++ audacity-1.3.12/src/export/ExportFFmpeg.cpp
+@@ -615,13 +615,13 @@ bool ExportFFmpeg::Finalize()
+       }
+    }
+ 
++   // Write any file trailers.
++   FFMPEG_LIB(av_write_trailer(mEncFormatCtx));
++
+    // Close the codecs.
+    if (mEncAudioStream != NULL)
+       FFMPEG_LIB(avcodec_close(mEncAudioStream->codec));
+ 
+-   // Write any file trailers.
+-   FFMPEG_LIB(av_write_trailer(mEncFormatCtx));
+-
+    for (i = 0; i < (int)mEncFormatCtx->nb_streams; i++)
+    {
+       FFMPEG_LIB(av_freep(&mEncFormatCtx->streams[i]->codec));
