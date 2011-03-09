@@ -4,7 +4,6 @@ Priority: optional
 Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
 XSBC-Original-Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alioth.debian.org>
 Uploaders: Free Ekanayaka <freee@debian.org>,
-           Fabian Greffrath <fabian+debian@greffrath.com>,
            Benjamin Drung <bdrung@debian.org>,
            David Henningsson <diwic@ubuntu.com>
 Standards-Version: 3.9.1
