@@ -16,8 +16,8 @@ configure_flags := \
 	--with-libtwolame=system \
 	--with-libvamp=system \
 	--with-libvorbis=system \
-	--with-midi=local \
-	--with-sbsms=local \
+	--with-midi=system \
+	--with-sbsms=system \
 	--with-soundtouch=system \
 	$(NULL)
 
