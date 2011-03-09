@@ -3199,7 +3199,15 @@ Forwarded: not-needed
    withval=$with_pa_include; with_portaudio=$withval
  else
    with_portaudio=""
-@@ -3464,696 +3320,226 @@
+@@ -3457,703 +3313,233 @@
+ #
+ #
+ #
+-if [ with_portaudio != "" ] ; then
++if test -n "$with_portaudio"; then
+    CPPFLAGS="$CPPFLAGS -I$withval"
+    cflags="$cflags -I$withval"
+ 
  fi
  
  #
