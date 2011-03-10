@@ -613,16 +613,17 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        {
           wxLogMessage(wxT("FFmpeg : ERROR - Couldn't write last audio frame to output file."));
           break;
-@@ -593,34 +617,34 @@
+@@ -592,35 +616,35 @@
+    }
+ 
+    // Write any file trailers.
+-   FFmpegLibsInst->av_write_trailer(mEncFormatCtx);
++   FFMPEG_LIB(av_write_trailer(mEncFormatCtx));
  
     // Close the codecs.
     if (mEncAudioStream != NULL)
 -      FFmpegLibsInst->avcodec_close(mEncAudioStream->codec);
 +      FFMPEG_LIB(avcodec_close(mEncAudioStream->codec));
- 
-    // Write any file trailers.
--   FFmpegLibsInst->av_write_trailer(mEncFormatCtx);
-+   FFMPEG_LIB(av_write_trailer(mEncFormatCtx));
  
     for (i = 0; i < (int)mEncFormatCtx->nb_streams; i++)
     {
