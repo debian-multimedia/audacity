@@ -11,5 +11,6 @@ fix-wma-export-crash.patch
 fix-autoconf-warning.patch
 autogen-script.patch
 disable-dynamic-loading.patch
+disable-dynamic-loading-lame.patch
 autoreconf.patch
 configure.patch

@@ -7,6 +7,7 @@ configure_flags := \
 	--disable-dynamic-loading \
 	--with-expat=system \
 	--with-ffmpeg=system \
+	--with-lame=local \
 	--with-libflac=system \
 	--with-libid3tag=system \
 	--with-libmad=system \
