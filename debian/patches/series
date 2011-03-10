@@ -8,6 +8,8 @@ system-portaudio.patch
 portmixer-include-directory.patch
 soundtouch-pkgconfig-file.patch
 fix-wma-export-crash.patch
+fix-autoconf-warning.patch
+autogen-script.patch
 disable-dynamic-loading.patch
 autoreconf.patch
 configure.patch

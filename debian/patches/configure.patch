@@ -8048,7 +8048,7 @@ Forwarded: not-needed
 +            if test "x$dynamic_loading" = "xno"; then
 +               FFMPEG_SYSTEM_LIBS="$AVCODEC_LIBS $AVFORMAT_LIBS $AVUTIL_LIBS"
 +
-+$as_echo "#define USE_SYSTEM_FFMPEG 1" >>confdefs.h
++$as_echo "#define DISABLE_DYNAMIC_LOADING_FFMPEG 1" >>confdefs.h
 +
 +            fi
 +                                    FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \

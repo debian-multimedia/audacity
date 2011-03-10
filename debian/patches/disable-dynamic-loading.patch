@@ -5,15 +5,6 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 
 --- a/configure.in
 +++ b/configure.in
-@@ -138,7 +138,7 @@
- # plug-ins. This might not work on all architectures / compilers, so we need
- # to check if it does or not.
- AX_LD_CHECK_FLAG([-rdynamic],[],[],
--               have_dynamic_link=yes,have_dynamic_link=no)
-+               [have_dynamic_link=yes],[have_dynamic_link=no])
- if test "x$have_dynamic_link" = "xyes" ; then
-    BUILD_LDFLAGS="${BUILD_LDFLAGS} -rdynamic "
- else
 @@ -173,6 +173,12 @@
              lib_preference=$withval,
              lib_preference="system local")
@@ -27,23 +18,6 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  dnl AC_ARG_WITH(wx-version,
  dnl            [AS_HELP_STRING([--with-wx-version],
  dnl                            [select wxWidgets version (if both installed) [2.8,]])],
-@@ -286,7 +292,7 @@
- dnl CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/allegro"
- 
- dnl Include FileDialog
--AC_CONFIG_SUBDIRS(["lib-src/FileDialog"])
-+AC_CONFIG_SUBDIRS([lib-src/FileDialog])
- LOCAL_LIBS="$LOCAL_LIBS FileDialog.a"
- CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/FileDialog"
- 
---- /dev/null
-+++ b/autogen.sh
-@@ -0,0 +1,5 @@
-+#!/bin/sh
-+
-+aclocal -I m4
-+autoconf
-+rm -rf aclocal.m4 autom4te.cache
 --- a/m4/audacity_checklib_ffmpeg.m4
 +++ b/m4/audacity_checklib_ffmpeg.m4
 @@ -2,7 +2,7 @@
@@ -80,7 +54,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 +            FFMPEG_SYSTEM_CPPSYMBOLS="USE_FFMPEG"
 +            if test "x$dynamic_loading" = "xno"; then
 +               FFMPEG_SYSTEM_LIBS="$AVCODEC_LIBS $AVFORMAT_LIBS $AVUTIL_LIBS"
-+               AC_DEFINE(USE_SYSTEM_FFMPEG, 1, [Use system FFmpeg library and disable dynamic loading of it.])
++               AC_DEFINE(DISABLE_DYNAMIC_LOADING_FFMPEG, 1, [Use system FFmpeg library and disable dynamic loading of it.])
 +            fi
 +            dnl build the extra object files needed to use FFmpeg. Paths inside
 +            dnl the audacity src/ dir, as this is subsitiuted into src/Makefile.in
@@ -97,7 +71,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  #else
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  /** This pointer to the shared object has global scope and is used to track the
   * singleton object which wraps the FFmpeg codecs */
@@ -106,7 +80,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     return versionString;
  }
  
-+#endif // USE_SYSTEM_FFMPEG
++#endif // DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
  {
@@ -223,7 +197,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  /*******************************************************/
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  class FFmpegNotFoundDialog;
  
@@ -258,7 +232,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     return;
  }
  
-+#endif // USE_SYSTEM_FFMPEG
++#endif // DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  #endif //USE_FFMPEG
 --- a/src/FFmpeg.h
@@ -280,9 +254,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #endif
  
 +
-+#ifdef USE_SYSTEM_FFMPEG
++#ifdef DISABLE_DYNAMIC_LOADING_FFMPEG
 +#define FFMPEG_LIB(x) x
-+#else //USE_SYSTEM_FFMPEG
++#else //DISABLE_DYNAMIC_LOADING_FFMPEG
 +
 +#define FFMPEG_LIB(x) FFmpegLibsInst->x
 +
@@ -314,7 +288,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
 +extern FFmpegLibs *FFmpegLibsInst;
 +
-+#endif // USE_SYSTEM_FFMPEG
++#endif // DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  int ufile_fopen(ByteIOContext **s, const wxString & name, int flags);
  int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name);
@@ -326,7 +300,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #undef USE_FFMPEG
  
 +/* Use system FFmpeg library and disable dynamic loading of it. */
-+#undef USE_SYSTEM_FFMPEG
++#undef DISABLE_DYNAMIC_LOADING_FFMPEG
 +
  /* Define if LADSPA plug-ins are enabled */
  #undef USE_LADSPA
@@ -337,13 +311,13 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     mLogger->SetLogLevel(wxLOG_Max);
  
     #ifdef USE_FFMPEG
-+   #ifdef USE_SYSTEM_FFMPEG
++   #ifdef DISABLE_DYNAMIC_LOADING_FFMPEG
 +   avcodec_init();
 +   avcodec_register_all();
 +   av_register_all();
-+   #else //USE_SYSTEM_FFMPEG
++   #else //DISABLE_DYNAMIC_LOADING_FFMPEG
     FFmpegStartup();
-+   #endif //USE_SYSTEM_FFMPEG
++   #endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     #endif
  
     #ifdef USE_GSTREAMER
@@ -351,9 +325,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     FinishPreferences();
  
     #ifdef USE_FFMPEG
-+   #ifndef USE_SYSTEM_FFMPEG
++   #ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     DropFFmpegLibs();
-+   #endif //USE_SYSTEM_FFMPEG
++   #endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     #endif
  
     UnloadEffects();
@@ -365,7 +339,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
 -extern FFmpegLibs *FFmpegLibsInst;
 -
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
  static bool CheckFFmpegPresence()
  {
     bool result = true;
@@ -373,7 +347,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     DropFFmpegLibs();
     return result;
  }
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  
  static int AdjustFormatIndex(int format)
  {
@@ -381,20 +355,20 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     mSampleRate = 0;
     mSupportsUTF8 = true;
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     PickFFmpegLibs(); // DropFFmpegLibs() call is in ExportFFmpeg::Destroy()
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     int newfmt;
     // Adds export types from the export type list
     for (newfmt = 0; newfmt < FMT_LAST; newfmt++)
     {
        wxString shortname(ExportFFmpegOptions::fmts[newfmt].shortname);
        //Don't hide export types when there's no av-libs, and don't hide FMT_OTHER
-+#ifdef USE_SYSTEM_FFMPEG
++#ifdef DISABLE_DYNAMIC_LOADING_FFMPEG
 +      if (newfmt < FMT_OTHER)
 +#else
        if (newfmt < FMT_OTHER && FFmpegLibsInst->ValidLibsLoaded())
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
        {
           // Format/Codec support is compiled in?
 -         AVOutputFormat *avoformat = FFmpegLibsInst->guess_format(shortname.mb_str(), NULL, NULL);
@@ -412,9 +386,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  void ExportFFmpeg::Destroy()
  {
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     DropFFmpegLibs();
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     delete this;
  }
  
@@ -422,12 +396,12 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     }
     else
  #endif
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!CheckFFmpegPresence())
     {
        result = false;
     }
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     return result;
  }
  
@@ -435,9 +409,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     int err;
     //FFmpegLibsInst->LoadLibs(NULL,true); //Loaded at startup or from Prefs now
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!FFmpegLibsInst->ValidLibsLoaded()) return false;
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  
 -   FFmpegLibsInst->av_log_set_callback(av_log_wx_callback);
 +   FFMPEG_LIB(av_log_set_callback(av_log_wx_callback));
@@ -726,10 +700,10 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
                         int channels, wxString fName,
                         bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata, int subformat)
  {
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!CheckFFmpegPresence())
        return false;
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     mChannels = channels;
     // subformat index may not correspond directly to fmts[] index, convert it
     mSubFormat = AdjustFormatIndex(subformat);
@@ -737,10 +711,10 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  bool ExportFFmpeg::DisplayOptions(wxWindow *parent, int format)
  {
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!CheckFFmpegPresence())
        return false;
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     // subformat index may not correspond directly to fmts[] index, convert it
     mSubFormat = AdjustFormatIndex(format);
     if (mSubFormat == FMT_M4A)
@@ -759,9 +733,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  {
     delete mPresets;
     delete mPresetNames;
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     DropFFmpegLibs();
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  }
  
  ExportFFmpegOptions::ExportFFmpegOptions(wxWindow *parent)
@@ -769,17 +743,17 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
              wxString(_("Specify Other Options")))
  {
     ShuttleGui S(this, eIsCreatingFromPrefs);
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     PickFFmpegLibs();
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     //FFmpegLibsInst->LoadLibs(NULL,true); //Loaded at startup or from Prefs now
  
     mPresets = new FFmpegPresets();
     mPresetNames = mPresets->GetPresetList();
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (FFmpegLibsInst->ValidLibsLoaded())
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     {
        FetchFormatList();
        FetchCodecList();
@@ -944,7 +918,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        //insdead of usual wxMessageBox()
        bool newsession = false;
        gPrefs->Read(wxT("/NewImportingSession"), &newsession);
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
        if (!FFmpegLibsInst->ValidLibsLoaded())
        {
           int dontShowDlg;
@@ -952,15 +926,15 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
              delete dlg;
           }         
        }
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     }
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!FFmpegLibsInst->ValidLibsLoaded())
     {
        delete handle;
        return NULL;
     }
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  
     // Open the file for import  
     bool success = handle->Init();
@@ -968,9 +942,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  FFmpegImportFileHandle::FFmpegImportFileHandle(const wxString & name)
  :  ImportFileHandle(name)
  {
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     PickFFmpegLibs();
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  
     mStreamInfo = new wxArrayString();
     mFormatContext = NULL;
@@ -978,9 +952,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  {
     //FFmpegLibsInst->LoadLibs(NULL,false); //Loaded at startup or from Prefs now
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (!FFmpegLibsInst->ValidLibsLoaded()) return false;
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  
 -   FFmpegLibsInst->av_log_set_callback(av_log_wx_callback);
 +   FFMPEG_LIB(av_log_set_callback(av_log_wx_callback));
@@ -1089,9 +1063,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if(!mUsingOD)
     {
  #endif
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     if (FFmpegLibsInst->ValidLibsLoaded())
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
     {
 -      if (mFormatContext) FFmpegLibsInst->av_close_input_file(mFormatContext);
 -      FFmpegLibsInst->av_log_set_callback(FFmpegLibsInst->av_log_default_callback);
@@ -1111,9 +1085,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     delete mStreamInfo;
  
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     DropFFmpegLibs();
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  }
  
  #endif //USE_FFMPEG
@@ -1123,10 +1097,10 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
           S.Id(ID_FFMPEG_DOWN_BUTTON);
           wxButton *bdwn = S.AddButton(_("Dow&nload"),
                                        wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL);
-+#ifdef USE_SYSTEM_FFMPEG
++#ifdef DISABLE_DYNAMIC_LOADING_FFMPEG
 +         bdwn->Enable(FALSE);
 +         bfnd->Enable(FALSE);
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  #if !defined(USE_FFMPEG)
           bdwn->Enable(FALSE);
           bfnd->Enable(FALSE);
@@ -1134,7 +1108,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  void LibraryPrefs::SetFFmpegVersionText()
  {
-+#ifdef USE_SYSTEM_FFMPEG
++#ifdef DISABLE_DYNAMIC_LOADING_FFMPEG
 +   int avcver = avcodec_version();
 +   int avfver = avformat_version();
 +   int avuver = avutil_version();
@@ -1142,15 +1116,15 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 +                                             avfver >> 16 & 0xFF, avfver >> 8 & 0xFF, avfver & 0xFF,
 +                                             avcver >> 16 & 0xFF, avcver >> 8 & 0xFF, avcver & 0xFF,
 +                                             avuver >> 16 & 0xFF, avuver >> 8 & 0xFF, avuver & 0xFF));
-+#else //USE_SYSTEM_FFMPEG
++#else //DISABLE_DYNAMIC_LOADING_FFMPEG
     mFFmpegVersion->SetLabel(GetFFmpegVersion(this));
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  }
  
  void LibraryPrefs::OnFFmpegFindButton(wxCommandEvent & e)
  {
 -#ifdef USE_FFMPEG
-+#ifndef USE_SYSTEM_FFMPEG
++#ifndef DISABLE_DYNAMIC_LOADING_FFMPEG
     FFmpegLibs* FFmpegLibsInst = PickFFmpegLibs();
     bool showerrs =
  #if defined(__WXDEBUG__)
@@ -1159,7 +1133,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     DropFFmpegLibs();
 -#endif
-+#endif //USE_SYSTEM_FFMPEG
++#endif //DISABLE_DYNAMIC_LOADING_FFMPEG
  }
  
  void LibraryPrefs::OnFFmpegDownButton(wxCommandEvent & e)
