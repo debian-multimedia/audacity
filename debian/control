@@ -20,6 +20,7 @@ Build-Depends: autotools-dev,
                libid3tag0-dev,
                libjack-dev,
                libmad0-dev (>= 0.14.2b),
+               libmp3lame-dev,
                libogg-dev (>= 1.0.0),
                libportsmf-dev,
                libsamplerate0-dev (>= 0.1.2),
@@ -40,7 +41,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
 Package: audacity
 Architecture: any
 Depends: audacity-data (= ${source:Version}), ${misc:Depends}, ${shlibs:Depends}
-Suggests: ladspa-plugin, libmp3lame0
+Suggests: ladspa-plugin
 Description: A fast, cross-platform audio editor
  Audacity is a multi-track audio editor for Linux/Unix, MacOS and
  Windows.  It is designed for easy recording, playing and editing of
