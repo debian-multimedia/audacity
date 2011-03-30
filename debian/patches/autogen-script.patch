@@ -1,5 +1,6 @@
 Description: Add a autogen.sh script to easy the configure regeneration.
 Author: Benjamin Drung <bdrung@debian.org>
+Applied-Upstream: 1.3.13
 
 --- /dev/null
 +++ b/autogen.sh
