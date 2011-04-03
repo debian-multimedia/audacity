@@ -1,5 +1,6 @@
 Description: Fix an autoconf warning.
 Author: Benjamin Drung <bdrung@debian.org>
+Applied-Upstream: 1.3.13
 
 --- a/configure.in
 +++ b/configure.in
