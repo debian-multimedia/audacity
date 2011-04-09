@@ -1,6 +1,7 @@
 Description: Support using system portSMF.
 Author: Benjamin Drung <bdrung@ubuntu.com>
 Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=284
+Applied-Upstream: 1.3.13
 
 --- /dev/null
 +++ b/m4/audacity_checklib_portsmf.m4

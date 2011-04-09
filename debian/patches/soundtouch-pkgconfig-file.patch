@@ -1,5 +1,6 @@
 Description: Soundtouch >= 1.5 uses soundtouch.pc and not soundtouch-1.4.pc
 Author: Benjamin Drung <bdrung@debian.org>
+Applied-Upstream: 1.3.13
 
 --- a/m4/audacity_checklib_libsoundtouch.m4
 +++ b/m4/audacity_checklib_libsoundtouch.m4
