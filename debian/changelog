@@ -1,3 +1,13 @@
+audacity (1.3.12-17) unstable; urgency=low
+
+  * Drop article from the description synopsis.
+  * Add Applied-Upstream tag to patches.
+  * Build against portSMF.
+  * Build against libsbsms.
+  * Bump Standards-Version to 3.9.2 (no changes required).
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 09 Apr 2011 18:25:32 +0200
+
 audacity (1.3.12-16) unstable; urgency=low
 
   * Split and update disable-dynamic-loading.patch.
