@@ -23,8 +23,10 @@
 #include <wx/intl.h>
 #include <wx/snglinst.h>
 #include <wx/log.h>
+#include <wx/timer.h>
 
 #include "widgets/FileHistory.h"
+#include "ondemand/ODTaskThread.h"
 
 class IPCServ;
 class Importer;
@@ -81,11 +83,13 @@ enum
    NoteTracksExistFlag    = 0x00800000,  //gsw
    NoteTracksSelectedFlag = 0x01000000,  //gsw
    HaveRecentFiles        = 0x02000000,
-   LinkingDisabledFlag    = 0x04000000,  //awd
-   LinkingEnabledFlag     = 0x08000000,  //awd
+   IsNotSyncLockedFlag    = 0x04000000,  //awd
+   IsSyncLockedFlag       = 0x08000000,  //awd
 
    NoFlagsSpecifed        = 0xffffffff
 };
+
+class BlockFile;
 
 class AudacityApp:public wxApp {
  public:
@@ -122,12 +126,29 @@ class AudacityApp:public wxApp {
    // Most Recently Used File support (for all platforms).
    void OnMRUClear(wxCommandEvent &event);
    void OnMRUFile(wxCommandEvent &event);
-// void OnMRUProject(wxCommandEvent &event);
    // Backend for above - returns true for success, false for failure
    bool MRUOpen(wxString fileName);
 
    void OnReceiveCommand(AppCommandEvent &event);
 
+   void OnTimer(wxTimerEvent & event);
+
+   /** \brief Mark playback as having missing aliased blockfiles
+     *
+     * Playback will continue, but the missing files will be silenced
+     * ShouldShowMissingAliasedFileWarning can be called to determine
+     * if the user should be notified
+     */
+   void MarkAliasedFilesMissingWarning(BlockFile *b);
+
+   /** \brief Changes the behavior of missing aliased blockfiles warnings
+     */
+   void SetMissingAliasedFileWarningShouldShow(bool b);
+   
+   /** \brief Returns true if the user should be notified of missing alias warnings
+     */
+   bool ShouldShowMissingAliasedFileWarning();
+   
    #ifdef __WXMAC__
     // In response to Apple Events
     virtual void MacOpenFile(const wxString &fileName) ;
@@ -172,6 +193,13 @@ class AudacityApp:public wxApp {
    Importer *mImporter;
 
    wxLogWindow *mLogger;
+
+#if defined(__WXGTK__)
+   /** \brief This flag is set true when in a keyboard event handler.
+    * Used to work around a hang issue with ibus (bug 154) */
+   bool inKbdHandler;
+#endif
+
  private:
    CommandHandler *mCmdHandler;
    FileHistory *mRecentFiles;
@@ -179,6 +207,13 @@ class AudacityApp:public wxApp {
    wxLocale *mLocale;
 
    wxSingleInstanceChecker *mChecker;
+
+   wxTimer *mTimer;
+   
+   bool                 m_aliasMissingWarningShouldShow;
+   BlockFile           *m_LastMissingBlockFile;
+   
+   ODLock               m_LastMissingBlockFileLock;
 
    void InitCommandHandler();
    void DeInitCommandHandler();

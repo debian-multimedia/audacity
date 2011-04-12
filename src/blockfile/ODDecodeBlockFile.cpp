@@ -216,18 +216,17 @@ void ODDecodeBlockFile::SaveXML(XMLWriter &xmlFile)
 
 /// Constructs a ODPCMAliasBlockFile from the xml output of WriteXML.
 /// Also schedules the ODPCMAliasBlockFile for OD loading.
+// BuildFromXML methods should always return a BlockFile, not NULL,  
+// even if the result is flawed (e.g., refers to nonexistent file), 
+// as testing will be done in DirManager::ProjectFSCK().
 BlockFile *ODDecodeBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
 {
-
    wxFileName summaryFileName;
    wxFileName audioFileName;
    sampleCount aliasStart=0, aliasLen=0;
    int aliasChannel=0;
    long nValue;
    unsigned int   decodeType=0;
-   float rms=0.0f;
-
-
 
    while(*attrs)
    {
@@ -237,19 +236,14 @@ BlockFile *ODDecodeBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
          break;
 
       const wxString strValue = value;
-      if( !wxStricmp(attr, wxT("summaryfile")) )
+      if (!wxStricmp(attr, wxT("summaryfile")) && 
+            // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
+            XMLValueChecker::IsGoodFileString(strValue) && 
+            (strValue.Length() + 1 + dm.GetProjectDataDir().Length() <= PLATFORM_MAX_PATH))
       {
-      
-         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
-         if (!XMLValueChecker::IsGoodFileString(strValue))
-            return NULL;
-
-         #ifdef _WIN32
-            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
-               return NULL;
-         #endif
-
-         dm.AssignFile(summaryFileName,value,FALSE);
+         if (!dm.AssignFile(summaryFileName, strValue, false))
+            // Make sure summaryFileName is back to uninitialized state so we can detect problem later.
+            summaryFileName.Clear();
       }
       else if( !wxStricmp(attr, wxT("audiofile")) )
       {
@@ -258,28 +252,25 @@ BlockFile *ODDecodeBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
          else if (XMLValueChecker::IsGoodFileName(strValue, dm.GetProjectDataDir()))
             // Allow fallback of looking for the file name, located in the data directory.
             audioFileName.Assign(dm.GetProjectDataDir(), strValue);
-         else 
-            return NULL;
+         else if (XMLValueChecker::IsGoodPathString(strValue))
+            // If the file is missing, we failed XMLValueChecker::IsGoodPathName() 
+            // and XMLValueChecker::IsGoodFileName, because both do existence tests, 
+            // but we want to keep the reference to the file because it's a good path string.
+            audioFileName.Assign(strValue);
       }
       else if (XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
-      { // integer parameters
-         if( !wxStricmp(attr, wxT("aliasstart")) )
+      {  // integer parameters
+         if (!wxStricmp(attr, wxT("aliasstart")) && (nValue >= 0))
             aliasStart = nValue;
-         else if( !wxStricmp(attr, wxT("aliaslen")) )
+         else if (!wxStricmp(attr, wxT("aliaslen")) && (nValue >= 0))
             aliasLen = nValue;
-         else if( !wxStricmp(attr, wxT("aliaschannel")) )
+         else if (!wxStricmp(attr, wxT("aliaschannel")) && XMLValueChecker::IsValidChannel(aliasChannel))
             aliasChannel = nValue;
          else if( !wxStricmp(attr, wxT("decodetype")) )
             decodeType = nValue;
       }
    }
 
-   //file doesn't exist, but IsGoodFileName Checks that it does - maybe we should have a different method to check for valid names?
-   if ( /*!XMLValueChecker::IsGoodFileName(summaryFileName.GetFullName(), summaryFileName.GetPath(wxPATH_GET_VOLUME)) || */
-         !XMLValueChecker::IsGoodFileName(audioFileName.GetFullName(), audioFileName.GetPath(wxPATH_GET_VOLUME)) || 
-         (aliasLen <= 0) || (aliasLen < 0.0) || !XMLValueChecker::IsValidChannel(aliasChannel) || (rms < 0.0))
-      return NULL;
-   
    return new ODDecodeBlockFile(summaryFileName, audioFileName,
                                 aliasStart, aliasLen, aliasChannel,decodeType);
 
@@ -311,28 +302,29 @@ bool ODDecodeBlockFile::IsDataAvailable()
 /// Write the summary to disk, using the derived ReadData() to get the data
 /// Here, the decoder ODTask associated with this file must fetch the samples with
 /// the ODDecodeTask::Decode() method.
-void ODDecodeBlockFile::WriteODDecodeBlockFile()
+int ODDecodeBlockFile::WriteODDecodeBlockFile()
 {
 
    // To build the summary data, call ReadData (implemented by the
    // derived classes) to get the sample data
    samplePtr sampleData;// = NewSamples(mLen, floatSample);
-   
+   int ret;
    //use the decoder here.   
    mDecoderMutex.Lock();
    
    if(!mDecoder)
    {
       mDecoderMutex.Unlock();
-      return;
+      return -1;
    }
    
    
    //sampleData and mFormat are set by the decoder.
-   mDecoder->Decode(sampleData, mFormat, mAliasStart, mLen, mAliasChannel);
+   ret = mDecoder->Decode(sampleData, mFormat, mAliasStart, mLen, mAliasChannel);
    
    mDecoderMutex.Unlock();
-   
+   if(ret < 0)
+      return ret; //failure
 
    //the summary is also calculated here.
    mFileNameMutex.Lock();
@@ -352,6 +344,8 @@ void ODDecodeBlockFile::WriteODDecodeBlockFile()
    mDataAvailableMutex.Lock();
    mDataAvailable=true;
    mDataAvailableMutex.Unlock();
+   
+   return ret;
 }
 
 ///sets the file name the summary info will be saved in.  threadsafe.

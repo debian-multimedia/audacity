@@ -37,7 +37,7 @@ struct MeterBar {
    double peakHoldTime;
    wxRect rClip;
    bool   clipping;
-   bool   isclipping;
+   bool   isclipping; //ANSWER-ME: What's the diff between these bools?! "clipping" vs "isclipping" is not clear.
    int    tailPeakCount;
    float  peakPeakHold;
 };
@@ -144,11 +144,12 @@ class Meter : public wxPanel
     */
    void UpdateDisplay(int numChannels,
                       int numFrames, float *sampleData);
-   void UpdateDisplay(int numChannels, int numFrames, 
-                        // Need to make these double-indexed max and min arrays if we handle more than 2 channels.
-                        float* maxLeft, float* rmsLeft, 
-                        float* maxRight, float* rmsRight, 
-                        const sampleCount kSampleCount);
+   // Vaughan, 2010-11-29: This not currently used. See comments in MixerTrackCluster::UpdateMeter().
+   //void UpdateDisplay(int numChannels, int numFrames, 
+   //                     // Need to make these double-indexed max and min arrays if we handle more than 2 channels.
+   //                     float* maxLeft, float* rmsLeft, 
+   //                     float* maxRight, float* rmsRight, 
+   //                     const sampleCount kSampleCount);
 
    /** \brief Find out if the level meter is disabled or not.
     *

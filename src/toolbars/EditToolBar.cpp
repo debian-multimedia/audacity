@@ -98,7 +98,7 @@ void EditToolBar::AddSeparator()
 /// MakeButtons() with fewer arguments
 /// Very similar to code in ControlToolBar...
 AButton *EditToolBar::AddButton(
-   teBmps eFore, teBmps eDisabled,
+   teBmps eEnabledUp, teBmps eEnabledDown, teBmps eDisabled,
    int id,
    const wxChar *label,
    bool toggle)
@@ -107,7 +107,7 @@ AButton *EditToolBar::AddButton(
 
    r = ToolBar::MakeButton(
       bmpRecoloredUpSmall, bmpRecoloredDownSmall, bmpRecoloredHiliteSmall,
-      eFore, eDisabled,
+      eEnabledUp, eEnabledDown, eDisabled,
       wxWindowID(id),
       wxDefaultPosition, 
       toggle,
@@ -127,41 +127,41 @@ void EditToolBar::Populate()
    MakeButtonBackgroundsSmall();
 
    /* Buttons */
-   AddButton(bmpCut, bmpCutDisabled, ETBCutID,
+   AddButton(bmpCut, bmpCut, bmpCutDisabled, ETBCutID,
       _("Cut"));
-   AddButton(bmpCopy, bmpCopyDisabled, ETBCopyID,
+   AddButton(bmpCopy, bmpCopy, bmpCopyDisabled, ETBCopyID,
       _("Copy"));
-   AddButton(bmpPaste, bmpPasteDisabled, ETBPasteID,
+   AddButton(bmpPaste, bmpPaste, bmpPasteDisabled, ETBPasteID,
       _("Paste"));
-   AddButton(bmpTrim, bmpTrimDisabled, ETBTrimID,
+   AddButton(bmpTrim, bmpTrim, bmpTrimDisabled, ETBTrimID,
       _("Trim outside selection"));
-   AddButton(bmpSilence, bmpSilenceDisabled, ETBSilenceID,
+   AddButton(bmpSilence, bmpSilence, bmpSilenceDisabled, ETBSilenceID,
       _("Silence selection"));
 
    AddSeparator();
 
-   AddButton(bmpUndo, bmpUndoDisabled, ETBUndoID,
+   AddButton(bmpUndo, bmpUndo, bmpUndoDisabled, ETBUndoID,
       _("Undo"));
-   AddButton(bmpRedo, bmpRedoDisabled, ETBRedoID,
+   AddButton(bmpRedo, bmpRedo, bmpRedoDisabled, ETBRedoID,
       _("Redo"));
 
    AddSeparator();
 
-#ifdef EXPERIMENTAL_LINKING
-   AddButton(bmpLinkTracks, bmpLinkTracksDisabled, ETBLinkID,
-      _("Link Tracks"), true);
+#ifdef EXPERIMENTAL_SYNC_LOCK
+   AddButton(bmpSyncLockTracksUp, bmpSyncLockTracksDown, bmpSyncLockTracksDisabled, ETBSyncLockID,
+               _("Sync-Lock Tracks"), true);
    
    AddSeparator();
 #endif
    
-   AddButton(bmpZoomIn, bmpZoomInDisabled, ETBZoomInID,
+   AddButton(bmpZoomIn, bmpZoomIn, bmpZoomInDisabled, ETBZoomInID,
       _("Zoom In"));
-   AddButton(bmpZoomOut, bmpZoomOutDisabled, ETBZoomOutID,
+   AddButton(bmpZoomOut, bmpZoomOut, bmpZoomOutDisabled, ETBZoomOutID,
       _("Zoom Out"));
 
-   AddButton(bmpZoomSel, bmpZoomSelDisabled, ETBZoomSelID,
+   AddButton(bmpZoomSel, bmpZoomSel, bmpZoomSelDisabled, ETBZoomSelID,
       _("Fit selection in window"));
-   AddButton(bmpZoomFit, bmpZoomFitDisabled, ETBZoomFitID,
+   AddButton(bmpZoomFit, bmpZoomFit, bmpZoomFitDisabled, ETBZoomFitID,
       _("Fit project in window"));
 
    mButtons[ETBZoomInID]->SetEnabled(false);
@@ -171,8 +171,8 @@ void EditToolBar::Populate()
    mButtons[ETBZoomFitID]->SetEnabled(false);
    mButtons[ETBPasteID]->SetEnabled(false);
    
-#ifdef EXPERIMENTAL_LINKING
-   mButtons[ETBLinkID]->PushDown();
+#ifdef EXPERIMENTAL_SYNC_LOCK
+   mButtons[ETBSyncLockID]->PushDown();
 #endif
 
    RegenerateTooltips();
@@ -199,9 +199,9 @@ void EditToolBar::RegenerateTooltips()
    mButtons[ETBSilenceID]->SetToolTip(_("Silence"));
    mButtons[ETBUndoID]->SetToolTip(_("Undo"));
    mButtons[ETBRedoID]->SetToolTip(_("Redo"));
-#ifdef EXPERIMENTAL_LINKING
-   mButtons[ETBLinkID]->SetToolTip(_("Link Tracks"));
-#endif
+   #ifdef EXPERIMENTAL_SYNC_LOCK
+      mButtons[ETBSyncLockID]->SetToolTip(_("Sync-Lock Tracks"));
+   #endif
    mButtons[ETBZoomInID]->SetToolTip(_("Zoom In"));
    mButtons[ETBZoomOutID]->SetToolTip(_("Zoom Out"));
    mButtons[ETBZoomSelID]->SetToolTip(_("Fit Selection"));
@@ -239,9 +239,9 @@ void EditToolBar::OnButton(wxCommandEvent &event)
       case ETBRedoID:
          if (!busy) p->OnRedo();
          break;
-#ifdef EXPERIMENTAL_LINKING
-      case ETBLinkID:
-         if (!busy) p->OnStickyLabel();
+#ifdef EXPERIMENTAL_SYNC_LOCK
+      case ETBSyncLockID:
+         if (!busy) p->OnSyncLock();
          return;//avoiding the call to SetButton()
 #endif
       case ETBZoomInID:
@@ -305,25 +305,13 @@ void EditToolBar::EnableDisableButtons()
 
    mButtons[ETBPasteID]->SetEnabled(p->Clipboard());
    
-#ifdef EXPERIMENTAL_LINKING
-   bool linkTracks;
-   gPrefs->Read(wxT("/GUI/LinkTracks"), &linkTracks, true);
+#ifdef EXPERIMENTAL_SYNC_LOCK
+   bool bSyncLockTracks;
+   gPrefs->Read(wxT("/GUI/SyncLockTracks"), &bSyncLockTracks, false);
 
-   if (linkTracks)
-      mButtons[ETBLinkID]->PushDown();
+   if (bSyncLockTracks)
+      mButtons[ETBSyncLockID]->PushDown();
    else
-      mButtons[ETBLinkID]->PopUp();
+      mButtons[ETBSyncLockID]->PopUp();
 #endif
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 55533f04-7fee-4a50-a3b6-e392ab2f8713
-

@@ -39,6 +39,18 @@ class Ruler;
 #define DB_SLIDER 2      // -36...36 dB
 #define PAN_SLIDER 3     // -1.0...1.0
 #define SPEED_SLIDER 4  // 0.01 ..3.0 
+#ifdef EXPERIMENTAL_MIDI_OUT
+#define VEL_SLIDER 5    // -50..50
+#endif
+
+#define DB_MIN -36.0f
+#define DB_MAX 36.0f
+#define FRAC_MIN 0.0f
+#define FRAC_MAX 1.0f
+#define SPEED_MIN 0.01f
+#define SPEED_MAX 3.0f
+#define VEL_MIN -50.0f
+#define VEL_MAX 50.0f
 
 // Customizable slider only: If stepValue is STEP_CONTINUOUS,
 // every value on the slider between minValue and maxValue
@@ -111,7 +123,7 @@ class LWSlider
 
    float Get(bool convert = true);
    void Set(float value);
-
+   void SetStyle(int style);
    void Increase(float steps);
    void Decrease(float steps);
 
@@ -134,6 +146,8 @@ class LWSlider
 
    void SetEnabled(bool enabled);
    bool GetEnabled();
+   
+   static void DeleteSharedTipPanel();
 
  private:
 
@@ -153,6 +167,8 @@ class LWSlider
    wxWindow* GetToolTipParent() const;
       
    wxWindow *mParent;
+   
+   wxString maxTipLabel; //string with the max num of chars for tip
 
    int mStyle;
    int mOrientation; // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
@@ -204,16 +220,20 @@ class LWSlider
 
    wxWindowID mID;
 
-   wxWindow *mPopWin;
+   //since we only need to show one tip at a time, just share one instance over all sliders.
+   static wxWindow* sharedTipPanel;
 
    Ruler* mpRuler;
 
    bool mIsDragging;
 
    wxBitmap *mBitmap;
-   wxBitmap *mSelBitmap;
    wxBitmap *mThumbBitmap;
-   wxBitmap *mSelThumbBitmap;
+
+   // AD: True if this object owns *mThumbBitmap (sometimes mThumbBitmap points
+   // to an object we shouldn't delete) -- once we get theming totally right
+   // this should go away
+   bool mThumbBitmapAllocated;
 
    wxString mName;
 
@@ -242,6 +262,9 @@ class ASlider :public wxPanel
 
    float Get( bool convert = true );
    void Set(float value);
+#ifdef EXPERIMENTAL_MIDI_OUT
+   void SetStyle(int style);
+#endif
 
    void Increase(float steps);
    void Decrease(float steps);

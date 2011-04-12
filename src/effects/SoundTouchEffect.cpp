@@ -22,6 +22,7 @@ effect that uses SoundTouch to do its processing (ChangeTempo
 #include "../Project.h"
 #include "SoundTouchEffect.h"
 #include "TimeWarper.h"
+#include "../NoteTrack.h"
 
 bool EffectSoundTouch::ProcessLabelTrack(Track *track)
 {
@@ -34,6 +35,14 @@ bool EffectSoundTouch::ProcessLabelTrack(Track *track)
    return true;
 }
 
+bool EffectSoundTouch::ProcessNoteTrack(Track *track)
+{
+   NoteTrack *nt = (NoteTrack *) track;
+   if (nt == NULL) return false;
+   nt->WarpAndTransposeNotes(mCurT0, mCurT1, *GetTimeWarper(), mSemitones);
+   return true;
+}
+
 bool EffectSoundTouch::Process()
 {
    // Assumes that mSoundTouch has already been initialized
@@ -41,7 +50,7 @@ bool EffectSoundTouch::Process()
    // time warper should also be set.
 
    // Check if this effect will alter the selection length; if so, we need
-   // to operate on sync-selected tracks
+   // to operate on sync-lock selected tracks.
    bool mustSync = true;
    if (mT1 == GetTimeWarper()->Warp(mT1)) {
       mustSync = false;
@@ -60,7 +69,7 @@ bool EffectSoundTouch::Process()
    t = iter.First();
    while (t != NULL) {
       if (t->GetKind() == Track::Label && 
-            (t->GetSelected() || (mustSync && t->IsSynchroSelected())) )
+            (t->GetSelected() || (mustSync && t->IsSyncLockSelected())) )
       {
          if (!ProcessLabelTrack(t))
          {
@@ -68,6 +77,17 @@ bool EffectSoundTouch::Process()
             break;
          }
       }
+#ifdef USE_MIDI
+      else if (t->GetKind() == Track::Note && 
+               (t->GetSelected() || (mustSync && t->IsSyncLockSelected())))
+      {
+         if (!ProcessNoteTrack(t))
+         {
+            bGoodResult = false;
+            break;
+         }
+      }
+#endif
       else if (t->GetKind() == Track::Wave && t->GetSelected())
       {
          WaveTrack* leftTrack = (WaveTrack*)t;
@@ -128,8 +148,8 @@ bool EffectSoundTouch::Process()
          }
          mCurTrackNum++;
       }
-      else if (mustSync && t->IsSynchroSelected()) {
-         t->SyncAdjust(mT1, GetTimeWarper()->Warp(mT1));
+      else if (mustSync && t->IsSyncLockSelected()) {
+         t->SyncLockAdjust(mT1, GetTimeWarper()->Warp(mT1));
       }
 
       //Iterate to the next track

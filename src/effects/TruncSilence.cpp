@@ -10,7 +10,8 @@
 *******************************************************************//**
 
 \class EffectTruncSilence
-\brief An Effect.
+\brief Truncate Silence automatically reduces the length of passages 
+       where the volume is below a set threshold level.
 
   \todo mBlendFrameCount only retrieved from prefs ... not using dialog
         Only way to change (for windows) is thru registry
@@ -467,7 +468,7 @@ bool EffectTruncSilence::Process()
    double truncDbSilenceThreshold = Enums::Db2Signal[mTruncDbChoiceIndex];
 
    // Master list of silent regions; it is responsible for deleting them.
-   // This list should always be kept in order
+   // This list should always be kept in order.
    RegionList silences;
    silences.DeleteContents(true);
 
@@ -580,8 +581,9 @@ bool EffectTruncSilence::Process()
 
       delete [] buffer;
 
-      // Buffer has been freed, so we're OK to return if cancelled
-      if (cancelled) {
+      if (cancelled) 
+      {
+         ReplaceProcessedTracks(false);
          return false;
       }
 
@@ -600,7 +602,7 @@ bool EffectTruncSilence::Process()
    }
 
    //
-   // Now remove the silent regions from all selected/sync-seletcted tracks
+   // Now remove the silent regions from all selected / sync-lock selected tracks.
    //
 
    // Loop over detected regions in reverse (so cuts don't change time values
@@ -611,10 +613,12 @@ bool EffectTruncSilence::Process()
    for (rit = silences.rbegin(); rit != silences.rend(); ++rit) {
       Region *r = *rit;
 
-      // Progress dialog and cancellation; at this point it's safe to return
-      if (TotalProgress(detectFrac +
-               (1 - detectFrac) * whichReg / (double)silences.size()))
+      // Progress dialog and cancellation. Do additional cleanup before return.
+      if (TotalProgress(detectFrac + (1 - detectFrac) * whichReg / (double)silences.size()))
+      {
+         ReplaceProcessedTracks(false);
          return false;
+      }
 
       // Intersection may create regions smaller than allowed; ignore them
       if (r->end - r->start < mTruncInitialAllowedSilentMs / 1000.0)
@@ -636,7 +640,7 @@ bool EffectTruncSilence::Process()
             continue;
 
          if (t->GetKind() == Track::Wave && (
-                  t->GetSelected() || t->IsSynchroSelected()))
+                  t->GetSelected() || t->IsSyncLockSelected()))
          {
             // In WaveTracks, clear with a cross-fade
             WaveTrack *wt = (WaveTrack *)t;
@@ -675,12 +679,12 @@ bool EffectTruncSilence::Process()
             delete [] buf1;
             delete [] buf2;
          }
-         else if (t->GetSelected() || t->IsSynchroSelected())
+         else if (t->GetSelected() || t->IsSyncLockSelected())
          {
-            // Non-wave tracks: just do a sync adjust
+            // Non-wave tracks: just do a sync-lock adjust
             double cutStart = (r->start + r->end - cutLen) / 2;
             double cutEnd = cutStart + cutLen;
-            t->SyncAdjust(cutStart, cutEnd);
+            t->SyncLockAdjust(cutEnd, cutStart);
          }
       }
       ++whichReg;
@@ -709,6 +713,13 @@ void EffectTruncSilence::Intersect(RegionList &dest, const RegionList &src)
    bool lastRun = false; // must run the loop one extra time
 
    RegionList::const_iterator srcIter = src.begin();
+   
+   // This logic, causing the loop to run once after end of src, must occur
+   // each time srcIter is updated
+   if (srcIter == src.end()) {
+      lastRun = true;
+   }
+
    while (srcIter != src.end() || lastRun)
    {
       // Don't use curSrc unless lastRun is false!
@@ -746,13 +757,22 @@ void EffectTruncSilence::Intersect(RegionList &dest, const RegionList &src)
             // The first region
             curDest->end = nsStart;
 
-            // Insert second
-            // AWD: wxList::insert() has a bug causing it to return the wrong
-            // value; this is a workaround.
+            // Insert second region after first
             RegionList::iterator nextIt(destIter);
             ++nextIt;
-            dest.insert(nextIt, r);
+            
+            // This should just read: destIter = dest.insert(nextIt, r); but we
+            // work around two two wxList::insert() bugs. First, in some
+            // versions it returns the wrong value. Second, in some versions,
+            // it crashes when you insert at list end.
+            if (nextIt == dest.end()) {
+               dest.Append(r);
+            }
+            else {
+               dest.insert(nextIt, r);
+            }
             ++destIter;          // (now points at the newly-inserted region)
+
             curDest = *destIter;
          }
 

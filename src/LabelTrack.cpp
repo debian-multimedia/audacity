@@ -154,21 +154,21 @@ void LabelTrack::SetOffset(double dOffset)
 bool LabelTrack::Clear(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++){
-      if (mLabels[i]->t >= e){//label is after deletion region
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(b, e, this);
+      if (relation == LabelStruct::BEFORE_LABEL) {
          mLabels[i]->t  = mLabels[i]->t  - (e-b);
          mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
-      }else if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
+      } else if (relation == LabelStruct::SURROUNDS_LABEL) {
          DeleteLabel( i );
          i--;
-      }else if (mLabels[i]->t >= b && mLabels[i]->t1 > e){//deletion region covers start
+      } else if (relation == LabelStruct::ENDS_IN_LABEL) {
          mLabels[i]->t  = b;
          mLabels[i]->t1 = mLabels[i]->t1 - (e - mLabels[i]->t);
-      }else if (mLabels[i]->t < b && mLabels[i]->t1 > b && mLabels[i]->t1 <= e){//deletion regions covers end
+      } else if (relation == LabelStruct::BEGINS_IN_LABEL) {
          mLabels[i]->t1 = b;
-      }else if (mLabels[i]->t < b && mLabels[i]->t1 > e){//label encloses deletion region
+      } else if (relation == LabelStruct::WITHIN_LABEL) {
          mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
-      }else if (mLabels[i]->t1 <= b){
-         //nothing
       }
    }
 
@@ -179,14 +179,16 @@ bool LabelTrack::Clear(double b, double e)
 bool LabelTrack::SplitDelete(double b, double e)
 {
    for (size_t i=0;i<mLabels.GetCount();i++) {
-      if (mLabels[i]->t >= b && mLabels[i]->t1 <= e){//deletion region encloses label
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(b, e, this);
+      if (relation == LabelStruct::SURROUNDS_LABEL) {
          DeleteLabel(i);
          i--;
-      }else if (mLabels[i]->t < b && mLabels[i]->t1 > e){//label encloses deletion region
+      } else if (relation == LabelStruct::WITHIN_LABEL) {
          mLabels[i]->t1 = mLabels[i]->t1 - (e-b);
-      }else if (mLabels[i]->t <= e && mLabels[i]->t1 > e){//deletion region covers label start
+      } else if (relation == LabelStruct::ENDS_IN_LABEL) {
          mLabels[i]->t  = e;
-      }else if (mLabels[i]->t < b && mLabels[i]->t1 >= b){//deletion regions covers label end
+      } else if (relation == LabelStruct::BEGINS_IN_LABEL) {
          mLabels[i]->t1 = b;
       }
    }
@@ -195,16 +197,15 @@ bool LabelTrack::SplitDelete(double b, double e)
 }
 void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 {
-   for (unsigned int i=0;i<mLabels.GetCount();i++){
-      // label is after the insert point
-      if (mLabels[i]->t >= pt) {
+   for (unsigned int i=0;i<mLabels.GetCount();i++) {
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(pt, pt, this);
+
+      if (relation == LabelStruct::BEFORE_LABEL) {
          mLabels[i]->t = mLabels[i]->t + length;
          mLabels[i]->t1 = mLabels[i]->t1 + length;
-      // label is before the insert point
-      }else if (mLabels[i]->t1 <= pt) {
-         //nothing
-      // insert point is inside the label
-      }else{
+      }
+      else if (relation == LabelStruct::WITHIN_LABEL) {
          mLabels[i]->t1 = mLabels[i]->t1 + length;
       }
    }
@@ -213,7 +214,9 @@ void LabelTrack::ShiftLabelsOnInsert(double length, double pt)
 void LabelTrack::ChangeLabelsOnReverse(double b, double e)
 {
    for (size_t i=0; i<mLabels.GetCount(); i++) {
-      if (mLabels[i]->t >= b && mLabels[i]->t1 <= e) {//deletion region encloses label
+      if (mLabels[i]->RegionRelation(b, e, this) ==
+                                    LabelStruct::SURROUNDS_LABEL)
+      {
          double aux     = b + (e - mLabels[i]->t1);
          mLabels[i]->t1 = e - (mLabels[i]->t - b);
          mLabels[i]->t  = aux;
@@ -712,57 +715,9 @@ void LabelTrack::Draw(wxDC & dc, const wxRect & r, double h, double pps,
    if (mFontHeight == -1)
       calculateFontHeight(dc);
 
-   double right = h + r.width / pps;
-   double dsel0 = sel0;
-   if (dsel0 < h)
-      dsel0 = h;
-   if (dsel0 > right)
-      dsel0 = right;
-   double dsel1 = sel1;
-   if (dsel1 < h)
-      dsel1 = h;
-   if (dsel1 > right)
-      dsel1 = right;
-
-   wxRect before = r;
-   before.width = int ((dsel0 - h) * pps);
-   dc.SetBrush(AColor::labelUnselectedBrush);
-   dc.SetPen(AColor::labelUnselectedPen);
-   dc.DrawRectangle(before);
-
-   wxRect selr = r;
-   selr.x += before.width;
-   selr.width = int ((dsel1 - dsel0) * pps);
-   
-   // If selection is synchro use synchro colors
-   if (IsSynchroSelected() && !GetSelected()) {
-      dc.SetBrush(AColor::labelSyncSelBrush);
-      dc.SetPen(AColor::labelSyncSelPen);
-   }
-   else {
-      dc.SetBrush(AColor::labelSelectedBrush);
-      dc.SetPen(AColor::labelSelectedPen);
-   }
-
-   dc.DrawRectangle(selr);
-
-   // If selection is synchro, draw in linked graphics
-   if (IsSynchroSelected() && !GetSelected() && selr.width > 0) {
-      TrackArtist::DrawLinkTiles(&dc, selr);
-   }
-
-   wxRect after = r;
-   after.x += (before.width + selr.width);
-   after.width -= (before.width + selr.width);
-   if (after.x < r.x) 
-   {
-      after.width -= (r.x - after.x);
-      after.x = r.x;
-   }
-
-   dc.SetBrush(AColor::labelUnselectedBrush);
-   dc.SetPen(AColor::labelUnselectedPen);
-   dc.DrawRectangle(after);
+   TrackArtist::DrawBackgroundWithSelection(&dc, r, this,
+         AColor::labelSelectedBrush, AColor::labelUnselectedBrush,
+         sel0, sel1, h, pps);
 
    int i;
 
@@ -1123,7 +1078,20 @@ bool LabelTrack::IsTextClipSupported()
    CaptureEvents capture;
 #endif
 
-   return wxTheClipboard->IsSupported(wxDF_TEXT);
+#if defined(__WXGTK__)
+   // AWD: work-around for bug 154: do not call wxClipboard::IsSupported()
+   // when handling a keyboard event
+   if (!wxGetApp().inKbdHandler) {
+#endif
+
+      return wxTheClipboard->IsSupported(wxDF_TEXT);
+
+#if defined (__WXGTK__)
+   }
+
+   // In keyboard handler; return false for now
+   return false;
+#endif
 }
 
 
@@ -1267,6 +1235,41 @@ void LabelStruct::MoveLabel( int iEdge, double fNewTime)
    updated = true;
 }
 
+LabelStruct::TimeRelations LabelStruct::RegionRelation(
+      double reg_t0, double reg_t1, LabelTrack *parent)
+{
+    wxASSERT(reg_t0 <= reg_t1);
+
+    // AWD: Desired behavior for edge cases: point labels bordered by the
+    // selection are included within it. Region labels are included in the
+    // selection to the extent that the selection covers them; specifically,
+    // they're not included at all if the selection borders them, and they're
+    // fully included if the selection covers them fully, even if it just
+    // borders their endpoints. This is just one of many possible schemes.
+
+    // The first test catches bordered point-labels and selected-through
+    // region-labels; move it to third and selection edges become inclusive WRT
+    // point-labels.
+    if (reg_t0 <= t && reg_t1 >= t1)
+        return SURROUNDS_LABEL;
+    else if (reg_t1 <= t)
+        return BEFORE_LABEL;
+    else if (reg_t0 >= t1)
+        return AFTER_LABEL;
+
+    // At this point, all point labels should have returned.
+
+    else if (reg_t0 > t && reg_t0 < t1 && reg_t1 > t && reg_t1 < t1)
+        return WITHIN_LABEL;
+    
+    // Knowing that none of the other relations match simplifies remaining
+    // tests
+    else if (reg_t0 > t && reg_t0 < t1)
+        return BEGINS_IN_LABEL;
+    else
+        return ENDS_IN_LABEL;
+}
+
 /// If the index is for a real label, adjust its left or right boundary.
 /// @iLabel - index of label, -1 for none.
 /// @iEdge - which edge is requested to move, -1 for left +1 for right.
@@ -1344,6 +1347,24 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
             mLabels[mMouseOverLabelRight]->updated = false;
          }
       }
+#if 0
+      // AWD: Due to wxWidgets bug #7491 (fix not ported to 2.8 branch) we
+      // should never write the primary selection. We can enable this block
+      // when we move to the 3.0 branch (or if a fixed 2.8 version is released
+      // and we can do a runtime version check)
+#if defined (__WXGTK__) && defined (HAVE_GTK)
+      // On GTK, if we just dragged out a text selection, set the primary
+      // selection
+      else {
+         if (mInitialCursorPos != mCurrentCursorPos) {
+            wxTheClipboard->UsePrimarySelection(true);
+            CopySelectedText();
+            wxTheClipboard->UsePrimarySelection(false);
+         }
+      }
+#endif
+#endif
+
       mIsAdjustingLabel = false;
       mMouseOverLabelLeft  = -1;
       mMouseOverLabelRight = -1;
@@ -1503,6 +1524,28 @@ bool LabelTrack::HandleMouse(const wxMouseEvent & evt,
          }
       }
 
+      // Middle click on GTK: paste from primary selection
+#if defined(__WXGTK__) && (HAVE_GTK)
+      if (evt.MiddleDown()) {
+         // Check for a click outside of the selected label's text box; in this
+         // case PasteSelectedText() will start a new label at the click
+         // location
+         if (mSelIndex != -1) {
+            if (!OverTextBox(mLabels[mSelIndex], evt.m_x, evt.m_y))
+               mSelIndex = -1;
+            double t = h + (evt.m_x - r.x) / pps;
+            *newSel0 = t;
+            *newSel1 = t;
+         }
+
+         wxTheClipboard->UsePrimarySelection(true);
+         PasteSelectedText(*newSel0, *newSel1);
+         wxTheClipboard->UsePrimarySelection(false);
+
+         return false;
+      }
+#endif
+
       mSelIndex = -1;
       LabelStruct * pLabel;
       for (int i = 0; i < (int)mLabels.Count(); i++) {
@@ -1530,56 +1573,40 @@ bool LabelTrack::CaptureKey(wxKeyEvent & event)
 {
    // Cache the keycode
    int keyCode = event.GetKeyCode();
-   wxChar charCode = keyCode;
-#if wxUSE_UNICODE
-   charCode = event.GetUnicodeKey();
-#endif
+   // Check for modifiers -- this does what wxKeyEvent::HasModifiers() should
+   // do (it checks Control instead of CMD on Mac)
+   bool hasMods = ((event.GetModifiers() & (wxMOD_CMD | wxMOD_ALT)) != 0);
 
    if (mSelIndex >= 0) {
-      switch (keyCode)
-      {
-         case WXK_BACK:
-         case WXK_DELETE:
-         case WXK_HOME:
-         case WXK_END:
-         case WXK_LEFT:
-         case WXK_RIGHT:
-         case WXK_RETURN:
-         case WXK_NUMPAD_ENTER:
-         case WXK_ESCAPE:
-         case WXK_TAB:
-            return true;
-         break;
-      }
-
-      if( IsGoodLabelCharacter(keyCode, charCode) && !event.CmdDown()) {
+      if (IsGoodLabelEditKey(keyCode) && !hasMods) {
          return true;
       }
    }
    else
    {
-      if( IsGoodLabelFirstCharacter(keyCode, charCode) && !event.CmdDown() ){
+      if( IsGoodLabelFirstKey(keyCode) && !hasMods)
+      {
          AudacityProject * pProj = GetActiveProject();
-         CommandManager * cm = pProj->GetCommandManager();
-         if (pProj->GetAudioIOToken() > 0 && gAudioIO->IsStreamActive(pProj->GetAudioIOToken()) &&
-            cm && cm->GetKeyFromName(wxT("AddLabelPlaying")) == keyCode)
-            return false;
 
-         // IF Label already there, then don't add a new one on typing.
+         // If we're playing, don't capture if the selection is the same as the
+         // playback region (this helps prevent label track creation from
+         // stealing unmodified kbd. shortcuts)
+         if (pProj->GetAudioIOToken() > 0 &&
+               gAudioIO->IsStreamActive(pProj->GetAudioIOToken()))
+         {
+            double t0, t1;
+            pProj->GetPlayRegion(&t0, &t1);
+            if (pProj->mViewInfo.sel0 == t0 && pProj->mViewInfo.sel1 == t1)
+               return false;
+         }
+
+         // If there's a label there already don't capture
          if( GetLabelIndex( pProj->mViewInfo.sel0,  pProj->mViewInfo.sel1) != wxNOT_FOUND )
             return false;
 
-         if( pProj )
-            pProj->OnAddLabel();
          return true;
       }
    }
-
-#if 0
-   if (IsGoodLabelFirstCharacter(keyCode, charCode) && !event.CmdDown()) {
-      return true;
-   }
-#endif
 
    return false;
 }
@@ -1592,10 +1619,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
 
    // Cache the keycode
    int keyCode = event.GetKeyCode();
-   wxChar charCode = keyCode;
-#if wxUSE_UNICODE
-   charCode = event.GetUnicodeKey();
-#endif
+   int mods = event.GetModifiers();
 
    // All editing keys are only active if we're currently editing a label
    if (mSelIndex >= 0) {
@@ -1632,6 +1656,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
          break;
 
       case WXK_DELETE:
+      case WXK_NUMPAD_DELETE:
          {
             int len = mLabels[mSelIndex]->title.Length();
             
@@ -1661,58 +1686,85 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
          break;
 
       case WXK_HOME:
+      case WXK_NUMPAD_HOME:
          // Move cursor to beginning of label
-         mCurrentCursorPos = 0;
-         if (event.ShiftDown()) {
+         if (mods == wxMOD_SHIFT) {
+            mCurrentCursorPos = 0;
             mDragXPos = 0;
          }
-         else
+         else if (mods == wxMOD_NONE)
          {
+            mCurrentCursorPos = 0;
             mDragXPos = -1;
             mInitialCursorPos = mCurrentCursorPos;
+         }
+         else {
+            // Not handled
+            event.Skip();
          }
          break;
 
       case WXK_END:
+      case WXK_NUMPAD_END:
          // Move cursor to end of label
-         mCurrentCursorPos = (int)mLabels[mSelIndex]->title.length();
-         if (event.ShiftDown()) {
+         if (mods == wxMOD_SHIFT) {
+            mCurrentCursorPos = (int)mLabels[mSelIndex]->title.length();
             mDragXPos = 0;
          }
-         else
+         else if (mods == wxMOD_NONE)
          {
+            mCurrentCursorPos = (int)mLabels[mSelIndex]->title.length();
             mDragXPos = -1;
             mInitialCursorPos = mCurrentCursorPos;
+         }
+         else {
+            // Not handled
+            event.Skip();
          }
          break;
 
       case WXK_LEFT:
+      case WXK_NUMPAD_LEFT:
          // Moving cursor left
-         if (mCurrentCursorPos > 0) {
-            mCurrentCursorPos--;
-            if (event.ShiftDown()) {
+         if (mods == wxMOD_SHIFT) {
+            if (mCurrentCursorPos > 0) {
+               mCurrentCursorPos--;
                mDragXPos = 0;
             }
-            else
-            {
+         }
+         else if (mods == wxMOD_NONE) {
+            if (mCurrentCursorPos > 0) {
+               mCurrentCursorPos--;
                mDragXPos = -1;
                mInitialCursorPos = mCurrentCursorPos;
             }
          }
+         else {
+            // Not handled
+            event.Skip();
+         }
          break;
 
       case WXK_RIGHT:
+      case WXK_NUMPAD_RIGHT:
          // Moving cursor right
-         if (mCurrentCursorPos < (int)mLabels[mSelIndex]->title.length()) {
-            mCurrentCursorPos++;
-            if (event.ShiftDown()) {
+         if (mods == wxMOD_SHIFT) {
+            if (mCurrentCursorPos < (int)mLabels[mSelIndex]->title.length()) {
+               mCurrentCursorPos++;
                mDragXPos = 0;
             }
-            else
-            {
+         }
+         else if (mods == wxMOD_NONE)
+         {
+            if (mCurrentCursorPos < (int)mLabels[mSelIndex]->title.length()) {
+               mCurrentCursorPos++;
                mDragXPos = -1;
                mInitialCursorPos = mCurrentCursorPos;
             }
+         }
+         else {
+            // Not handled
+            event.Skip();
          }
          break;
 
@@ -1724,6 +1776,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
          break;
          
       case WXK_TAB:
+      case WXK_NUMPAD_TAB:
          if (event.ShiftDown()) {
                mSelIndex--;
          } else {
@@ -1751,6 +1804,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
       switch (keyCode) {
 
       case WXK_TAB:
+      case WXK_NUMPAD_TAB:
          if (!mLabels.IsEmpty()) {
             if (event.ShiftDown()) {
                mSelIndex = (int)mLabels.Count() - 1;
@@ -1777,7 +1831,8 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
    return updated;
 }
 
-/// KeyEvent is called for every keypress when over the label track.
+/// OnChar is called for incoming characters -- that's any keypress not handled
+/// by OnKeyDown.
 bool LabelTrack::OnChar(double & newSel0, double & newSel1, wxKeyEvent & event)
 {
    // Only track true changes to the label
@@ -1790,68 +1845,83 @@ bool LabelTrack::OnChar(double & newSel0, double & newSel1, wxKeyEvent & event)
    charCode = event.GetUnicodeKey();
 #endif
 
-   if (mSelIndex >= 0) {
-      if (IsGoodLabelCharacter(keyCode, charCode)) {
-         // Test if cursor is in the end of string or not
-         if (mLabels[mSelIndex]->highlighted) {
-            RemoveSelectedText();
-         }
+   // We still have some filtering to do. Character events can be generated for,
+   // i.e., the F keys, and if they aren't handled in OnKeyDown() or in the
+   // command manager we get them here.
 
-         if (mCurrentCursorPos < (int)mLabels[mSelIndex]->title.length()) {
-            // Get substring on the righthand side of cursor
-            wxString rightPart = mLabels[mSelIndex]->title.Mid(mCurrentCursorPos);
-            // Set title to substring on the lefthand side of cursor
-            mLabels[mSelIndex]->title = mLabels[mSelIndex]->title.Left(mCurrentCursorPos);
-            //append charcode
-            mLabels[mSelIndex]->title += charCode;
-            //append the right part substring
-            mLabels[mSelIndex]->title += rightPart;
-         }
-         else
-         {
-            //append charCode
-            mLabels[mSelIndex]->title += charCode;
-         }
-         //moving cursor position forward
-         mCurrentCursorPos++;
-         mInitialCursorPos = mCurrentCursorPos;
-         updated = true;
-      }
-      else
-         event.Skip();
-   }
-   else //if( !IsGoodLabelFirstCharacter(keyCode, charCode))
-   {
-      // Don't automatically start a label unless its one of the accepted 
-      // characters.
-      // We can always create the label and then type the forbidden character
-      // as our first character.
+   // AWD: the following behavior is not really documented (I figured it out by
+   // entering lots of Unicode characters on various OSes), and it's possible
+   // that different versions of wxWidgets act differently. It's unfortunately
+   // the only way I can find to allow input of full Unicode ranges without
+   // breaking other stuff (Audacity's command manager, keyboard menu
+   // navigation, Windows' Alt-+-xxxx arbitrary Unicode entry, etc.)
+   bool bogusChar =
+#if defined(__WXMSW__) && wxUSE_UNICODE
+      // In Windows Unicode builds, these have keyCode not matching charCode
+      (keyCode != (int)charCode) ||
+#else
+      // In Windows non-unicode, GTK+, and Mac builds the keyCode comes in the
+      // WXK_* range
+      (keyCode >= WXK_START && keyCode <= WXK_COMMAND) ||
+#endif
+      // Avoid modified characters, but allow Alt (option) on Mac because
+      // several legit characters come in with it set.
+      (event.CmdDown()) ||
+#if !defined(__WXMAC__)
+      (event.AltDown()) ||
+#endif
+      // Avoid control characters on all platforms; Casting to wxUChar to avoid
+      // assertions in Windows non-Unicode builds...
+      (wxIscntrl((wxUChar)charCode));
+
+   if (bogusChar) {
       event.Skip();
+      return false;
    }
-#if 0
+
+
+   // If we've reached this point and aren't currently editing, add new label
+   if (mSelIndex < 0) {
+      // Don't create a new label for a space
+      if (wxIsspace((wxUChar)charCode)) {
+         event.Skip();
+         return false;
+      }
+      SetSelected(true);
+      AudacityProject *p = GetActiveProject();
+      AddLabel(p->mViewInfo.sel0, p->mViewInfo.sel1);
+      p->PushState(_("Added label"), _("Label"));
+   }
+
+   //
+   // Now we are definitely in a label; append the incoming character
+   //
+
+   // Test if cursor is in the end of string or not
+   if (mLabels[mSelIndex]->highlighted) {
+      RemoveSelectedText();
+   }
+
+   if (mCurrentCursorPos < (int)mLabels[mSelIndex]->title.length()) {
+      // Get substring on the righthand side of cursor
+      wxString rightPart = mLabels[mSelIndex]->title.Mid(mCurrentCursorPos);
+      // Set title to substring on the lefthand side of cursor
+      mLabels[mSelIndex]->title = mLabels[mSelIndex]->title.Left(mCurrentCursorPos);
+      //append charcode
+      mLabels[mSelIndex]->title += charCode;
+      //append the right part substring
+      mLabels[mSelIndex]->title += rightPart;
+   }
    else
    {
-      // Create new label
-      wxString rightPart;
-      LabelStruct *l = new LabelStruct();
-      l->t =  newSel0;
-      l->t1 = newSel1;
-      l->title += wxChar(charCode);
-      mCurrentCursorPos = 1;
-      mInitialCursorPos = mCurrentCursorPos;
-      
-      int len = mLabels.Count();
-      int pos = 0;
-      
-      while (pos < len && l->t > mLabels[pos]->t)
-         pos++;
-      
-      mLabels.Insert(l, pos);
-      
-      mSelIndex = pos;
-      updated = true;
+      //append charCode
+      mLabels[mSelIndex]->title += charCode;
    }
-#endif
+   //moving cursor position forward
+   mCurrentCursorPos++;
+   mInitialCursorPos = mCurrentCursorPos;
+   updated = true;
+
    // Make sure the caret is visible
    mDrawCursor = true;
 
@@ -2152,7 +2222,7 @@ bool LabelTrack::Save(wxTextFile * out, bool overwrite)
 
 bool LabelTrack::Cut(double t0, double t1, Track **dest)
 {
-   if (!SplitCut(t0, t1, dest))
+   if (!Copy(t0, t1, dest))
       return false;
    if (!Clear(t0, t1))
       return false;
@@ -2162,27 +2232,12 @@ bool LabelTrack::Cut(double t0, double t1, Track **dest)
 
 bool LabelTrack::SplitCut(double t0, double t1, Track ** dest)
 {
-   *dest = new LabelTrack(GetDirManager());
-   int len = mLabels.Count();
-
-   for (int i = 0; i < len; i++) {
-      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1) {
-         mLabels[i]->t -= t0;
-         mLabels[i]->t1 -= t0;
-         ((LabelTrack *) (*dest))->mLabels.Add(mLabels[i]);
-         //Don't use DeleteLabel() since we've only moved it.
-         mLabels.RemoveAt(i);
-         // JC: ALWAYS unselect, since RemoveAt renumbers labels.
-         mSelIndex=-1;
-         len--;
-         i--;
-      }
-      else if (mLabels[i]->t > t1) {
-         mLabels[i]->t -= (t1 - t0);
-         mLabels[i]->t1 -= (t1 - t0);
-      }
-   }
-   ((LabelTrack *) (*dest))->mClipLen = (t1 - t0);
+   // SplitCut() == Copy() + SplitDelete()
+   
+   if (!Copy(t0, t1, dest))
+      return false;
+   if (!SplitDelete(t0, t1))
+      return false;
 
    return true;
 }
@@ -2193,10 +2248,33 @@ bool LabelTrack::Copy(double t0, double t1, Track ** dest)
    int len = mLabels.Count();
 
    for (int i = 0; i < len; i++) {
-      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1) {
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(t0, t1, this);
+      if (relation == LabelStruct::SURROUNDS_LABEL) {
          LabelStruct *l = new LabelStruct();
          l->t = mLabels[i]->t - t0;
          l->t1 = mLabels[i]->t1 - t0;
+         l->title = mLabels[i]->title;
+         ((LabelTrack *) (*dest))->mLabels.Add(l);
+      }
+      else if (relation == LabelStruct::WITHIN_LABEL) {
+         LabelStruct *l = new LabelStruct();
+         l->t = 0;
+         l->t1 = t1 - t0;
+         l->title = mLabels[i]->title;
+         ((LabelTrack *) (*dest))->mLabels.Add(l);
+      }
+      else if (relation == LabelStruct::BEGINS_IN_LABEL) {
+         LabelStruct *l = new LabelStruct();
+         l->t = 0;
+         l->t1 = mLabels[i]->t1 - t0;
+         l->title = mLabels[i]->title;
+         ((LabelTrack *) (*dest))->mLabels.Add(l);
+      }
+      else if (relation == LabelStruct::ENDS_IN_LABEL) {
+         LabelStruct *l = new LabelStruct();
+         l->t = mLabels[i]->t - t0;
+         l->t1 = t1 - t0;
          l->title = mLabels[i]->title;
          ((LabelTrack *) (*dest))->mLabels.Add(l);
       }
@@ -2257,8 +2335,9 @@ bool LabelTrack::Repeat(double t0, double t1, int n)
 
    for (unsigned int i = 0; i < mLabels.GetCount(); i++)
    {
-      if (mLabels[i]->t >= t0 && mLabels[i]->t <= t1 &&
-            mLabels[i]->t1 >= t0 && mLabels[i]->t1 <= t1)
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(t0, t1, this);
+      if (relation == LabelStruct::SURROUNDS_LABEL)
       {
          // Label is completely inside the selection; duplicate it in each
          // repeat interval
@@ -2277,8 +2356,7 @@ bool LabelTrack::Repeat(double t0, double t1, int n)
             mLabels.Insert(l, pos);
          }
       }
-      else if (mLabels[i]->t < t0 &&
-            mLabels[i]->t1 >= t0 && mLabels[i]->t1 <= t1)
+      else if (relation == LabelStruct::BEGINS_IN_LABEL)
       {
          // Label ends inside the selection; ShiftLabelsOnInsert() hasn't touched
          // it, and we need to extend it through to the last repeat interval
@@ -2296,9 +2374,11 @@ bool LabelTrack::Silence(double t0, double t1)
    int len = mLabels.Count();
 
    for (int i = 0; i < len; i++) {
-      // If the label "surrounds" the selection, split it around the selection
-      if (mLabels[i]->t < t0 && t1 < mLabels[i]->t1)
+      LabelStruct::TimeRelations relation =
+                        mLabels[i]->RegionRelation(t0, t1, this);
+      if (relation == LabelStruct::WITHIN_LABEL)
       {
+         // Split label around the selection
          LabelStruct *l = new LabelStruct();
          l->t = t1;
          l->t1 = mLabels[i]->t1;
@@ -2310,20 +2390,17 @@ bool LabelTrack::Silence(double t0, double t1)
          ++i;
          mLabels.Insert(l, i);
       }
-
-      // If label begins in the selection, move the beginning to selection end
-      if (t0 <= mLabels[i]->t && mLabels[i]->t <= t1)
+      else if (relation == LabelStruct::ENDS_IN_LABEL)
       {
+         // Beginning of label to selection end
          mLabels[i]->t = t1;
       }
-      // If label ends in the selection, move the end to selection beginning
-      if (t0 <= mLabels[i]->t1 && mLabels[i]->t1 <= t1)
+      else if (relation == LabelStruct::BEGINS_IN_LABEL)
       {
+         // End of label to selection beginning
          mLabels[i]->t1 = t0;
       }
-
-      // Delete labels that were totally selected
-      if (mLabels[i]->t1 < mLabels[i]->t)
+      else if (relation == LabelStruct::SURROUNDS_LABEL)
       {
          DeleteLabel( i );
          len--;
@@ -2546,21 +2623,30 @@ void LabelTrack::CreateCustomGlyphs()
    mbGlyphsReady=true;
 }
 
-/// The 'typing at selection creates label' feature
-/// will only accept these charCodes as a first label 
-/// character.
-bool LabelTrack::IsGoodLabelFirstCharacter(int keyCode, wxChar charCode)
+/// Returns true for keys we capture to start a label.
+bool LabelTrack::IsGoodLabelFirstKey(int keyCode)
 {
-   // The WXK_DELETE is because Windows doesn't convert DELETE to a proper
-   // unicode value.  (Or at least one we can't use...0x46)
-   return (keyCode < WXK_START && !wxIscntrl(charCode) && (keyCode != WXK_SPACE) && (keyCode != WXK_DELETE)) ||
-          keyCode > WXK_COMMAND;
+   // Allow everything before WXK_START except space and delete, the numpad keys
+   // when numlock is on, and everything after WXK_COMMAND
+   return (keyCode < WXK_START
+                  && keyCode != WXK_SPACE && keyCode != WXK_DELETE) ||
+          (keyCode >= WXK_NUMPAD0 && keyCode <= WXK_DIVIDE) ||
+          (keyCode >= WXK_NUMPAD_EQUAL && keyCode <= WXK_NUMPAD_DIVIDE) ||
+          (keyCode > WXK_COMMAND);
 }
 
-/// We'll only accept these characters within a label
-bool LabelTrack::IsGoodLabelCharacter(int keyCode, wxChar charCode)
+/// This returns true for keys we capture for label editing.
+bool LabelTrack::IsGoodLabelEditKey(int keyCode)
 {
-   return (keyCode < WXK_START && !wxIscntrl(charCode)) ||
+   // Accept everything outside of WXK_START through WXK_COMMAND, plus the keys
+   // within that range that are usually printable, plus the ones we use for
+   // keyboard navigation.
+   return keyCode < WXK_START ||
+          (keyCode >= WXK_END && keyCode <= WXK_DOWN) ||
+          (keyCode >= WXK_NUMPAD0 && keyCode <= WXK_DIVIDE) ||
+          (keyCode >= WXK_NUMPAD_SPACE && keyCode <= WXK_NUMPAD_ENTER) ||
+          (keyCode >= WXK_NUMPAD_HOME && keyCode <= WXK_NUMPAD_END) ||
+          (keyCode >= WXK_NUMPAD_DELETE && keyCode <= WXK_NUMPAD_DIVIDE) ||
           keyCode > WXK_COMMAND;
 }
 

@@ -59,7 +59,7 @@ DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_TOOLBAR_UPDATED, -1);
 enum
 {
    NoBarID = -1,
-   ControlBarID,
+   TransportBarID,
    ToolsBarID,
    MeterBarID,
    MixerBarID,
@@ -100,12 +100,16 @@ class ToolBar:public wxPanel
    bool IsVisible();
    bool IsDocked();
 
+   /// Resizable toolbars should implement this.
+   virtual int GetInitialWidth() {return -1;}
+   virtual int GetMinToolbarWidth() {return GetInitialWidth();}
  protected:
 
    AButton *MakeButton(teBmps eUp,
                        teBmps eDown,
                        teBmps eHilite,
-                       teBmps eStandard,
+                       teBmps eStandardUp,
+                       teBmps eStandardDown,
                        teBmps eDisabled,
                        wxWindowID id,
                        wxPoint placement,
@@ -147,6 +151,9 @@ class ToolBar:public wxPanel
    void Detach(wxSizer *sizer);
 
    void Updated();
+
+   /// Returns the width in pixels of the resizer element
+   int GetResizeGrabberWidth();
 
    virtual void Populate() = 0;
    virtual void Repaint(wxDC *dc) = 0;

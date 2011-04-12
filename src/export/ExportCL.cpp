@@ -7,14 +7,14 @@
   Joshua Haberman
 
   This code allows Audacity to export data by piping it to an external
-  program. Although it could in theory be made to work on Windows
-  (and perhaps even Mac), it's not worth it to invest the effort because
-  commandline encoders are rarely installed there.
+  program.
 
 **********************************************************************/
 
 #include "../Audacity.h"
 
+#include <wx/button.h>
+#include <wx/combobox.h>
 #include <wx/log.h>
 #include <wx/process.h>
 #include <wx/textctrl.h>
@@ -26,6 +26,10 @@
 #include "../Prefs.h"
 #include "../Internat.h"
 #include "../float_cast.h"
+#include "../widgets/FileHistory.h"
+
+#include <FileDialog.h>
+
 
 //----------------------------------------------------------------------------
 // ExportCLOptions
@@ -39,13 +43,20 @@ public:
    void PopulateOrExchange(ShuttleGui & S);
    void OnOK(wxCommandEvent & event);
 
+   void OnBrowse(wxCommandEvent & event);
+
 private:
+   wxComboBox *mCmd;
+   FileHistory mHistory;
 
    DECLARE_EVENT_TABLE()
 };
 
+#define ID_BROWSE 5000
+
 BEGIN_EVENT_TABLE(ExportCLOptions, wxDialog)
    EVT_BUTTON(wxID_OK, ExportCLOptions::OnOK)
+   EVT_BUTTON(ID_BROWSE, ExportCLOptions::OnBrowse)
 END_EVENT_TABLE()
 
 /// 
@@ -54,6 +65,17 @@ ExportCLOptions::ExportCLOptions(wxWindow *parent)
 :  wxDialog(parent, wxID_ANY,
             wxString(_("Specify Command Line Encoder")))
 {
+   mHistory.Load(*gPrefs, wxT("/FileFormats/ExternalProgramHistory"));
+
+   if (mHistory.GetCount() == 0) {
+      mHistory.AddFileToHistory(wxT("ffmpeg -i - \"%f\""), false);
+      mHistory.AddFileToHistory(wxT("lame - \"%f\""), false);
+   }
+
+   mHistory.AddFileToHistory(gPrefs->Read(wxT("/FileFormats/ExternalProgramExportCommand"),
+                                          mHistory.GetHistoryFile(0)),
+                             false);
+
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
    PopulateOrExchange(S);
@@ -63,24 +85,32 @@ ExportCLOptions::ExportCLOptions(wxWindow *parent)
 /// 
 void ExportCLOptions::PopulateOrExchange(ShuttleGui & S)
 {
+   wxArrayString cmds;
+   wxString cmd;
+
+   for (size_t i = 0; i < mHistory.GetCount(); i++) {
+      cmds.Add(mHistory.GetHistoryFile(i));
+   }
+   cmd = cmds[0];
+
    S.StartHorizontalLay(wxEXPAND, 0);
    {
       S.StartStatic(_("Command Line Export Setup"), true);
       {
-         S.StartMultiColumn(2, wxEXPAND);
+         S.StartMultiColumn(3, wxEXPAND);
          {
             S.SetStretchyCol(1);
-            S.TieTextBox(_("Command:"),
-                         wxT("/FileFormats/ExternalProgramExportCommand"),
-                         wxT("lame - \"%f\""),
-                         64);
+            mCmd = S.AddCombo(_("Command:"),
+                              cmd,
+                              &cmds);
+            S.Id(ID_BROWSE).AddButton(_("Browse..."),
+                                      wxALIGN_CENTER_VERTICAL);
             S.AddFixedText(wxT(""));
             S.TieCheckBox(_("Show output"),
                           wxT("/FileFormats/ExternalProgramShowOutput"),
                           false);
          }
          S.EndMultiColumn();
-
 
          S.AddFixedText(_("Data will be piped to standard in. \"%f\" uses the file name in the export window."));
       }
@@ -103,9 +133,50 @@ void ExportCLOptions::PopulateOrExchange(ShuttleGui & S)
 void ExportCLOptions::OnOK(wxCommandEvent& event)
 {
    ShuttleGui S(this, eIsSavingToPrefs);
+   wxString cmd = mCmd->GetValue();
+
+   gPrefs->Write(wxT("/FileFormats/ExternalProgramExportCommand"), cmd);
+
    PopulateOrExchange(S);
 
+   mHistory.AddFileToHistory(cmd, false);
+   mHistory.Save(*gPrefs, wxT("/FileFormats/ExternalProgramHistory"));
+
    EndModal(wxID_OK);
+
+   return;
+}
+
+/// 
+/// 
+void ExportCLOptions::OnBrowse(wxCommandEvent& event)
+{
+   wxString path;
+   wxString ext;
+
+#if defined(__WXMSW__)
+   ext = wxT(".exe");
+#endif
+
+   path = FileSelector(_("Find path to command"),
+                       wxEmptyString,
+                       wxEmptyString,
+                       ext,
+                       wxT("*") + ext,
+                       wxFD_OPEN | wxRESIZE_BORDER,
+                       this);
+   if (path.IsEmpty()) {
+      return;
+   }
+
+   if (path.Find(wxT(' ')) == wxNOT_FOUND) {
+      mCmd->SetValue(path);
+   }
+   else {
+      mCmd->SetValue(wxT('"') + path + wxT('"'));
+   }
+
+   mCmd->SetInsertionPointEnd();
 
    return;
 }
@@ -337,7 +408,7 @@ int ExportCL::Export(AudacityProject *project,
    WaveTrack **waveTracks;
    TrackList *tracks = project->GetTracks();
    tracks->GetWaveTracks(selectionOnly, &numWaveTracks, &waveTracks);
-   Mixer *mixer = new Mixer(numWaveTracks,
+   Mixer *mixer = CreateMixer(numWaveTracks,
                             waveTracks,
                             tracks->GetTimeTrack(),
                             t0,
@@ -351,14 +422,14 @@ int ExportCL::Export(AudacityProject *project,
                             mixerSpec);
 
    size_t numBytes = 0;
-   samplePtr mixed;
+   samplePtr mixed = NULL;
    int updateResult = eProgressSuccess;
 
    // Prepare the progress display
    ProgressDialog *progress = new ProgressDialog(_("Export"),
       selectionOnly ?
       _("Exporting the selected audio using command-line encoder") :
-   _("Exporting the entire project using command-line encoder"));
+      _("Exporting the entire project using command-line encoder"));
 
    // Start piping the mixed data to the command
    while (updateResult == eProgressSuccess && p->IsActive() && os->IsOk()) {
@@ -413,7 +484,7 @@ int ExportCL::Export(AudacityProject *project,
    // Wait for process to terminate
    while (p->IsActive()) {
       wxMilliSleep(10);
-      wxYield();
+      wxTheApp->Yield();
    }
 
    // Display output on error or if the user wants to see it
@@ -427,7 +498,7 @@ int ExportCL::Export(AudacityProject *project,
                    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
       ShuttleGui S(&dlg, eIsCreating);
-      S.AddTextWindow(output);
+      S.AddTextWindow(cmd + wxT("\n\n") + output);
       S.StartHorizontalLay(wxALIGN_CENTER, false);
       {
          S.Id(wxID_OK).AddButton(_("&OK"))->SetDefault();

@@ -91,8 +91,13 @@ class AUDACITY_DLL_API TrackArtist {
      this->selectedPen = selectedPen;
    }
 
-   // Helper: draws the "linked" watermark tiled to a rectangle
-   static void DrawLinkTiles(wxDC *dc, wxRect r);
+   // Helper: draws the "sync-locked" watermark tiled to a rectangle
+   static void DrawSyncLockTiles(wxDC *dc, wxRect r);
+
+   // Helper: draws background with selection rect
+   static void DrawBackgroundWithSelection(wxDC *dc, const wxRect &r,
+         Track *track, wxBrush &selBrush, wxBrush &unselBrush,
+         double sel0, double sel1, double h, double pps);
 
  private:
 
@@ -109,8 +114,16 @@ class AUDACITY_DLL_API TrackArtist {
                      wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
                      bool autocorrelation, bool logF);
 #ifdef USE_MIDI
+   int GetBottom(NoteTrack *t, const wxRect &r);
+   void DrawNoteBackground(NoteTrack *track, wxDC &dc, 
+                           const wxRect &r, const wxRect &sel,
+                           const ViewInfo *viewInfo,
+                           const wxBrush &wb, const wxPen &wp,
+                           const wxBrush &bb, const wxPen &bp,
+                           const wxPen &mp);
    void DrawNoteTrack(NoteTrack *track,
-                      wxDC & dc, const wxRect & r, const ViewInfo *viewInfo);
+                      wxDC & dc, const wxRect & r, const ViewInfo *viewInfo,
+                      bool muted);
 #endif // USE_MIDI
 
    void DrawLabelTrack(LabelTrack *track,
@@ -138,7 +151,7 @@ class AUDACITY_DLL_API TrackArtist {
                                float zoomMin, float zoomMax, bool dB,
                                const sampleCount where[],
                                sampleCount ssel0, sampleCount ssel1,
-                               bool drawEnvelope, bool synchroSelection);
+                               bool drawEnvelope, bool bIsSyncLockSelected);
 
    void DrawMinMaxRMS(wxDC & dc, const wxRect & r, const double env[],
                       float zoomMin, float zoomMax, bool dB,
@@ -194,6 +207,7 @@ class AUDACITY_DLL_API TrackArtist {
    wxBrush selsampleBrush;
    wxBrush dragsampleBrush;// for samples which are draggable.
    wxBrush muteSampleBrush;
+   wxBrush blankSelectedBrush;
    wxPen blankPen;
    wxPen unselectedPen;
    wxPen selectedPen;
@@ -207,6 +221,7 @@ class AUDACITY_DLL_API TrackArtist {
    wxPen shadowPen;
    wxPen clippedPen;
    wxPen muteClippedPen;
+   wxPen blankSelectedPen;
 
    Ruler *vruler;
 

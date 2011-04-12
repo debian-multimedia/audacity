@@ -1,3 +1,13 @@
+/**********************************************************************
+
+   Audacity: A Digital Audio Editor
+   Audacity(R) is copyright (c) 1999-2010 Audacity Team.
+   License: GPL v2.  See License.txt.
+
+   AutoRecovery.h
+
+*******************************************************************/
+
 #ifndef __AUDACITY_AUTORECOVERY__
 #define __AUDACITY_AUTORECOVERY__
 
@@ -16,6 +26,9 @@
 // Returns: True, if the start of Audacity should continue as normal
 //          False if Audacity should be quit immediately
 //
+// The didRecoverAnything param is strictly for a return value. 
+// Any value passed in is ignored.
+// 
 bool ShowAutoRecoveryDialogIfNeeded(AudacityProject** pproj,
                                     bool *didRecoverAnything);
 

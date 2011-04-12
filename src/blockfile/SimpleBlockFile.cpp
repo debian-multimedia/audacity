@@ -32,12 +32,12 @@ default is to disable caching.
 
 * Read-caching: If caching is enabled, all block files will always be
   read-cached. Block files on disk will be read as soon as they are created
-  and hold in memory. New block files will be written to disk, but hold in
+  and held in memory. New block files will be written to disk, but held in
   memory, so they are never read from disk in the current session.
 
 * Write-caching: If caching is enabled and the parameter allowDeferredWrite
-  is enabled at the block file constructor, new block files are hold in memory
-  and only written to disk when WriteCacheToDisk() is called. This is used
+  is enabled at the block file constructor, new block files are held in memory
+  and written to disk only when WriteCacheToDisk() is called. This is used
   during recording to prevent disk access. After recording, WriteCacheToDisk()
   will be called on all block files and they will be written to disk. During
   normal editing, no write cache is active, that is, any block files will be
@@ -468,11 +468,14 @@ void SimpleBlockFile::SaveXML(XMLWriter &xmlFile)
    xmlFile.EndTag(wxT("simpleblockfile"));
 }
 
+// BuildFromXML methods should always return a BlockFile, not NULL,  
+// even if the result is flawed (e.g., refers to nonexistent file), 
+// as testing will be done in DirManager::ProjectFSCK().
 /// static
 BlockFile *SimpleBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
 {
    wxFileName fileName;
-   float min=0, max=0, rms=0;
+   float min = 0.0f, max = 0.0f, rms = 0.0f;
    sampleCount len = 0;
    double dblValue;
    long nValue;
@@ -481,40 +484,33 @@ BlockFile *SimpleBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
    {
       const wxChar *attr =  *attrs++;
       const wxChar *value = *attrs++;
-
       if (!value)
          break;
 
       const wxString strValue = value;
-      if( !wxStrcmp(attr, wxT("filename")) )
+      if (!wxStricmp(attr, wxT("filename")) && 
+            // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
+            XMLValueChecker::IsGoodFileString(strValue) && 
+            (strValue.Length() + 1 + dm.GetProjectDataDir().Length() <= PLATFORM_MAX_PATH))
       {
-         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
-         if (!XMLValueChecker::IsGoodFileString(strValue))
-            return NULL;
-
-         #ifdef _WIN32
-            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
-               return NULL;
-         #endif
-
-         dm.AssignFile(fileName,value,FALSE);
+         if (!dm.AssignFile(fileName, strValue, false))
+            // Make sure fileName is back to uninitialized state so we can detect problem later.
+            fileName.Clear();
       }
-      else if( !wxStrcmp(attr, wxT("len")) && XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
+      else if (!wxStrcmp(attr, wxT("len")) && 
+               XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue) && 
+               nValue > 0) 
          len = nValue;
-      else if( !wxStrcmp(attr, wxT("min")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         min = dblValue;
-      else if( !wxStrcmp(attr, wxT("max")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         max = dblValue;
-      else if( !wxStrcmp(attr, wxT("rms")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         rms = dblValue;
+      else if (XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
+      {  // double parameters
+         if (!wxStricmp(attr, wxT("min")))
+            min = dblValue;
+         else if (!wxStricmp(attr, wxT("max")))
+            max = dblValue;
+         else if (!wxStricmp(attr, wxT("rms")) && (dblValue >= 0.0))
+            rms = dblValue;
+      }
    }
-
-   if (!XMLValueChecker::IsGoodFileString(fileName.GetFullName()) || 
-         (len <= 0) || (rms < 0.0))
-      return NULL;
 
    return new SimpleBlockFile(fileName, len, min, max, rms);
 }
@@ -592,14 +588,15 @@ bool SimpleBlockFile::GetCache()
 {  
    bool cacheBlockFiles = false;
    gPrefs->Read(wxT("/Directories/CacheBlockFiles"), &cacheBlockFiles);
+   if (!cacheBlockFiles) 
+      return false;
 
    int lowMem = gPrefs->Read(wxT("/Directories/CacheLowMem"), 16l);
    if (lowMem < 16) {
       lowMem = 16;
    }
    lowMem <<= 20;
-
-   return cacheBlockFiles && (GetFreeMemory() > lowMem);
+   return (GetFreeMemory() > lowMem);
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

@@ -16,6 +16,7 @@
 
 #include "Audacity.h"
 
+#include <wx/grid.h>
 #include <wx/string.h>
 
 #include "WrappedType.h" 
@@ -62,6 +63,7 @@ class wxMenuBar;
 class wxMenu;
 class wxSpinCtrl;
 class wxListBox;
+class wxGrid;
 class Shuttle;
 
 class WrappedType;
@@ -93,6 +95,7 @@ public:
    wxListBox * AddListBox(const wxArrayString * pChoices, long style = 0);
    wxListCtrl * AddListControl();
    wxListCtrl * AddListControlReportMode();
+   wxGrid * AddGrid();
    wxCheckBox * AddCheckBox( const wxString &Prompt, const wxString &Selected);
    wxCheckBox * AddCheckBoxOnRight( const wxString &Prompt, const wxString &Selected);
    wxComboBox * AddCombo( const wxString &Prompt, const wxString &Selected,const wxArrayString * pChoices );

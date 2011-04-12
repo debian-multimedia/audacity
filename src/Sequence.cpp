@@ -8,20 +8,22 @@
 
 *******************************************************************//**
 \file Sequence.cpp
-\brief Appears to duplicate some structures such as SeqBlock that are 
-also found in Track.cpp. 
+\brief Implements classes Sequence and SeqBlock.
 
 *//****************************************************************//**
 
 \class Sequence
-\brief Has a sequence of samples.  Compare with RingBuffer.
+\brief A WaveTrack contains WaveClip(s). 
+   A WaveClip contains a Sequence. A Sequence is primarily an 
+   interface to an array of SeqBlock instances, corresponding to 
+   the audio BlockFiles on disk.
+   Contrast with RingBuffer.
 
 *//****************************************************************//**
 
 \class SeqBlock
-\brief Pointer to a BlockFile along with a start time.  Element of 
-a BlockArray.  WARNING defined differently in Track.cpp and 
-Sequence.cpp.  Not yet sure why.
+\brief Data structure containing pointer to a BlockFile and 
+   a start time. Element of a BlockArray. 
 
 *//*******************************************************************/
 
@@ -767,8 +769,8 @@ bool Sequence::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          if (!wxStrcmp(attr, wxT("maxsamples")))
          {
             // Dominic, 12/10/2006:
-			//    Let's check that maxsamples is >= 1024 and <= 64 * 1024 * 1024 
-			//    - that's a pretty wide range of reasonable values.
+			   //    Let's check that maxsamples is >= 1024 and <= 64 * 1024 * 1024 
+			   //    - that's a pretty wide range of reasonable values.
             if ((nValue < 1024) || (nValue > 64 * 1024 * 1024))
             {
                mErrorOpening = true;
@@ -934,10 +936,9 @@ bool Sequence::Read(samplePtr buffer, sampleFormat format,
 
    int result = f->ReadData(buffer, format, start, len);
 
-   if (result != len) {
-      // TODO err
-      wxPrintf(wxT("Expected to read %d samples, got %d samples.\n"),
-             len, result);
+   if (result != len) 
+   {
+      wxLogError(wxT("Expected to read %d samples, got %d samples.\n"), len, result);
       if (result < 0)
          result = 0;
       ClearSamples(buffer, format, result, len-result);
@@ -1621,29 +1622,26 @@ bool Sequence::ConsistencyCheck(const wxChar *whereStr)
    unsigned int i;
    sampleCount pos = 0;
    unsigned int numBlocks = mBlock->Count();
-   bool error = false;
+   bool bError = false;
 
    for (i = 0; i < numBlocks; i++) {
       if (pos != mBlock->Item(i)->start)
-         error = true;
+         bError = true;
       pos += mBlock->Item(i)->f->GetLength();
    }
    if (pos != mNumSamples)
-      error = true;
+      bError = true;
 
-   if (error) {
-      wxPrintf(wxT("*** Consistency check failed after %s ***\n"), whereStr);
-      Debug();
-      printf("*** Please report this error to audacity-devel@lists.sourceforge.net ***\n");
-
-      printf("\n");
-      printf("Recommended course of action:\n");
-      printf("Undo the failed operation(s), then export or save your work and quit.\n");
-      
-      return false;
+   if (bError) 
+   {
+      wxLogError(wxT("*** Consistency check failed after %s ***\n"), whereStr);
+      wxString str;
+      DebugPrintf(&str);
+      wxLogError(wxT("%s"), str.c_str());
+      wxLogError(wxT("*** Please report this error to feedback@audacityteam.org ***\n\nRecommended course of action:\nUndo the failed operation(s), then export or save your work and quit.\n"));   
    }
 
-   return true;
+   return !bError;
 }
 
 void Sequence::DebugPrintf(wxString *dest)
@@ -1653,14 +1651,14 @@ void Sequence::DebugPrintf(wxString *dest)
 
    for (i = 0; i < mBlock->Count(); i++) {
       *dest += wxString::Format
-         (wxT("Block %3d: start %8d len %8d refs %d %s"),
+         (wxT("   Block %3d: start %8d len %8d refs %d %s"),
           i,
           mBlock->Item(i)->start,
           mBlock->Item(i)->f->GetLength(),
           mDirManager->GetRefCount(mBlock->Item(i)->f),
           mBlock->Item(i)->f->GetFileName().GetFullName().c_str());
       if (pos != mBlock->Item(i)->start)
-         *dest += wxT("  ERROR\n");
+         *dest += wxT("      ERROR\n");
       else
          *dest += wxT("\n");
       pos += mBlock->Item(i)->f->GetLength();
@@ -1670,14 +1668,7 @@ void Sequence::DebugPrintf(wxString *dest)
          (wxT("ERROR mNumSamples = %d\n"), mNumSamples);
 }
 
-void Sequence::Debug()
-{
-   wxString s;
-   DebugPrintf(&s);
-   wxPrintf(wxT("%s"), s.c_str());
-}
-
-// Static
+// static
 void Sequence::SetMaxDiskBlockSize(int bytes)
 {
    sMaxDiskBlockSize = bytes;

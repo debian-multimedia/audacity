@@ -27,6 +27,7 @@ UndoManager
 #include "Sequence.h"
 #include "Track.h"
 #include "WaveTrack.h"          // temp
+#include "NoteTrack.h"  // for Sonify* function declarations
 
 #include <map>
 #include <set>
@@ -49,7 +50,7 @@ UndoManager::~UndoManager()
 // get the sum of the sizes of all blocks this track list
 // references.  However, if a block is referred to multiple
 // times it is only counted once.  Return value is in bytes.
-wxLongLong UndoManager::GetSpaceUsage(int index)
+wxLongLong UndoManager::CalculateSpaceUsage(int index)
 {
    TrackListOfKindIterator iter(Track::Wave);
    WaveTrack *wt;
@@ -64,8 +65,11 @@ wxLongLong UndoManager::GetSpaceUsage(int index)
    while (wt) {
       for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
          blocks = it->GetData()->GetSequenceBlockArray();
-         for (i = 0; i < blocks->GetCount(); i++) {
-            cur[blocks->Item(i)->f] = blocks->Item(i)->f->GetSpaceUsage();
+         for (i = 0; i < blocks->GetCount(); i++) 
+         {
+            BlockFile* pBlockFile = blocks->Item(i)->f;
+            if (pBlockFile->GetFileName().FileExists())
+               cur[pBlockFile] = pBlockFile->GetSpaceUsage();
          }
       }
       wt = (WaveTrack *) iter.Next();
@@ -113,7 +117,7 @@ void UndoManager::GetLongDescription(unsigned int n, wxString *desc,
 
    *desc = stack[n]->description;
 
-   *size = Internat::FormatSize(GetSpaceUsage(n));
+   *size = Internat::FormatSize(stack[n]->spaceUsage);
 }
 
 void UndoManager::GetShortDescription(unsigned int n, wxString *desc)
@@ -182,6 +186,7 @@ bool UndoManager::RedoAvailable()
 
 void UndoManager::ModifyState(TrackList * l, double sel0, double sel1)
 {
+   SonifyBeginModifyState();
    // Delete current
    stack[current]->tracks->Clear(true);
    delete stack[current]->tracks;
@@ -199,6 +204,7 @@ void UndoManager::ModifyState(TrackList * l, double sel0, double sel1)
    stack[current]->tracks = tracksCopy;
    stack[current]->sel0 = sel0;
    stack[current]->sel1 = sel1;
+   SonifyEndModifyState();
 }
 
 void UndoManager::PushState(TrackList * l, double sel0, double sel1,
@@ -243,9 +249,11 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
    push->sel1 = sel1;
    push->description = longDescription;
    push->shortDescription = shortDescription;
+   push->spaceUsage = 0; // Calculate actual value after it's on the stack.
 
    stack.Add(push);
    current++;
+   push->spaceUsage = this->CalculateSpaceUsage(current);
 
    if (saved >= current) {
       saved = -1;
@@ -333,15 +341,16 @@ void UndoManager::StateSaved()
    ResetODChangesFlag();
 }
 
-void UndoManager::Debug()
-{
-   for (unsigned int i = 0; i < stack.Count(); i++) {
-      TrackListIterator iter(stack[i]->tracks);
-      WaveTrack *t = (WaveTrack *) (iter.First());
-      wxPrintf(wxT("*%d* %s %f\n"), i, (i == (unsigned int)current) ? wxT("-->") : wxT("   "),
-             t ? t->GetEndTime()-t->GetStartTime() : 0);
-   }
-}
+// currently unused
+//void UndoManager::Debug()
+//{
+//   for (unsigned int i = 0; i < stack.Count(); i++) {
+//      TrackListIterator iter(stack[i]->tracks);
+//      WaveTrack *t = (WaveTrack *) (iter.First());
+//      wxPrintf(wxT("*%d* %s %f\n"), i, (i == (unsigned int)current) ? wxT("-->") : wxT("   "),
+//             t ? t->GetEndTime()-t->GetStartTime() : 0);
+//   }
+//}
 
 ///to mark as unsaved changes without changing the state/tracks.
 void UndoManager::SetODChangesFlag()

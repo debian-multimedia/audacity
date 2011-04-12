@@ -72,6 +72,8 @@
 #include "../WaveTrack.h"
 #include "../widgets/Warning.h"
 #include "../AColor.h"
+#include "../TimeTrack.h"
+#include "../Dependencies.h"
 
 // Callback to display format options
 static void ExportCallback(void *cbdata, int index)
@@ -264,6 +266,28 @@ int ExportPlugin::DoExport(AudacityProject *project,
    return false;
 }
 
+//Create a mixer by computing the time warp factor
+Mixer* ExportPlugin::CreateMixer(int numInputTracks, WaveTrack **inputTracks,
+         TimeTrack *timeTrack,
+         double startTime, double stopTime,
+         int numOutChannels, int outBufferSize, bool outInterleaved,
+         double outRate, sampleFormat outFormat,
+         bool highQuality, MixerSpec *mixerSpec)
+{
+   double warpedStopTime;
+   double warpFactor = 1.0;
+   if(timeTrack)
+      warpFactor = timeTrack->ComputeWarpFactor(startTime, stopTime);
+
+   warpedStopTime = warpFactor >= 1.0 ? stopTime : (startTime + ((stopTime - startTime) / warpFactor));
+   printf("warpfactor %f, stoptime %f, warpstoptime %f\n",warpFactor, stopTime, warpedStopTime);
+   return new Mixer(numInputTracks, inputTracks,
+                  timeTrack,
+                  startTime, warpedStopTime,
+                  numOutChannels, outBufferSize, outInterleaved,
+                  outRate, outFormat,
+                  highQuality, mixerSpec);
+}
 //----------------------------------------------------------------------------
 // Export
 //----------------------------------------------------------------------------
@@ -611,6 +635,32 @@ bool Exporter::GetFilename()
          wxMessageBox(_("Sorry, pathnames longer than 256 characters not supported."));
          continue;
       }
+
+      // Check to see if we are writing to a path that a missing aliased file existed at.
+      // This causes problems for the exporter, so we don't allow it.
+      // Overwritting non-missing aliased files is okay.
+      // Also, this can only happen for uncompressed audio.
+      size_t i;
+      bool overwritingMissingAlias;
+      overwritingMissingAlias = false;
+      for (i = 0; i < gAudacityProjects.GetCount(); i++) {
+         AliasedFileArray aliasedFiles;
+         FindDependencies(gAudacityProjects[i], &aliasedFiles);
+         size_t j;
+         for (j = 0; j< aliasedFiles.GetCount(); j++) {
+            if (mFilename.GetFullPath() == aliasedFiles[j].mFileName.GetFullPath() &&
+                !mFilename.FileExists()) {
+               // Warn and return to the dialog
+               wxMessageBox(_("You are attempting to overwrite an aliased file that is missing.\n\
+The file cannot be written because the path is needed to restore the original audio to the project.\n\
+Choose File > Check Dependencies to view the locations of all missing files.\n\
+If you still wish to export, please choose a different filename or folder."));
+               overwritingMissingAlias = true;
+            }
+         }
+      }
+      if (overwritingMissingAlias)
+         continue;
 
       if (mFilename.FileExists()) {
          wxString prompt;

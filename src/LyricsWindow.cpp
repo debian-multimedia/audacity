@@ -10,7 +10,6 @@
 **********************************************************************/
 
 #include "Experimental.h"
-#ifdef EXPERIMENTAL_LYRICS_WINDOW
 
 #include "LyricsWindow.h"
 #include "Lyrics.h"
@@ -53,8 +52,9 @@ LyricsWindow::LyricsWindow(AudacityProject *parent):
                                    parent->GetName().c_str()).c_str())),
             wxPoint(100, 300), gSize, 
             //v Bug in wxFRAME_FLOAT_ON_PARENT:
-            // If both the project frame and LyricsWindow are minimized and you restore LyricsWindow, you can't restore project frame until you close
-            // LyricsWindow, but then project frame and LyricsWindow are restored but LyricsWindow is unresponsive because it thinks it's not shown.
+            // If both the project frame and LyricsWindow are minimized and you restore LyricsWindow, 
+            // you can't restore project frame until you close LyricsWindow, but then project frame and 
+            // LyricsWindow are restored but LyricsWindow is unresponsive because it thinks it's not shown.
             //    wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT)
             wxDEFAULT_FRAME_STYLE)
 {
@@ -78,7 +78,7 @@ LyricsWindow::LyricsWindow(AudacityProject *parent):
    wxPoint panelPos(0, 0);
    wxSize panelSize = gSize;
 
-   //vvvvv not yet working right in ported version, so choice is disabled.
+   //vvv not yet working right in ported version, so choice is disabled.
    // It seems when you select highlight style, the TrackPanel timer stops working, but 
    // going back to bouncing ball style starts it up again (!!!), per breakpoints in TrackPanel::OnTimer().
    //
@@ -112,7 +112,7 @@ LyricsWindow::LyricsWindow(AudacityProject *parent):
 
    mLyricsPanel = new Lyrics(this, -1, panelPos, panelSize);
 
-   //vvvvv Highlight style is broken in ported version.
+   //vvv Highlight style is broken in ported version.
    //switch (mLyricsPanel->GetLyricsStyle()) 
    //{
    //   case Lyrics::kBouncingBallLyrics:
@@ -141,4 +141,3 @@ void LyricsWindow::OnStyle_Highlight(wxCommandEvent &evt)
    mLyricsPanel->SetLyricsStyle(Lyrics::kHighlightLyrics);
 }
 
-#endif // EXPERIMENTAL_LYRICS_WINDOW

@@ -71,6 +71,7 @@ WX_DEFINE_OBJARRAY(NyqControlArray);
 EffectNyquist::EffectNyquist(wxString fName)
 {
    mAction = _("Applying Nyquist Effect...");
+   mInputCmd = wxEmptyString;
    mCmd = wxEmptyString;
    SetEffectFlags(HIDDEN_EFFECT);
    mInteractive = false;
@@ -93,7 +94,7 @@ EffectNyquist::EffectNyquist(wxString fName)
       return;
    }
 
-   wxLogNull dontLog;
+   // wxLogNull dontLog; // Vaughan, 2010-08-27: Why turn off logging? Logging is good!
 
    mName = wxFileName(fName).GetName();
    mFileName = wxFileName(fName);
@@ -104,6 +105,18 @@ EffectNyquist::EffectNyquist(wxString fName)
 EffectNyquist::~EffectNyquist()
 {
 }
+
+wxString EffectNyquist::NyquistToWxString(const char *nyqString)
+{
+    wxString str(nyqString, wxConvUTF8);
+    if (nyqString != NULL && nyqString[0] && str.IsEmpty()) {
+        // invalid UTF-8 string, convert as Latin-1
+        str = _("[Warning: Nyquist returned invalid UTF-8 string, converted here as Latin-1]");
+        str += LAT1CTOWX(nyqString);
+    }
+    return str;
+}
+
 
 void EffectNyquist::Break()
 {
@@ -218,6 +231,8 @@ void EffectNyquist::Parse(wxString line)
 
    if (len >= 2 && tokens[0] == wxT("debugflags")) {
       for (int i = 1; i < len; i++) {
+         // Note: "trace" and "notrace" are overridden by "Debug" and "OK"
+         // buttons if the plug-in generates a dialog box by using controls 
          if (tokens[i] == wxT("trace")) {
             mDebug = true;
          }
@@ -279,11 +294,24 @@ void EffectNyquist::Parse(wxString line)
             return;
          }
           
-         if (tokens[3] == wxT("real")) {
+         if ((tokens[3] == wxT("real")) || 
+               (tokens[3] == wxT("float"))) // undocumented, but useful, alternative
             ctrl.type = NYQ_CTRL_REAL;
-         }
-         else {
+         else if (tokens[3] == wxT("int"))
             ctrl.type = NYQ_CTRL_INT;
+         else 
+         {
+            wxString str;
+            str.Printf(_("Bad Nyquist 'control' type specification: '%s' in plugin file '%s'.\nControl not created."), 
+                       tokens[3].c_str(), mFileName.GetFullPath().c_str());
+
+            // Too disturbing to show alert before Audacity frame is up.
+            //    wxMessageBox(str, wxT("Nyquist Warning"), wxOK | wxICON_EXCLAMATION);
+
+            // Note that the AudacityApp's mLogger has not yet been created, 
+            // so this brings up an alert box, but after the Audacity frame is up.
+            wxLogWarning(str);
+            return;
          }
           
          ctrl.lowStr = tokens[6];
@@ -304,6 +332,8 @@ void EffectNyquist::Parse(wxString line)
 
 void EffectNyquist::ParseFile()
 {
+   wxLogDebug(wxT("EffectNyquist::ParseFile called"));
+
    wxTextFile f(mFileName.GetFullPath());
    if (!f.Open())
       return;
@@ -313,6 +343,7 @@ void EffectNyquist::ParseFile()
    mOK = false;
    mIsSal = false;
    mControls.Clear();
+   mDebug = false;
 
    int i;
    int len = f.GetLineCount();
@@ -322,9 +353,8 @@ void EffectNyquist::ParseFile()
       if (line.Length() > 1 && line[0] == wxT(';')) {
          Parse(line);
       }
-      else {
-         mCmd += line + wxT("\n");
-      }
+      // preserve comments so that SAL effects compile with proper line numbers
+      mCmd += line + wxT("\n");
    }
 }
 
@@ -398,9 +428,9 @@ bool EffectNyquist::PromptUser()
 
    if (mInteractive) {
       NyquistInputDialog dlog(wxGetTopLevelParent(NULL), -1,
-                              _("Nyquist Prompt..."),
+                              _("Nyquist Prompt"),
                               _("Enter Nyquist Command: "),
-                              mCmd);
+                              mInputCmd);
       dlog.CentreOnParent();
       int result = dlog.ShowModal();
 
@@ -408,11 +438,57 @@ bool EffectNyquist::PromptUser()
          return false;
       }
 
-      if (result == eDebugID) {
+      /*if (result == eDebugID) {
          mDebug = true;
+      }*/
+      mDebug = (result == eDebugID);
+
+      // remember exact input in mInputCmd which will appear in the next
+      // NyquistInputDialog. Copy to mCmd for possible embedding in
+      // "function main() begin ... end":
+      mCmd = mInputCmd = dlog.GetCommand();
+
+      // Is this LISP or SAL? Both allow comments. After comments, LISP
+      // must begin with "(". Technically, a LISP expression could be a
+      // symbol or number or string, etc., but these are not really 
+      // useful expressions. If the input begins with a symbol, number,
+      // or string, etc., it is more likely an erroneous attempt to type
+      // a SAL expression (which should probably begin with "return"),
+      // so we will treat it as SAL.
+
+      // this is a state machine to scan past LISP comments and white
+      // space to find the first real character of LISP or SAL. Note
+      // that #| ... |# style comments are not valid in SAL, so we do
+      // not skip these. Instead, "#|" indicates LISP if found.
+      //
+      unsigned int i = 0;
+      bool inComment = false; // handle "; ... \n" comments
+      while (i < mCmd.Len()) {
+         if (inComment) {
+            inComment = (mCmd[i] != wxT('\n'));
+         } else if (mCmd[i] == wxT(';')) {
+            inComment = true;
+         } else if (!wxIsspace(mCmd[i])) { 
+            break; // found the first non-comment, non-space character
+         }
+         i++;
       }
 
-      mCmd = dlog.GetCommand();
+      // invariant: i == mCmd.Len() | 
+      //            mCmd[i] is first non-comment, non-space character
+      
+      mIsSal = false;
+      if (mCmd.Len() > i && mCmd[i] != wxT('(') && 
+          (mCmd[i] != wxT('#') || mCmd.Len() <= i + 1 ||
+           mCmd[i + 1] != wxT('|'))) {
+         mIsSal = true;
+         wxString cmdUp = mCmd.Upper();
+         int returnLoc = cmdUp.Find(wxT("RETURN"));
+         if (returnLoc == wxNOT_FOUND) {
+            wxMessageBox(_("Your code looks like SAL syntax, but there is no return statement. Either use a return statement such as\n\treturn s * 0.1\nfor SAL, or begin with an open parenthesis such as\n\t(mult s 0.1)\n for LISP."), _("Error in Nyquist code"), wxOK | wxCENTRE);
+            return false;
+         }
+      }
 
       return true;
    }
@@ -473,9 +549,10 @@ bool EffectNyquist::PromptUser()
       return false;
    }
    
-   if (result == eDebugID) {
+   /* if (result == eDebugID) {
       mDebug = true;
-   }
+   } */
+   mDebug = (result == eDebugID);
 
    return true;
 }
@@ -531,7 +608,7 @@ bool EffectNyquist::Process()
          }
 
          // Check whether we're in the same group as the last selected track
-         TrackGroupIterator gIter(mOutputTracks);
+         SyncLockedTracksIterator gIter(mOutputTracks);
          Track *gt = gIter.First(mCurTrack[0]);
          mFirstInGroup = !gtLast || (gtLast != gt);
          gtLast = gt;
@@ -584,14 +661,14 @@ bool EffectNyquist::Process()
       NyquistOutputDialog dlog(mParent, -1,
                                _("Nyquist"),
                                _("Nyquist Output: "),
-                               wxString(mDebugOutput.c_str(), wxConvISO8859_1));
+                               NyquistToWxString(mDebugOutput.c_str()));
       dlog.CentreOnParent();
       dlog.ShowModal();
    }
 
    this->ReplaceProcessedTracks(success);
 
-   mDebug = false;
+   //mDebug = false;
 
    return success;
 }
@@ -638,24 +715,51 @@ bool EffectNyquist::ProcessOne()
       }
       else if (mControls[j].type == NYQ_CTRL_STRING) {
          wxString str = mControls[j].valStr;
-         str.Replace(wxT("\""), wxT("'"));
-         cmd += wxString::Format(wxT("(setf %s \"%s\")\n"),
-                                 mControls[j].var.c_str(),
-                                 str.c_str());
+         str.Replace(wxT("\\"), wxT("\\\\"));
+         str.Replace(wxT("\""), wxT("\\\""));
+         cmd += wxT("(setf ");
+         // restrict variable names to 7-bit ASCII:
+         cmd += mControls[j].var.c_str();
+         cmd += wxT(" \"");
+         cmd += str; // unrestricted value will become quoted UTF-8
+         cmd += wxT("\")\n");
       }
    }
 
    if (mIsSal) {
       wxString str = mCmd;
+      str.Replace(wxT("\\"), wxT("\\\\"));
       str.Replace(wxT("\""), wxT("\\\""));
+      // this is tricky: we need SAL to call main so that we can get a
+      // SAL traceback in the event of an error (sal-compile catches the
+      // error and calls sal-error-output), but SAL does not return values.
+      // We will catch the value in a special global aud:result and if no
+      // error occurs, we will grab the value with a LISP expression
+      str += wxT("\nset aud:result = main()\n");
+
+      if (mDebug) {
+         // since we're about to evaluate SAL, remove LISP trace enable and
+         // break enable (which stops SAL processing) and turn on SAL stack
+         // trace
+         cmd += wxT("(setf *tracenable* nil)\n");
+         cmd += wxT("(setf *breakenable* nil)\n");
+         cmd += wxT("(setf *sal-traceback* t)\n");
+      }
 
       if (mCompiler) {
          cmd += wxT("(setf *sal-compiler-debug* t)\n");
       }
 
       cmd += wxT("(setf *sal-call-stack* nil)\n");
-      cmd += wxT("(sal-compile \"\n") + str + wxT("\n\" t t nil)\n");
-      cmd += wxT("(main)\n");
+      // if we do not set this here and an error occurs in main, another
+      // error will be raised when we try to return the value of aud:result
+      // which is unbound
+      cmd += wxT("(setf aud:result nil)\n");
+      cmd += wxT("(sal-compile-audacity \"") + str + wxT("\" t t nil)\n");
+      // Capture the value returned by main (saved in aud:result), but
+      // set aud:result to nil so sound results can be evaluated without
+      // retaining audio in memory
+      cmd += wxT("(prog1 aud:result (setf aud:result nil))\n");
    }
    else {
       cmd += mCmd;
@@ -666,11 +770,12 @@ bool EffectNyquist::ProcessOne()
 		mCurBuffer[i] = NULL;
    }
 
-   rval = nyx_eval_expression(cmd.mb_str());
+   rval = nyx_eval_expression(cmd.mb_str(wxConvUTF8));
 
    if (rval == nyx_string) {
-      wxMessageBox(wxString(nyx_get_string(), wxConvISO8859_1), wxT("Nyquist"),
-                   wxOK | wxCENTRE, mParent);
+       wxMessageBox(NyquistToWxString(nyx_get_string()), 
+                    wxT("Nyquist"),
+                    wxOK | wxCENTRE, mParent);
       return true;
    }
 
@@ -716,7 +821,7 @@ bool EffectNyquist::ProcessOne()
 
          nyx_get_label(l, &t0, &t1, &str);
 
-         ltrack->AddLabel(t0 + mT0, t1 + mT0, LAT1CTOWX(str));
+         ltrack->AddLabel(t0 + mT0, t1 + mT0, UTF8CTOWX(str));
       }
       return true;
    }
@@ -780,12 +885,12 @@ bool EffectNyquist::ProcessOne()
       mCurTrack[i]->ClearAndPaste(mT0, mT1, out, false, false);
       // If we were first in the group adjust non-selected group tracks
       if (mFirstInGroup) {
-         TrackGroupIterator git(mOutputTracks);
+         SyncLockedTracksIterator git(mOutputTracks);
          Track *t;
          for (t = git.First(mCurTrack[i]); t; t = git.Next())
          {
-            if (!t->GetSelected() && t->IsSynchroSelected()) {
-               t->SyncAdjust(mT1, mT0 + out->GetEndTime());
+            if (!t->GetSelected() && t->IsSyncLockSelected()) {
+               t->SyncLockAdjust(mT1, mT0 + out->GetEndTime());
             }
          }
       }
@@ -1315,16 +1420,4 @@ void NyquistOutputDialog::OnOk(wxCommandEvent & /* event */)
 {
    EndModal(wxID_OK);
 }
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: a6e418bb-2609-42f2-a8ae-8e50373855f3
 
