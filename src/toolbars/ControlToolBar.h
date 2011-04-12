@@ -28,6 +28,7 @@ class AudacityProject;
 class TrackList;
 class TimeTrack;
 
+// In the GUI, ControlToolBar appears as the "Transport Toolbar". "Control Toolbar" is historic.
 class ControlToolBar:public ToolBar {
 
  public:
@@ -83,7 +84,7 @@ class ControlToolBar:public ToolBar {
 
  private:
 
-   AButton *MakeButton(teBmps eFore, teBmps eDisabled,
+   AButton *MakeButton(teBmps eEnabledUp, teBmps eEnabledDown, teBmps eDisabled,
       int id,
       bool processdownevents,
       const wxChar *label);

@@ -37,8 +37,8 @@ enum {
    ETBUndoID,
    ETBRedoID,
 
-#ifdef EXPERIMENTAL_LINKING
-   ETBLinkID,
+#ifdef EXPERIMENTAL_SYNC_LOCK
+   ETBSyncLockID,
 #endif
 
    ETBZoomInID,
@@ -72,7 +72,7 @@ class EditToolBar:public ToolBar {
 
  private:
 
-   AButton *AddButton(teBmps eFore, teBmps eDisabled,
+   AButton *AddButton(teBmps eEnabledUp, teBmps eEnabledDown, teBmps eDisabled,
       int id, const wxChar *label, bool toggle = false);
 
    void AddSeparator();

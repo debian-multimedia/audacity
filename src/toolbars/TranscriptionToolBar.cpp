@@ -145,7 +145,7 @@ AButton *TranscriptionToolBar::AddButton(
 
    r = ToolBar::MakeButton(
       bmpRecoloredUpSmall, bmpRecoloredDownSmall, bmpRecoloredHiliteSmall,
-      eFore, eDisabled,
+      eFore, eFore, eDisabled,
       wxWindowID(id),
       wxDefaultPosition, 
       false,
@@ -415,7 +415,9 @@ void TranscriptionToolBar::OnPlaySpeed(wxCommandEvent & event)
    // Start playing
    if (playRegionStart >= 0) {
 //      playRegionEnd = playRegionStart + (playRegionEnd-playRegionStart)* 100.0/mPlaySpeed;
-
+#ifdef EXPERIMENTAL_MIDI_OUT
+      gAudioIO->SetMidiPlaySpeed(mPlaySpeed);
+#endif
       p->GetControlToolBar()->PlayPlayRegion(playRegionStart,
                                              playRegionEnd,
                                              false,

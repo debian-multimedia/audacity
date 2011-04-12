@@ -1,8 +1,10 @@
 /**********************************************************************
 
-  Audacity: A Digital Audio Editor
+   Audacity: A Digital Audio Editor
+   Audacity(R) is copyright (c) 1999-2010 Audacity Team.
+   License: GPL v2.  See License.txt.
 
-  AutoRecovery.cpp
+   AutoRecovery.cpp
 
 *******************************************************************//**
 
@@ -143,7 +145,7 @@ static bool HaveFilesToRecover()
    wxDir dir(FileNames::AutoSaveDir());
    if (!dir.IsOpened())
    {
-      wxMessageBox(_("Could not enumerate files in auto save directory"),
+      wxMessageBox(_("Could not enumerate files in auto save directory."),
                    _("Error"), wxICON_STOP);
       return false;
    }
@@ -180,7 +182,7 @@ static bool RecoverAllProjects(AudacityProject** pproj)
    wxDir dir(FileNames::AutoSaveDir());
    if (!dir.IsOpened())
    {
-      wxMessageBox(_("Could not enumerate files in auto save directory"),
+      wxMessageBox(_("Could not enumerate files in auto save directory."),
                    _("Error"), wxICON_STOP);
       return false;
    }
@@ -210,9 +212,6 @@ static bool RecoverAllProjects(AudacityProject** pproj)
       // the opened auto-save file is automatically deleted and a new one
       // is created.
       proj->OpenFile(files[i], false);
-
-      //fit project after recovery
-      proj->OnZoomFit();
    }
    
    return true;
@@ -221,9 +220,7 @@ static bool RecoverAllProjects(AudacityProject** pproj)
 bool ShowAutoRecoveryDialogIfNeeded(AudacityProject** pproj,
                                     bool *didRecoverAnything)
 {
-   if (didRecoverAnything)
-      *didRecoverAnything = false;
-
+   *didRecoverAnything = false;
    if (HaveFilesToRecover())
    {
       AutoRecoveryDialog dlg(*pproj);
@@ -283,7 +280,8 @@ bool RecordingRecoveryHandler::HandleXMLTag(const wxChar *tag,
          return false;
       }
       WaveTrack* track = tracks.Item(index);
-      Sequence* seq = track->GetLastOrCreateClip()->GetSequence();
+      WaveClip*  clip  = track->GetLastOrCreateClip();
+      Sequence* seq = clip->GetSequence();
       
       // Load the blockfile from the XML
       BlockFile* blockFile = NULL;
@@ -298,6 +296,7 @@ bool RecordingRecoveryHandler::HandleXMLTag(const wxChar *tag,
       }
 
       seq->AppendBlockFile(blockFile);
+      clip->UpdateEnvelopeTrackLen();
 
    } else if (wxStrcmp(tag, wxT("recordingrecovery")) == 0)
    {
@@ -313,10 +312,11 @@ bool RecordingRecoveryHandler::HandleXMLTag(const wxChar *tag,
             break;
          
          const wxString strValue = value;
+         //this channels value does not correspond to WaveTrack::Left/Right/Mono, but which channel of the recording device
+         //it came from, and thus we can't use XMLValueChecker::IsValidChannel on it.  Rather we compare to the next attribute value.
          if (wxStrcmp(attr, wxT("channel")) == 0)
          {
-            if (!XMLValueChecker::IsGoodInt(strValue) || !strValue.ToLong(&nValue) || 
-                  !XMLValueChecker::IsValidChannel(nValue))
+            if (!XMLValueChecker::IsGoodInt(strValue) || !strValue.ToLong(&nValue) || nValue < 0)
                return false;
             mChannel = nValue;
          }
@@ -325,8 +325,11 @@ bool RecordingRecoveryHandler::HandleXMLTag(const wxChar *tag,
             if (!XMLValueChecker::IsGoodInt(strValue) || !strValue.ToLong(&nValue) || 
                   (nValue < 1))
                return false;
+            if(mChannel >= nValue )
+               return false;   
             mNumChannels = nValue;
          }
+         
       }
    }
    

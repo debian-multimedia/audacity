@@ -68,16 +68,87 @@ static void dprintf(const char *format, ...)
 }
 #endif
 
+// The VerSetConditionMask() function did not appear until Windows 2000,
+// so check for it at runtime.  However, post 2.0, this can be deleted
+// since pre-Win2k support will be dropped.
+#define VerSetConditionMask VerSetConditionMaskThunk
+LONGLONG
+VerSetConditionMaskThunk(ULONGLONG ConditionMask,
+                         DWORD TypeMask,
+                         BYTE Condition)
+{
+   // The VerifyVersionInfo() function did not appear until Windows 2000,
+   // so check for it at runtime.  However, post 2.0, this can be dropped
+   // since pre-Win2k support will be dropped.
+   typedef BOOL (WINAPI *versetconditionask)(ULONGLONG ConditionMask,
+                                             DWORD TypeMask,
+                                             BYTE Condition);
+   versetconditionask vscm =
+      (versetconditionask) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
+                                         "VerSetConditionMask");
+   if (vscm == NULL) {
+      return 0;
+   }
+
+   return vscm(ConditionMask, TypeMask, Condition);
+}
+
+// The VerifyVersionInfo() function did not appear until Windows 2000,
+// so check for it at runtime.  However, post 2.0, this can be deleted
+// since pre-Win2k support will be dropped.
+#define VerifyVersionInfoA VerifyVersionInfoAThunk
+BOOL
+VerifyVersionInfoAThunk(LPOSVERSIONINFOEXA lpVersionInformation,
+                        DWORD dwTypeMask,
+                        DWORDLONG dwlConditionMask)
+{
+   typedef BOOL (WINAPI *verifyversioninfo)(LPOSVERSIONINFOEXA lpVersionInformation,
+                                            DWORD dwTypeMask,
+                                            DWORDLONG dwlConditionMask);
+   verifyversioninfo vvi =
+      (verifyversioninfo) GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")),
+                                         "VerifyVersionInfoA");
+   if (vvi == NULL) {
+      return FALSE;
+   }
+
+   return vvi(lpVersionInformation, dwTypeMask, dwlConditionMask);
+}
+
+static BOOL is_vista_or_later() 
+{
+   OSVERSIONINFOEX osvi;
+   DWORDLONG dwlConditionMask = 0;
+   int op=VER_GREATER_EQUAL;
+
+   // Initialize the OSVERSIONINFOEX structure.
+
+   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+   osvi.dwMajorVersion = 6;
+   osvi.dwMinorVersion = 0;
+   osvi.wServicePackMajor = 0;
+   osvi.wServicePackMinor = 0;
+
+   // Initialize the condition mask.
+
+   VER_SET_CONDITION( dwlConditionMask, VER_MAJORVERSION, op );
+   VER_SET_CONDITION( dwlConditionMask, VER_MINORVERSION, op );
+
+   // Perform the test.
+
+   return VerifyVersionInfo(
+      &osvi, 
+      VER_MAJORVERSION | VER_MINORVERSION,
+      dwlConditionMask);
+}
+
 int open_mixers(px_mixer *Px, UINT deviceIn, UINT deviceOut)
 {
    PxInfo*info;
    MMRESULT res;
-   OSVERSIONINFO verInfo;
-
-   memset(&verInfo, 0, sizeof(verInfo));
-   verInfo.dwOSVersionInfoSize = sizeof(verInfo);
-   GetVersionEx(&verInfo);
-   if (verInfo.dwMajorVersion >= 6) {
+  
+   if (is_vista_or_later()) {
       return open_ep_mixers(Px, deviceIn, deviceOut);
    }
 
@@ -90,7 +161,7 @@ int open_mixers(px_mixer *Px, UINT deviceIn, UINT deviceOut)
 
    res = mixerGetID((HMIXEROBJ) (deviceOut == WAVE_MAPPER ? 0 : deviceOut),
                     &deviceOut,
-                    MIXER_OBJECTF_WAVEIN);
+                    MIXER_OBJECTF_WAVEOUT);
    if (res != MMSYSERR_NOERROR) {
       return FALSE;
    }

@@ -205,19 +205,19 @@ Track *Track::GetLink() const
    return NULL;
 }
 
-bool Track::IsSynchroSelected()
+bool Track::IsSyncLockSelected()
 {
-#ifdef EXPERIMENTAL_LINKING
+#ifdef EXPERIMENTAL_SYNC_LOCK
    AudacityProject *p = GetActiveProject();
-   if (!p || !p->IsSticky())
+   if (!p || !p->IsSyncLocked())
       return false;
 
-   TrackGroupIterator git(mList);
+   SyncLockedTracksIterator git(mList);
    Track *t = git.First(this);
 
    if (!t) {
-      // Not in a group.
-      return GetSelected();
+      // Not in a sync-locked group.
+      return ((this->GetKind() == Track::Wave) || (this->GetKind() == Track::Label)) && GetSelected();
    }
 
    for (; t; t = git.Next()) {
@@ -229,7 +229,7 @@ bool Track::IsSynchroSelected()
    return false;
 }
 
-bool Track::SyncAdjust(double oldT1, double newT1)
+bool Track::SyncLockAdjust(double oldT1, double newT1)
 {
    if (newT1 > oldT1) {
       // Insert space within the track
@@ -323,13 +323,13 @@ Track *TrackListIterator::Last(bool skiplinked)
    return NULL;
 }
 
-Track *TrackListIterator::Next(bool SkipLinked)
+Track *TrackListIterator::Next(bool skipLinked)
 {
    #ifdef DEBUG_TLI // if we are debugging this bit
    wxASSERT_MSG((!cur || (*l).Contains((*cur).t)), wxT("cur invalid at start of Next(). List changed since iterator created?"));   // check that cur is in the list
    #endif
 
-   if (SkipLinked && cur && cur->t->GetLinked()) {
+   if (skipLinked && cur && cur->t->GetLinked()) {
       cur = cur->next;
    }
 
@@ -496,22 +496,22 @@ bool VisibleTrackIterator::Condition(Track *t)
    return r.Intersects(mPanelRect);
 }
 
-// TrackGroupIterator
+// SyncLockedTracksIterator
 //
 // Based on TrackListIterator returns only tracks belonging to the group
 // in which the starting track is a member.
 //
-TrackGroupIterator::TrackGroupIterator(TrackList * val)
+SyncLockedTracksIterator::SyncLockedTracksIterator(TrackList * val)
 :  TrackListIterator(val),
    mInLabelSection(false)
 {
 }
 
-Track *TrackGroupIterator::First(Track * member)
+Track *SyncLockedTracksIterator::First(Track * member)
 {
    Track *t = NULL;
 
-   // A group consists of any positive number of wave tracks followed by any
+   // A sync-locked group consists of any positive number of wave tracks followed by any
    // non-negative number of label tracks. Step back through any label tracks,
    // and then through the wave tracks above them.
 
@@ -519,13 +519,17 @@ Track *TrackGroupIterator::First(Track * member)
       member = l->GetPrev(member);
    }
 
-   while (member && member->GetKind() == Track::Wave) {
+   while (member && (member->GetKind() == Track::Wave
+#ifdef USE_MIDI
+                  || member->GetKind() == Track::Note
+#endif
+                    )) {
       t = member;
       member = l->GetPrev(member);
    }
 
    // Make it current (if t is still NULL there are no wave tracks, so we're
-   // not in a group).
+   // not in a sync-locked group).
    if (t)
       cur = (TrackListNode *) t->GetNode();
 
@@ -534,12 +538,12 @@ Track *TrackGroupIterator::First(Track * member)
    return t;
 }
 
-Track *TrackGroupIterator::Next(bool skiplinked)
+Track *SyncLockedTracksIterator::Next(bool skiplinked)
 {
    Track *t = TrackListIterator::Next(skiplinked);
 
    //
-   // Ways to end a group
+   // Ways to end a sync-locked group
    //
 
    // End of tracks
@@ -551,25 +555,26 @@ Track *TrackGroupIterator::Next(bool skiplinked)
       cur = NULL;
       return NULL;
    }
-
+// This code block stops a group when a NoteTrack is encountered
+#ifndef USE_MIDI
    // Encounter a non-wave non-label track
    if (t->GetKind() != Track::Wave && t->GetKind() != Track::Label) {
       cur = NULL;
       return NULL;
    }
-
+#endif
    // Otherwise, check if we're in the label section
    mInLabelSection = (t->GetKind() == Track::Label);
 
    return t;
 }
 
-Track *TrackGroupIterator::Prev(bool skiplinked)
+Track *SyncLockedTracksIterator::Prev(bool skiplinked)
 {
    Track *t = TrackListIterator::Prev(skiplinked);
 
    //
-   // Ways to end a group in reverse
+   // Ways to end a sync-locked group in reverse
    //
 
    // Beginning of tracks
@@ -581,20 +586,20 @@ Track *TrackGroupIterator::Prev(bool skiplinked)
       cur = NULL;
       return NULL;
    }
-
+#ifndef USE_MIDI
    // Encounter a non-wave non-label track
    if (t->GetKind() != Track::Wave && t->GetKind() != Track::Label) {
       cur = NULL;
       return NULL;
    }
-
+#endif
    // Otherwise, check if we're in the label section
    mInLabelSection = (t->GetKind() == Track::Label);
 
    return t;
 }
 
-Track *TrackGroupIterator::Last(bool skiplinked)
+Track *SyncLockedTracksIterator::Last(bool skiplinked)
 {
    if (!cur)
       return NULL;
@@ -602,11 +607,15 @@ Track *TrackGroupIterator::Last(bool skiplinked)
    Track *t = cur->t;
 
    while (l->GetNext(t)) {
-      // Check if this is the last track in the group
+      // Check if this is the last track in the sync-locked group.
       int nextKind = l->GetNext(t)->GetKind();
       if (mInLabelSection && nextKind != Track::Label)
          break;
-      if (nextKind != Track::Label && nextKind != Track::Wave)
+      if (nextKind != Track::Label && nextKind != Track::Wave
+#ifdef USE_MIDI
+          && nextKind != Track::Note
+#endif
+          )
          break;
 
       t = Next(skiplinked);
@@ -615,41 +624,6 @@ Track *TrackGroupIterator::Last(bool skiplinked)
    return t;
 }
 
-// TrackAndGroupIterator
-//
-// Based on TrackListIterator has methods to retrieve both tracks and groups
-//
-TrackAndGroupIterator::TrackAndGroupIterator(TrackList * val)
-:  TrackListIterator(val)
-{
-}
-
-Track *TrackAndGroupIterator::NextGroup(bool skiplinked)
-{
-   if (!cur)
-      return NULL;
-
-   Track* t = cur->t;
-
-   while(t) {
-      int prevKind = t->GetKind();
-      t = TrackListIterator::Next(skiplinked);
-
-      // Check if we've exited a group
-
-      // End of tracks
-      if (!t)
-         break;
-      // Non-wave non-label track
-      if (t->GetKind() != Track::Wave && t->GetKind() != Track::Label)
-         break;
-      // From label section to non-label track
-      if (prevKind == Track::Label && t->GetKind() != Track::Label)
-         break;
-   }
-   
-   return t;
-}
 
 // TrackList
 //
@@ -913,7 +887,7 @@ Track *TrackList::GetPrev(Track * t, bool linked) const
 }
 
 /// For mono track height of track
-/// For stereo track combined height of track and linked track.
+/// For stereo track combined height of both channels.
 int TrackList::GetGroupHeight(Track * t) const
 {
    int height = t->GetHeight();

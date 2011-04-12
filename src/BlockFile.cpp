@@ -114,7 +114,9 @@ BlockFile::~BlockFile()
 
 /// Returns the file name of the disk file associated with this
 /// BlockFile.  Not all BlockFiles store their sample data here,
-/// but all BlockFiles have at least their summary data here.
+/// but most BlockFiles have at least their summary data here.
+/// (some, i.e. SilentBlockFiles, do not correspond to a file on
+///  disk and have empty file names)
 wxFileName BlockFile::GetFileName()
 {
    return mFileName;
@@ -535,11 +537,13 @@ AliasBlockFile::AliasBlockFile(wxFileName baseFileName,
    mSilentAliasLog=FALSE;
 }
 
-AliasBlockFile::AliasBlockFile(wxFileName existingSummaryFile,
-                               wxFileName aliasedFileName, sampleCount aliasStart,
-                               sampleCount aliasLen, int aliasChannel,
+AliasBlockFile::AliasBlockFile(wxFileName existingSummaryFileName,
+                               wxFileName aliasedFileName, 
+                               sampleCount aliasStart,
+                               sampleCount aliasLen, 
+                               int aliasChannel,
                                float min, float max, float rms):
-   BlockFile(existingSummaryFile, aliasLen),
+   BlockFile(existingSummaryFileName, aliasLen),
    mAliasedFileName(aliasedFileName),
    mAliasStart(aliasStart),
    mAliasChannel(aliasChannel)
@@ -623,17 +627,10 @@ bool AliasBlockFile::ReadSummary(void *data)
    return (read == mSummaryInfo.totalSummaryBytes);
 }
 
-/// Get the name of the file where the audio data for this block is
-/// stored.
-wxFileName AliasBlockFile::GetAliasedFile()
-{
-   return mAliasedFileName;
-}
-
 /// Modify this block to point at a different file.  This is generally
 /// looked down on, but it is necessary in one case: see
 /// DirManager::EnsureSafeFilename().
-void AliasBlockFile::ChangeAliasedFile(wxFileName newAliasedFile)
+void AliasBlockFile::ChangeAliasedFileName(wxFileName newAliasedFile)
 {
    mAliasedFileName = newAliasedFile;
 }
@@ -643,16 +640,4 @@ wxLongLong AliasBlockFile::GetSpaceUsage()
    wxFFile summaryFile(mFileName.GetFullPath());
    return summaryFile.Length();
 }
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: a38e6501-f14a-4428-902d-17af1847cb59
 

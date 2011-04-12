@@ -39,9 +39,10 @@ and ImportLOF.cpp.
 #include <wx/msgdlg.h>
 #include <wx/string.h>
 #include <wx/intl.h>
-#include <wx/listimpl.cpp>
 #include <wx/log.h>
 #include <wx/sizer.h>         //for wxBoxSizer
+#include <wx/arrimpl.cpp>
+#include <wx/listimpl.cpp>
 #include "../ShuttleGui.h"
 #include "../Audacity.h"
 
@@ -62,11 +63,13 @@ and ImportLOF.cpp.
 WX_DEFINE_LIST(ImportPluginList);
 WX_DEFINE_LIST(UnusableImportPluginList);
 WX_DEFINE_LIST(FormatList);
+WX_DEFINE_OBJARRAY(ExtImportItems);
 
 Importer::Importer()
 {
    mImportPluginList = new ImportPluginList;
    mUnusableImportPluginList = new UnusableImportPluginList;
+   mExtImportItems = NULL;
 
    // build the list of import plugin and/or unusableImporters.
    // order is significant.  If none match, they will all be tried
@@ -77,24 +80,28 @@ Importer::Importer()
    GetMP3ImportPlugin(mImportPluginList, mUnusableImportPluginList);
    GetLOFImportPlugin(mImportPluginList, mUnusableImportPluginList);
 
-   #ifdef USE_QUICKTIME
-   GetQTImportPlugin(mImportPluginList, mUnusableImportPluginList);
-   #endif
    #if defined(USE_FFMPEG)
    GetFFmpegImportPlugin(mImportPluginList, mUnusableImportPluginList);
+   #endif
+   #ifdef USE_QUICKTIME
+   GetQTImportPlugin(mImportPluginList, mUnusableImportPluginList);
    #endif
    #if defined(USE_GSTREAMER)
    GetGStreamerImportPlugin(mImportPluginList, mUnusableImportPluginList);
    #endif
 
+   ReadImportItems();
 }
 
 Importer::~Importer()
 {
+   WriteImportItems();
    mImportPluginList->DeleteContents(true);
    delete mImportPluginList;
    mUnusableImportPluginList->DeleteContents(true);//JKC
    delete mUnusableImportPluginList;
+   if (this->mExtImportItems != NULL)
+      delete this->mExtImportItems;
 }
 
 void Importer::GetSupportedImportFormats(FormatList *formatList)
@@ -107,6 +114,202 @@ void Importer::GetSupportedImportFormats(FormatList *formatList)
                                     importPlugin->GetSupportedExtensions()));
       importPluginNode = importPluginNode->GetNext();
    }
+}
+
+void Importer::StringToList(wxString &str, wxString &delims, wxArrayString &list, wxStringTokenizerMode mod)
+{
+   wxStringTokenizer toker;
+   
+   for (toker.SetString(str, delims, mod);
+      toker.HasMoreTokens(); list.Add (toker.GetNextToken()));
+}
+
+void Importer::ReadImportItems()
+{
+   int item_counter = 0;
+   wxStringTokenizer toker;
+   wxString item_name;
+   wxString item_value;
+   ExtImportItem *new_item;
+   ImportPluginList::compatibility_iterator importPluginNode;
+   
+   if (this->mExtImportItems != NULL)
+      delete this->mExtImportItems;
+      
+   this->mExtImportItems = new ExtImportItems();
+   /* Rule string format is:
+    * extension1:extension2:extension3\mime_type1:mime_type2:mime_type3|filter1:filter2:filter3\unusedfilter1:unusedfilter2
+    * backslashes are escaped and unescaped internally
+    */
+   for (item_counter = 0; true; item_counter++)
+   {
+      wxString condition, filters, used_filters, unused_filters = wxEmptyString, extensions, mime_types = wxEmptyString;
+      item_name.Printf (wxT("/ExtImportItems/Item%d"), item_counter);
+      /* Break at first non-existent item */
+      if (!gPrefs->Read(item_name, &item_value))
+        break;
+        
+      toker.SetString(item_value, wxT("|"), wxTOKEN_RET_EMPTY_ALL);
+      /* Break at first broken item */
+      if (toker.CountTokens() != 2)
+        break;
+
+      new_item = new ExtImportItem();
+        
+      /* First token is the filtering condition, second - the filter list */
+      condition = toker.GetNextToken();
+      filters = toker.GetNextToken();
+
+      /* Condition token consists of extension list and mime type list
+       * mime type list can be omitted entirely (complete with '\' separator)*/
+      toker.SetString(condition, wxT("\\"), wxTOKEN_RET_EMPTY_ALL);
+      extensions = toker.GetNextToken();
+      if (toker.HasMoreTokens())
+        mime_types = toker.GetNextToken();
+
+      wxString delims(wxT(":"));
+      StringToList (extensions, delims, new_item->extensions);
+
+      if (mime_types != wxEmptyString)
+         StringToList (mime_types, delims, new_item->mime_types);
+      
+      /* Filter token consists of used and unused filter lists */
+      toker.SetString(filters, wxT("\\"), wxTOKEN_RET_EMPTY_ALL);
+      used_filters = toker.GetNextToken();
+      if (toker.HasMoreTokens())
+        unused_filters = toker.GetNextToken();
+      
+      StringToList (used_filters, delims, new_item->filters);
+
+      if (unused_filters != wxEmptyString)
+      {
+         /* Filters are stored in one list, but the position at which
+          * unused filters start is remembered
+          */
+         new_item->divider = new_item->filters.Count();
+         StringToList (unused_filters, delims, new_item->filters);
+      }
+      else
+         new_item->divider = -1;
+      
+      /* Find corresponding filter object for each filter ID */
+      for (size_t i = 0; i < new_item->filters.Count(); i++)
+      {
+         for (importPluginNode = mImportPluginList->GetFirst();
+            importPluginNode; importPluginNode = importPluginNode->GetNext())
+         {
+            ImportPlugin *importPlugin = importPluginNode->GetData();
+            if (importPlugin->GetPluginStringID().Cmp(new_item->filters[i]) == 0)
+            {
+               new_item->filter_objects.Add (importPlugin);
+               break;
+            }
+         }
+         /* IDs that do not have corresponding filters, will be shown as-is */
+         if (!importPluginNode)
+           new_item->filter_objects.Add (NULL);
+      }
+      /* Find all filter objects that are not present in the filter list */
+      for (importPluginNode = mImportPluginList->GetFirst();
+         importPluginNode; importPluginNode = importPluginNode->GetNext())
+      {
+         bool found = false;
+         ImportPlugin *importPlugin = importPluginNode->GetData();
+         for (size_t i = 0; i < new_item->filter_objects.Count(); i++)
+         {
+            if (importPlugin == new_item->filter_objects[i])
+            {
+               found = true;
+               break;
+            }
+         }
+         /* Add these filters at the bottom of used filter list */
+         if (!found)
+         {
+            int index = new_item->divider;
+            if (new_item->divider < 0)
+               index = new_item->filters.Count();
+            new_item->filters.Insert(importPlugin->GetPluginStringID(),index);
+            new_item->filter_objects.Insert (importPlugin, index);
+            if (new_item->divider >= 0)
+               new_item->divider++;
+         }
+      }
+      this->mExtImportItems->Add (new_item);
+   }
+}
+
+void Importer::WriteImportItems()
+{
+   size_t i;
+   wxString val, name;
+   for (i = 0; i < this->mExtImportItems->Count(); i++)
+   {
+      ExtImportItem *item = &(mExtImportItems->Item(i));
+      val.Clear();
+
+      for (size_t j = 0; j < item->extensions.Count(); j++)
+      {
+         val.Append (item->extensions[j]);
+         if (j < item->extensions.Count() - 1)
+            val.Append (wxT(":"));
+      }
+      val.Append (wxT("\\"));
+      for (size_t j = 0; j < item->mime_types.Count(); j++)
+      {
+         val.Append (item->mime_types[j]);
+         if (j < item->mime_types.Count() - 1)
+            val.Append (wxT(":"));
+      }
+      val.Append (wxT("|"));
+      for (size_t j = 0; j < item->filters.Count() && ((int) j < item->divider || item->divider < 0); j++)
+      {
+         val.Append (item->filters[j]);
+         if (j < item->filters.Count() - 1 && ((int) j < item->divider - 1 || item->divider < 0))
+            val.Append (wxT(":"));
+      }
+      if (item->divider >= 0)
+      {
+         val.Append (wxT("\\"));
+         for (size_t j = item->divider; j < item->filters.Count(); j++)
+         {
+            val.Append (item->filters[j]);
+            if (j < item->filters.Count() - 1)
+               val.Append (wxT(":"));
+         }
+      }
+      name.Printf (wxT("/ExtImportItems/Item%d"), i);
+      gPrefs->Write (name, val);
+   }
+   /* If we had more items than we have now, delete the excess */
+   for (i = this->mExtImportItems->Count(); i >= 0; i++)
+   {
+     name.Printf (wxT("/ExtImportItems/Item%d"), i);
+     if (gPrefs->Read(name, &val))
+       gPrefs->DeleteEntry (name, false);
+     else
+       break;
+   }
+}
+
+ExtImportItem *Importer::CreateDefaultImportItem()
+{
+   ExtImportItem *new_item;
+   ImportPluginList::compatibility_iterator importPluginNode;
+
+   new_item = new ExtImportItem();
+   new_item->extensions.Add(wxT("*"));
+   new_item->mime_types.Add(wxT("*"));
+
+   for (importPluginNode = mImportPluginList->GetFirst();
+      importPluginNode; importPluginNode = importPluginNode->GetNext())
+   {
+      ImportPlugin *importPlugin = importPluginNode->GetData();
+      new_item->filters.Add (importPlugin->GetPluginStringID());
+      new_item->filter_objects.Add (importPlugin);
+   }
+   new_item->divider = -1;
+   return new_item;
 }
 
 // returns number of tracks imported
@@ -131,40 +334,125 @@ int Importer::Import(wxString fName,
    // If user explicitly selected a filter,
    // then we should try importing via corresponding plugin first
    wxString type = gPrefs->Read(wxT("/LastOpenType"),wxT(""));
+   
+   // Not implemented (yet?)
+   wxString mime_type = wxT("*");
 
-   // First, add all explicitly compatible plugins
-   importPluginNode = mImportPluginList->GetFirst();
-   while(importPluginNode)
+   // First, add user-selected filter
+   bool usersSelectionOverrides;
+   // False if override filter is not found
+   bool foundOverride = false;
+   gPrefs->Read(wxT("/ExtendedImport/OverrideExtendedImportByOpenFileDialogChoice"), &usersSelectionOverrides, false);
+   wxLogDebug(wxT("LastOpenType is %s"),type.c_str());
+   wxLogDebug(wxT("OverrideExtendedImportByOpenFileDialogChoice is %i"),usersSelectionOverrides);
+   if (usersSelectionOverrides)
    {
-      ImportPlugin *plugin = importPluginNode->GetData();
-      if (plugin->GetPluginFormatDescription().CompareTo(type) == 0)
+      
+      importPluginNode = mImportPluginList->GetFirst();
+      while(importPluginNode)
       {
-         // This plugin corresponds to user-selected filter, try it first.
-         importPlugins.Insert(plugin);
+         ImportPlugin *plugin = importPluginNode->GetData();
+         if (plugin->GetPluginFormatDescription().CompareTo(type) == 0)
+         {
+            // This plugin corresponds to user-selected filter, try it first.
+            wxLogDebug(wxT("Inserting %s"),plugin->GetPluginStringID().c_str());
+            importPlugins.Insert(plugin);
+            foundOverride = true;
+         }
+         importPluginNode = importPluginNode->GetNext();
       }
-      else if (plugin->SupportsExtension(extension))
+   }
+   bool foundItem = false;
+   wxLogMessage(wxT("File name is %s"),fName.Lower().c_str());
+   wxLogMessage(wxT("Mime type is %s"),mime_type.Lower().c_str());
+   for (size_t i = 0; i < mExtImportItems->Count(); i++)
+   {
+      ExtImportItem *item = &(*mExtImportItems)[i];
+      bool matches_ext = false, matches_mime = false;
+      wxLogDebug(wxT("Testing extensions"));
+      for (size_t j = 0; j < item->extensions.Count(); j++)
       {
-         importPlugins.Append(plugin);
+         wxLogDebug(wxT("%s"),item->extensions[j].Lower().c_str());
+         if (wxMatchWild (item->extensions[j].Lower(),fName.Lower(), false))
+         {
+            wxLogDebug(wxT("Match!"));
+            matches_ext = true;
+            break;
+         }
       }
-      if (plugin->SupportsExtension(extension))
-        compatiblePlugins.Append(plugin);
-      importPluginNode = importPluginNode->GetNext();
+      if (item->extensions.Count() == 0)
+      {
+         wxLogDebug(wxT("Match! (empty list)"));
+         matches_ext = true;
+      }
+      if (matches_ext)
+         wxLogDebug(wxT("Testing mime types"));
+      else
+         wxLogDebug(wxT("Not testing mime types"));
+      for (size_t j = 0; matches_ext && j < item->mime_types.Count(); j++)
+      {
+         if (wxMatchWild (item->mime_types[j].Lower(),mime_type.Lower(), false))
+         {
+            wxLogDebug(wxT("Match!"));
+            matches_mime = true;
+            break;
+         }
+      }
+      if (item->mime_types.Count() == 0)
+      {
+         wxLogDebug(wxT("Match! (empty list)"));
+         matches_mime = true;
+      }
+      if (matches_ext && matches_mime)
+      {
+         wxLogDebug(wxT("Complete match!"));
+         for (size_t j = 0; j < item->filter_objects.Count() && (item->divider < 0 || (int) j < item->divider); j++)
+         {
+            wxLogDebug(wxT("Inserting %s"),item->filter_objects[j]->GetPluginStringID().c_str());
+            importPlugins.Append(item->filter_objects[j]);
+         }
+         foundItem = true;
+      }
    }
 
-   // Next, add all other plugins
-   importPluginNode = mImportPluginList->GetFirst();
-   while(importPluginNode)
+   if (!foundItem || (usersSelectionOverrides && !foundOverride))
    {
-      ImportPlugin *plugin = importPluginNode->GetData();
-      if (importPlugins.Find(plugin) == NULL)
+      bool prioritizeMp3 = false;
+      if (usersSelectionOverrides && !foundOverride)
+         importPlugins.Clear();
+      wxLogDebug(wxT("Applying default rule"));
+      // Special treatment for mp3 files
+      if (wxMatchWild (wxT("*.mp3"),fName.Lower(), false))
+         prioritizeMp3 = true;
+      // By default just add all plugins (except for MP3)
+      importPluginNode = mImportPluginList->GetFirst();
+      while(importPluginNode)
       {
-         // Skip MP3 import plugin. Opens some non-mp3 audio files (ac3 for example) as garbage.
-         if (plugin->GetPluginFormatDescription().CompareTo( _("MP3 files") ) != 0)
+         ImportPlugin *plugin = importPluginNode->GetData();
+         if (importPlugins.Find(plugin) == NULL)
          {
-            importPlugins.Append(plugin);
-         }        
+            // Skip MP3 import plugin. Opens some non-mp3 audio files (ac3 for example) as garbage.
+            if (plugin->GetPluginFormatDescription().CompareTo( _("MP3 files") ) != 0)
+            {
+               wxLogDebug(wxT("Inserting %s"),plugin->GetPluginStringID().c_str());
+               importPlugins.Append(plugin);
+            }
+            else if (prioritizeMp3)
+            {
+               if (usersSelectionOverrides)
+               {
+                  wxLogDebug(wxT("Inserting %s at 1"),plugin->GetPluginStringID().c_str());
+                  importPlugins.Insert((size_t) 1, plugin);
+               }
+               else
+               {
+                  wxLogDebug(wxT("Inserting %s at 0"),plugin->GetPluginStringID().c_str());
+                  importPlugins.Insert((size_t) 0, plugin);
+               }
+            }
+         }
+         importPluginNode = importPluginNode->GetNext();
       }
-      importPluginNode = importPluginNode->GetNext();
    }
 
    importPluginNode = importPlugins.GetFirst();
@@ -172,9 +460,11 @@ int Importer::Import(wxString fName,
    {
       ImportPlugin *plugin = importPluginNode->GetData();
       // Try to open the file with this plugin (probe it)
+      wxLogMessage(wxT("Opening with %s"),plugin->GetPluginStringID().c_str());
       inFile = plugin->Open(fName);
       if ( (inFile != NULL) && (inFile->GetStreamCount() > 0) )
       {
+         wxLogMessage(wxT("Open(%s) succeeded"), fName.Lower().c_str());
          // File has more than one stream - display stream selector
          if (inFile->GetStreamCount() > 1)                                                  
          {
@@ -220,7 +510,7 @@ int Importer::Import(wxString fName,
       }
       importPluginNode = importPluginNode->GetNext();
    }
-
+   wxLogError(wxT("Importer::Import: Opening failed."));
    // None of our plugins can handle this file.  It might be that
    // Audacity supports this format, but support was not compiled in.
    // If so, notify the user of this fact

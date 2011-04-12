@@ -78,25 +78,16 @@ void GUIPrefs::Populate()
    // ----------------------- End of main section --------------
 }
 
-// Code duplication warning: this default is repeated in Project.cpp
-// in the destructor.  -DMM
-#ifdef __WXMAC__
-   const bool bQuitOnCloseDefault = false;
-#else
-   const bool bQuitOnCloseDefault = true;
-#endif
-// End code duplication warning
-
 void GUIPrefs::PopulateOrExchange(ShuttleGui & S)
 {
    S.SetBorder(2);
 
    S.StartStatic(_("Display"));
    {
-      S.TieCheckBox(_("&Ergonomic order of audio I/O buttons"),
+      S.TieCheckBox(_("&Ergonomic order of Transport Toolbar buttons"),
                     wxT("/GUI/ErgonomicTransportButtons"),
                     true);
-      S.TieCheckBox(_("S&how 'How to get Help' message at program start up"),
+      S.TieCheckBox(_("S&how 'How to Get Help' dialog box at program start up"),
                     wxT("/GUI/ShowSplashScreen"),
                     true);
 
@@ -131,9 +122,6 @@ void GUIPrefs::PopulateOrExchange(ShuttleGui & S)
 
    S.StartStatic(_("Behaviors"));
    {
-      S.TieCheckBox(_("Closing last window &quits Audacity"),
-                    wxT("/GUI/QuitOnClose"),
-                    bQuitOnCloseDefault);
       S.TieCheckBox(_("&Beep on completion of longer activities"),
                     wxT("/GUI/BeepOnCompletion"),
                     false);

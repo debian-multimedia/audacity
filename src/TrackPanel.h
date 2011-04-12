@@ -11,11 +11,11 @@
 #ifndef __AUDACITY_TRACK_PANEL__
 #define __AUDACITY_TRACK_PANEL__
 
+#include <wx/dcmemory.h>
 #include <wx/dynarray.h>
+#include <wx/panel.h>
 #include <wx/timer.h>
 #include <wx/window.h>
-#include <wx/panel.h>
-#include <wx/dcmemory.h>
 
 //Stm:  The following included because of the sampleCount struct.
 #include "Sequence.h"  
@@ -34,9 +34,7 @@ class AdornedRulerPanel;
 class LWSlider;
 class ControlToolBar; //Needed because state of controls can affect what gets drawn.
 class ToolsToolBar; //Needed because state of controls can affect what gets drawn.
-#ifdef EXPERIMENTAL_MIXER_BOARD
-   class MixerBoard;
-#endif
+class MixerBoard;
 class AudacityProject;
 
 class TrackPanelAx;
@@ -80,6 +78,18 @@ class AUDACITY_DLL_API TrackPanelListener {
    virtual void TP_HandleResize() = 0;
 };
 
+// 
+// TrackInfo sliders: we keep a pool of sliders, and attach them to tracks as
+// they come on screen (this helps deal with very large numbers of tracks, esp.
+// on MSW).
+//
+// With the initial set of sliders smaller than the page size, a new slider is
+// created at track-creation time for tracks between 16 and when 80 goes past
+// the top of the screen. After that, existing sliders are re-used for new
+// tracks.
+//
+const unsigned int kInitialSliders = 16;
+const unsigned int kSliderPageFlip = 80;
 
 class TrackInfo
 {
@@ -87,7 +97,9 @@ public:
    TrackInfo(wxWindow * pParentIn);
    ~TrackInfo();
 
-   int GetTitleWidth() const;
+   int GetTrackInfoWidth() const;
+
+   void UpdateSliderOffset(Track *t);
 
 private:
    void MakeMoreSliders();
@@ -100,8 +112,13 @@ private:
    void DrawTitleBar(wxDC * dc, const wxRect r, Track * t, bool down);
    void DrawMuteSolo(wxDC * dc, const wxRect r, Track * t, bool down, bool solo, bool bHasSoloButton);
    void DrawVRuler(wxDC * dc, const wxRect r, Track * t);
+#ifdef EXPERIMENTAL_MIDI_OUT
+   void DrawVelocitySlider(wxDC * dc, NoteTrack *t, wxRect r);
+#endif
    void DrawSliders(wxDC * dc, WaveTrack *t, wxRect r);
-   void DrawMinimize(wxDC * dc, const wxRect r, Track * t, bool down, bool minimized);
+
+   // Draw the minimize button *and* the sync-lock track icon, if necessary.
+   void DrawMinimize(wxDC * dc, const wxRect r, Track * t, bool down);
 
    void GetTrackControlsRect(const wxRect r, wxRect &dest) const;
    void GetCloseBoxRect(const wxRect r, wxRect &dest) const;
@@ -109,11 +126,22 @@ private:
    void GetMuteSoloRect(const wxRect r, wxRect &dest, bool solo, bool bHasSoloButton) const;
    void GetGainRect(const wxRect r, wxRect &dest) const;
    void GetPanRect(const wxRect r, wxRect &dest) const;
-   void GetMinimizeRect(const wxRect r, wxRect &dest, bool minimized) const;
+   void GetMinimizeRect(const wxRect r, wxRect &dest) const;
+   void GetSyncLockIconRect(const wxRect r, wxRect &dest) const;
 
-public:
+   // These arrays are always kept the same size.
    LWSliderArray mGains;
    LWSliderArray mPans;
+
+   // index of track whose pan/gain sliders are at index 0 in the above arrays
+   unsigned int mSliderOffset;
+
+public:
+
+   // Slider access by track index
+   LWSlider * GainSlider(int trackIndex);
+   LWSlider * PanSlider(int trackIndex);
+
    wxWindow * pParent;
    wxFont mFont;
 
@@ -223,9 +251,7 @@ class TrackPanel:public wxPanel {
    void UpdateVRulerSize();
 
  private:
-   #ifdef EXPERIMENTAL_MIXER_BOARD
-      MixerBoard* GetMixerBoard();
-   #endif
+   MixerBoard* GetMixerBoard();
    bool IsUnsafe();
    bool HandleLabelTrackMouseEvent(LabelTrack * lTrack, wxRect &r, wxMouseEvent & event);
    bool HandleTrackLocationMouseEvent(WaveTrack * track, wxRect &r, wxMouseEvent &event);
@@ -242,6 +268,33 @@ class TrackPanel:public wxPanel {
    bool HitTestEnvelope(Track *track, wxRect &r, wxMouseEvent & event);
    bool HitTestSamples(Track *track, wxRect &r, wxMouseEvent & event);
    bool HitTestSlide(Track *track, wxRect &r, wxMouseEvent & event);
+#ifdef USE_MIDI
+   // data for NoteTrack interactive stretch operations:
+   // Stretching applies to a selected region after quantizing the
+   // region to beat boundaries (subbeat stretching is not supported,
+   // but maybe it should be enabled with shift or ctrl or something)
+   // Stretching can drag the left boundary (the right stays fixed),
+   // the right boundary (the left stays fixed), or the center (splits
+   // the selection into two parts: when left part grows, the right
+   // part shrinks, keeping the leftmost and rightmost boundaries 
+   // fixed.
+   enum StretchEnum {
+      stretchLeft,
+      stretchCenter,
+      stretchRight
+   };
+   StretchEnum mStretchMode; // remembers what to drag
+   bool mStretching; // true between mouse down and mouse up
+   bool mStretched; // true after drag has pushed state
+   double mStretchStart; // time of initial mouse position, quantized
+                         // to the nearest beat
+   double mStretchSel0;  // initial sel0 (left) quantized to nearest beat
+   double mStretchSel1;  // initial sel1 (left) quantized to nearest beat
+   double mStretchLeftBeats; // how many beats from left to cursor
+   double mStretchRightBeats; // how many beats from cursor to right
+   bool HitTestStretch(Track *track, wxRect &r, wxMouseEvent & event);
+   void Stretch(int mouseXCoordinate, int trackLeftEdge, Track *pTrack);
+#endif
 
    // AS: Selection handling
    void HandleSelect(wxMouseEvent & event);
@@ -318,14 +371,27 @@ class TrackPanel:public wxPanel {
    void HandleMutingSoloing(wxMouseEvent & event, bool solo);
    void HandleMinimizing(wxMouseEvent & event);
    void HandleSliders(wxMouseEvent &event, bool pan);
-   bool MuteSoloFunc(Track *t, wxRect r, int x, int f, bool solo);
-   bool MinimizeFunc(Track *t, wxRect r, int x, int f);
+
+
+   // These *Func methods are used in TrackPanel::HandleLabelClick to set up 
+   // for actual handling in methods called by TrackPanel::OnMouseEvent, and 
+   // to draw button-down states, etc.
    bool CloseFunc(Track * t, wxRect r, int x, int y);
    bool PopupFunc(Track * t, wxRect r, int x, int y);
+
+   // TrackSelFunc, unlike the other *Func methods, returns true if the click is not 
+   // set up to be handled, but click is on the sync-lock icon or the blank area to 
+   // the left of the minimize button, and we want to pass it forward to be a track select. 
+   bool TrackSelFunc(Track * t, wxRect r, int x, int y);
+
+   bool MuteSoloFunc(Track *t, wxRect r, int x, int f, bool solo);
+   bool MinimizeFunc(Track *t, wxRect r, int x, int f);
    bool GainFunc(Track * t, wxRect r, wxMouseEvent &event,
                  int x, int y);
    bool PanFunc(Track * t, wxRect r, wxMouseEvent &event,
                 int x, int y);
+
+
    void MakeParentRedrawScrollbars();
    
    // AS: Pushing the state preserves state for Undo operations.
@@ -371,13 +437,10 @@ class TrackPanel:public wxPanel {
 
    wxRect FindTrackRect(Track * target, bool label);
 
-//   int GetTitleWidth() const { return 100; }
-   int GetTitleOffset() const { return 0; }
-
    int GetVRulerWidth() const;
+   int GetVRulerOffset() const { return mTrackInfo.GetTrackInfoWidth(); };
 
-   int GetVRulerOffset() const { return GetTitleOffset() + mTrackInfo.GetTitleWidth();}
-   int GetLabelWidth() const { return mTrackInfo.GetTitleWidth() + GetVRulerWidth();}
+   int GetLabelWidth() const { return mTrackInfo.GetTrackInfoWidth() + GetVRulerWidth(); };
 
 private:
    void DrawTracks(wxDC * dc);
@@ -470,6 +533,10 @@ private:
    // us to undo the slide and then slide it by another amount
    double mHSlideAmount;
 
+#ifdef USE_MIDI
+   NoteTrack *mCapturedNoteClip;
+#endif
+
    bool mDidSlideVertically;
 
    bool mRedrawAfterStop;
@@ -533,6 +600,9 @@ private:
       IsOverCutLine,
       WasOverCutLine,
       IsPopping,
+#ifdef USE_MIDI
+      IsStretching,
+#endif
       IsZooming
    };
 
@@ -564,6 +634,11 @@ private:
    wxCursor *mDisabledCursor;
    wxCursor *mAdjustLeftSelectionCursor;
    wxCursor *mAdjustRightSelectionCursor;
+#if USE_MIDI
+   wxCursor *mStretchCursor;
+   wxCursor *mStretchLeftCursor;
+   wxCursor *mStretchRightCursor;
+#endif
 
    wxMenu *mWaveTrackMenu;
    wxMenu *mNoteTrackMenu;

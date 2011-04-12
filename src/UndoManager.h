@@ -61,6 +61,7 @@ struct UndoStackElem {
    wxString shortDescription;
    double sel0;
    double sel1;
+   wxLongLong spaceUsage;
 };
 
 WX_DEFINE_USER_EXPORTED_ARRAY(UndoStackElem *, UndoStack, class AUDACITY_DLL_API);
@@ -94,7 +95,7 @@ class AUDACITY_DLL_API UndoManager {
    bool UnsavedChanges();
    void StateSaved();
 
-   void Debug();
+   // void Debug(); // currently unused
 
    ///to mark as unsaved changes without changing the state/tracks.
    void SetODChangesFlag();
@@ -102,7 +103,7 @@ class AUDACITY_DLL_API UndoManager {
    void ResetODChangesFlag();
 
  private:
-   wxLongLong GetSpaceUsage(int index);
+   wxLongLong CalculateSpaceUsage(int index);
 
    int current;
    int saved;

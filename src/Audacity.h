@@ -1,11 +1,14 @@
 /**********************************************************************
 
-  Audacity: A Digital Audio Editor
+   Audacity: A Digital Audio Editor
+   Audacity(R) is copyright (c) 1999-2011 Audacity Team.
+   License: GPL v2.  See License.txt.
 
-  Audacity.h
+   Audacity.h
 
-  Dominic Mazzoni
-  Joshua Haberman
+   Dominic Mazzoni
+   Joshua Haberman
+   et al
 
 ********************************************************************//*!
 
@@ -17,6 +20,9 @@
 
 *//********************************************************************/
 
+#ifndef __AUDACITY_H__
+#define __AUDACITY_H__
+
 // Set to 0 for a release version and 1 for a beta version
 #define IS_BETA 1
 
@@ -24,12 +30,12 @@
 // alphas of a stable release, typically the nightly builds. 
 // Most of the time we're in development, so IS_ALPHA should be defined
 // to 1.
-#define IS_ALPHA 0
+#define IS_ALPHA 0   // Turn it off for beta release.
 
 // Increment as appropriate every time you release a new version
 #define AUDACITY_VERSION   1
 #define AUDACITY_RELEASE   3
-#define AUDACITY_REVISION  12
+#define AUDACITY_REVISION  13
 #define AUDACITY_MODLEVEL  0
 
 #if IS_ALPHA
@@ -69,20 +75,31 @@ class wxWindow;
 void QuitAudacity(bool bForce);
 void QuitAudacity();
 
+// Define one constant for maximum path value, so we don't have to do 
+// platform-specific conditionals everywhere we want to check it. 
+#define PLATFORM_MAX_PATH 260 // Play it safe for default, with same value as Windows' MAX_PATH.
+
 #ifdef __WXMAC__
 #include "configmac.h"
+#undef PLATFORM_MAX_PATH
+#define PLATFORM_MAX_PATH PATH_MAX
 #endif
 
 #ifdef __WXGTK__
 #include "configunix.h"
+#undef PLATFORM_MAX_PATH
+#define PLATFORM_MAX_PATH PATH_MAX
 #endif
 
 #ifdef __WXX11__
 #include "configunix.h"
+// wxX11 should also get the platform-specific definition of PLATFORM_MAX_PATH, so do not declare here.
 #endif
 
 #ifdef __WXMSW__
 #include "configwin.h"
+#undef PLATFORM_MAX_PATH
+#define PLATFORM_MAX_PATH MAX_PATH
 #endif
 
 /* Magic for dynamic library import and export. This is unfortunately
@@ -152,14 +169,7 @@ void QuitAudacity();
 #endif
 #endif
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 21aef079-ec47-4ff9-a359-7d159e2ba0e6
+// This macro is used widely, so declared here.
+#define QUANTIZED_TIME(time, rate) ((double)((sampleCount)floor(((double)(time) * (rate)) + 0.5))) / (rate)
 
+#endif // __AUDACITY_H__

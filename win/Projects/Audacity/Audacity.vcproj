@@ -508,6 +508,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\DeviceManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\DeviceManager.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\DirManager.cpp"
 				>
 			</File>
@@ -1300,6 +1308,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\effects\ScoreAlignDialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\effects\Silence.cpp"
 				>
 			</File>
@@ -1329,14 +1341,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\effects\SoundTouchEffect.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\effects\SpikeCleaner.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\effects\SpikeCleaner.h"
 				>
 			</File>
 			<File
@@ -1613,6 +1617,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\prefs\EffectsPrefs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\prefs\ExtImportPrefs.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\prefs\ExtImportPrefs.h"
 				>
 			</File>
 			<File
@@ -2464,6 +2476,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\plug-ins\notch.ny"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\plug-ins\pluck.ny"
 				>
 			</File>
@@ -2542,6 +2558,42 @@
 			<File
 				RelativePath="..\..\..\nyquist\nyquist-plot.txt"
 				>
+				<FileConfiguration
+					Name="Unicode Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Unicode Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\..\nyquist\nyquist.lsp"

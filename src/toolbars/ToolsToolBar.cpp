@@ -17,8 +17,7 @@
 
   This class, which is a child of Toolbar, creates the
   window containing the tool selection (ibeam, envelope,
-  move, zoom), the rewind/play/stop/record/ff buttons, and
-  the volume control. The window can be embedded within a
+  move, zoom). The window can be embedded within a
   normal project window, or within a ToolbarFrame that is
   managed by a global ToolBarStub called
   gToolsToolBarStub.
@@ -166,7 +165,7 @@ AButton * ToolsToolBar::MakeTool( teBmps eTool,
 {
    AButton *button = ToolBar::MakeButton(
       bmpRecoloredUpSmall, bmpRecoloredDownSmall, bmpRecoloredHiliteSmall,
-      eTool, eTool,
+      eTool, eTool, eTool,
       wxWindowID(id),
       wxDefaultPosition, true,
       theTheme.ImageSize( bmpRecoloredUpSmall ));

@@ -62,7 +62,13 @@ bool EffectDtmf::Init()
 
    if (mT1 > mT0) {
       // there is a selection: let's fit in there...
-      mDuration = mT1 - mT0;
+      // MJS: note that this is just for the TTC and is independent of the track rate
+      // but we do need to make sure we have the right number of samples at the project rate
+      AudacityProject *p = GetActiveProject();
+      double projRate = p->GetRate();
+      double quantMT0 = QUANTIZED_TIME(mT0, projRate);
+      double quantMT1 = QUANTIZED_TIME(mT1, projRate);
+      mDuration = quantMT1 - quantMT0;
       mIsSelection = true;
    } else {
       // retrieve last used values
@@ -254,18 +260,26 @@ bool EffectDtmf::GenerateTrack(WaveTrack *tmp,
    bool bGoodResult = true;
 
    // all dtmf sequence durations in samples from seconds
-   numSamplesSequence = (sampleCount)(mDuration * track.GetRate() + 0.5);
-   numSamplesTone = (sampleCount)(dtmfTone * track.GetRate() + 0.5);
-   numSamplesSilence = (sampleCount)(dtmfSilence * track.GetRate() + 0.5);
+   // MJS: Note that mDuration is in seconds but will have been quantised to the units of the TTC.
+   // If this was 'samples' and the project rate was lower than the track rate,
+   // extra samples may get created as mDuration may now be > mT1 - mT0;
+   // However we are making our best efforts at creating what was asked for.
+   sampleCount nT0 = tmp->TimeToLongSamples(mT0);
+   sampleCount nT1 = tmp->TimeToLongSamples(mT0 + mDuration);
+   numSamplesSequence = nT1 - nT0;  // needs to be exact number of samples selected
+
+   //make under-estimates if anything, and then redistribute the few remaining samples
+   numSamplesTone = (sampleCount)floor(dtmfTone * track.GetRate());
+   numSamplesSilence = (sampleCount)floor(dtmfSilence * track.GetRate());
 
    // recalculate the sum, and spread the difference - due to approximations.
    // Since diff should be in the order of "some" samples, a division (resulting in zero)
    // is not sufficient, so we add the additional remaining samples in each tone/silence block,
    // at least until available.
    int diff = numSamplesSequence - (dtmfNTones*numSamplesTone) - (dtmfNTones-1)*numSamplesSilence;
-   if (diff>dtmfNTones) {
-      // in this case, both these values would change, so it makes sense to recalculate diff
-      // otherwise just keep the value we already have
+   while (diff > 2*dtmfNTones - 1) {   // more than one per thingToBeGenerated
+      // in this case, both numSamplesTone and numSamplesSilence would change, so it makes sense
+      //  to recalculate diff here, otherwise just keep the value we already have
 
       // should always be the case that dtmfNTones>1, as if 0, we don't even start processing,
       // and with 1 there is no difference to spread (no silence slot)...
@@ -274,6 +288,8 @@ bool EffectDtmf::GenerateTrack(WaveTrack *tmp,
       numSamplesSilence += (diff/(dtmfNTones-1));
       diff = numSamplesSequence - (dtmfNTones*numSamplesTone) - (dtmfNTones-1)*numSamplesSilence;
    }
+   wxASSERT(diff >= 0);  // should never be negative
+
    // this var will be used as extra samples distributor
    int extra=0;
 
@@ -303,8 +319,7 @@ bool EffectDtmf::GenerateTrack(WaveTrack *tmp,
    //
    while ((i < numSamplesSequence) && bGoodResult) {
       if (isTone)
-         // generate tone
-      {
+      {  // generate tone
          // the statement takes care of extracting one sample from the diff bin and
          // adding it into the tone block until depletion
          extra=(diff-- > 0?1:0);
@@ -325,8 +340,7 @@ bool EffectDtmf::GenerateTrack(WaveTrack *tmp,
          if(n>=dtmfNTones)break;
       }
       else
-         // generate silence
-      {
+      {  // generate silence
          // the statement takes care of extracting one sample from the diff bin and
          // adding it into the silence block until depletion
          extra=(diff-- > 0?1:0);
@@ -348,7 +362,7 @@ bool EffectDtmf::GenerateTrack(WaveTrack *tmp,
       isTone=!isTone;
 
    } // finished the whole dtmf sequence
-
+   wxLogDebug(wxT("Extra %d diff: %d"), extra, diff);
    delete[] data;
    return bGoodResult;
 }
@@ -425,14 +439,17 @@ void DtmfDialog::PopulateOrExchange( ShuttleGui & S )
    wxTextValidator vldDtmf(wxFILTER_INCLUDE_CHAR_LIST);
    vldDtmf.SetIncludes(wxArrayString(42, dtmfSymbols));
 
-   S.AddTitle(_("by Salvo Ventura (2006)"));
+   S.AddTitle(_("by Salvo Ventura"));
 
    S.StartMultiColumn(2, wxEXPAND);
    {
       mDtmfStringT = S.Id(ID_DTMF_STRING_TEXT).AddTextBox(_("DTMF sequence:"), wxT(""), 10);
       mDtmfStringT->SetValidator(vldDtmf);
 
-      S.TieTextBox(_("Amplitude (0-1)"),  dAmplitude, 10);
+      // The added colon to improve visual consistency was placed outside 
+      // the translatable strings to avoid breaking translations close to 2.0. 
+      // TODO: Make colon part of the translatable string after 2.0.
+      S.TieTextBox(_("Amplitude (0-1)") + wxString(wxT(":")),  dAmplitude, 10);
 
       S.AddPrompt(_("Duration:"));
       if (mDtmfDurationT == NULL)

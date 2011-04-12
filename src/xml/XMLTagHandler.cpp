@@ -41,7 +41,7 @@ bool XMLValueChecker::IsGoodString(const wxString str)
 {
    size_t len = str.Length();
    int nullIndex = str.Find('\0', false);
-   if ((len < 2048) && // Shouldn't be any reason for longer strings, except intentional file corruption.
+   if ((len <= PLATFORM_MAX_PATH) && // Shouldn't be any reason for longer strings, except intentional file corruption.
          (nullIndex == -1)) // No null characters except terminator.
       return true;
    else
@@ -52,17 +52,25 @@ bool XMLValueChecker::IsGoodString(const wxString str)
 bool XMLValueChecker::IsGoodFileName(const wxString strFileName, const wxString strDirName /* = "" */)
 {
    // Test strFileName.
-   if (!IsGoodFileString(strFileName)) 
+   if (!IsGoodFileString(strFileName) || 
+         (strDirName.Length() + 1 + strFileName.Length() > PLATFORM_MAX_PATH))
       return false;
-
-   #ifdef _WIN32
-      if (strFileName.Length() + 1 + strDirName.Length() > MAX_PATH)
-         return false;
-   #endif
 
    // Test the corresponding wxFileName.
    wxFileName fileName(strDirName, strFileName);
    return (fileName.IsOk() && fileName.FileExists());
+}
+
+bool XMLValueChecker::IsGoodFileString(wxString str)
+{
+   return (IsGoodString(str) && 
+            !str.IsEmpty() && 
+
+            // FILENAME_MAX is 260 in MSVC, but inconsistent across platforms, 
+            // sometimes huge, but we use 260 for all platforms.
+            (str.Length() <= 260) && 
+
+            (str.Find(wxFileName::GetPathSeparator()) == -1)); // No path separator characters. 
 }
 
 bool XMLValueChecker::IsGoodSubdirName(const wxString strSubdirName, const wxString strDirName /* = "" */)
@@ -71,13 +79,10 @@ bool XMLValueChecker::IsGoodSubdirName(const wxString strSubdirName, const wxStr
    // Note this prevents path separators, and relative path to parents (strDirName), 
    // so fixes vulnerability #3 in the NGS report for UmixIt, 
    // where an attacker could craft an AUP file with relative pathnames to get to system files, for example.
-   if (!IsGoodFileString(strSubdirName) || (strSubdirName == wxT(".")) || (strSubdirName == wxT("..")))
+   if (!IsGoodFileString(strSubdirName) || 
+         (strSubdirName == wxT(".")) || (strSubdirName == wxT("..")) || 
+         (strDirName.Length() + 1 + strSubdirName.Length() > PLATFORM_MAX_PATH))
       return false;
-
-   #ifdef _WIN32
-      if (strSubdirName.Length() + 1 + strDirName.Length() > MAX_PATH)
-         return false;
-   #endif
 
    // Test the corresponding wxFileName.
    wxFileName fileName(strDirName, strSubdirName);
@@ -91,13 +96,13 @@ bool XMLValueChecker::IsGoodPathName(const wxString strPathName)
    return XMLValueChecker::IsGoodFileName(fileName.GetFullName(), fileName.GetPath(wxPATH_GET_VOLUME));
 }
 
-bool XMLValueChecker::IsGoodFileString(wxString str)
+bool XMLValueChecker::IsGoodPathString(wxString str)
 {
    return (IsGoodString(str) && 
             !str.IsEmpty() && 
-            (str.Length() <= 260) && // FILENAME_MAX is 260 in MSVC, but inconsistent across platforms, sometimes huge.
-            (str.Find(wxFileName::GetPathSeparator()) == -1)); // No path separator characters. //vvv (this won't work on CVS HEAD)
+            (str.Length() <= PLATFORM_MAX_PATH));
 }
+
 
 bool XMLValueChecker::IsGoodInt(const wxString strInt)
 {
@@ -145,6 +150,13 @@ bool XMLValueChecker::IsValidChannel(const int nValue)
    return (nValue >= Track::LeftChannel) && (nValue <= Track::MonoChannel);
 }
 
+#ifdef USE_MIDI
+bool XMLValueChecker::IsValidVisibleChannels(const int nValue)
+{
+    return (nValue >= 0 && nValue < (1 << 16));
+}
+#endif
+
 bool XMLValueChecker::IsValidSampleFormat(const int nValue)
 {
    return (nValue == int16Sample) || (nValue == int24Sample) || (nValue == floatSample);
@@ -189,15 +201,3 @@ XMLTagHandler *XMLTagHandler::ReadXMLChild(const char *tag)
 {
    return HandleXMLChild(UTF8CTOWX(tag).c_str());
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 6aabae58-19bd-4b3a-aa6c-08432a7e106e
-

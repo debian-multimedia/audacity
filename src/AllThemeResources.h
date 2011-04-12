@@ -19,6 +19,9 @@ and grids used by Audacity.
 This will be split up into separate include files to reduce the amount
 of recompilation on a change.
 
+Meantime, do NOT delete any of these declarations, even if they're 
+unused, as they're all offset by prior declarations.
+
 To add an image, you give its size and name like so:
 
 \code
@@ -137,8 +140,11 @@ from there.  Audacity will look for a file called "Pause.png".
    DEFINE_IMAGE( bmpUndoDisabled, wxImage( 26, 24 ), wxT("UndoDisabled"));
    DEFINE_IMAGE( bmpRedo, wxImage( 26, 24 ), wxT("Redo"));
    DEFINE_IMAGE( bmpRedoDisabled, wxImage( 26, 24 ), wxT("RedoDisabled"));
-   DEFINE_IMAGE( bmpLinkTracks, wxImage( 20, 20 ), wxT("LinkTracks"));
-   DEFINE_IMAGE( bmpLinkTracksDisabled, wxImage( 20, 20 ), wxT("LinkTracksDisabled"));
+
+   DEFINE_IMAGE( bmpSyncLockTracksDown, wxImage( 20, 20 ), wxT("SyncLockTracksDown"));
+   DEFINE_IMAGE( bmpSyncLockTracksUp, wxImage( 20, 20 ), wxT("SyncLockTracksUp"));
+   DEFINE_IMAGE( bmpSyncLockTracksDisabled, wxImage( 20, 20 ), wxT("SyncLockTracksDisabled"));
+
 
    SET_THEME_FLAGS(  resFlagPaired | resFlagNewLine  );
    DEFINE_IMAGE( bmpTnStartOn, wxImage( 27, 27 ), wxT("TnStartOn"));
@@ -204,24 +210,12 @@ from there.  Audacity will look for a file called "Pause.png".
 
 #define LOGOWITHNAME_WIDTH 506
 #define LOGOWITHNAME_HEIGHT 200
-//vvv For now, do the new image the old-fashioned way, not via Theme.
-   // DEFINE_IMAGE(bmpAudacityLogoWithName, wxImage(LOGOWITHNAME_WIDTH, LOGOWITHNAME_HEIGHT), wxT("AudacityLogoWithName"));
 
-// AWD: no sense in statically building the XPM into every file that includes
-// this one; the few that need it should include it themselves.
-//#ifndef HAVE_AUDACITYLOGOWITHNAME
-//   #define HAVE_AUDACITYLOGOWITHNAME
-//   #include "../images/AudacityLogoWithName.xpm"
-//#ifdef __WXGTK__
-//   #include "../images/AudacityLogoAlpha.xpm"
-//#endif
-//#endif
-
-   DEFINE_IMAGE( bmpAudacityLogo, wxImage( 215, 190 ), wxT("AudacityLogo")); //vvv
+   DEFINE_IMAGE( bmpAudacityLogo, wxImage( 215, 190 ), wxT("AudacityLogo")); 
    DEFINE_IMAGE( bmpAudacityLogo48x48, wxImage( 48, 48 ), wxT("AudacityLogo48x48"));
 
-   DEFINE_IMAGE( bmpLinkSelect, wxImage(27, 27), wxT("LinkSelect"));
-   DEFINE_IMAGE( bmpLinkTP, wxImage(12, 12), wxT("LinkTP"));
+   DEFINE_IMAGE( bmpSyncLockSelTile, wxImage(20, 22), wxT("SyncLockSelTile"));
+   DEFINE_IMAGE( bmpSyncLockIcon, wxImage(12, 12), wxT("SyncLockIcon"));
 
 #ifdef OLD_COLOURS
    DEFINE_COLOUR( clrBlank,      wxColour(214, 214, 214), wxT("Blank"));
@@ -336,17 +330,13 @@ from there.  Audacity will look for a file called "Pause.png".
 
    DEFINE_COLOUR( clrProgressDone,     wxColour(60, 240, 60, 128),   wxT("ProgressDone"));
    DEFINE_COLOUR( clrProgressNotYet,   wxColour(255, 255, 255,220), wxT("ProgressNotYet"));
-   DEFINE_COLOUR( clrSyncSel,          wxColour(192, 192, 192),      wxT("SyncSel"));
-   DEFINE_COLOUR( clrTrackInfoSyncSel, wxColour( 64,  64,  64),      wxT("TrackInfoSyncSel"));
-   DEFINE_COLOUR( clrSelTranslucent,   wxColour(104, 104, 148, 127), wxT("SelTranslucent"));
+   DEFINE_COLOUR( clrSyncLockSel,          wxColour(192, 192, 192),      wxT("SyncLockSel"));
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: b8a9d878-fa18-4cba-a5ce-3c61b5d77f0e
+   // Vaughan, 2010-09-20: clrTrackInfoSyncLockSel is unused so this is cruft, but 
+   //    do NOT delete it as it's in the theme image, so offsets subsequent colors.
+   DEFINE_COLOUR( clrTrackInfoSyncLockSel, wxColour( 64,  64,  64),      wxT("TrackInfoSyncLockSel"));
+   
+   DEFINE_COLOUR( clrSelTranslucent,   wxColour(104, 104, 148, 127), wxT("SelTranslucent"));
+   // This is for waveform drawing, selected outside of clips
+   DEFINE_COLOUR( clrBlankSelected, wxColour(170, 170, 192), wxT("BlankSelected"));
+

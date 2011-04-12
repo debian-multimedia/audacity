@@ -69,6 +69,7 @@ array of Ruler::Label.
 #include "../Theme.h"
 #include "../AllThemeResources.h"
 #include "../Experimental.h"
+#include "../TimeTrack.h"
 
 #define max(a,b)  ( (a<b)?b:a )
 
@@ -688,7 +689,7 @@ void Ruler::Tick(int pos, double d, bool major, bool minor)
    wxCoord strW, strH, strD, strL;
    int strPos, strLen, strLeft, strTop;
 
-   // FIXME: We don't draw a tick if of end of our label arrays
+   // FIX-ME: We don't draw a tick if of end of our label arrays
    // But we shouldn't have an array of labels.
    if( mNumMinorMinor >= mLength )
       return;
@@ -748,7 +749,7 @@ void Ruler::Tick(int pos, double d, bool major, bool minor)
    }
 
 
-   // FIXME: we shouldn't even get here if strPos < 0.
+   // FIX-ME: we shouldn't even get here if strPos < 0.
    // Ruler code currently does  not handle very small or
    // negative sized windows (i.e. don't draw) properly.
    if( strPos < 0 )
@@ -800,7 +801,7 @@ void Ruler::TickCustom(int labelIdx, bool major, bool minor)
    wxCoord strW, strH, strD, strL;
    int strPos, strLen, strLeft, strTop;
 
-   // FIXME: We don't draw a tick if of end of our label arrays
+   // FIX-ME: We don't draw a tick if of end of our label arrays
    // But we shouldn't have an array of labels.
    if( mNumMinor >= mLength )
       return;
@@ -862,7 +863,7 @@ void Ruler::TickCustom(int labelIdx, bool major, bool minor)
    }
 
 
-   // FIXME: we shouldn't even get here if strPos < 0.
+   // FIX-ME: we shouldn't even get here if strPos < 0.
    // Ruler code currently does  not handle very small or
    // negative sized windows (i.e. don't draw) properly.
    if( strPos < 0 )
@@ -905,10 +906,10 @@ void Ruler::TickCustom(int labelIdx, bool major, bool minor)
 
 void Ruler::Update()
 {
-  Update(NULL, 0, 0);
+  Update(NULL);
 }
 
-void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
+void Ruler::Update(TimeTrack* timetrack)// Envelope *speedEnv, long minSpeed, long maxSpeed )
 {
    // This gets called when something has been changed
    // (i.e. we've been invalidated).  Recompute all
@@ -977,7 +978,7 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
       mRect = wxRect(0,0, 0,mLength);
    }
 
-   // FIXME: Surely we do not need to allocate storage for the labels?
+   // FIX-ME: Surely we do not need to allocate storage for the labels?
    // We can just recompute them as we need them?  Yes, but only if 
    // mCustom is false!!!! 
 
@@ -1050,19 +1051,14 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
       i = -1;
       while(i <= mLength) {
          double warpfactor;
-         if( d>0 && speedEnv != NULL ) {
-            warpfactor = speedEnv->Average( lastD, d );
-            // Now we re-scale so that 0.5 is normal speed and
-            // 0 and 1.0 are min% and max% of normal speed
-            warpfactor = (maxSpeed * (1 - warpfactor) +
-                          warpfactor * minSpeed) / 100.0;
-         }
+         if( d>0 && timetrack != NULL )
+            warpfactor = timetrack->ComputeWarpFactor( lastD, d );
          else
             warpfactor = 1.0;
          
          i++;
          lastD = d;
-         d += UPP*warpfactor;
+         d += UPP/warpfactor;
          
          if ((int)floor(sg * d / mMajor) > majorInt) {
             majorInt = (int)floor(sg * d / mMajor);
@@ -1077,19 +1073,14 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
       i = -1;
       while(i <= mLength) {
          double warpfactor;
-         if( d>0 && speedEnv != NULL ) {
-            warpfactor = speedEnv->Average( lastD, d );
-            // Now we re-scale so that 0.5 is normal speed and
-            // 0 and 1.0 are min% and max% of normal speed
-            warpfactor = (maxSpeed * (1 - warpfactor) +
-                          warpfactor * minSpeed) / 100.0;
-         }
+         if( d>0 && timetrack != NULL )
+            warpfactor = timetrack->ComputeWarpFactor( lastD, d );
          else
             warpfactor = 1.0;
          
          i++;
          lastD = d;
-         d += UPP*warpfactor;
+         d += UPP/warpfactor;
          
          if ((int)floor(sg * d / mMinor) > minorInt) {
             minorInt = (int)floor(sg * d / mMinor);
@@ -1217,17 +1208,17 @@ void Ruler::Update( Envelope *speedEnv, long minSpeed, long maxSpeed )
 
 void Ruler::Draw(wxDC& dc)
 {
-   Draw( dc, NULL, 0, 0);
+   Draw( dc, NULL);
 }
 
-void Ruler::Draw(wxDC& dc, Envelope *speedEnv, long minSpeed, long maxSpeed)
+void Ruler::Draw(wxDC& dc, TimeTrack* timetrack)
 {
    mDC = &dc;
    if( mLength <=0 )
       return;
 
    if (!mValid)
-      Update( speedEnv, minSpeed, maxSpeed );
+      Update(timetrack);
 
 #ifdef EXPERIMENTAL_THEMING
    mDC->SetPen(mPen);
@@ -1462,7 +1453,7 @@ void Ruler::GetMaxSize(wxCoord *width, wxCoord *height)
       wxBitmap tmpBM(1, 1);
       tmpDC.SelectObject(tmpBM);
       mDC = &tmpDC;
-      Update( NULL, 0, 0 );
+      Update( NULL);
    }
 
    if (width)

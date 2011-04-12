@@ -14,10 +14,14 @@
 
 
 // These are all member functions of class AudacityProject.
+// Vaughan, 2010-08-05: 
+//    Note that this file is included in a "public" section of Project.h.
+//    Most of these methods do not need to be public, and because 
+//    we do not subclass AudacityProject, they should be "private."
+//    Because the ones that need to be public are intermixed, 
+//    I've added "private" in just a few cases.
 
-void CommandManagerCallback(void *fptr);
-void CommandManagerListCallback(void *fptr, int index);
-
+private:
 void CreateMenusAndCommands();
 
 #ifdef EFFECT_CATEGORIES
@@ -35,7 +39,7 @@ void AddEffectsToMenu(CommandManager* c, const EffectSet& effects);
 #endif
 
 void CreateRecentFilesMenu(CommandManager *c);
-void ModifyUndoMenus();
+void ModifyUndoMenuItems();
 void ModifyToolbarMenus();
 // Calls ModifyToolbarMenus() on all projects
 void ModifyAllProjectToolbarMenus();
@@ -45,15 +49,12 @@ wxUint32 GetUpdateFlags();
 
 double NearestZeroCrossing(double t0);
 
-
+public:
 //Adds label and returns index of label in labeltrack.
 int DoAddLabel(double left, double right);
 
-// used in routines OnSelectionSave
-// and OnSelectionRestore
-double mSel0save;
-double mSel1save;
- 
+private:
+
         // Selecting a tool from the keyboard
 
 void SetTool(int tool);
@@ -67,6 +68,7 @@ void OnMultiTool();
 void OnNextTool();
 void OnPrevTool();
 
+public:
         // Audio I/O Commands
 
 void OnStop();
@@ -104,11 +106,16 @@ void OnTrackMute();
 void OnTrackSolo();
 void OnTrackClose();
 
+        // Device control
+void OnInputDevice();
+void OnOutputDevice();
+void OnAudioHost();
+void OnInputChannels();
+
         // Mixer control
 
 void OnOutputGain();
 void OnInputGain();
-void OnInputSource();
 void OnOutputGainInc();
 void OnOutputGainDec();
 void OnInputGainInc();
@@ -181,7 +188,9 @@ void OnExportMultiple();
 void OnExportLabels();
 void OnExportMIDI();
 
-void OnUpload();
+#ifdef EXPERIMENTAL_FTP
+   void OnUpload();
+#endif
 
 void OnPreferences();
 
@@ -192,13 +201,20 @@ void OnExit();
 
         // Edit Menu
 
+public:
 void OnUndo();
 void OnRedo();
 
 void OnCut();
 void OnSplitCut();
 void OnCopy();
+
 void OnPaste();
+private:
+bool HandlePasteText(); // Handle text paste (into active label), if any. Return true if pasted.
+bool HandlePasteNothingSelected(); // Return true if nothing selected, regardless of paste result.
+public:
+
 void OnPasteNewLabel();
 void OnPasteOver();
 void OnTrim();
@@ -228,7 +244,7 @@ void OnSelectAll();
 void OnSelectNone();
 void OnSelectCursorEnd();
 void OnSelectStartCursor();
-void OnSelectSyncSel();
+void OnSelectSyncLockSel();
 void OnSelectAllTracks();
 
         // View Menu
@@ -252,17 +268,13 @@ void OnShowClipping();
 
 void OnHistory();
 
-#ifdef EXPERIMENTAL_LYRICS_WINDOW
-   void OnKaraoke();
-#endif
-#ifdef EXPERIMENTAL_MIXER_BOARD
-   void OnMixerBoard();
-#endif
+void OnKaraoke();
+void OnMixerBoard();
 
 void OnPlotSpectrum();
 void OnContrast();
 
-void OnShowControlToolBar();
+void OnShowTransportToolBar();
 void OnShowDeviceToolBar();
 void OnShowEditToolBar();
 void OnShowMeterToolBar();
@@ -282,6 +294,7 @@ void OnToggleSWPlaythrough();
 #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
    void OnToogleAutomatedInputLevelAdjustment();
 #endif
+void OnRescanDevices();
 
         // Tracks Menu
 
@@ -296,6 +309,10 @@ void OnMixAndRender();
 void OnMixAndRenderToNewTrack();
 void HandleMixAndRender(bool toNewTrack);
 
+private:
+double mSel0save;
+double mSel1save;
+public:
 void OnSelectionSave();
 void OnSelectionRestore();
 
@@ -318,7 +335,7 @@ void OnNewLabelTrack();
 void OnNewTimeTrack();
 void OnTimerRecord();
 void OnRemoveTracks();
-void OnStickyLabel();
+void OnSyncLock();
 void OnAddLabel();
 void OnAddLabelPlaying();
 void OnEditLabels();
@@ -350,7 +367,7 @@ wxString BuildCleanFileName(wxString fileName);
 void OnAbout();
 void OnQuickHelp();
 void OnManual();
-void OnLog();
+void OnShowLog();
 void OnHelpWelcome();
 void OnBenchmark();
 void OnScreenshot();
@@ -367,16 +384,10 @@ void NextFrame();
 
 void OnResample();
 
+// Make sure we return to "public" for subsequent declarations in Project.h.
+public:
+
 #endif
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 21c627ef-9d3a-4836-b10a-7b0d67b97cb5
+
 

@@ -54,31 +54,32 @@ WX_DEFINE_LIST(AboutDialogCreditItemsList);
 void AboutDialog::CreateCreditsList()
 {
    // The Audacity 1.3.x and 2.0.x team: developers and support
-   // These will be split into two separate categories
-
-   AddCredit(wxT("Gale Andrews"), roleTeamSupport);
    AddCredit(wxT("Richard Ash"), roleTeamDeveloper);
-   AddCredit(wxT("Christian Brochec"), roleTeamSupport);
    AddCredit(wxT("Michael Chinen"), roleTeamDeveloper);
    AddCredit(wxT("James Crook"), roleTeamDeveloper);
-   AddCredit(wxT("Steve Daulton"), roleTeamSupport);
+   AddCredit(wxT("Roger Dannenberg"), roleTeamDeveloper);
+   AddCredit(wxT("Al Dimond"), roleTeamDeveloper);
    AddCredit(wxT("Ruslan Ijbulatov"), roleTeamDeveloper);
    AddCredit(wxT("Vaughan Johnson"), roleTeamDeveloper);
-   AddCredit(wxT("Greg Kozikowski"), roleTeamSupport);
    AddCredit(wxT("Dominic Mazzoni"), roleTeamDeveloper);
+   AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
+
+   AddCredit(wxT("Gale Andrews"), roleTeamSupport);
+   AddCredit(wxT("Christian Brochec"), roleTeamSupport);
+   AddCredit(wxT("Steve Daulton"), roleTeamSupport);
+   AddCredit(wxT("Greg Kozikowski"), roleTeamSupport);
    AddCredit(wxT("Alexandre Prokoudine"), roleTeamSupport);
    AddCredit(wxT("Peter Sampson"), roleTeamSupport);
-   AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
+   AddCredit(wxT("Bill Wharrie"), roleTeamSupport);
 
    // Emeritus: people who were "lead developers" or made an
    // otherwise distinguished contribution, but who are no
    // longer active.
  
    AddCredit(wxT("Matt Brubeck"), roleEmeritusDeveloper);
-   AddCredit(wxT("Roger Dannenberg"), roleEmeritusDeveloper);
    AddCredit(wxT("Joshua Haberman"), roleEmeritusDeveloper);
-   AddCredit(wxT("Leland Lucius"), roleTeamDeveloper);
-   AddCredit(wxT("Markus Meyer"), roleTeamDeveloper);
+   AddCredit(wxT("Leland Lucius"), roleEmeritusDeveloper);
+   AddCredit(wxT("Markus Meyer"), roleEmeritusDeveloper);
    AddCredit(wxT("Monty Montgomery"), roleEmeritusDeveloper);
    AddCredit(wxT("Shane Mueller"), roleEmeritusDeveloper);
    AddCredit(wxT("Tony Oetzmann"), roleEmeritusSupport);
@@ -179,6 +180,8 @@ AboutDialog::AboutDialog(wxWindow * parent)
    this->Centre();
 }
 
+#define ABOUT_DIALOG_WIDTH 506
+
 void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 {
    wxString versionStr = AUDACITY_VERSION_STRING;
@@ -193,10 +196,10 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 
    #if IS_BETA // Is this beta or not?
    wxString par2Str = _(
-     "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, use the Help menu in the program, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/index.php?title=Audacity_Wiki_Home_Page\">Wiki</a> or visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
+     "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, use the Help menu in the program, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">Wiki</a> or visit our <a href=\"http://forum.audacityteam.org/\">Forum</a>.");
    #else
    wxString par2Str = _(
-     "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/index.php?title=Audacity_Wiki_Home_Page\">Wiki</a> or visit our <a href=\"http://audacityteam.org/forum/\">Forum</a>.");
+     "This is a stable, completed release of the program. However, if you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">Wiki</a> or visit our <a href=\"http://forum.audacityteam.org/\">Forum</a>.");
    #endif
 
    wxString translatorCredits;
@@ -265,7 +268,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
       wxT("<p><br></center>") +
 	  
       _("<b>Audacity&reg;</b> software is copyright")+
-      wxT("&copy; 1999-2010 Audacity Team.<br>") +
+      wxT("&copy; 1999-2011 Audacity Team.<br>") +
      
       _("The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
       wxT("</font></body></html>");
@@ -278,8 +281,8 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    S.StartNotebookPage( _("Audacity") );
    S.StartVerticalLay(1);
 
-   //vvv For now, change to AudacityLogoWithName via old-fashioned way, not Theme.
-   logo = new wxBitmap((const char **) AudacityLogoWithName_xpm); //vvv
+   //v For now, change to AudacityLogoWithName via old-fashioned way, not Theme.
+   logo = new wxBitmap((const char **) AudacityLogoWithName_xpm); //v
 
    // JKC: Resize to 50% of size.  Later we may use a smaller xpm as
    // our source, but this allows us to tweak the size - if we want to.
@@ -292,17 +295,18 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 
    icon =
        new wxStaticBitmap(S.GetParent(), -1, 
-                          //*logo, //vvv
-                          //vvv theTheme.Bitmap(bmpAudacityLogo), wxPoint(93, 10), wxSize(215, 190));
-                          //vvv theTheme.Bitmap(bmpAudacityLogoWithName), 
+                          //*logo, //v
+                          //v theTheme.Bitmap(bmpAudacityLogo), wxPoint(93, 10), wxSize(215, 190));
+                          //v theTheme.Bitmap(bmpAudacityLogoWithName), 
                           RescaledBitmap,
-                          wxDefaultPosition, wxSize(int(LOGOWITHNAME_WIDTH*fScale), int(LOGOWITHNAME_HEIGHT*fScale)));
+                          wxDefaultPosition, 
+                          wxSize(int(LOGOWITHNAME_WIDTH*fScale), int(LOGOWITHNAME_HEIGHT*fScale)));
    delete logo;
    S.Prop(0).AddWindow( icon );
 
    HtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
-                                         wxSize(LOGOWITHNAME_WIDTH, 359), // wxSize(480, 240),
+                                         wxSize(ABOUT_DIALOG_WIDTH, 359), 
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    html->SetFocus();
    html->SetPage(creditStr);
@@ -324,7 +328,7 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    S.StartNotebookPage( _("Build Information") );  // start the tab
    S.StartVerticalLay(2);  // create the window
    HtmlWindow *html = new HtmlWindow(S.GetParent(), -1, wxDefaultPosition,
-                           wxSize(LOGOWITHNAME_WIDTH, 264), 
+                           wxSize(ABOUT_DIALOG_WIDTH, 264), 
                            wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    // create a html pane in it to put the content in.
    wxString enabled = _("Enabled");
@@ -522,7 +526,7 @@ void AboutDialog::PopulateLicensePage( ShuttleGui & S )
    S.StartVerticalLay(1);
    HtmlWindow *html = new HtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
-                                         wxSize(LOGOWITHNAME_WIDTH, 264), // wxSize(480, 240),
+                                         wxSize(ABOUT_DIALOG_WIDTH, 264), 
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
 
 // I tried using <pre> here to get a monospaced font,

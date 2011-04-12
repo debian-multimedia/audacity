@@ -24,30 +24,42 @@
 #include "../Internat.h"
 
 #include "../ondemand/ODManager.h"
+#include "../AudioIO.h"
 
-PCMAliasBlockFile::PCMAliasBlockFile(wxFileName fileName,
-                     wxFileName aliasedFile, sampleCount aliasStart,
-                     sampleCount aliasLen, int aliasChannel):
-   AliasBlockFile(fileName, aliasedFile, aliasStart, aliasLen, aliasChannel)
+extern AudioIO *gAudioIO;
+
+PCMAliasBlockFile::PCMAliasBlockFile(
+      wxFileName fileName,
+      wxFileName aliasedFileName, 
+      sampleCount aliasStart,
+      sampleCount aliasLen, int aliasChannel) 
+: AliasBlockFile(fileName, aliasedFileName, 
+                 aliasStart, aliasLen, aliasChannel)
 {
    AliasBlockFile::WriteSummary();
 }
 
-PCMAliasBlockFile::PCMAliasBlockFile(wxFileName fileName,
-                     wxFileName aliasedFile, sampleCount aliasStart,
-                     sampleCount aliasLen, int aliasChannel,bool writeSummary):
-   AliasBlockFile(fileName, aliasedFile, aliasStart, aliasLen, aliasChannel)
+PCMAliasBlockFile::PCMAliasBlockFile(
+      wxFileName fileName,
+      wxFileName aliasedFileName, 
+      sampleCount aliasStart,
+      sampleCount aliasLen, int aliasChannel,bool writeSummary)
+: AliasBlockFile(fileName, aliasedFileName, 
+                 aliasStart, aliasLen, aliasChannel)
 {
    if(writeSummary)
       AliasBlockFile::WriteSummary();
 }
 
-PCMAliasBlockFile::PCMAliasBlockFile(wxFileName existingFileName,
-                     wxFileName aliasedFile, sampleCount aliasStart,
-                     sampleCount aliasLen, int aliasChannel,
-                     float min, float max, float rms):
-   AliasBlockFile(existingFileName, aliasedFile, aliasStart, aliasLen,
-                  aliasChannel, min, max, rms)
+PCMAliasBlockFile::PCMAliasBlockFile(
+      wxFileName existingSummaryFileName,
+      wxFileName aliasedFileName, 
+      sampleCount aliasStart,
+      sampleCount aliasLen, int aliasChannel,
+      float min, float max, float rms)
+: AliasBlockFile(existingSummaryFileName, aliasedFileName, 
+                 aliasStart, aliasLen,
+                 aliasChannel, min, max, rms)
 {
 }
 
@@ -95,6 +107,10 @@ int PCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
       memset(data,0,SAMPLE_SIZE(format)*len);
       if(silence) delete silence;
       mSilentAliasLog=TRUE;
+      
+      // Set a marker to display an error message for the silence
+      if (!wxGetApp().ShouldShowMissingAliasedFileWarning())
+         wxGetApp().MarkAliasedFilesMissingWarning(this);
       return len;
    }
 
@@ -171,12 +187,15 @@ void PCMAliasBlockFile::SaveXML(XMLWriter &xmlFile)
    xmlFile.EndTag(wxT("pcmaliasblockfile"));
 }
 
+// BuildFromXML methods should always return a BlockFile, not NULL,  
+// even if the result is flawed (e.g., refers to nonexistent file), 
+// as testing will be done in DirManager::ProjectFSCK().
 BlockFile *PCMAliasBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
 {
    wxFileName summaryFileName;
    wxFileName aliasFileName;
    int aliasStart=0, aliasLen=0, aliasChannel=0;
-   float min=0, max=0, rms=0;
+   float min = 0.0f, max = 0.0f, rms = 0.0f;
    double dblValue;
    long nValue;
 
@@ -188,61 +207,58 @@ BlockFile *PCMAliasBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
          break;
 
       const wxString strValue = value;
-      if( !wxStricmp(attr, wxT("summaryfile")) )
+      if (!wxStricmp(attr, wxT("summaryfile")) && 
+            // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
+            XMLValueChecker::IsGoodFileString(strValue) && 
+            (strValue.Length() + 1 + dm.GetProjectDataDir().Length() <= PLATFORM_MAX_PATH))
       {
-         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
-         if (!XMLValueChecker::IsGoodFileString(strValue))
-            return NULL;
-
-         #ifdef _WIN32
-            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
-               return NULL;
-         #endif
-
-         dm.AssignFile(summaryFileName,value,FALSE);
+         if (!dm.AssignFile(summaryFileName, strValue, false))
+            // Make sure summaryFileName is back to uninitialized state so we can detect problem later.
+            summaryFileName.Clear();
       }
-      else if( !wxStricmp(attr, wxT("aliasfile")) )
+      else if (!wxStricmp(attr, wxT("aliasfile")))
       {
          if (XMLValueChecker::IsGoodPathName(strValue))
             aliasFileName.Assign(strValue);
          else if (XMLValueChecker::IsGoodFileName(strValue, dm.GetProjectDataDir()))
             // Allow fallback of looking for the file name, located in the data directory.
             aliasFileName.Assign(dm.GetProjectDataDir(), strValue);
-         else 
-            return NULL;
+         else if (XMLValueChecker::IsGoodPathString(strValue))
+            // If the aliased file is missing, we failed XMLValueChecker::IsGoodPathName() 
+            // and XMLValueChecker::IsGoodFileName, because both do existence tests, 
+            // but we want to keep the reference to the missing file because it's a good path string.
+            aliasFileName.Assign(strValue);
       }
       else if (XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
-      { // integer parameters
-         if( !wxStricmp(attr, wxT("aliasstart")) )
+      {  // integer parameters
+         if (!wxStricmp(attr, wxT("aliasstart")) && (nValue >= 0))
             aliasStart = nValue;
-         else if( !wxStricmp(attr, wxT("aliaslen")) )
+         else if (!wxStricmp(attr, wxT("aliaslen")) && (nValue >= 0))
             aliasLen = nValue;
-         else if( !wxStricmp(attr, wxT("aliaschannel")) )
+         else if (!wxStricmp(attr, wxT("aliaschannel")) && XMLValueChecker::IsValidChannel(aliasChannel))
             aliasChannel = nValue;
-         else if( !wxStricmp(attr, wxT("min")) )
+         else if (!wxStricmp(attr, wxT("min")))
             min = nValue;
-         else if( !wxStricmp(attr, wxT("max")) )
+         else if (!wxStricmp(attr, wxT("max")))
             max = nValue;
-         else if( !wxStricmp(attr, wxT("rms")) )
+         else if (!wxStricmp(attr, wxT("rms")) && (nValue >= 0))
             rms = nValue;
       }      
-		//the min/max can be (are?) doubles as well, so handle this case:
-		else if( !wxStrcmp(attr, wxT("min")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         min = dblValue;
-      else if( !wxStrcmp(attr, wxT("max")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         max = dblValue;
-      else if( !wxStrcmp(attr, wxT("rms")) && 
-               XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
-         rms = dblValue;
-
+		// mchinen: the min/max can be (are?) doubles as well, so handle those cases.
+      // Vaughan: The code to which I added the XMLValueChecker checks 
+      // used wxAtoi to convert the string to an int. 
+      // So it's possible some prior project formats used ints (?), so am keeping 
+      // those above, but yes, we need to handle floats.
+      else if (XMLValueChecker::IsGoodString(strValue) && Internat::CompatibleToDouble(strValue, &dblValue))
+      {  // double parameters
+         if (!wxStricmp(attr, wxT("min")))
+            min = dblValue;
+         else if (!wxStricmp(attr, wxT("max")))
+            max = dblValue;
+         else if (!wxStricmp(attr, wxT("rms")) && (dblValue >= 0.0))
+            rms = dblValue;
+      }
    }
-
-   if (!XMLValueChecker::IsGoodFileName(summaryFileName.GetFullName(), summaryFileName.GetPath(wxPATH_GET_VOLUME)) || 
-         !XMLValueChecker::IsGoodFileName(aliasFileName.GetFullName(), aliasFileName.GetPath(wxPATH_GET_VOLUME)) || 
-         (aliasLen <= 0) || (aliasLen < 0.0) || !XMLValueChecker::IsValidChannel(aliasChannel) || (rms < 0.0))
-      return NULL;
 
    return new PCMAliasBlockFile(summaryFileName, aliasFileName,
                                 aliasStart, aliasLen, aliasChannel,
@@ -253,16 +269,4 @@ void PCMAliasBlockFile::Recover(void)
 {
    WriteSummary();
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 7afeef28-696c-40c6-9558-c1134ac04a66
-
 

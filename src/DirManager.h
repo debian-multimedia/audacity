@@ -22,11 +22,12 @@ class wxHashTable;
 class BlockFile;
 class SequenceTest;
 
-#define FSCKstatus_CLOSEREQ 0x1
-#define FSCKstatus_CHANGED  0x2
+#define FSCKstatus_CLOSE_REQ 0x1
+#define FSCKstatus_CHANGED   0x2
+#define FSCKstatus_SAVE_AUP  0x4 // used in combination with FSCKstatus_CHANGED
 
 WX_DECLARE_HASH_MAP(int, int, wxIntegerHash, wxIntegerEqual, DirHash);
-WX_DECLARE_HASH_MAP(wxString,BlockFile *,wxStringHash,wxStringEqual,BlockHash);
+WX_DECLARE_HASH_MAP(wxString, BlockFile*, wxStringHash, wxStringEqual, BlockHash);
 
 wxMemorySize GetFreeMemory();
 
@@ -48,7 +49,7 @@ class DirManager: public XMLTagHandler {
    // Returns true on success.
    // If SetProject is told NOT to create the directory
    // but it doesn't already exist, SetProject fails and returns false.
-   bool SetProject(wxString & projPath, wxString & projName, bool create);
+   bool SetProject(wxString& newProjPath, wxString& newProjName, const bool bCreate);
 
    wxString GetProjectDataDir();
    wxString GetProjectName();
@@ -68,6 +69,9 @@ class DirManager: public XMLTagHandler {
                                  
    BlockFile *NewODDecodeBlockFile( wxString aliasedFile, sampleCount aliasStart,
                                  sampleCount aliasLen, int aliasChannel, int decodeType);
+
+   /// Returns true if the blockfile is contained by the DirManager
+   bool ContainsBlockFile(BlockFile *b);
 
    // Adds one to the reference count of the block file,
    // UNLESS it is "locked", then it makes a new copy of
@@ -108,25 +112,29 @@ class DirManager: public XMLTagHandler {
    static void CleanTempDir();
 
    // Check the project for errors and possibly prompt user
-   //
-   // forceerror: Always show log error dialog even if no errors are found
-   //             Important when you know that there are already errors in
-   //             the log
-   //
-   // silentlycorrect: Do not show an error dialog (except if forceerror is
-   //             true) and silently correct problems the "safest" way.
-   //             This leaves orphaned blockfiles on disk, but replaces
-   //             files that are not found by silence
-   //
-   // bIgnoreNonAUs: Do not count non-AU files as orphaned block files, per <import> tag.
-   //             For example, <branding> JPG and <import> OGG.
-   // 
-   int ProjectFSCK(bool forceerror, bool silentlycorrect, bool bIgnoreNonAUs = true);
+   // bForceError: Always show log error alert even if no errors are found here. 
+   //    Important when you know that there are already errors in the log.
+   // bAutoRecoverMode: Do not show any option dialogs for how to deal with errors found here. 
+   //    Too complicated during auto-recover. Just correct problems the "safest" way.
+   int ProjectFSCK(const bool bForceError, const bool bAutoRecoverMode);
    
+   void FindMissingAliasedFiles(
+         BlockHash& missingAliasedFileAUFHash,     // output: (.auf) AliasBlockFiles whose aliased files are missing
+         BlockHash& missingAliasedFilePathHash);   // output: full paths of missing aliased files
+   void FindMissingAUFs(
+         BlockHash& missingAUFHash);               // output: missing (.auf) AliasBlockFiles 
+   void FindMissingAUs(
+         BlockHash& missingAUHash);                // missing data (.au) blockfiles
+   // Find .au and .auf files that are not in the project.
+   void FindOrphanBlockFiles( 
+         const wxArrayString& filePathArray,       // input: all files in project directory
+         wxArrayString& orphanFilePathArray);      // output: orphan files
+
+
    // Remove all orphaned blockfiles without user interaction. This is
    // generally safe, because orphaned blockfiles are not referenced by the
    // project and thus worthless anyway.
-   void RemoveOrphanedBlockfiles();
+   void RemoveOrphanBlockfiles();
 
    // Get directory where data files are in. Note that projects are normally
    // not interested in this information, but it is important for the
@@ -148,21 +156,14 @@ class DirManager: public XMLTagHandler {
 
  private:
 
-   // Create new unique track name
-   wxString NewTrackName();
-
    wxFileName MakeBlockFileName();
    wxFileName MakeBlockFilePath(wxString value);
 
-   // Create new unique names
-   wxString NewTempBlockName();
-   wxString NewBlockName();
-
-   //////////////////////////
+   bool MoveOrCopyToNewProjectDirectory(BlockFile *f, bool copy);
 
    int mRef; // MM: Current refcount
 
-   BlockHash blockFileHash; // repository for blockfiles
+   BlockHash mBlockFileHash; // repository for blockfiles
    DirHash   dirTopPool;    // available toplevel dirs
    DirHash   dirTopFull;    // full toplevel dirs
    DirHash   dirMidPool;    // available two-level dirs
@@ -196,15 +197,3 @@ class DirManager: public XMLTagHandler {
 };
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 5ba78795-b72e-4b1d-b408-4dc10035b0a4
-

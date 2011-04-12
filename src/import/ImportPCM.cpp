@@ -39,11 +39,9 @@
 
 #include "../ondemand/ODManager.h"
 #include "../ondemand/ODComputeSummaryTask.h"
-//temporarilly commented out till it is added to all projects
-//#include "../Profiler.h"
-//the minimum number of samples a file has to use the OD compute summary task
-//Otherwise, we use the older PCMAliasBlockFile method since it should be instant  enough
-//and the overhead of starting the thread might be slower.
+
+//If OD is enabled, he minimum number of samples a file has to use it.
+//Otherwise, we use the older PCMAliasBlockFile method since it should be fast enough.
 #define kMinimumODFileSampleSize 44100*30
 
 #ifndef SNDFILE_1
@@ -80,6 +78,7 @@ public:
 
    ~PCMImportPlugin() { }
 
+   wxString GetPluginStringID() { return wxT("libsndfile"); }
    wxString GetPluginFormatDescription();
    ImportFileHandle *Open(wxString Filename);
 };
@@ -183,12 +182,109 @@ int PCMImportFileHandle::GetFileUncompressedBytes()
    return mInfo.frames * mInfo.channels * SAMPLE_SIZE(mFormat);
 }
 
+// returns "copy" or "edit" (aliased) as the user selects.
+// if the cancel button is hit then "cancel" is returned.
+static wxString AskCopyOrEdit()
+{
+   wxString oldCopyPref = gPrefs->Read(wxT("/FileFormats/CopyOrEditUncompressedData"), wxT("copy"));
+   bool firstTimeAsk    = gPrefs->Read(wxT("/Warnings/CopyOrEditUncompressedDataFirstAsk"), true);
+   bool oldAskPref      = gPrefs->Read(wxT("/Warnings/CopyOrEditUncompressedDataAsk"), true);
+
+   // The first time the user is asked we force it to 'copy'.
+   // This effectively does a one-time change to the preferences.
+   if (firstTimeAsk) {
+      if (oldCopyPref != wxT("copy")) {
+         gPrefs->Write(wxT("/FileFormats/CopyOrEditUncompressedData"), wxT("copy"));
+         oldCopyPref = wxT("copy");
+      }
+      gPrefs->Write(wxT("/Warnings/CopyOrEditUncompressedDataFirstAsk"), (long) false);
+   }
+
+   // check the current preferences for whether or not we should ask the user about this.
+   if (oldAskPref) {
+      wxString newCopyPref = wxT("copy");
+      wxDialog dialog(NULL, -1, wxString(_("Warning")));
+
+      wxBoxSizer *vbox = new wxBoxSizer(wxVERTICAL);
+      dialog.SetSizer(vbox);
+
+      wxStaticText *message = new wxStaticText(&dialog, -1, wxString::Format(_("\
+When importing uncompressed audio files you can either copy them \
+into the project, or read them directly from their current location (without copying).\n\n\
+Your current preference is set to %s.\n\n\
+\
+Reading the files directly allows you to play or edit them almost immediately.  \
+This is less safe than copying in, because you must retain the files with their \
+original names in their original location.\n\
+File > Check Dependencies will show the original names and location of any files that you are reading directly.\n\n\
+\
+How do you want to import the current file(s)?"), oldCopyPref == wxT("copy") ? _("copy in") : _("read directly")));
+      message->Wrap(500);
+                               
+      vbox->Add(message, 1, wxALL | wxEXPAND, 10);
+      
+      wxStaticBox *box = new wxStaticBox(&dialog, -1, _("Choose an import method"));
+      wxStaticBoxSizer *boxsizer = new wxStaticBoxSizer(box, wxVERTICAL);
+
+      wxRadioButton *copyRadio  = new wxRadioButton(&dialog, -1, _("Make a &copy of the files before editing (safer)"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
+      boxsizer->Add(copyRadio, 0, wxALL);
+
+      wxRadioButton *aliasRadio = new wxRadioButton(&dialog, -1, _("Read the files &directly from the original (faster)"));
+      boxsizer->Add(aliasRadio, 0, wxALL);
+
+      wxCheckBox *dontAskNextTimeBox = new wxCheckBox(&dialog, -1, _("Don't &warn again and always use my choice above"));
+      boxsizer->Add(dontAskNextTimeBox, 0, wxALL);
+      vbox->Add(boxsizer, 0, wxALL, 10);
+      
+
+      wxRadioButton *prefsRadio = oldCopyPref == wxT("copy") ? copyRadio : aliasRadio;
+      prefsRadio->SetValue(true);
+
+      wxSizer *buttonSizer = dialog.CreateButtonSizer(wxOK | wxCANCEL);
+      vbox->Add(buttonSizer, 0, wxALL | wxEXPAND, 10);
+      
+      dialog.SetSize(dialog.GetBestSize());
+      dialog.Layout();
+      dialog.Center();
+
+      if (dialog.ShowModal() == wxID_OK) {
+         if (aliasRadio->GetValue()) {
+            newCopyPref = wxT("edit");
+         }
+         if (dontAskNextTimeBox->IsChecked()) {
+            gPrefs->Write(wxT("/Warnings/CopyOrEditUncompressedDataAsk"), (long) false);
+         }
+      } else {
+         return wxT("cancel");
+      }
+
+      // if the preference changed, save it.
+      if (newCopyPref != oldCopyPref) {
+         gPrefs->Write(wxT("/FileFormats/CopyOrEditUncompressedData"), newCopyPref);
+      }
+      oldCopyPref = newCopyPref;
+   }
+   return oldCopyPref;
+}
+
 int PCMImportFileHandle::Import(TrackFactory *trackFactory,
                                 Track ***outTracks,
                                 int *outNumTracks,
                                 Tags *tags)
 {
    wxASSERT(mFile);
+
+   // Get the preference / warn the user about aliased files.
+   wxString copyEdit = AskCopyOrEdit();
+
+   if (copyEdit == wxT("cancel"))
+      return eProgressCancelled;
+
+   // Fall back to "copy" if it doesn't match anything else, since it is safer
+   bool doEdit = false;
+   if (copyEdit.IsSameAs(wxT("edit"), false))
+      doEdit = true;
+      
 
    CreateProgress();
 
@@ -219,32 +315,13 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
    sampleCount maxBlockSize = channels[0]->GetMaxBlockSize();
    int updateResult = false;
    
-   wxString copyEdit =
-       gPrefs->Read(wxT("/FileFormats/CopyOrEditUncompressedData"), wxT("edit"));
-
-   // Fall back to "edit" if it doesn't match anything else
-   bool doEdit = true;          
-   if (copyEdit.IsSameAs(wxT("copy"), false))
-      doEdit = false;
-      
    // If the format is not seekable, we must use 'copy' mode,
    // because 'edit' mode depends on the ability to seek to an
    // arbitrary location in the file.
    if (!mInfo.seekable)
       doEdit = false;
-   //for profiling, uncomment and look in audacity.app/exe's folder for AudacityProfile.txt
-   //BEGIN_TASK_PROFILING("ON Demand Load 2hr stereo wav");
-   
-   //BEGIN_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) Drag and Drop 5 80 mb files into audacity (average per file)");
-   //BEGIN_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) open an 80 mb wav stereo file");
-    //for profiling, uncomment and look in audacity.app/exe's folder for AudacityProfile.txt
-   //static int tempLog =0;
-   //if(tempLog++ % 5==0)
-   //   BEGIN_TASK_PROFILING("On Demand Drag and Drop 5 80 mb files into audacity, 5 wavs per task");
-   //BEGIN_TASK_PROFILING("On Demand open an 80 mb wav stereo file");   
-   if (doEdit) {
-    wxLogDebug(wxT("Importing PCM Start\n"));
 
+   if (doEdit) {
       // If this mode has been selected, we form the tracks as
       // aliases to the files we're editing, i.e. ("foo.wav", 12000-18000)
       // instead of actually making fresh copies of the samples.
@@ -252,7 +329,8 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
       // lets use OD only if the file is longer than 30 seconds.  Otherwise, why wake up extra threads.
       //todo: make this a user pref.
       bool useOD =fileTotalFrames>kMinimumODFileSampleSize;
-      
+      int updateCounter = 0;
+
       for (sampleCount i = 0; i < fileTotalFrames; i += maxBlockSize) {
 	  
          sampleCount blockLen = maxBlockSize;
@@ -262,14 +340,14 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
          for (c = 0; c < mInfo.channels; c++)
             channels[c]->AppendAlias(mFilename, i, blockLen, c,useOD);
 
-         updateResult = mProgress->Update(i, fileTotalFrames);
-         if (updateResult != eProgressSuccess)
-            break;
+         if (++updateCounter == 50) {
+            updateResult = mProgress->Update(i, fileTotalFrames);
+            updateCounter = 0;
+            if (updateResult != eProgressSuccess)
+               break;
+         }
       }
-      
-      //now go over the wavetrack/waveclip/sequence and load all the blockfiles into a ComputeSummaryTask.  
-      //Add this task to the ODManager and the Track itself.      
-       wxLogDebug(wxT("Importing PCM \n"));
+      updateResult = mProgress->Update(fileTotalFrames, fileTotalFrames);
        
       if(useOD)
       { 
@@ -425,9 +503,8 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
                break;
             }
 
-            tags->SetID3V2( tp->options & ID3_TAG_OPTION_ID3V1 ? false : true );
-
             // Loop through all frames
+            bool have_year = false;
             for (int i = 0; i < (int) tp->nframes; i++) {
                struct id3_frame *frame = tp->frames[i];
 
@@ -457,11 +534,18 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
                else if (strcmp(frame->id, ID3_FRAME_TRACK) == 0) {
                   n = TAG_TRACK;
                }
-               else if (strcmp(frame->id, "TYER") == 0) {
-                  n = TAG_YEAR;
-               }
                else if (strcmp(frame->id, ID3_FRAME_YEAR) == 0) {
+                  // LLL:  When libid3tag encounters the "TYER" tag, it converts it to a
+                  //       "ZOBS" (obsolete) tag and adds a "TDRC" tag at the end of the
+                  //       list of tags using the first 4 characters of the "TYER" tag.
+                  //       Since we write both the "TDRC" and "TYER" tags, the "TDRC" tag
+                  //       will always be encountered first in the list.  We want use it
+                  //       since the converted "TYER" tag may have been truncated.
+                  if (have_year) {
+                     continue;
+                  }
                   n = TAG_YEAR;
+                  have_year = true;
                }
                else if (strcmp(frame->id, ID3_FRAME_COMMENT) == 0) {
                   n = TAG_COMMENTS;
@@ -523,9 +607,6 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
    }
 #endif
 
-   //comment out to undo profiling.
-   //END_TASK_PROFILING("Pre-GSOC (PCMAliasBlockFile) open an 80 mb wav stereo file");
-
    return updateResult;
 }
 
@@ -534,14 +615,4 @@ PCMImportFileHandle::~PCMImportFileHandle()
    sf_close(mFile);
 }
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 2e9db06a-fd0b-4af3-badd-eeb8437067e7
 
