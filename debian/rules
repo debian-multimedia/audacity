@@ -19,7 +19,7 @@ configure_flags := \
 	--with-libvorbis=system \
 	--with-midi=system \
 	--with-portaudio=system \
-	--with-sbsms=system \
+	--with-sbsms=local \
 	--with-soundtouch=system \
 	$(NULL)
 
