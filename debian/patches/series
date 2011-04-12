@@ -1,16 +1,3 @@
-enable-experimental-linking.patch
-fix-slider-background-color.patch
-open-mixer.patch
-fix-ftbfs-with-gcc-4.5.patch
-portsmf-configure.patch
-fix-const-char-conversion.patch
-system-portaudio.patch
-portmixer-include-directory.patch
-soundtouch-pkgconfig-file.patch
-fix-wma-export-crash.patch
-fix-autoconf-warning.patch
-autogen-script.patch
 disable-dynamic-loading.patch
 disable-dynamic-loading-lame.patch
-autoreconf.patch
 configure.patch
