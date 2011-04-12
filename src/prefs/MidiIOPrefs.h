@@ -31,6 +31,7 @@ class MidiIOPrefs:public PrefsPanel
    MidiIOPrefs(wxWindow * parent);
    virtual ~MidiIOPrefs();
    virtual bool Apply();
+   virtual bool Validate();
 
  private:
    void Populate();
@@ -44,12 +45,17 @@ class MidiIOPrefs:public PrefsPanel
    wxArrayString mHostLabels;
 
    wxString mPlayDevice;
+#ifdef EXPERIMENTAL_MIDI_IN
    wxString mRecordDevice;
+#endif
 //   long mRecordChannels;
 
    wxChoice *mHost;
    wxChoice *mPlay;
+   wxTextCtrl *mLatency;
+#ifdef EXPERIMENTAL_MIDI_IN
    wxChoice *mRecord;
+#endif
 //   wxChoice *mChannels;
 
    DECLARE_EVENT_TABLE();

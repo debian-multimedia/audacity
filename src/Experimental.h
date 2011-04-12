@@ -7,9 +7,9 @@
   Dominic Mazzoni
   James Crook
 
-  Used for includes and #defines for experimental features.
+  Used for #includes and #defines for experimental features.
 
-  When the features become mainstream the include files will 
+  When the features become mainstream the #include files will 
   move out of here and into the files which need them.  The
   #defines will then be retired.
 
@@ -21,26 +21,26 @@
     - Modular architecture.
   Add #defines in here for the new features, and make your code
   conditional on those #defines.
+  
+  All the #defines are positive, i.e., when defined, 
+  they enable the feature.
 
 **********************************************************************/
 
 #ifndef __EXPERIMENTAL__
 #define __EXPERIMENTAL__
 
-//uncomment the next line to enable the feature to link audio tracks to a label track
-//#define EXPERIMENTAL_LINKING
+// feature to link audio tracks to a label track
+#define EXPERIMENTAL_SYNC_LOCK
 
-//Uncomment the next #define to enable experimental features.
-#define EXPERIMENTAL_FEATURES
-
-// Comment out the next two lines if you want to disable 'experimental theming'
+// experimental theming
 // Work in progress, June-2008.
+// This mostly sets up a weird color scheme currently. 
 //#define EXPERIMENTAL_THEMING
-#if IS_BETA
-//August 2009 - Theming not locked down enough enough for a stable release.
-// we're doing betas which are leading up to an RC.
+
+//August 2009 - Theming not locked down enough for a stable release.
+// This turns on the Theme panel in Prefs dialog. It is independent of EXPERIMENTAL_THEMING.
 //#define EXPERIMENTAL_THEME_PREFS
-#endif
 
 //Next line enables Mic monitoring at times when it was previously off.
 //More work is needed as after recording or playing it results in an 
@@ -102,6 +102,8 @@
 //#define EXPERIMENTAL_SCOREALIGN
 #endif
 
+// experimental features
+#define EXPERIMENTAL_FEATURES
 #ifdef EXPERIMENTAL_FEATURES
    // The first experimental feature is a notebook that adds
    // a tabbed divider to the project.
@@ -130,20 +132,17 @@
 //If you want any of these files, ask JKC.  They are not
 //yet checked in to Audacity SVN as of 12-Feb-2010
 #ifdef EXPERIMENTAL_NOTEBOOK
-#include "widgets/GuiFactory.h"
-#include "widgets/APanel.h"
-extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebook  * pNotebook );
+   #include "widgets/GuiFactory.h"
+   #include "widgets/APanel.h"
+   extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebook  * pNotebook );
 #endif
 
 #ifdef EXPERIMENTAL_NYQUIST_INSPECTOR
-#include "NyquistAdapter.h"
+   #include "NyquistAdapter.h"
 #endif
 
 #ifdef EXPERIMENTAL_AUDACITY_TESTER
 #endif
-
-#define EXPERIMENTAL_LYRICS_WINDOW //vvv Vaughan, 2009-07-06
-#define EXPERIMENTAL_MIXER_BOARD //vvv Vaughan, 2009-07-07
 
 #if USE_PORTMIXER
    //Automatically tries to find an acceptable input volume
@@ -151,18 +150,6 @@ extern void AddPages(   AudacityProject * pProj, GuiFactory & Factory,  wxNotebo
 #endif
 
 // AWD: new Truncate Silence code
-//#define EXPERIMENTAL_TRUNC_SILENCE
+#define EXPERIMENTAL_TRUNC_SILENCE
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag:
-

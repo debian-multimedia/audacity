@@ -37,6 +37,9 @@
 #include <wx/event.h>
 #include <wx/frame.h>
 #include <wx/intl.h>
+#if defined(__WXMAC__)
+#include <wx/menu.h>
+#endif
 #include <wx/settings.h>
 #include <wx/sizer.h>
 #include <wx/stopwatch.h>
@@ -989,6 +992,7 @@ static const unsigned char beep[] =
 BEGIN_EVENT_TABLE(ProgressDialog, wxDialog)
    EVT_BUTTON(wxID_CANCEL, ProgressDialog::OnCancel)
    EVT_BUTTON(wxID_OK, ProgressDialog::OnStop)
+   EVT_CLOSE(ProgressDialog::OnCloseWindow)
 END_EVENT_TABLE()  
 
 //
@@ -1143,6 +1147,34 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message,
    // delay, we MUST disable other windows/menus anyway since we run the risk
    // of allowing other tasks to run before this one is complete.
    mDisable = new wxWindowDisabler(this);
+
+#if defined(__WXMAC__)
+   // LL:  On the Mac, the parent windows get disabled, but they still respond
+   //      to the close button being clicked and the application quit menu item
+   //      is still enabled.  We do not want the parent window to be destroyed
+   //      while we're active, so we have to kludge around a bit to keep this
+   //      from happening.
+   WindowRef windowRef = (WindowRef) MacGetWindowRef();
+   if (windowRef) {
+      SetWindowModality(windowRef, kWindowModalityAppModal, NULL);
+      BeginAppModalStateForWindow(windowRef);
+   }
+
+   w = wxTheApp->GetTopWindow();
+   if (w) {
+      w = wxGetTopLevelParent(w);
+      if (w) {
+         wxFrame *f = wxStaticCast(w, wxFrame);
+         if (f) {
+            wxMenuBar *bar = f->GetMenuBar();
+            if (bar) {
+               bar->Enable(wxID_PREFERENCES, false);
+               bar->Enable(wxID_EXIT, false);
+            }
+         }
+      }
+   }
+#endif
 }
 
 //
@@ -1157,10 +1189,31 @@ ProgressDialog::~ProgressDialog()
       Beep();
    }
 
+#if defined(__WXMAC__)
+   wxWindow *w = wxTheApp->GetTopWindow();
+   if (w) {
+      w = wxGetTopLevelParent(w);
+      if (w) {
+         wxFrame *f = wxStaticCast(w, wxFrame);
+         if (f) {
+            wxMenuBar *bar = f->GetMenuBar();
+            if (bar) {
+               bar->Enable(wxID_PREFERENCES, true);
+               bar->Enable(wxID_EXIT, true);
+            }
+         }
+      }
+   }
+
+   WindowRef windowRef = (WindowRef) MacGetWindowRef();
+   if (windowRef) {
+      EndAppModalStateForWindow(windowRef);
+   }
+#endif
+
    if (mDisable)
    {
       delete mDisable;
-
    }
 
 #if defined(__WXGTK__)
@@ -1350,6 +1403,12 @@ ProgressDialog::OnStop(wxCommandEvent & e)
    FindWindowById(wxID_OK, this)->Disable();
    mCancel = false;
    mStop = true;
+}
+
+void
+ProgressDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
+{
+   mCancel = true;
 }
 
 void

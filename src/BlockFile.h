@@ -21,14 +21,6 @@
 #include "xml/XMLTagHandler.h"
 #include "xml/XMLWriter.h"
 
-#if defined(_WIN32)
-  //taken from private.h (wxWidgets internal declarations)
-  #ifndef MAX_PATH
-    #define MAX_PATH  260
-  #endif
-#endif
-
-class wxFFile;
 
 class SummaryInfo {
  public:
@@ -77,6 +69,8 @@ class BlockFile {
    virtual void SaveXML(XMLWriter &xmlFile) = 0;
 
    /// Gets the filename of the disk file associated with this BlockFile
+   /// (can be empty -- some BlockFiles, like SilentBlockFile, correspond to
+   ///  no file on disk)
    virtual wxFileName GetFileName();
    virtual void SetFileName(wxFileName &name);
 
@@ -139,6 +133,7 @@ class BlockFile {
  private:
 
    friend class DirManager;
+   friend class AudacityApp;
    //needed for Ref/Deref access.
    friend class ODComputeSummaryTask;
    friend class ODDecodeTask;
@@ -192,7 +187,7 @@ class AliasBlockFile : public BlockFile
    AliasBlockFile(wxFileName baseFileName,
                   wxFileName aliasedFileName, sampleCount aliasStart,
                   sampleCount aliasLen, int aliasChannel);
-   AliasBlockFile(wxFileName existingSummaryFile,
+   AliasBlockFile(wxFileName existingSummaryFileName,
                   wxFileName aliasedFileName, sampleCount aliasStart,
                   sampleCount aliasLen, int aliasChannel,
                   float min, float max, float RMS);
@@ -210,17 +205,12 @@ class AliasBlockFile : public BlockFile
    // applying to Alias file access
    void SilenceAliasLog() { mSilentAliasLog = TRUE; }
 
-
    //
    // These methods are for advanced use only!
    //
-
-   /// Gets the name of the aliased file.
-   wxFileName GetAliasedFile();
-   /// Modifies the name of the aliased file.
-   void ChangeAliasedFile(wxFileName newAliasedFile);
-   /// Returns TRUE if this is an AliasBlockFile
-   bool IsAlias() { return true; }
+   wxFileName GetAliasedFileName() { return mAliasedFileName; };
+   void ChangeAliasedFileName(wxFileName newAliasedFile);
+   virtual bool IsAlias() { return true; }
 
  protected:
    /// Write the summary to disk, using the derived ReadData() to get the data
@@ -235,17 +225,4 @@ class AliasBlockFile : public BlockFile
 };
 
 #endif
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: ebcc7075-5983-4092-a316-1f2e2b0bcbc3
-
 

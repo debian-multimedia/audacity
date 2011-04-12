@@ -12,12 +12,14 @@
 *******************************************************************//**
 
 \class ControlToolBar
-\brief A ToolBar that has the main control buttons.
+\brief A ToolBar that has the main Transport buttons.
 
+  In the GUI, this is referred to as "Transport Toolbar", as 
+  it corresponds to commands in the Transport menu. 
+  "Control Toolbar" is historic.
   This class, which is a child of Toolbar, creates the
-  window containing the tool selection (ibeam, envelope,
-  move, zoom), the rewind/play/stop/record/ff buttons, and
-  the volume control. The window can be embedded within a
+  window containing the Transport (rewind/play/stop/record/ff)
+  buttons. The window can be embedded within a
   normal project window, or within a ToolbarFrame that is
   managed by a global ToolBarStub called
   gControlToolBarStub.
@@ -79,8 +81,12 @@ BEGIN_EVENT_TABLE(ControlToolBar, ToolBar)
 END_EVENT_TABLE()
 
 //Standard constructor
+// This was called "Control" toolbar in the GUI before - now it is "Transport".
+// Note that we use the legacy "Control" string as the section because this
+// gets written to prefs and cannot be changed in prefs to maintain backwards
+// compatibility
 ControlToolBar::ControlToolBar()
-: ToolBar(ControlBarID, _("Control"), wxT("Control"))
+: ToolBar(TransportBarID, _("Transport"), wxT("Control"))
 {
    mPaused = false;
    mSizer = NULL;
@@ -122,14 +128,14 @@ void ControlToolBar::Create(wxWindow * parent)
 
 // This is a convenience function that allows for button creation in
 // MakeButtons() with fewer arguments
-AButton *ControlToolBar::MakeButton(teBmps eFore, teBmps eDisabled,
+AButton *ControlToolBar::MakeButton(teBmps eEnabledUp, teBmps eEnabledDown, teBmps eDisabled,
                                     int id,
                                     bool processdownevents,
                                     const wxChar *label)
 {
    AButton *r = ToolBar::MakeButton(
       bmpRecoloredUpLarge, bmpRecoloredDownLarge, bmpRecoloredHiliteLarge,
-      eFore, eDisabled,
+      eEnabledUp, eEnabledDown, eDisabled,
       wxWindowID(id),
       wxDefaultPosition, processdownevents,
       theTheme.ImageSize( bmpRecoloredUpLarge ));
@@ -166,27 +172,27 @@ void ControlToolBar::Populate()
 {
    MakeButtonBackgroundsLarge();
 
-   mPause = MakeButton(bmpPause,bmpPauseDisabled,
+   mPause = MakeButton(bmpPause, bmpPause, bmpPauseDisabled,
       ID_PAUSE_BUTTON,  true,  _("Pause"));
 
-   mPlay = MakeButton( bmpPlay, bmpPlayDisabled, 
+   mPlay = MakeButton( bmpPlay, bmpPlay, bmpPlayDisabled, 
       ID_PLAY_BUTTON, true, _("Play"));
 
    MakeLoopImage();
 
-   mStop = MakeButton( bmpStop, bmpStopDisabled ,
+   mStop = MakeButton( bmpStop, bmpStop, bmpStopDisabled ,
       ID_STOP_BUTTON, false, _("Stop"));
 
-   mRewind = MakeButton(bmpRewind, bmpRewindDisabled,
+   mRewind = MakeButton(bmpRewind, bmpRewind, bmpRewindDisabled,
       ID_REW_BUTTON, false, _("Start"));
 
-   mFF = MakeButton(bmpFFwd, bmpFFwdDisabled,
+   mFF = MakeButton(bmpFFwd, bmpFFwd, bmpFFwdDisabled,
       ID_FF_BUTTON, false, _("End"));
 
-   mRecord = MakeButton(bmpRecord, bmpRecordDisabled,
+   mRecord = MakeButton(bmpRecord, bmpRecord, bmpRecordDisabled,
       ID_RECORD_BUTTON, true, _("Record"));
 
-   mBatch = MakeButton(bmpCleanSpeech,bmpCleanSpeechDisabled,
+   mBatch = MakeButton(bmpCleanSpeech, bmpCleanSpeech, bmpCleanSpeechDisabled,
       ID_BATCH_BUTTON, false, _("Clean Speech"));
 
 #if wxUSE_TOOLTIPS
@@ -240,7 +246,7 @@ void ControlToolBar::UpdatePrefs()
    }
 
    // Set label to pull in language change
-   SetLabel(_("Control"));
+   SetLabel(_("Transport"));
 
    // Give base class a chance
    ToolBar::UpdatePrefs();
@@ -544,7 +550,7 @@ void ControlToolBar::PlayPlayRegion(double t0, double t1,
                mCutPreviewTracks->GetWaveTrackArray(false),
                WaveTrackArray(),
 #ifdef EXPERIMENTAL_MIDI_OUT
-               &NoteTrackArray(),
+               NoteTrackArray(),
 #endif
                NULL, p->GetRate(), tcp0, tcp1, p, false,
                t0, t1-t0);
@@ -563,7 +569,7 @@ void ControlToolBar::PlayPlayRegion(double t0, double t1,
          token = gAudioIO->StartStream(t->GetWaveTrackArray(false),
                                        WaveTrackArray(),
 #ifdef EXPERIMENTAL_MIDI_OUT
-                                       &(t->GetNoteTrackArray(false)),
+                                       t->GetNoteTrackArray(false),
 #endif
                                        timetrack,
                                        p->GetRate(), t0, t1, p, looped);
@@ -864,16 +870,10 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
          for (int c = 0; c < recordingChannels; c++) {
             WaveTrack *newTrack = p->GetTrackFactory()->NewWaveTrack();
 
-            int initialheight = newTrack->GetHeight();
-
             newTrack->SetOffset(t0);
 
-            if (recordingChannels <= 2) {
-               newTrack->SetHeight(initialheight/recordingChannels);
-            }
-            else {
-               newTrack->SetMinimized(true);
-            }
+            if (recordingChannels > 2)
+              newTrack->SetMinimized(true);
 
             if (recordingChannels == 2) {
                if (c == 0) {
@@ -906,7 +906,7 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       int token = gAudioIO->StartStream(playbackTracks,
                                         newRecordingTracks,
 #ifdef EXPERIMENTAL_MIDI_OUT                                        
-                                        &midiTracks,
+                                        midiTracks,
 #endif
                                         t->GetTimeTrack(),
                                         p->GetRate(), t0, t1, p);

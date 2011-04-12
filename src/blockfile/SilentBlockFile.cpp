@@ -46,6 +46,9 @@ void SilentBlockFile::SaveXML(XMLWriter &xmlFile)
    xmlFile.EndTag(wxT("silentblockfile"));
 }
 
+// BuildFromXML methods should always return a BlockFile, not NULL,  
+// even if the result is flawed (e.g., refers to nonexistent file), 
+// as testing will be done in DirManager::ProjectFSCK().
 /// static
 BlockFile *SilentBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
 {
@@ -56,18 +59,16 @@ BlockFile *SilentBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
    {
        const wxChar *attr =  *attrs++;
        const wxChar *value = *attrs++;
-
        if (!value)
          break;
 
        const wxString strValue = value;
-       if( !wxStrcmp(attr, wxT("len")) && 
-            XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
-          len = nValue;
+       if (!wxStrcmp(attr, wxT("len")) && 
+            XMLValueChecker::IsGoodInt(strValue) && 
+            strValue.ToLong(&nValue) && 
+            nValue > 0) 
+         len = nValue;
    }
-
-   if (len <= 0)
-      return NULL;
 
    return new SilentBlockFile(len);
 }
@@ -84,16 +85,4 @@ wxLongLong SilentBlockFile::GetSpaceUsage()
 {
    return 0;
 }
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: d7d174aa-19f1-4bc8-8bd9-c075dcd1cc1b
 

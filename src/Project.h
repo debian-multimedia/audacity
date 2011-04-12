@@ -49,33 +49,32 @@ class wxScrollEvent;
 class wxScrollBar;
 class wxPanel;
 
-class ToolManager;
-class Toolbar;
+class AudacityProject;
+class Importer;
+class ODLock;
+class RecordingRecoveryHandler;
+class TrackList;
+class Tags;
+
+// toolbar classes
 class ControlToolBar;
 class DeviceToolBar;
 class EditToolBar;
 class MeterToolBar;
 class MixerToolBar;
 class SelectionToolBar;
+class Toolbar;
+class ToolManager;
 class ToolsToolBar;
 class TranscriptionToolBar;
 
-class TrackList;
-class Tags;
-class HistoryWindow;
-#ifdef EXPERIMENTAL_LYRICS_WINDOW
-   class LyricsWindow;
-#endif
-#ifdef EXPERIMENTAL_MIXER_BOARD
-   class MixerBoard;
-   class MixerBoardFrame;
-#endif
-class Importer;
+// windows and frames
 class AdornedRulerPanel;
+class HistoryWindow;
+class LyricsWindow;
+class MixerBoard;
+class MixerBoardFrame;
 
-class AudacityProject;
-class RecordingRecoveryHandler;
-class ODLock;
 
 AudacityProject *CreateNewAudacityProject();
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
@@ -108,7 +107,11 @@ class ImportXMLTagHandler : public XMLTagHandler
 
    virtual bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
    virtual XMLTagHandler *HandleXMLChild(const wxChar *tag) { return NULL; };
-   virtual void WriteXML(XMLWriter &xmlFile) { wxASSERT(false); } //vvv todo
+   
+   // Don't want a WriteXML method because ImportXMLTagHandler is not a WaveTrack. 
+   // <import> tags are instead written by AudacityProject::WriteXML.
+   //    virtual void WriteXML(XMLWriter &xmlFile) { wxASSERT(false); } 
+
  private: 
    AudacityProject* mProject;
 };
@@ -120,13 +123,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
                                      public AudioIOListener
 {
  public:
-
-   // Constructor and Destructor
-
    AudacityProject(wxWindow * parent, wxWindowID id,
                    const wxPoint & pos, const wxSize & size);
-
-   virtual ~ AudacityProject();
+   virtual ~AudacityProject();
 
    TrackList *GetTracks() { return mTracks; };
    UndoManager *GetUndoManager() { return &mUndoManager; }
@@ -147,7 +146,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void SetSel0(double);        //Added by STM 
    void SetSel1(double);        //Added by STM 
 
-   bool Clipboard() { return msClipLen > 0.0; }
+   bool Clipboard() { return (msClipT1 - msClipT0) > 0.0; }
 
    wxString GetName();
    DirManager *GetDirManager();
@@ -190,6 +189,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
     */
    static wxArrayString ShowOpenDialog(wxString extraformat = wxEmptyString,
          wxString extrafilter = wxEmptyString);
+   static bool IsAlreadyOpen(const wxString projPathName);
    static void OpenFiles(AudacityProject *proj);
    void OpenFile(wxString fileName, bool addtohistory = true);
    bool WarnOfLegacyFile( );
@@ -199,6 +199,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    void AddImportedTracks(wxString fileName,
                           Track **newTracks, int numTracks);
+   void LockAllBlocks();
+   void UnlockAllBlocks();
    bool Save(bool overwrite = true, bool fromSaveAs = false, bool bWantSaveCompressed = false);
    bool SaveAs(bool bWantSaveCompressed = false);
    #ifdef USE_LIBVORBIS
@@ -226,6 +228,15 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool GetNormalizeOnLoad() { return mNormalizeOnLoad; } //lda
    void SetNormalizeOnLoad(bool flag) { mNormalizeOnLoad = flag; } //lda
 
+   /** \brief Sets the wxDialog that is being displayed 
+     * Used by the custom dialog warning constructor and destructor
+     */
+   void SetMissingAliasFileDialog(wxDialog *dialog);
+   
+   /** \brief returns a pointer to the wxDialog if it is displayed, NULL otherwise.
+     */
+   wxDialog *GetMissingAliasFileDialog();
+
 #include "Menus.h"
 
    CommandManager *GetCommandManager() { return &mCommandManager; }
@@ -234,7 +245,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void RebuildOtherMenus();
    void MayStartMonitoring();
 
- public:
 
    // Message Handlers
 
@@ -280,11 +290,10 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void Rewind(bool shift);
    void SkipEnd(bool shift);
    void SetStop(bool bStopped);
-   void EditByLabel( WaveTrack::EditFunction action, bool syncTracks ); 
+   void EditByLabel( WaveTrack::EditFunction action, bool bSyncLockedTracks ); 
    void EditClipboardByLabel( WaveTrack::EditDestFunction action );
-   bool IsSticky();
-   bool GetStickyFlag() { return mStickyFlag; };
-   void SetStickyFlag(bool flag);
+   bool IsSyncLocked();
+   void SetSyncLock(bool flag);
 
    // "exclusive" mute means mute the chosen track and unmute all others.
    void HandleTrackMute(Track *t, const bool exclusive); 
@@ -336,7 +345,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // ToolBar
 
-   ControlToolBar *GetControlToolBar();
+   // In the GUI, ControlToolBar appears as the "Transport Toolbar". "Control Toolbar" is historic.
+   ControlToolBar *GetControlToolBar(); 
+
    DeviceToolBar *GetDeviceToolBar();
    EditToolBar *GetEditToolBar();
    MeterToolBar *GetMeterToolBar();
@@ -345,12 +356,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    ToolsToolBar *GetToolsToolBar();
    TranscriptionToolBar *GetTranscriptionToolBar();
 
-   #ifdef EXPERIMENTAL_LYRICS_WINDOW
-      LyricsWindow* GetLyricsWindow() { return mLyricsWindow; };
-   #endif
-   #ifdef EXPERIMENTAL_MIXER_BOARD
-      MixerBoard* GetMixerBoard() { return mMixerBoard; };
-   #endif
+   LyricsWindow* GetLyricsWindow() { return mLyricsWindow; };
+   MixerBoard* GetMixerBoard() { return mMixerBoard; };
 
    // SelectionBar callback methods
 
@@ -399,18 +406,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void ModifyState();
    void PopState(TrackList * l);
    
-   #ifdef EXPERIMENTAL_LYRICS_WINDOW
-      void UpdateLyrics();
-   #endif
-   #ifdef EXPERIMENTAL_MIXER_BOARD
-      void UpdateMixerBoard();
-   #endif
+   void UpdateLyrics();
+   void UpdateMixerBoard();
    
    void GetRegionsByLabel( Regions &regions );
    
-   void AutoSaveIfNeeded();
    void AutoSave();
-   static bool IsAutoSaveEnabled();
    void DeleteCurrentAutoSaveFile();
    
    static bool GetCacheBlockFiles();
@@ -444,7 +445,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Clipboard (static because it is shared by all projects)
    static TrackList *msClipboard;
    static AudacityProject *msClipProject;
-   static double msClipLen;
+   static double msClipT0;
+   static double msClipT1;
 
    //shared by all projects
    static ODLock *msAllProjectDeleteMutex;
@@ -477,15 +479,14 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mIconized;
 
    HistoryWindow *mHistoryWindow;
-   #ifdef EXPERIMENTAL_LYRICS_WINDOW
-      LyricsWindow* mLyricsWindow;
-   #endif
-   #ifdef EXPERIMENTAL_MIXER_BOARD
-      MixerBoard* mMixerBoard;
-      MixerBoardFrame* mMixerBoardFrame;
-   #endif
+   LyricsWindow* mLyricsWindow;
+   MixerBoard* mMixerBoard;
+   MixerBoardFrame* mMixerBoardFrame;
 
    FreqWindow *mFreqWindow;
+
+   // dialog for missing alias warnings
+   wxDialog            *mAliasMissingWarningDialog;
 
  public:
    ToolManager *mToolManager;
@@ -499,6 +500,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool IsTimerRecordCancelled(){return mTimerRecordCanceled;}
    void ResetTimerRecordFlag(){mTimerRecordCanceled=false;}
  private:
+   //sort method used by OnSortName and OnSortTime
+   //currently only supported flags are kAudacitySortByName and kAudacitySortByName
+   //in the future we might have 0x01 as sort ascending and we can bit or it
+#define kAudacitySortByTime (1 << 1)
+#define kAudacitySortByName (1 << 2)
+   void SortTracks(int flags);
 
    int  mAudioIOToken;
 
@@ -510,7 +517,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mEmptyCanBeDirty;
    bool mSelectAllOnNone;
    
-   bool mStickyFlag;
+   bool mIsSyncLocked;
 
    bool mLockPlayRegion;
 
@@ -557,20 +564,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    //flag for cancellation of timer record.
    bool mTimerRecordCanceled;
 
+   // Are we currently closing as the result of a menu command?
+   bool mMenuClose;
+
  public:
     DECLARE_EVENT_TABLE()
 };
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: bf2e4288-d3d3-411e-b8af-1e8d12814c70
 

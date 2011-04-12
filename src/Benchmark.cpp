@@ -367,7 +367,7 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
 
    Printf(wxT("Preparing...\n"));
 
-   wxYield();
+   wxTheApp->Yield();
    FlushPrint();
 
    int i, b, v;
@@ -397,10 +397,9 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
              t->GetClipByIndex(0)->GetSequence()->GetNumSamples());
       goto fail;
    }
-   //t->Debug();
 
    Printf(wxT("Performing %d edits...\n"), trials);
-   wxYield();
+   wxTheApp->Yield();
    FlushPrint();
 
    timer.Start();
@@ -454,7 +453,7 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
    }
    Printf(wxT("Time to perform %d edits: %ld ms\n"), trials, elapsed);
    FlushPrint();
-   wxYield();
+   wxTheApp->Yield();
 
 
 #if 0
@@ -466,7 +465,7 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
 
    Printf(wxT("Doing correctness check...\n"));
    FlushPrint();
-   wxYield();
+   wxTheApp->Yield();
 
    bad = 0;
    timer.Start();
@@ -491,7 +490,7 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
    Printf(wxT("Time to check all data: %ld ms\n"), elapsed);
    Printf(wxT("Reading data again...\n"));
 
-   wxYield();
+   wxTheApp->Yield();
    FlushPrint();
 
    timer.Start();
@@ -531,6 +530,7 @@ void BenchmarkDialog::OnRun( wxCommandEvent &event )
    d->Deref();
 
    Sequence::SetMaxDiskBlockSize(oldBlockSize);
+   Printf(wxT("Benchmark completed successfully.\n"));
    HoldPrint(false);
 
    gPrefs->Write(wxT("/GUI/EditClipCanMove"), editClipCanMove);

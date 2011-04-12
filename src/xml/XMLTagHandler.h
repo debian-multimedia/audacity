@@ -32,17 +32,18 @@ public:
    static bool IsGoodString(const wxString str);
 
    static bool IsGoodFileName(const wxString strFileName, const wxString strDirName = wxEmptyString);
+   static bool IsGoodFileString(wxString str);
    static bool IsGoodSubdirName(const wxString strSubdirName, const wxString strDirName = wxEmptyString);
    static bool IsGoodPathName(const wxString strPathName);
+   static bool IsGoodPathString(wxString str);
 
    // Note that because wxString::ToLong does additional testing, IsGoodInt doesn't duplicate 
    // that testing, so use wxString::ToLong after IsGoodInt, not just atoi.
    static bool IsGoodInt(const wxString strInt);
 
    static bool IsValidChannel(const int nValue); 
+   static bool IsValidVisibleChannels(const int nValue);
    static bool IsValidSampleFormat(const int nValue); // true if nValue is one sampleFormat enum values
-
-   static bool IsGoodFileString(wxString str);
 };
 
 

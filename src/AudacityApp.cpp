@@ -66,6 +66,7 @@ It handles initialization and termination by subclassing wxApp.
 #include "effects/LoadEffects.h"
 #include "effects/Contrast.h"
 #include "effects/VST/VSTEffect.h"
+#include "widgets/ASlider.h"
 #include "FFmpeg.h"
 #include "GStreamerLoader.h"
 #include "Internat.h"
@@ -87,12 +88,18 @@ It handles initialization and termination by subclassing wxApp.
 #include "BlockFile.h"
 #include "ondemand/ODManager.h"
 #include "commands/Keyboard.h"
+#include "widgets/ErrorDialog.h"
+
 //temporarilly commented out till it is added to all projects
 //#include "Profiler.h"
 
 #include "LoadModules.h"
 
 #include "import/Import.h"
+
+#ifdef EXPERIMENTAL_SCOREALIGN
+#include "effects/ScoreAlignDialog.h"
+#endif
 
 #ifdef _DEBUG
     #ifdef _MSC_VER
@@ -263,6 +270,8 @@ void QuitAudacity(bool bForce)
       }
    }
 
+   LWSlider::DeleteSharedTipPanel();
+
    ModuleManager::Dispatch(AppQuiting);
 
    wxLogWindow *lw = wxGetApp().mLogger;
@@ -279,6 +288,9 @@ void QuitAudacity(bool bForce)
    gParentFrame = NULL;
 
    CloseContrastDialog();
+#ifdef EXPERIMENTAL_SCOREALIGN
+   CloseScoreAlignDialog();
+#endif
    CloseScreenshotTools();
    
    //release ODManager Threads
@@ -691,12 +703,19 @@ void AudacityApp::OnMacOpenFile(wxCommandEvent & event)
    while (ofqueue.GetCount()) {
       wxString name(ofqueue[0]);
       ofqueue.RemoveAt(0);
-      MRUOpen(name);
+      MRUOpen(name); // FIX-ME: Check the return result?
    }
 }
 #endif //__WXMAC__
 
 typedef int (AudacityApp::*SPECIALKEYEVENT)(wxKeyEvent&);
+
+#define ID_RECENT_CLEAR 6100
+#define ID_RECENT_FIRST 6101
+#define ID_RECENT_LAST  6112
+
+// we don't really care about the timer id, but set this value just in case we do in the future
+#define kAudacityAppTimerID 0
 
 BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_QUERY_END_SESSION(AudacityApp::OnEndSession)
@@ -704,6 +723,7 @@ BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_KEY_DOWN(AudacityApp::OnKeyDown)
    EVT_CHAR(AudacityApp::OnChar)
    EVT_KEY_UP(AudacityApp::OnKeyUp)
+   EVT_TIMER(kAudacityAppTimerID, AudacityApp::OnTimer)
 #ifdef __WXMAC__
    EVT_MENU(wxID_NEW, AudacityApp::OnMenuNew)
    EVT_MENU(wxID_OPEN, AudacityApp::OnMenuOpen)
@@ -714,40 +734,33 @@ BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_COMMAND(wxID_ANY, EVT_OPEN_AUDIO_FILE, AudacityApp::OnMacOpenFile)
 #endif
    // Recent file event handlers.  
-   EVT_MENU(wxID_FILE, AudacityApp::OnMRUClear)
-   EVT_MENU_RANGE(wxID_FILE1, wxID_FILE9, AudacityApp::OnMRUFile)
-// EVT_MENU_RANGE(6050, 6060, AudacityApp::OnMRUProject)
+   EVT_MENU(ID_RECENT_CLEAR, AudacityApp::OnMRUClear)
+   EVT_MENU_RANGE(ID_RECENT_FIRST, ID_RECENT_LAST, AudacityApp::OnMRUFile)
 
    // Handle AppCommandEvents (usually from a script)
    EVT_APP_COMMAND(wxID_ANY, AudacityApp::OnReceiveCommand)
 END_EVENT_TABLE()
 
-// Backend for OnMRUFile and OnMRUProject
-bool AudacityApp::MRUOpen(wxString fileName) {
-   // Most of the checks below are copied from AudacityProject::ShowFileDialog
+// backend for OnMRUFile 
+bool AudacityApp::MRUOpen(wxString fullPathStr) {
+   // Most of the checks below are copied from AudacityProject::OpenFiles.
    // - some rationalisation might be possible.
    
    AudacityProject *proj = GetActiveProject();
    
-   if(!fileName.IsEmpty()) {
-      
+   if (!fullPathStr.IsEmpty()) 
+   {   
       // verify that the file exists 
-      if(wxFile::Exists(fileName)) {
-         wxFileName newFileName(fileName);
+      if (wxFile::Exists(fullPathStr)) 
+      {
+         gPrefs->Write(wxT("/DefaultOpenPath"), wxPathOnly(fullPathStr));
          
-         gPrefs->Write(wxT("/DefaultOpenPath"), wxPathOnly(fileName));
-         
-         // Make sure it isn't already open
-         size_t numProjects = gAudacityProjects.Count();
-         for (size_t i = 0; i < numProjects; i++) {
-            if (newFileName.SameAs(gAudacityProjects[i]->GetFileName())) {
-               wxMessageBox(wxString::Format(_("%s is already open in another window."),
-                  newFileName.GetName().c_str()),
-                  _("Error opening project"),
-                  wxOK | wxCENTRE);
-               return(true);
-            }
-         }
+         // Make sure it isn't already open.
+         // Test here even though AudacityProject::OpenFile() also now checks, because 
+         // that method does not return the bad result. 
+         // That itself may be a FIX-ME.
+         if (AudacityProject::IsAlreadyOpen(fullPathStr))
+            return false;
          
          // DMM: If the project is dirty, that means it's been touched at
          // all, and it's not safe to open a new project directly in its
@@ -765,12 +778,12 @@ bool AudacityApp::MRUOpen(wxString fileName) {
          // This project is clean; it's never been touched.  Therefore
          // all relevant member variables are in their initial state,
          // and it's okay to open a new project inside this window.
-         proj->OpenFile(fileName);
+         proj->OpenFile(fullPathStr);
       }
       else {
          // File doesn't exist - remove file from history
          wxMessageBox(wxString::Format(_("%s could not be found.\n\nIt has been removed from the list of recent files."), 
-                      fileName.c_str()));
+                      fullPathStr.c_str()));
          return(false);
       }
    }
@@ -782,43 +795,119 @@ void AudacityApp::OnMRUClear(wxCommandEvent& event)
    mRecentFiles->Clear();
 }
 
+//vvv Basically, anything from Recent Files is treated as a .aup, until proven otherwise, 
+// then it tries to Import(). Very questionable handling, imo. 
+// Better, for example, to check the file type early on.
 void AudacityApp::OnMRUFile(wxCommandEvent& event) {
-   int n = event.GetId() - wxID_FILE1;
-   wxString fileName = mRecentFiles->GetHistoryFile(n);
+   int n = event.GetId() - ID_RECENT_FIRST;
+   wxString fullPathStr = mRecentFiles->GetHistoryFile(n);
 
-   bool opened = MRUOpen(fileName);
-   if(!opened) {
+   // Try to open only if not already open. 
+   // Test IsAlreadyOpen() here even though AudacityProject::MRUOpen() also now checks, 
+   // because we don't want to RemoveFileFromHistory() just because it already exists,
+   // and AudacityApp::OnMacOpenFile() calls MRUOpen() directly.
+   // that method does not return the bad result. 
+   if (!AudacityProject::IsAlreadyOpen(fullPathStr) && !MRUOpen(fullPathStr))
       mRecentFiles->RemoveFileFromHistory(n);
+}
+
+void AudacityApp::OnTimer(wxTimerEvent& event)
+{
+   // Check if a warning for missing aliased files should be displayed
+   if (ShouldShowMissingAliasedFileWarning()) {
+      // find which project owns the blockfile
+      // note: there may be more than 1, but just go with the first one.
+      size_t numProjects = gAudacityProjects.Count();
+      wxString missingFileName;
+      AudacityProject *offendingProject = NULL;
+
+      m_LastMissingBlockFileLock.Lock();
+      if (numProjects == 1) {
+         // if there is only one project open, no need to search
+         offendingProject = gAudacityProjects[0];
+      } else if (numProjects > 1) {
+         for (size_t i = 0; i < numProjects; i++) {
+            // search each project for the blockfile
+            if (gAudacityProjects[i]->GetDirManager()->ContainsBlockFile(m_LastMissingBlockFile)) {
+               offendingProject = gAudacityProjects[i];
+               break;
+            }
+         }
+      }
+      missingFileName = ((AliasBlockFile*)m_LastMissingBlockFile)->GetAliasedFileName().GetFullPath();
+      m_LastMissingBlockFileLock.Unlock();
+
+      // if there are no projects open, don't show the warning (user has closed it)
+      if (offendingProject) {
+         offendingProject->Iconize(false);
+         offendingProject->Raise();
+        
+         wxString errorMessage = wxString::Format(_(
+"One or more external audio files could not be found.\n\
+It is possible they were moved, deleted, or the drive they \
+were on was unmounted.\n\
+Silence is being substituted for the affected audio.\n\
+The first detected missing file is:\n\
+%s\n\
+There may be additional missing files.\n\
+Choose File > Check Dependencies to view a list of \
+locations of the missing files."), missingFileName.c_str());
+
+         // if an old dialog exists, raise it if it is 
+         if (offendingProject->GetMissingAliasFileDialog()) {
+            offendingProject->GetMissingAliasFileDialog()->Raise();
+         } else {
+            ShowAliasMissingDialog(offendingProject, _("Files Missing"),
+                                   errorMessage, wxT(""), true);
+         }
+      }
+      // Only show this warning once per event (playback/menu item/etc).
+      SetMissingAliasedFileWarningShouldShow(false);
    }
 }
 
-#if 0
-//FIX-ME: Was this OnMRUProject lost in an edit??  Should we have it back?
-void AudacityApp::OnMRUProject(wxCommandEvent& event) {
-   AudacityProject *proj = GetActiveProject();
+void AudacityApp::MarkAliasedFilesMissingWarning(BlockFile *b)
+{
+   // the reference counting provides thread safety.
+   if (b)
+      b->Ref();
 
-   int n = event.GetId() - 6050;//FIX-ME: Use correct ID name.
-   wxString fileName = proj->GetRecentProjects()->GetHistoryFile(n);
+   m_LastMissingBlockFileLock.Lock();
+   if (m_LastMissingBlockFile)
+      m_LastMissingBlockFile->Deref();
 
-   bool opened = MRUOpen(fileName);
-   if(!opened) {
-      proj->GetRecentProjects()->RemoveFileFromHistory(n);
-      gPrefs->SetPath("/RecentProjects");
-      proj->GetRecentProjects()->Save(*gPrefs);
-      gPrefs->SetPath("..");
+   m_LastMissingBlockFile = b;
+
+   m_LastMissingBlockFileLock.Unlock();
+}
+
+void AudacityApp::SetMissingAliasedFileWarningShouldShow(bool b)
+{
+   // Note that this is can be called by both the main thread and other threads.
+   // I don't believe we need a mutex because we are checking zero vs non-zero,
+   // and the setting from other threads will always be non-zero (true), and the
+   // setting from the main thread is always false.
+   m_aliasMissingWarningShouldShow = b;
+   // reset the warnings as they were probably marked by a previous run
+   if (m_aliasMissingWarningShouldShow) {
+      MarkAliasedFilesMissingWarning(NULL);
    }
 }
-#endif
 
+bool AudacityApp::ShouldShowMissingAliasedFileWarning()
+{
+   bool ret = m_LastMissingBlockFile && m_aliasMissingWarningShouldShow;
+
+   return ret;
+}
 
 void AudacityApp::InitLang( const wxString & lang )
 {
    if( mLocale )
       delete mLocale;
 
-   if (lang != wxT("en")) {
-      wxLogNull nolog;
-
+   if (lang != wxT("en")) 
+   {
 // LL: I do not know why loading translations fail on the Mac if LANG is not
 //     set, but for some reason it does.  So wrap the creation of wxLocale
 //     with the default translation.
@@ -843,6 +932,11 @@ void AudacityApp::InitLang( const wxString & lang )
 
       for(unsigned int i=0; i<audacityPathList.GetCount(); i++)
          mLocale->AddCatalogLookupPathPrefix(audacityPathList[i]);
+
+      // LL:  Must add the wxWidgets catalog manually since the search
+      //      paths were not set up when mLocale was created.  The
+      //      catalogs are search in LIFO order, so add wxstd first.
+      mLocale->AddCatalog(wxT("wxstd"));
 
 #ifdef AUDACITY_NAME
       mLocale->AddCatalog(wxT(AUDACITY_NAME));
@@ -869,6 +963,14 @@ void AudacityApp::OnFatalException()
 // main frame
 bool AudacityApp::OnInit()
 {
+   m_aliasMissingWarningShouldShow = true;
+   m_LastMissingBlockFile = NULL;
+
+#if defined(__WXGTK__)
+   // Workaround for bug 154 -- initialize to false
+   inKbdHandler = false;
+#endif
+
 #if defined(__WXMAC__)
    // Disable window animation
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
@@ -903,7 +1005,12 @@ bool AudacityApp::OnInit()
    }
 #endif
 
-   mLogger = NULL;
+   #ifndef __WXMAC__
+      mLogger = new wxLogWindow(NULL, wxT("Audacity Log"), false, false);
+      mLogger->SetActiveTarget(mLogger);
+      mLogger->EnableLogging(true);
+      mLogger->SetLogLevel(wxLOG_Max);
+   #endif
 
    // Unused strings that we want to be translated, even though
    // we're not using them yet...
@@ -922,7 +1029,7 @@ bool AudacityApp::OnInit()
    #endif
 
    // TODO - read the number of files to store in history from preferences
-   mRecentFiles = new FileHistory(/* number of files */);
+   mRecentFiles = new FileHistory(ID_RECENT_LAST - ID_RECENT_FIRST + 1, ID_RECENT_CLEAR);
    mRecentFiles->Load(*gPrefs, wxT("RecentFiles"));
 
    //
@@ -1111,10 +1218,12 @@ bool AudacityApp::OnInit()
    // So we also call StartMonitoring when STOP is called.
    project->MayStartMonitoring();
 
-   mLogger = new wxLogWindow(NULL,wxT("Debug Log"),false,false);
-   mLogger->SetActiveTarget(mLogger);
-   mLogger->EnableLogging(true);
-   mLogger->SetLogLevel(wxLOG_Max);
+   #ifdef __WXMAC__
+      mLogger = new wxLogWindow(NULL, wxT("Audacity Log"), false, false);
+      mLogger->SetActiveTarget(mLogger);
+      mLogger->EnableLogging(true);
+      mLogger->SetLogLevel(wxLOG_Max);
+   #endif
 
    #ifdef USE_FFMPEG
    FFmpegStartup();
@@ -1289,6 +1398,10 @@ bool AudacityApp::OnInit()
 
    mWindowRectAlreadySaved = FALSE;
 
+   wxLog::FlushActive(); // Make sure all log messages are written.
+
+   mTimer = new wxTimer(this, kAudacityAppTimerID);
+   mTimer->Start(200);
    return TRUE;
 }
 
@@ -1929,13 +2042,3 @@ void AudacityApp::AssociateFileTypes()
 }
 #endif
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 49c2c7b5-6e93-4f33-83ab-ddac56ea598d

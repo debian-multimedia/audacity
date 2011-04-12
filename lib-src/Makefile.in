@@ -1,14 +1,10 @@
 all: @LOCAL_LIBS@ @LIBSRC_BUILD@
 
 # portSMF
-portSMF:
+portsmf-recursive:
 	$(MAKE) -C portsmf
-
-# dlcompat
-dl-recursive:
-	$(MAKE) -C dlcompat
-libdl.a: dl-recursive
-	ln -sf dlcompat/libdl.a libdl.a
+libportSMF.a: portsmf-recursive
+	ln -sf portsmf/libportSMF.a libportSMF.a
 
 # expat
 expat-recursive:
@@ -144,19 +140,14 @@ taglib.a: taglib-recursive
 # PortAudio
 portaudio-v19-recursive:
 	$(MAKE) -C portaudio-v19 lib/libportaudio.la
-portaudio-v19/lib/libportaudio.a: portaudio-v19-recursive
-	ln -sf .libs/libportaudio.a $@
+libportaudio.a: portaudio-v19-recursive
+	ln -sf portaudio-v19/lib/.libs/libportaudio.a libportaudio.a
 
 # PortMixer
 portmixer-recursive:
 	$(MAKE) -C portmixer
-portmixer/libportmixer.a: portmixer-recursive
-
-portaudio/pa_unix_oss/portaudio.a:
-	$(MAKE) -C portaudio/pa_unix_oss
-
-portaudio/pa_mac_core/portaudio.a:
-	$(MAKE) -C portaudio/pa_mac_core
+libportmixer.a: portmixer-recursive
+	ln -sf portmixer/libportmixer.a libportmixer.a
 
 # RTAudio not supported 23/08/2007 R.A.
 # librtaudio-recursive:
@@ -167,7 +158,6 @@ portaudio/pa_mac_core/portaudio.a:
 # Utility rules
 clean:
 	-$(MAKE) -C portsmf clean
-	-$(MAKE) -C dlcompat clean	
 	-$(MAKE) -C expat clean
 	-$(MAKE) -C FileDialog clean
 	-$(MAKE) -C libid3tag clean
@@ -183,8 +173,6 @@ clean:
 	-$(MAKE) -C lib-widget-extra clean
 	-$(MAKE) -C libflac clean
 	-$(MAKE) -C portaudio-v19 clean
-	-$(MAKE) -C portaudio/pa_unix_oss clean
-	-$(MAKE) -C portaudio/pa_mac_core clean
 	-$(MAKE) -C portmixer clean
 	-$(MAKE) -C sbsms clean
 	-$(MAKE) -C soundtouch clean
@@ -193,7 +181,6 @@ clean:
 
 distclean:
 	-$(MAKE) -C portsmf distclean
-	-$(MAKE) -C dlcompat distclean
 	-$(MAKE) -C expat distclean
 	-$(MAKE) -C FileDialog distclean
 	-$(MAKE) -C libid3tag distclean
@@ -209,8 +196,6 @@ distclean:
 	-$(MAKE) -C lib-widget-extra distclean
 	-$(MAKE) -C libflac distclean
 	-$(MAKE) -C portaudio-v19 distclean
-	-$(MAKE) -C portaudio/pa_unix_oss distclean
-	-$(MAKE) -C portaudio/pa_mac_core distclean
 	-$(MAKE) -C portmixer distclean
 	-$(MAKE) -C sbsms distclean
 	-$(MAKE) -C soundtouch distclean
@@ -218,8 +203,8 @@ distclean:
 	-rm -f @LOCAL_LIBS@
 
 # list here all the targets that aren't actually files to be made
-.PHONY: portSMF eexpat-recursive FileDialog-recursive \
-		widgetextra libogg-recursive \
+.PHONY: portsmf-recursive eexpat-recursive FileDialog-recursive \
+	widgetextra libogg-recursive \
 	libvorbis-recursive libnyquist-recursive libmad-recursive \
 	libid3tag-recursive sbsms-recursive soundtouch-recursive libsndfile-recursive \
 	libresample-recursive libsamplerate-recursive vamp-sdk \

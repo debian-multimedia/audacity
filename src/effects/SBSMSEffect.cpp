@@ -32,7 +32,6 @@ public:
       rightBuffer = NULL;
 
       sbsmser = NULL;
-      pitch = NULL;
       outBuf = NULL;
       outputLeftBuffer = NULL;
       outputRightBuffer = NULL;
@@ -46,7 +45,6 @@ public:
       if(buf)                 free(buf);
       if(leftBuffer)          free(leftBuffer);
       if(rightBuffer)         free(rightBuffer);
-      if(pitch)               pitch_destroy(pitch);
       if(sbsmser)             sbsms_destroy(sbsmser);
       if(outBuf)              free(outBuf);
       if(outputLeftBuffer)    free(outputLeftBuffer);
@@ -68,7 +66,6 @@ public:
 
    // Not required by callbacks, but makes for easier cleanup
    sbsms *sbsmser;
-   pitcher *pitch;
    audio *outBuf;
    float *outputLeftBuffer;
    float *outputRightBuffer;
@@ -84,37 +81,12 @@ long samplesCB(audio *chdata, long numFrames, void *userData)
    return n_read;
 }
 
-real stretchCB(long nProcessed, void *userData)
-{
-   sbsmsInfo *si = (sbsmsInfo*) userData;
-   real t0 = (real)nProcessed/(real)si->samplesToProcess;
-   real stretch = si->stretch0 + (si->stretch1-si->stretch0)*t0;
-   return stretch;
-}
-
-real ratioCB(long nProcessed, void *userData)
-{
-   sbsmsInfo *si = (sbsmsInfo*) userData;
-   real t0 = (real)nProcessed/(real)si->samplesToProcess;
-   real stretch = si->stretch0 + (si->stretch1-si->stretch0)*t0;
-   real t1;
-   if(stretch == si->stretch0)
-      t1 = 1.0/stretch;
-   else
-      t1 = log(stretch/si->stretch0)/(stretch-si->stretch0);
-   
-   real ratio = si->ratio0 + (si->ratio1-si->ratio0)*t1*(real)nProcessed/(real)si->samplesToGenerate;
-   
-   return ratio;
-}
-
-void EffectSBSMS :: setParameters(double rateStart, double rateEnd, double pitchStart, double pitchEnd, int quality, bool bPreAnalyze)
+void EffectSBSMS :: setParameters(double rateStart, double rateEnd, double pitchStart, double pitchEnd, bool bPreAnalyze)
 {
    this->rateStart = rateStart;
    this->rateEnd = rateEnd;
    this->pitchStart = pitchStart;
    this->pitchEnd = pitchEnd;
-   this->quality = quality;
    this->bPreAnalyze = bPreAnalyze;
 }
 
@@ -173,14 +145,15 @@ bool EffectSBSMS::ProcessLabelTrack(Track *t)
 bool EffectSBSMS::Process()
 {
    if(!bInit) {
-      sbsms_init(4096);
+      sbsms_init(8192);
       bInit = TRUE;
    }
    
    bool bGoodResult = true;
    
    //Iterate over each track
-   //Track::All is needed because this effect needs to introduce silence in the group tracks to keep sync
+   // Track::All is needed because this effect needs to introduce 
+   // silence in the group tracks to keep sync-lock.
    this->CopyInputTracks(Track::All); // Set up mOutputTracks.
    TrackListIterator iter(mOutputTracks);
    Track* t;
@@ -199,7 +172,7 @@ bool EffectSBSMS::Process()
    t = iter.First();
    while (t != NULL) {
       if (t->GetKind() == Track::Label && 
-            (t->GetSelected() || (mustSync && t->IsSynchroSelected())) )
+            (t->GetSelected() || (mustSync && t->IsSyncLockSelected())) )
       {
          if (!ProcessLabelTrack(t)) {
             bGoodResult = false;
@@ -250,7 +223,8 @@ bool EffectSBSMS::Process()
 
             // SBSMS has a fixed sample rate - we just convert to its sample rate and then convert back
             float srIn = leftTrack->GetRate();
-            float srSBSMS = 44100.0;
+            // mchinen: srSBMS doesn't do the right thing when it was set to fixed 44100.  This seems to fix it.
+            float srSBSMS = leftTrack->GetRate();
             
             // the resampler needs a callback to supply its samples
             resampleBuf rb;
@@ -296,13 +270,13 @@ bool EffectSBSMS::Process()
             si.rs = rb.resampler;
             si.samplesToProcess = samplesToProcess;
             si.samplesToGenerate = samplesToGenerate;
-            si.stretch0 = rateStart;
-            si.stretch1 = rateEnd;
-            si.ratio0 = pitchStart;
-            si.ratio1 = pitchEnd;
+            si.rate0 = rateStart;
+            si.rate1 = rateEnd;
+            si.pitch0 = pitchStart;
+            si.pitch1 = pitchEnd;
             
-            rb.sbsmser = sbsms_create(&samplesCB,&stretchCB,&ratioCB,rightTrack?2:1,quality,bPreAnalyze,true);
-            rb.pitch = pitch_create(rb.sbsmser,&si,srIn/srSBSMS);
+            sbsms_quality quality = sbsms_quality_fast;
+            rb.sbsmser = sbsms_create(&samplesCB,&rateCBLinear,&pitchCBLinear,rightTrack?2:1,&quality,bPreAnalyze,true);
             
             rb.outputLeftTrack = mFactory->NewWaveTrack(leftTrack->GetSampleFormat(),
                                                         leftTrack->GetRate());
@@ -311,7 +285,7 @@ bool EffectSBSMS::Process()
                                                             rightTrack->GetRate());
             
             
-            sampleCount blockSize = SBSMS_FRAME_SIZE[quality];
+            sampleCount blockSize = quality.maxoutframesize;
             rb.outBuf = (audio*)calloc(blockSize,sizeof(audio));
             rb.outputLeftBuffer = (float*)calloc(blockSize*2,sizeof(float));
             if(rightTrack)
@@ -355,14 +329,11 @@ bool EffectSBSMS::Process()
             
             // process
             while(pos<samplesOut && outputCount) {
-               long frames;
-               if(pos+blockSize>samplesOut) {
-                  frames = samplesOut - pos;
-               } else {
-                  frames = blockSize;
+               outputCount = sbsms_read_frame(rb.outBuf, &si, rb.sbsmser, NULL, NULL);
+               if(pos+outputCount>samplesOut) {
+                  outputCount = samplesOut - pos;
                }
-               
-               outputCount = pitch_process(rb.outBuf, frames, rb.pitch);
+
                for(int i = 0; i < outputCount; i++) {
                   rb.outputLeftBuffer[i] = rb.outBuf[i][0];
                   if(rightTrack)
@@ -402,9 +373,9 @@ bool EffectSBSMS::Process()
          }
          mCurTrackNum++;
       }
-      else if (mustSync && t->IsSynchroSelected())
+      else if (mustSync && t->IsSyncLockSelected())
       {
-         t->SyncAdjust(mCurT1, mCurT0 + (mCurT1 - mCurT0) * mTotalStretch);
+         t->SyncLockAdjust(mCurT1, mCurT0 + (mCurT1 - mCurT0) * mTotalStretch);
       }
       //Iterate to the next track
       t = iter.Next();

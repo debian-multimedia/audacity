@@ -75,7 +75,7 @@ void xlungetc(LVAL fptr, int ch)
         ;
         
     /* otherwise, check for ungetc to a stream */
-    if (ustreamp(fptr)) {
+    else if (ustreamp(fptr)) {
         if (ch != EOF) {
             lptr = cons(cvchar(ch),gethead(fptr));
             if (gethead(fptr) == NIL)
@@ -85,7 +85,7 @@ void xlungetc(LVAL fptr, int ch)
     }
     
     /* otherwise, it must be a file */
-    else
+    else if (fptr)
         setsavech(fptr,ch);
 }
 

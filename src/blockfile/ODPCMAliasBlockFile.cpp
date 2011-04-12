@@ -34,44 +34,44 @@ The summary is eventually computed and written to a file in a background thread.
 #include "../Internat.h"
 
 #include "../ondemand/ODManager.h"
+#include "../AudioIO.h"
 
 //#include <errno.h>
 
+extern AudioIO *gAudioIO;
 
 const int aheaderTagLen = 20;
 char aheaderTag[aheaderTagLen + 1] = "AudacityBlockFile112";
 
 
-ODPCMAliasBlockFile::ODPCMAliasBlockFile(wxFileName fileName,
-                     wxFileName aliasedFile, sampleCount aliasStart,
-                     sampleCount aliasLen, int aliasChannel):
-   PCMAliasBlockFile(fileName, aliasedFile, aliasStart, aliasLen, aliasChannel,false)
+ODPCMAliasBlockFile::ODPCMAliasBlockFile(
+      wxFileName fileName,
+      wxFileName aliasedFileName, 
+      sampleCount aliasStart,
+      sampleCount aliasLen, int aliasChannel)
+: PCMAliasBlockFile(fileName, aliasedFileName, 
+                    aliasStart, aliasLen, aliasChannel,false)
 {
-
-  mSummaryAvailable=mSummaryBeingComputed=mHasBeenSaved=false;
-   mFileNameChar = new char[strlen(mFileName.GetFullPath().mb_str(wxConvUTF8))+1];
-   strcpy(mFileNameChar,mFileName.GetFullPath().mb_str(wxConvUTF8));
-
-  
+   mSummaryAvailable = mSummaryBeingComputed = mHasBeenSaved = false;
 }
 
 ///summaryAvailable should be true if the file has been written already.
-ODPCMAliasBlockFile::ODPCMAliasBlockFile(wxFileName existingFileName,
-                     wxFileName aliasedFile, sampleCount aliasStart,
-                     sampleCount aliasLen, int aliasChannel,
-                     float min, float max, float rms, bool summaryAvailable):
-   PCMAliasBlockFile(existingFileName, aliasedFile, aliasStart, aliasLen,
-                  aliasChannel, min, max, rms)
+ODPCMAliasBlockFile::ODPCMAliasBlockFile(
+      wxFileName existingSummaryFileName,
+      wxFileName aliasedFileName, 
+      sampleCount aliasStart,
+      sampleCount aliasLen, int aliasChannel,
+      float min, float max, float rms, bool summaryAvailable)
+: PCMAliasBlockFile(existingSummaryFileName, aliasedFileName, 
+                    aliasStart, aliasLen,
+                    aliasChannel, min, max, rms)
 {
    mSummaryAvailable=summaryAvailable;
    mSummaryBeingComputed=mHasBeenSaved=false;      
-   mFileNameChar = new char[strlen(mFileName.GetFullPath().mb_str(wxConvUTF8))+1];
-   strcpy(mFileNameChar,mFileName.GetFullPath().mb_str(wxConvUTF8));
  }
 
 ODPCMAliasBlockFile::~ODPCMAliasBlockFile()
 {
-   delete [] mFileNameChar;
 }
 
 /// Increases the reference count of this block by one.  Only
@@ -286,13 +286,15 @@ void ODPCMAliasBlockFile::SaveXML(XMLWriter &xmlFile)
 
 /// Constructs a ODPCMAliasBlockFile from the xml output of WriteXML.
 /// Does not schedule the ODPCMAliasBlockFile for OD loading.  Client code must do this.
+// BuildFromXML methods should always return a BlockFile, not NULL,  
+// even if the result is flawed (e.g., refers to nonexistent file), 
+// as testing will be done in DirManager::ProjectFSCK().
 BlockFile *ODPCMAliasBlockFile::BuildFromXML(DirManager &dm, const wxChar **attrs)
 {
    wxFileName summaryFileName;
    wxFileName aliasFileName;
    sampleCount aliasStart=0, aliasLen=0;
    int aliasChannel=0;
-   float rms=0;
    long nValue;
 
    while(*attrs)
@@ -303,19 +305,14 @@ BlockFile *ODPCMAliasBlockFile::BuildFromXML(DirManager &dm, const wxChar **attr
          break;
 
       const wxString strValue = value;
-      if( !wxStricmp(attr, wxT("summaryfile")) )
+      if (!wxStricmp(attr, wxT("summaryfile")) && 
+            // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
+            XMLValueChecker::IsGoodFileString(strValue) && 
+            (strValue.Length() + 1 + dm.GetProjectDataDir().Length() <= PLATFORM_MAX_PATH))
       {
-      
-         // Can't use XMLValueChecker::IsGoodFileName here, but do part of its test.
-         if (!XMLValueChecker::IsGoodFileString(strValue))
-            return NULL;
-
-         #ifdef _WIN32
-            if (strValue.Length() + 1 + dm.GetProjectDataDir().Length() > MAX_PATH)
-               return NULL;
-         #endif
-
-         dm.AssignFile(summaryFileName,value,FALSE);
+         if (!dm.AssignFile(summaryFileName, strValue, false))
+            // Make sure summaryFileName is back to uninitialized state so we can detect problem later.
+            summaryFileName.Clear();
       }
       else if( !wxStricmp(attr, wxT("aliasfile")) )
       {
@@ -324,28 +321,25 @@ BlockFile *ODPCMAliasBlockFile::BuildFromXML(DirManager &dm, const wxChar **attr
          else if (XMLValueChecker::IsGoodFileName(strValue, dm.GetProjectDataDir()))
             // Allow fallback of looking for the file name, located in the data directory.
             aliasFileName.Assign(dm.GetProjectDataDir(), strValue);
-         else 
-            return NULL;
+         else if (XMLValueChecker::IsGoodPathString(strValue))
+            // If the aliased file is missing, we failed XMLValueChecker::IsGoodPathName() 
+            // and XMLValueChecker::IsGoodFileName, because both do existence tests, 
+            // but we want to keep the reference to the missing file because it's a good path string.
+            aliasFileName.Assign(strValue);
       }
       else if (XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue)) 
-      { // integer parameters
-         if( !wxStricmp(attr, wxT("aliasstart")) )
+      {  // integer parameters
+         if (!wxStricmp(attr, wxT("aliasstart")) && (nValue >= 0))
             aliasStart = nValue;
-         else if( !wxStricmp(attr, wxT("aliaslen")) )
+         else if (!wxStricmp(attr, wxT("aliaslen")) && (nValue >= 0))
             aliasLen = nValue;
-         else if( !wxStricmp(attr, wxT("aliaschannel")) )
+         else if (!wxStricmp(attr, wxT("aliaschannel")) && XMLValueChecker::IsValidChannel(aliasChannel))
             aliasChannel = nValue;
       }
    }
 
-   //file doesn't exist, but IsGoodFileName Checks that it does - maybe we should have a different method to check for valid names?
-   if ( /*!XMLValueChecker::IsGoodFileName(summaryFileName.GetFullName(), summaryFileName.GetPath(wxPATH_GET_VOLUME)) || */
-         !XMLValueChecker::IsGoodFileName(aliasFileName.GetFullName(), aliasFileName.GetPath(wxPATH_GET_VOLUME)) || 
-         (aliasLen <= 0) || (aliasLen < 0.0) || !XMLValueChecker::IsValidChannel(aliasChannel) || (rms < 0.0))
-      return NULL;
-   
    return new ODPCMAliasBlockFile(summaryFileName, aliasFileName,
-                                aliasStart, aliasLen, aliasChannel);
+                                    aliasStart, aliasLen, aliasChannel);
 }
 
 
@@ -381,9 +375,6 @@ void ODPCMAliasBlockFile::SetFileName(wxFileName &name)
 {
    mFileNameMutex.Lock();
    mFileName=name;
-   delete [] mFileNameChar;
-   mFileNameChar = new char[strlen(mFileName.GetFullPath().mb_str(wxConvUTF8))+1];
-   strcpy(mFileNameChar,mFileName.GetFullPath().mb_str(wxConvUTF8));
    mFileNameMutex.Unlock();
 }
 
@@ -403,12 +394,20 @@ void ODPCMAliasBlockFile::WriteSummary()
    //the mFileName path may change, for example, when the project is saved.
    //(it moves from /tmp/ to wherever it is saved to.
    mFileNameMutex.Lock();
-      //wxFFile is not thread-safe - if any error occurs in fopen, it posts a wxlog message which WILL crash
-      //audacity because it goes into the wx GUI.  For this reason I left the FILE* method commented out (mchinen)
-     //wxFFile summaryFile(mFileName.GetFullPath(), wxT("wb"));
-   
-   FILE* summaryFile=fopen(mFileNameChar, "wb");
-   
+
+   //wxFFile is not thread-safe - if any error occurs in opening the file, 
+   // it posts a wxlog message which WILL crash
+   // Audacity because it goes into the wx GUI.  
+   // For this reason I left the wxFFile method commented out. (mchinen)
+   //    wxFFile summaryFile(mFileName.GetFullPath(), wxT("wb"));
+
+   // ...and we use fopen instead.
+   wxString sFullPath = mFileName.GetFullPath();
+   char* fileNameChar = new char[strlen(sFullPath.mb_str(wxConvFile)) + 1];
+   strcpy(fileNameChar, sFullPath.mb_str(wxConvFile));
+   FILE* summaryFile = fopen(fileNameChar, "wb");
+   delete [] fileNameChar;
+
    mFileNameMutex.Unlock();
 
    if( !summaryFile){//.IsOpened() ){
@@ -418,7 +417,7 @@ void ODPCMAliasBlockFile::WriteSummary()
       //and wxLog calls are not thread safe.
       printf("Unable to write summary data to file: ");// %s",
       printf("test..\n");
-      printf(" filename: %s\n",mFileNameChar);
+      printf(" filename: %s\n", fileNameChar);
       mFileNameMutex.Unlock();
       return;
    }
@@ -438,7 +437,7 @@ void ODPCMAliasBlockFile::WriteSummary()
    delete [] (char *) summaryData;
    
    
-    //     printf("write successful. filename: %s\n",mFileNameChar);
+    //     printf("write successful. filename: %s\n", fileNameChar);
 
    mSummaryAvailableMutex.Lock();
    mSummaryAvailable=true;
@@ -634,6 +633,9 @@ int ODPCMAliasBlockFile::ReadData(samplePtr data, sampleFormat format,
       memset(data,0,SAMPLE_SIZE(format)*len);
 
       mSilentAliasLog=TRUE;
+      // Set a marker to display an error message
+      if (!wxGetApp().ShouldShowMissingAliasedFileWarning())
+         wxGetApp().MarkAliasedFilesMissingWarning(this);
 
       UnlockRead();
       return len;

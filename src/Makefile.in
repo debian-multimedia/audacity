@@ -20,7 +20,7 @@ PRECOMP_CFLAGS = @PRECOMP_CFLAGS@
 LOCAL_LIBS = @LOCAL_LIBS@
 EXTRAOBJS = @EXTRAOBJS@
 EXTRATARGETS = @EXTRATARGETS@
-LIBS = @LIBS@ @PA_LIBS@
+LIBS = @LIBS@
 DIRS=blockfile commands effects effects/ladspa effects/nyquist effects/vamp export import prefs toolbars widgets xml
 
 srcdir=@srcdir@
@@ -59,6 +59,7 @@ OBJS = \
 	Benchmark.o \
 	CaptureEvents.o \
 	Dependencies.o \
+	DeviceManager.o \
 	Envelope.o \
 	FFmpeg.o \
 	FFT.o \
@@ -222,6 +223,7 @@ OBJS = \
    prefs/ThemePrefs.o \
    prefs/TracksPrefs.o \
    prefs/WarningsPrefs.o \
+   prefs/ExtImportPrefs.o \
 	toolbars/ControlToolBar.o \
 	toolbars/DeviceToolBar.o \
 	toolbars/EditToolBar.o \

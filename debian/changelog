@@ -1,3 +1,13 @@
+audacity (1.3.13-1) unstable; urgency=low
+
+  * New upstream release (LP: #608948, #690226, #694778, #713584, #753323).
+  * Drop 13 upstream applied patches.
+  * Refresh disable dynamic loading patches.
+  * Drop configure.patch and run ./autogen.sh on build time instead.
+  * Use local sbsms due to an API change.
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 13 Apr 2011 01:43:29 +0200
+
 audacity (1.3.12-17ubuntu1) natty; urgency=low
 
   * Merge from Debian unstable. Remaining changes:

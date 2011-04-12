@@ -26,7 +26,6 @@ greater use in future.
 #include <wx/defs.h>
 #include <wx/string.h>
 #include <wx/msgdlg.h>
-#include <wx/progdlg.h>
 #include <wx/sizer.h>
 #include <wx/timer.h>
 #include <wx/hashmap.h>
@@ -140,7 +139,8 @@ bool Effect::DoEffect(wxWindow *parent, int flags,
    bool skipFlag = CheckWhetherSkipEffect();
    if (skipFlag == false) {
       mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
-                                     GetEffectAction());
+                                     GetEffectAction(), 
+                                     pdlgHideStopButton);
       returnVal = Process();
       delete mProgress;
    }
@@ -163,25 +163,19 @@ bool Effect::DoEffect(wxWindow *parent, int flags,
 bool Effect::TotalProgress(double frac)
 {
    int updateResult = mProgress->Update(frac);
-   if (updateResult == eProgressSuccess)
-     return false;
-   return true;
+   return (updateResult != eProgressSuccess);
 }
 
 bool Effect::TrackProgress(int whichTrack, double frac)
 {
    int updateResult = mProgress->Update(whichTrack + frac, (double) mNumTracks);
-   if (updateResult == eProgressSuccess)
-     return false;
-   return true;
+   return (updateResult != eProgressSuccess);
 }
 
 bool Effect::TrackGroupProgress(int whichGroup, double frac)
 {
    int updateResult = mProgress->Update(whichGroup + frac, (double) mNumGroups);
-   if (updateResult == eProgressSuccess)
-     return false;
-   return true;
+   return (updateResult != eProgressSuccess);
 }
 
 void Effect::GetSamples(WaveTrack *track, sampleCount *start, sampleCount *len)
@@ -249,9 +243,9 @@ void Effect::CopyInputTracks(int trackType)
 
    for (Track *aTrack = aIt.First(); aTrack; aTrack = aIt.Next()) {
 
-      // Include selected tracks, plus sync-selected tracks for Track::All)
+      // Include selected tracks, plus sync-lock selected tracks for Track::All.
       if (aTrack->GetSelected() ||
-            (trackType == Track::All && aTrack->IsSynchroSelected()))
+            (trackType == Track::All && aTrack->IsSyncLockSelected()))
       {
          Track *o = aTrack->Duplicate();
          mOutputTracks->Add(o);
@@ -472,7 +466,8 @@ void Effect::Preview()
    // again, so the state is exactly the way it was before Preview
    // was called.
    mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
-                                  _("Preparing preview"));
+                                  _("Preparing preview"), 
+                                  pdlgHideCancelButton); // Have only "Stop" button.
    bool bSuccess = Process();
    delete mProgress;
    End();
@@ -492,13 +487,16 @@ void Effect::Preview()
       if (mixRight)
          playbackTracks.Add(mixRight);
 
+#ifdef EXPERIMENTAL_MIDI_OUT
+      NoteTrackArray empty;
+#endif
       // Start audio playing
       int token =
-         gAudioIO->StartStream(playbackTracks, recordingTracks, NULL,
+         gAudioIO->StartStream(playbackTracks, recordingTracks, 
 #ifdef EXPERIMENTAL_MIDI_OUT
-                               NULL,
+                               empty,
 #endif
-                               rate, t0, t1, NULL);
+                               NULL, rate, t0, t1, NULL);
 
       if (token) {
          int previewing = eProgressSuccess;

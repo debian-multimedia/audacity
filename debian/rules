@@ -19,7 +19,7 @@ configure_flags := \
 	--with-libvorbis=system \
 	--with-midi=system \
 	--with-portaudio=system \
-	--with-sbsms=system \
+	--with-sbsms=local \
 	--with-soundtouch=system \
 	$(NULL)
 
@@ -27,6 +27,7 @@ configure_flags := \
 	dh $@ --parallel
 
 override_dh_auto_configure:
+	./autogen.sh
 	dh_auto_configure -- $(configure_flags)
 
 override_dh_auto_install:

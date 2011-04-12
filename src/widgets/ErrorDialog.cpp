@@ -36,6 +36,7 @@ Gives an Error message with an option for help.
 #include "../Project.h"
 #include "../Prefs.h"
 
+
 class ErrorDialog : public wxDialog
 {
    public:
@@ -43,10 +44,15 @@ class ErrorDialog : public wxDialog
    ErrorDialog(wxWindow *parent, 
       const wxString & dlogTitle, 
       const wxString & message, 
-      const wxString & helpURL);
+      const wxString & helpURL,
+      const bool Close = true, const bool modal = true);
+
+   virtual ~ErrorDialog(){}
 
 private:
 	wxString dhelpURL;
+   bool dClose;
+   bool dModal;
 	
    void OnOk( wxCommandEvent &event );
    void OnHelp( wxCommandEvent &event );
@@ -54,19 +60,54 @@ private:
 	   
 };
 
+// special case for alias missing dialog because we keep track of if it exists.
+class AliasedFileMissingDialog : public ErrorDialog
+{
+   public:
+   AliasedFileMissingDialog(AudacityProject *parent, 
+      const wxString & dlogTitle, 
+      const wxString & message, 
+      const wxString & helpURL,
+      const bool Close = true, const bool modal = true);
+   virtual ~AliasedFileMissingDialog();
+};
+
 BEGIN_EVENT_TABLE(ErrorDialog, wxDialog)
    EVT_BUTTON( wxID_OK, ErrorDialog::OnOk)
    EVT_BUTTON( wxID_HELP, ErrorDialog::OnHelp)
 END_EVENT_TABLE()
 
+
+AliasedFileMissingDialog::AliasedFileMissingDialog(AudacityProject *parent, 
+      const wxString & dlogTitle, 
+      const wxString & message, 
+      const wxString & helpURL,
+      const bool Close, const bool modal):
+ErrorDialog(parent, dlogTitle, message, helpURL, Close, modal)
+{
+   parent->SetMissingAliasFileDialog(this);
+}
+
+AliasedFileMissingDialog::~AliasedFileMissingDialog()
+{
+   ((AudacityProject*)GetParent())->SetMissingAliasFileDialog(NULL);
+}
+
 ErrorDialog::ErrorDialog(
    wxWindow *parent, 
    const wxString & dlogTitle, 
    const wxString & message, 
-   const wxString & helpURL):
+   const wxString & helpURL,
+   const bool Close, const bool modal):
    wxDialog(parent, (wxWindowID)-1, dlogTitle)
 {
+   long buttonMask;
+
+   // only add the help button if we have a URL
+   buttonMask = (helpURL == wxT("")) ? eOkButton : (eHelpButton | eOkButton);
    dhelpURL = helpURL;
+   dClose = Close;
+   dModal = modal;
 
    ShuttleGui S(this, eIsCreating);
 
@@ -75,7 +116,7 @@ ErrorDialog::ErrorDialog(
       S.SetBorder( 20 );
       S.AddFixedText( message );
       S.SetBorder( 2 );
-      S.AddStandardButtons(eHelpButton | eOkButton);
+      S.AddStandardButtons( buttonMask );
    }
    S.EndVerticalLay();
 
@@ -115,9 +156,11 @@ ErrorDialog::ErrorDialog(
 }
 
 void ErrorDialog::OnOk(wxCommandEvent &event)
-{	
-
-   EndModal(true);
+{
+   if (dModal)
+      EndModal(true);
+   else
+      Destroy();
 }
 
 // Helper class to make browser "simulate" a modal dialog
@@ -234,19 +277,53 @@ void ErrorDialog::OnHelp(wxCommandEvent &event)
       return;
    }
    OpenInDefaultBrowser( dhelpURL );
-	EndModal(true);
+   if(dClose)
+	   EndModal(true);
 }
 
 void ShowErrorDialog(wxWindow *parent,
                      const wxString &dlogTitle,
                      const wxString &message, 
-                     const wxString &helpURL)
+                     const wxString &helpURL,
+                     const bool Close)
 {
-   ErrorDialog dlog(parent, dlogTitle, message, helpURL);
+   ErrorDialog dlog(parent, dlogTitle, message, helpURL, Close);
    dlog.CentreOnParent();
    dlog.ShowModal();
 }
 
+void ShowModelessErrorDialog(wxWindow *parent,
+                     const wxString &dlogTitle,
+                     const wxString &message, 
+                     const wxString &helpURL,
+                     const bool Close)
+{
+   ErrorDialog *dlog = new ErrorDialog(parent, dlogTitle, message, helpURL, Close, false);
+   dlog->CentreOnParent();
+   dlog->Show();
+}
+
+void ShowAliasMissingDialog(AudacityProject *parent,
+                     const wxString &dlogTitle,
+                     const wxString &message, 
+                     const wxString &helpURL,
+                     const bool Close)
+{
+   ErrorDialog *dlog = new AliasedFileMissingDialog(parent, dlogTitle, message, helpURL, Close, false);
+   // Don't center because in many cases (effect, export, etc) there will be a progress bar in the center that blocks this.
+   // instead put it just above or on the top of the project.
+   wxPoint point;
+   point.x = 0;
+   
+   point.y = parent ? parent->GetPosition().y - 200 : 100;
+   
+   if (point.y < 100)
+      point.y = 100;
+   dlog->SetPosition(point);
+   dlog->CentreOnParent(wxHORIZONTAL);
+   
+   dlog->Show();
+}
 
 /// Mostly we use this so that we have the code for resizability
 /// in one place.  Other considerations like screen readers are also
@@ -272,15 +349,16 @@ void ShowInfoDialog( wxWindow *parent,
       S.AddTextWindow(message);
    }
    S.SetBorder( 0 );
-   S.StartHorizontalLay(wxALIGN_RIGHT|wxALIGN_BOTTOM, 0);
+   S.StartHorizontalLay(wxALIGN_CENTER|wxALIGN_BOTTOM, 0);
    S.AddStandardButtons(eOkButton);
+
+   S.EndHorizontalLay();
 
    // Next three lines add a tiny dragger.
    wxStatusBar * pBar = new wxStatusBar( &dlog );
    pBar->SetSize( 18, 38);
    S.AddWindow( pBar, wxALIGN_BOTTOM|wxALIGN_RIGHT );
 
-   S.EndHorizontalLay();
    S.EndVerticalLay();
 
    // Smallest size is half default size.  Seems reasonable.

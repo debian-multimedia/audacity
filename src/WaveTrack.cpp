@@ -254,8 +254,7 @@ bool WaveTrack::IsEmpty(double t0, double t1)
    {
       WaveClip *clip = it->GetData();
 
-      if (clip->GetStartTime() < t1-(1.0/mRate) &&
-          clip->GetEndTime()-(1.0/mRate) > t0) {
+      if (!clip->BeforeClip(t1) && !clip->AfterClip(t0)) {
          //printf("Overlapping clip: %.6f...%.6f\n",
          //       clip->GetStartTime(),
          //       clip->GetEndTime());
@@ -463,13 +462,13 @@ bool WaveTrack::ClearAndAddCutLine(double t0, double t1)
 
 //
 // ClearAndPaste() is a specialized version of HandleClear()
-// followed by HandlePaste() and is used mostly by effects that
+// followed by Paste() and is used mostly by effects that
 // can't replace track data directly using Get()/Set().
 //
 // HandleClear() removes any cut/split lines lines with the
 // cleared range, but, in most cases, effects want to preserve
 // the existing cut/split lines, so they are saved before the
-// HandleClear()/HandlePaste() and restored after.
+// HandleClear()/Paste() and restored after.
 //
 // If the pasted track overlaps two or more clips, then it will
 // be pasted with visible split lines.  Normally, effects do not
@@ -508,7 +507,7 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
    t1 = LongSamplesToTime(TimeToLongSamples(t1));
 
    // Save the cut/split lines whether preserving or not since merging
-   // needs to know if a clip boundary is being crossed since HandlePaste()
+   // needs to know if a clip boundary is being crossed since Paste()
    // will add split lines around the pasted clip if so.
    for (ic = GetClipIterator(); ic; ic = ic->GetNext()) {
       double st;
@@ -793,7 +792,7 @@ bool WaveTrack::HandleClear(double t0, double t1,
    return true;
 }
 
-bool WaveTrack::SyncAdjust(double oldT1, double newT1)
+bool WaveTrack::SyncLockAdjust(double oldT1, double newT1)
 {
    if (newT1 > oldT1) {
       // Insert space within the track
@@ -2116,7 +2115,7 @@ bool WaveTrack::Resample(int rate, ProgressDialog *progress)
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (!it->GetData()->Resample(rate, progress))
       {
-         // FIXME: The track is now in an inconsistent state since some
+         // FIX-ME: The track is now in an inconsistent state since some
          //        clips are resampled and some are not
          return false;
       }

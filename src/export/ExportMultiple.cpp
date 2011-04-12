@@ -172,7 +172,11 @@ void ExportMultiple::CountTracksAndLabels()
 int ExportMultiple::ShowModal()
 {
    if (mNumWaveTracks < 2 && mNumLabels < 1) {
-      ::wxMessageBox(_("If you have more than one Audio Track, you can export each track as a separate file,\nor if you have a Label Track, you can export a new file for each label.\n\nThis project does not have multiple tracks or a Label Track, so you cannot export multiple files."),
+      ::wxMessageBox(_("If you have more than one Audio Track, you can\nexport each track \
+as a separate audio file.\n\nIf you have a Label Track, you can export a separate\naudio file \
+for each label in that track. You can have\nmore than one Label Track, but files will only \
+be\nexported for the uppermost Label Track.\n\nThis Project does not meet the above criteria \
+for\nexporting multiple files."),
                      _("Can't export multiple files"),
                      wxOK | wxCENTRE, this);
       return wxID_CANCEL;
@@ -315,7 +319,7 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
                .TieRadioButton(_("Numbering before Label/Track Name"), wxT("numberBefore"));
 
             mByNumber = S.Id(ByNumberID)
-               .TieRadioButton(_("Numbering after Label/Track Name"), wxT("numberAfter"));
+               .TieRadioButton(_("Numbering after File name prefix"), wxT("numberAfter"));
          }
          S.EndRadioButtonGroup();
 
@@ -920,7 +924,7 @@ wxString ExportMultiple::MakeFileName(wxString input)
    {  // need to get user to fix file name
       // build the dialog
       wxString msg;
-      msg.Printf(_("Label %s is not a legal file name. You cannot use any of:   %s\nUse..."), input.c_str(), wxFileName::GetForbiddenChars().c_str());
+      msg.Printf(_("Label or track \"%s\" is not a legal file name. You cannot use any of: %s\nUse..."), input.c_str(), wxFileName::GetForbiddenChars().c_str());
       wxTextEntryDialog dlg( this, msg, _("Save As..."), newname );
 
       // And tell the validator about excluded chars

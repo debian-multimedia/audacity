@@ -407,7 +407,7 @@ ToolManager::ToolManager( AudacityProject *parent )
 
    // Create all of the toolbars
    mBars[ ToolsBarID ]         = new ToolsToolBar();
-   mBars[ ControlBarID ]       = new ControlToolBar();
+   mBars[ TransportBarID ]       = new ControlToolBar();
    mBars[ MeterBarID ]         = new MeterToolBar();
    mBars[ EditBarID ]          = new EditToolBar();
    mBars[ MixerBarID ]         = new MixerToolBar();
@@ -506,7 +506,7 @@ void ToolManager::Reset()
 #endif
       dock->Dock( bar );
 
-      Expose( ndx, ndx ==  DeviceBarID ? false : true );
+      Expose( ndx, true );
 
       if( parent )
       {
@@ -560,7 +560,8 @@ void ToolManager::ReadConfig()
       // Read in all the settings
       gPrefs->Read( wxT("Dock"), &dock, ndx == SelectionBarID ? BotDockID : TopDockID );
       gPrefs->Read( wxT("Order"), &ord, NoBarID );
-      gPrefs->Read( wxT("Show"), &show[ ndx ], ndx == DeviceBarID ? false : true );
+      gPrefs->Read( wxT("Show"), &show[ ndx ], true );
+
       gPrefs->Read( wxT("X"), &x, -1 );
       gPrefs->Read( wxT("Y"), &y, -1 );
       gPrefs->Read( wxT("W"), &width[ ndx ], -1 );
@@ -584,7 +585,7 @@ void ToolManager::ReadConfig()
             bar->Create( mBotDock );
          }
 
-#ifdef EXPERIMENTAL_LINKING
+#ifdef EXPERIMENTAL_SYNC_LOCK
          // Set the width
          if( width[ ndx ] >= bar->GetSize().x )
          {

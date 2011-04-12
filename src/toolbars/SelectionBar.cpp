@@ -184,7 +184,7 @@ void SelectionBar::Populate()
                              wxDefaultPosition, wxSize(80, -1));
    mRateBox->SetName(_("Project Rate (Hz):"));
    wxTextValidator vld(wxFILTER_INCLUDE_CHAR_LIST);
-   vld.SetIncludes(wxArrayString(12, numbers));
+   vld.SetIncludes(wxArrayString(10, numbers));
    mRateBox->SetValidator(vld);
    mRateBox->SetValue(wxString::Format(wxT("%d"), (int)mRate));
    UpdateRates(); // Must be done _after_ setting value on mRateBox!
@@ -400,7 +400,14 @@ void SelectionBar::ValuesToControls()
    if (mRightEndButton->GetValue())
       mRightTime->SetTimeValue(mEnd);
    else
-      mRightTime->SetTimeValue(mEnd - mStart);
+   {  // mRightTime is the length.
+      // Be sure to take into account the sub-sample offset.
+      // See TimeToLongSamples and LongSamplesToTime but here at the project rate.
+      double t = (sampleCount)floor(mEnd * mRate + 0.5);
+      t -= (sampleCount)floor(mStart * mRate + 0.5);
+      t /= mRate;
+      mRightTime->SetTimeValue(t);
+   }
 
    mAudioTime->SetTimeValue(mAudio);
 }

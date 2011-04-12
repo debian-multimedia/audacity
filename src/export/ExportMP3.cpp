@@ -76,6 +76,7 @@
 #include <wx/window.h>
 
 #include "../Audacity.h"
+#include "../FileNames.h"
 #include "../float_cast.h"
 #include "../Internat.h"
 #include "../Mix.h"
@@ -214,6 +215,7 @@ static CHOICES sampRates[] =
 #define ID_VBR 7001
 #define ID_ABR 7002
 #define ID_CBR 7003
+#define ID_QUALITY 7004
 
 void InitMP3_Statics()
 {
@@ -272,9 +274,12 @@ public:
    void OnVBR(wxCommandEvent& evt);
    void OnABR(wxCommandEvent& evt);
    void OnCBR(wxCommandEvent& evt);
+   void OnQuality(wxCommandEvent& evt);
+
    void LoadNames(CHOICES *choices, int count);
    wxArrayString GetNames(CHOICES *choices, int count);
    wxArrayInt GetLabels(CHOICES *choices, int count);
+   int FindIndex(CHOICES *choices, int cnt, int needle, int def);
 
 private:
 
@@ -287,6 +292,11 @@ private:
    wxChoice *mRate;
    wxChoice *mMode;
 
+   long mSetRate;
+   long mVbrRate;
+   long mAbrRate;
+   long mCbrRate;
+
    DECLARE_EVENT_TABLE()
 };
 
@@ -295,6 +305,7 @@ BEGIN_EVENT_TABLE(ExportMP3Options, wxDialog)
    EVT_RADIOBUTTON(ID_VBR,    ExportMP3Options::OnVBR)
    EVT_RADIOBUTTON(ID_ABR,    ExportMP3Options::OnABR)
    EVT_RADIOBUTTON(ID_CBR,    ExportMP3Options::OnCBR)
+   EVT_CHOICE(wxID_ANY,       ExportMP3Options::OnQuality)
    EVT_BUTTON(wxID_OK,        ExportMP3Options::OnOK)
 END_EVENT_TABLE()
 
@@ -305,6 +316,12 @@ ExportMP3Options::ExportMP3Options(wxWindow *parent)
             wxString(_("Specify MP3 Options")))
 {
    InitMP3_Statics();
+
+   mSetRate = gPrefs->Read(wxT("/FileFormats/MP3SetRate"), PRESET_STANDARD);
+   mVbrRate = gPrefs->Read(wxT("/FileFormats/MP3VbrRate"), QUALITY_4);
+   mAbrRate = gPrefs->Read(wxT("/FileFormats/MP3AbrRate"), 128);
+   mCbrRate = gPrefs->Read(wxT("/FileFormats/MP3CbrRate"), 128);
+
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
    PopulateOrExchange(S);
@@ -341,40 +358,38 @@ void ExportMP3Options::PopulateOrExchange(ShuttleGui & S)
                int cnt;
                bool enable;
                int defrate;
-               bool preset = false;
 
                if (mSET->GetValue()) {
                   choices = setRates;
                   cnt = WXSIZEOF(setRates);
                   enable = true;
-                  defrate = PRESET_STANDARD;
-                  preset = true;
+                  defrate = mSetRate;
                }
                else if (mVBR->GetValue()) {
                   choices = varRates;
                   cnt = WXSIZEOF(varRates);
                   enable = true;
-                  defrate = QUALITY_4;
+                  defrate = mVbrRate;
                }
                else if (mABR->GetValue()) {
                   choices = fixRates;
                   cnt = WXSIZEOF(fixRates);
                   enable = false;
-                  defrate = 128;
+                  defrate = mAbrRate;
                }
                else {
                   mCBR->SetValue(true);
                   choices = fixRates;
                   cnt = WXSIZEOF(fixRates);
                   enable = false;
-                  defrate = 128;
+                  defrate = mCbrRate;
                }
 
-               mRate = S.TieChoice(_("Quality"),
-                                   wxT("/FileFormats/MP3Bitrate"), 
-                                   defrate,
-                                   GetNames(choices, cnt),
-                                   GetLabels(choices, cnt));
+               mRate = S.Id(ID_QUALITY).TieChoice(_("Quality"),
+                                                  wxT("/FileFormats/MP3Bitrate"), 
+                                                  defrate,
+                                                  GetNames(choices, cnt),
+                                                  GetLabels(choices, cnt));
 
                mMode = S.TieChoice(_("Variable Speed:"),
                                    wxT("/FileFormats/MP3VarMode"), 
@@ -386,14 +401,10 @@ void ExportMP3Options::PopulateOrExchange(ShuttleGui & S)
                S.AddPrompt(_("Channel Mode:"));
                S.StartTwoColumn();
                {
-                  S.StartRadioButtonGroup(wxT("/FileFormats/MP3ChannelMode"), CHANNEL_STEREO);
+                  S.StartRadioButtonGroup(wxT("/FileFormats/MP3ChannelMode"), CHANNEL_JOINT);
                   {
                      mJoint = S.TieRadioButton(_("Joint Stereo"), CHANNEL_JOINT);
                      mStereo = S.TieRadioButton(_("Stereo"), CHANNEL_STEREO);
-#if defined(__WXMSW__)
-                     mJoint->Enable(!preset);
-                     mStereo->Enable(!preset);
-#endif
                   }
                   S.EndRadioButtonGroup();
                }
@@ -424,6 +435,11 @@ void ExportMP3Options::OnOK(wxCommandEvent& event)
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
 
+   gPrefs->Write(wxT("/FileFormats/MP3SetRate"), mSetRate);
+   gPrefs->Write(wxT("/FileFormats/MP3VbrRate"), mVbrRate);
+   gPrefs->Write(wxT("/FileFormats/MP3AbrRate"), mAbrRate);
+   gPrefs->Write(wxT("/FileFormats/MP3CbrRate"), mCbrRate);
+
    EndModal(wxID_OK);
 
    return;
@@ -435,13 +451,9 @@ void ExportMP3Options::OnSET(wxCommandEvent& evt)
 {
    LoadNames(setRates, WXSIZEOF(setRates));
 
-   mRate->SetSelection(2);
+   mRate->SetSelection(FindIndex(setRates, WXSIZEOF(setRates), mSetRate, 2));
    mRate->Refresh();
    mMode->Enable(true);
-#if defined(__WXMSW__)
-   mJoint->Enable(false);
-   mStereo->Enable(false);
-#endif
 }
 
 /// 
@@ -450,13 +462,9 @@ void ExportMP3Options::OnVBR(wxCommandEvent& evt)
 {
    LoadNames(varRates, WXSIZEOF(varRates));
 
-   mRate->SetSelection(2);
+   mRate->SetSelection(FindIndex(varRates, WXSIZEOF(varRates), mVbrRate, 2));
    mRate->Refresh();
    mMode->Enable(true);
-#if defined(__WXMSW__)
-   mJoint->Enable(true);
-   mStereo->Enable(true);
-#endif
 }
 
 /// 
@@ -465,13 +473,9 @@ void ExportMP3Options::OnABR(wxCommandEvent& evt)
 {
    LoadNames(fixRates, WXSIZEOF(fixRates));
 
-   mRate->SetSelection(10);
+   mRate->SetSelection(FindIndex(fixRates, WXSIZEOF(fixRates), mAbrRate, 10));
    mRate->Refresh();
    mMode->Enable(false);
-#if defined(__WXMSW__)
-   mJoint->Enable(true);
-   mStereo->Enable(true);
-#endif
 }
 
 /// 
@@ -480,13 +484,27 @@ void ExportMP3Options::OnCBR(wxCommandEvent& evt)
 {
    LoadNames(fixRates, WXSIZEOF(fixRates));
 
-   mRate->SetSelection(10);
+   mRate->SetSelection(FindIndex(fixRates, WXSIZEOF(fixRates), mCbrRate, 10));
    mRate->Refresh();
    mMode->Enable(false);
-#if defined(__WXMSW__)
-   mJoint->Enable(true);
-   mStereo->Enable(true);
-#endif
+}
+
+void ExportMP3Options::OnQuality(wxCommandEvent& evt)
+{
+   int sel = mRate->GetSelection();
+
+   if (mSET->GetValue()) {
+      mSetRate = setRates[sel].label;
+   }
+   else if (mVBR->GetValue()) {
+      mVbrRate = varRates[sel].label;
+   }
+   else if (mABR->GetValue()) {
+      mAbrRate = fixRates[sel].label;
+   }
+   else {
+      mCbrRate = fixRates[sel].label;
+   }
 }
 
 void ExportMP3Options::LoadNames(CHOICES *choices, int count)
@@ -519,6 +537,17 @@ wxArrayInt ExportMP3Options::GetLabels(CHOICES *choices, int count)
    }
 
    return labels;
+}
+
+int ExportMP3Options::FindIndex(CHOICES *choices, int cnt, int needle, int def)
+{
+   for (int i = 0; i < cnt; i++) {
+      if (choices[i].label == needle) {
+         return i;
+      }
+   }
+
+   return def;
 }
 
 //----------------------------------------------------------------------------
@@ -903,8 +932,6 @@ bool MP3Exporter::FindLibrary(wxWindow *parent)
 
 bool MP3Exporter::LoadLibrary(wxWindow *parent, AskUser askuser)
 {
-   wxLogNull logNo;
-
    if (ValidLibraryLoaded()) {
       FreeLibrary();
       mLibraryLoaded = false;
@@ -916,17 +943,20 @@ bool MP3Exporter::LoadLibrary(wxWindow *parent, AskUser askuser)
 
    // First try loading it from a previously located path
    if (!mLibPath.IsEmpty()) {
+      wxLogMessage(wxT("Attempting to load LAME from previously defined path"));
       mLibraryLoaded = InitLibrary(mLibPath);
    }
 
    // If not successful, try loading using system search paths
    if (!ValidLibraryLoaded()) {
+      wxLogMessage(wxT("Attempting to load LAME from system search paths"));
       mLibPath = GetLibraryName();
       mLibraryLoaded = InitLibrary(mLibPath);
    }
 
    // If not successful, try loading using compiled in path
    if (!ValidLibraryLoaded()) {
+      wxLogMessage(wxT("Attempting to load LAME from builtin path"));
       wxFileName fn(GetLibraryPath(), GetLibraryName());
       mLibPath = fn.GetFullPath();
       mLibraryLoaded = InitLibrary(mLibPath);
@@ -934,6 +964,7 @@ bool MP3Exporter::LoadLibrary(wxWindow *parent, AskUser askuser)
 
    // If not successful, must ask the user
    if (!ValidLibraryLoaded()) {
+      wxLogMessage(wxT("(Maybe) ask user for library"));
       if (askuser == MP3Exporter::Maybe && FindLibrary(parent)) {
          mLibraryLoaded = InitLibrary(mLibPath);
       }
@@ -946,9 +977,12 @@ bool MP3Exporter::LoadLibrary(wxWindow *parent, AskUser askuser)
          wxMessageBox(mBladeVersion);
       }
 #endif
+      wxLogMessage(wxT("Failed to locate LAME library"));
 
       return false;
    }
+
+   wxLogMessage(wxT("LAME library successfully loaded"));
 
    return true;
 }
@@ -981,9 +1015,15 @@ void MP3Exporter::SetChannel(int mode)
 
 bool MP3Exporter::InitLibrary(wxString libpath)
 {
+   wxLogMessage(wxT("Loading LAME from %s"), libpath.c_str());
+
    if (!lame_lib.Load(libpath, wxDL_LAZY)) {
+      wxLogMessage(wxT("load failed"));
       return false;
    }
+
+   wxLogMessage(wxT("Actual LAME path %s"),
+              FileNames::PathFromAddr(lame_lib.GetSymbol(wxT("lame_init"))).c_str());
 
    lame_init = (lame_init_t *)
       lame_lib.GetSymbol(wxT("lame_init"));
@@ -1062,6 +1102,7 @@ bool MP3Exporter::InitLibrary(wxString libpath)
       !lame_set_padding_type ||
       !lame_set_bWriteVbrTag)
    {
+      wxLogMessage(wxT("Failed to find a required symbol in the LAME library\n"));
 #if defined(__WXMSW__)
       if (beVersion) {
          be_version v;
@@ -1123,7 +1164,7 @@ int MP3Exporter::InitializeStream(int channels, int sampleRate)
    lame_set_num_channels(mGF, channels);
    lame_set_in_samplerate(mGF, sampleRate);
    lame_set_out_samplerate(mGF, sampleRate);
-   lame_set_disable_reservoir(mGF, true);
+   lame_set_disable_reservoir(mGF, false);
    lame_set_padding_type(mGF, PAD_NO);
 
    // Add the VbrTag for all types.  For ABR/VBR, a Xing tag will be created.
@@ -1312,8 +1353,14 @@ wxString MP3Exporter::GetLibraryPath()
    wxString path;
 
    if (reg.Exists()) {
+      wxLogMessage(wxT("LAME registry key exists."));
       reg.QueryValue(wxT("InstallPath"), path);
    }
+   else {
+      wxLogMessage(wxT("LAME registry key does not exist."));
+   }
+
+   wxLogMessage(wxT("Library path is: ") + path);
 
    return path;
 }
@@ -1485,7 +1532,9 @@ private:
    wxString FindName(CHOICES *choices, int cnt, int needle);
    int AskResample(int bitrate, int rate, int lowrate, int highrate);
    int AddTags(AudacityProject *project, char **buffer, bool *endOfFile, Tags *tags);
-
+#ifdef USE_LIBID3TAG 
+   void AddFrame(struct id3_tag *tp, const wxString & n, const wxString & v, const char *name);
+#endif
 };
 
 ExportMP3::ExportMP3()
@@ -1639,7 +1688,7 @@ int ExportMP3::Export(AudacityProject *project,
    int numWaveTracks;
    WaveTrack **waveTracks;
    tracks->GetWaveTracks(selectionOnly, &numWaveTracks, &waveTracks);
-   Mixer *mixer = new Mixer(numWaveTracks, waveTracks,
+   Mixer *mixer = CreateMixer(numWaveTracks, waveTracks,
                             tracks->GetTimeTrack(),
                             t0, t1,
                             channels, inSamples, true,
@@ -1846,8 +1895,6 @@ int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
 #ifdef USE_LIBID3TAG 
    struct id3_tag *tp = id3_tag_new();
 
-   bool v2 = tags->GetID3V2();
-
    wxString n, v;
    for (bool cont = tags->GetFirst(n, v); cont; cont = tags->GetNext(n, v)) {
       const char *name = "TXXX";
@@ -1862,16 +1909,13 @@ int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
          name = ID3_FRAME_ALBUM;
       }
       else if (n.CmpNoCase(TAG_YEAR) == 0) {
-         // LLL:  This should be ID3_FRAME_YEAR, but some apps do not like the
-         //       newer frame ID, so we force usage of the older one.  (For now
-         //       anyway.)
-         name = "TYER";
+         // LLL:  Some apps do not like the newer frame ID (ID3_FRAME_YEAR),
+         //       so we add old one as well.
+         AddFrame(tp, n, v, "TYER");
+         name = ID3_FRAME_YEAR;
       }
       else if (n.CmpNoCase(TAG_GENRE) == 0) {
          name = ID3_FRAME_GENRE;
-         if (!v2) {
-            v.Printf(wxT("%d"), tags->GetGenre(v));
-         }
       }
       else if (n.CmpNoCase(TAG_COMMENTS) == 0) {
          name = ID3_FRAME_COMMENT;
@@ -1880,63 +1924,19 @@ int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
          name = ID3_FRAME_TRACK;
       }
 
-      struct id3_frame *frame = id3_frame_new(name);
-
-      if (v2) {
-         if (!n.IsAscii() || !v.IsAscii()) {
-            id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_UTF_16);
-         }
-         else {
-            id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_ISO_8859_1);
-         }
-      }
-
-      id3_ucs4_t *ucs4 =
-         id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) v.mb_str(wxConvUTF8));
-
-      if (strcmp(name, ID3_FRAME_COMMENT) == 0) {
-         // A hack to get around iTunes not recognizing the comment.  The
-         // language defaults to XXX and, since it's not a valid language,
-         // iTunes just ignores the tag.  So, either set it to a valid language
-         // (which one???) or just clear it.  Unfortunately, there's no supported
-         // way of clearing the field, so do it directly.
-         id3_field *f = id3_frame_field(frame, 1);
-         memset(f->immediate.value, 0, sizeof(f->immediate.value));
-         id3_field_setfullstring(id3_frame_field(frame, 3), ucs4);
-      }
-      else if (strcmp(name, "TXXX") == 0) {
-         id3_field_setstring(id3_frame_field(frame, 2), ucs4);
-         free(ucs4);
-
-         ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) n.mb_str(wxConvUTF8));
-           
-         id3_field_setstring(id3_frame_field(frame, 1), ucs4);
-      }
-      else {
-         id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
-      }
-
-      free(ucs4);
-
-      id3_tag_attachframe(tp, frame);
+      AddFrame(tp, n, v, name);
    }
 
-   if (v2) {
-      tp->options &= (~ID3_TAG_OPTION_COMPRESSION); // No compression
+   tp->options &= (~ID3_TAG_OPTION_COMPRESSION); // No compression
 
-      // If this version of libid3tag supports it, use v2.3 ID3
-      // tags instead of the newer, but less well supported, v2.4
-      // that libid3tag uses by default.
-      #ifdef ID3_TAG_HAS_TAG_OPTION_ID3V2_3
-      tp->options |= ID3_TAG_OPTION_ID3V2_3;
-      #endif
+   // If this version of libid3tag supports it, use v2.3 ID3
+   // tags instead of the newer, but less well supported, v2.4
+   // that libid3tag uses by default.
+   #ifdef ID3_TAG_HAS_TAG_OPTION_ID3V2_3
+   tp->options |= ID3_TAG_OPTION_ID3V2_3;
+   #endif
 
-      *endOfFile = false;
-   }
-   else {
-      tp->options |= ID3_TAG_OPTION_ID3V1;
-      *endOfFile = true;
-   }
+   *endOfFile = false;
 
    id3_length_t len;
    
@@ -1951,6 +1951,49 @@ int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile,
    return 0;
 #endif
 }
+
+#ifdef USE_LIBID3TAG 
+void ExportMP3::AddFrame(struct id3_tag *tp, const wxString & n, const wxString & v, const char *name)
+{
+   struct id3_frame *frame = id3_frame_new(name);
+
+   if (!n.IsAscii() || !v.IsAscii()) {
+      id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_UTF_16);
+   }
+   else {
+      id3_field_settextencoding(id3_frame_field(frame, 0), ID3_FIELD_TEXTENCODING_ISO_8859_1);
+   }
+
+   id3_ucs4_t *ucs4 =
+      id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) v.mb_str(wxConvUTF8));
+
+   if (strcmp(name, ID3_FRAME_COMMENT) == 0) {
+      // A hack to get around iTunes not recognizing the comment.  The
+      // language defaults to XXX and, since it's not a valid language,
+      // iTunes just ignores the tag.  So, either set it to a valid language
+      // (which one???) or just clear it.  Unfortunately, there's no supported
+      // way of clearing the field, so do it directly.
+      id3_field *f = id3_frame_field(frame, 1);
+      memset(f->immediate.value, 0, sizeof(f->immediate.value));
+      id3_field_setfullstring(id3_frame_field(frame, 3), ucs4);
+   }
+   else if (strcmp(name, "TXXX") == 0) {
+      id3_field_setstring(id3_frame_field(frame, 2), ucs4);
+      free(ucs4);
+
+      ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *) (const char *) n.mb_str(wxConvUTF8));
+        
+      id3_field_setstring(id3_frame_field(frame, 1), ucs4);
+   }
+   else {
+      id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
+   }
+
+   free(ucs4);
+
+   id3_tag_attachframe(tp, frame);
+}
+#endif
 
 //----------------------------------------------------------------------------
 // Constructor
