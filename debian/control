@@ -6,7 +6,8 @@ Uploaders: Free Ekanayaka <freee@debian.org>,
            Benjamin Drung <bdrung@debian.org>,
            David Henningsson <diwic@ubuntu.com>
 Standards-Version: 3.9.2
-Build-Depends: autotools-dev,
+Build-Depends: autoconf,
+               automake,
                debhelper (>= 7.0.50~),
                gettext,
                libasound2-dev [!kfreebsd-i386 !kfreebsd-amd64 !hurd-i386],
