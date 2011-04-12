@@ -77,7 +77,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  }
 --- a/src/FFmpeg.h
 +++ b/src/FFmpeg.h
-@@ -47,6 +47,20 @@
+@@ -47,6 +47,19 @@
     #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 94, 1)
     #define AVSampleFormat SampleFormat
     #endif
@@ -93,12 +93,11 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 +   #define avio_read get_buffer
 +   #define avio_seek url_fseek
 +   #define avio_close url_fclose
-+   #define av_metadata_set2 av_metadata_set
 +   #define av_get_bits_per_sample_fmt av_get_bits_per_sample_format
  }
  #endif
  
-@@ -335,6 +349,7 @@
+@@ -335,6 +348,7 @@
  } streamContext;
  #endif
  
@@ -106,7 +105,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  extern "C" {
     // A little explanation of what's going on here.
     //
-@@ -827,6 +842,7 @@
+@@ -827,6 +841,7 @@
        (protocol, size)
     );
  };
