@@ -1,3 +1,2 @@
-disable-dynamic-loading.patch
-disable-dynamic-loading-lame.patch
-configure.patch
+disable-dynamic-ffmpeg.patch
+disable-dynamic-lame.patch

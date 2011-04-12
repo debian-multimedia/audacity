@@ -78,7 +78,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
 --- a/src/export/ExportMP3.cpp
 +++ b/src/export/ExportMP3.cpp
-@@ -89,7 +89,11 @@
+@@ -90,7 +90,11 @@
  
  #include "Export.h"
  
@@ -90,7 +90,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
  #ifdef USE_LIBID3TAG 
  #include <id3tag.h>
-@@ -532,6 +536,8 @@
+@@ -561,6 +565,8 @@
  {
  public:
  
@@ -99,7 +99,7 @@ Author: Benjamin Drung <bdrung@debian.org>
     FindDialog(wxWindow *parent, wxString path, wxString name, wxString type)
     :  wxDialog(parent, wxID_ANY, wxString(_("Locate Lame")))
     {
-@@ -624,28 +630,36 @@
+@@ -653,28 +659,36 @@
        return mLibPath.GetFullPath();
     }
  
@@ -136,7 +136,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  typedef lame_global_flags *lame_init_t(void);
  typedef int lame_init_params_t(lame_global_flags*);
  typedef const char* get_lame_version_t(void);
-@@ -689,6 +703,8 @@
+@@ -718,6 +732,8 @@
  typedef size_t lame_get_lametag_frame_t(const lame_global_flags *, unsigned char* buffer, size_t size);
  typedef void lame_mp3_tags_fid_t(lame_global_flags *, FILE *);
  
@@ -145,7 +145,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  #if defined(__WXMSW__)
  // An alternative solution to give Windows an additional chance of writing the tag before
  // falling bato to lame_mp3_tag_fid().  The latter can have DLL sharing issues when mixing
-@@ -741,9 +757,11 @@
+@@ -770,9 +786,11 @@
     MP3Exporter();
     virtual ~MP3Exporter();
  
@@ -157,7 +157,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     /* These global settings keep state over the life of the object */
     void SetMode(int mode);
-@@ -785,9 +803,11 @@
+@@ -814,9 +832,11 @@
  
  private:
  
@@ -169,7 +169,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
  #if defined(__WXMSW__)
     wxString mBladeVersion;
-@@ -800,6 +820,7 @@
+@@ -829,6 +849,7 @@
     int mRoutine;
     int mChannel;
  
@@ -177,7 +177,7 @@ Author: Benjamin Drung <bdrung@debian.org>
     /* function pointers to the symbols we get from the library */
     lame_init_t* lame_init;
     lame_init_params_t* lame_init_params;
-@@ -829,6 +850,7 @@
+@@ -858,6 +879,7 @@
     beWriteInfoTag_t *beWriteInfoTag;
     beVersion_t *beVersion;
  #endif
@@ -185,7 +185,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     lame_global_flags *mGF;
  
-@@ -845,13 +867,17 @@
+@@ -874,13 +896,17 @@
  
  MP3Exporter::MP3Exporter()
  {
@@ -203,7 +203,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     mBitrate = 128;
     mQuality = QUALITY_2;
-@@ -865,6 +891,8 @@
+@@ -894,6 +920,8 @@
     FreeLibrary();
  }
  
@@ -212,7 +212,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  bool MP3Exporter::FindLibrary(wxWindow *parent)
  {
     wxString path;
-@@ -958,6 +986,8 @@
+@@ -992,6 +1020,8 @@
     return mLibraryLoaded;
  }
  
@@ -221,15 +221,15 @@ Author: Benjamin Drung <bdrung@debian.org>
  void MP3Exporter::SetMode(int mode)
  {
     mMode = mode;
-@@ -981,6 +1011,7 @@
- 
- bool MP3Exporter::InitLibrary(wxString libpath)
+@@ -1017,6 +1047,7 @@
  {
+    wxLogMessage(wxT("Loading LAME from %s"), libpath.c_str());
+ 
 +#ifndef DISABLE_DYNAMIC_LOADING_LAME
     if (!lame_lib.Load(libpath, wxDL_LAZY)) {
+       wxLogMessage(wxT("load failed"));
        return false;
-    }
-@@ -1079,6 +1110,7 @@
+@@ -1120,6 +1151,7 @@
        lame_lib.Unload();
        return false;
     }
@@ -237,7 +237,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     mGF = lame_init();
     if (mGF == NULL) {
-@@ -1095,25 +1127,31 @@
+@@ -1136,25 +1168,31 @@
        mGF = NULL;
     }
  
@@ -269,10 +269,10 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     if (channels > 2) {
        return -1;
-@@ -1124,7 +1162,10 @@
+@@ -1165,7 +1203,10 @@
     lame_set_in_samplerate(mGF, sampleRate);
     lame_set_out_samplerate(mGF, sampleRate);
-    lame_set_disable_reservoir(mGF, true);
+    lame_set_disable_reservoir(mGF, false);
 +#ifndef DISABLE_DYNAMIC_LOADING_LAME
 +// TODO: Make this configurable (detect the existance of this function)
     lame_set_padding_type(mGF, PAD_NO);
@@ -280,7 +280,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     // Add the VbrTag for all types.  For ABR/VBR, a Xing tag will be created.
     // For CBR, it will be a Lame Info tag.
-@@ -1269,9 +1310,13 @@
+@@ -1310,9 +1351,13 @@
  
     int result = lame_encode_flush(mGF, outbuffer, mOutBufferSize);
  
@@ -294,7 +294,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  
     return result;
  }
-@@ -1516,10 +1561,20 @@
+@@ -1565,10 +1610,20 @@
                         int subformat)
  {
     int rate = lrint(project->GetRate());
@@ -315,7 +315,7 @@ Author: Benjamin Drung <bdrung@debian.org>
     if (!exporter.LoadLibrary(parent, MP3Exporter::Maybe)) {
        wxMessageBox(_("Could not open MP3 encoding library!"));
        gPrefs->Write(wxT("/MP3/MP3LibPath"), wxString(wxT("")));
-@@ -1533,7 +1588,8 @@
+@@ -1582,7 +1637,8 @@
        
        return false;
     }
@@ -325,7 +325,7 @@ Author: Benjamin Drung <bdrung@debian.org>
     // Retrieve preferences
     int highrate = 48000;
     int lowrate = 8000;
-@@ -1969,13 +2025,17 @@
+@@ -2012,13 +2068,17 @@
     MP3Exporter exporter;
     wxString versionString = _("MP3 export library not found");
  
@@ -367,9 +367,9 @@ Author: Benjamin Drung <bdrung@debian.org>
     }
 --- a/src/prefs/PrefsDialog.cpp
 +++ b/src/prefs/PrefsDialog.cpp
-@@ -99,7 +99,9 @@
-          w = new TracksPrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
+@@ -101,7 +101,9 @@
           w = new ImportExportPrefs(mCategories);mCategories->AddPage(w, w->GetName(), false, 0);
+          w = new ExtImportPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
           w = new ProjectsPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
 +#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG) || !defined(DISABLE_DYNAMIC_LOADING_LAME)
           w = new LibraryPrefs(mCategories);     mCategories->AddPage(w, w->GetName(), false, 0);
