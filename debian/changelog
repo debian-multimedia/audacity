@@ -1,3 +1,10 @@
+audacity (1.3.13-1ubuntu1) natty; urgency=low
+
+  * Merge from Debian unstable (LP: #759314). Remaining changes:
+    - Build against libmp3lame.
+
+ -- Benjamin Drung <bdrung@ubuntu.com>  Wed, 13 Apr 2011 02:00:19 +0200
+
 audacity (1.3.13-1) unstable; urgency=low
 
   * New upstream release (LP: #608948, #690226, #694778, #713584, #753323).
