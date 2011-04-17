@@ -1,2 +1,4 @@
 disable-dynamic-ffmpeg.patch
 disable-dynamic-lame.patch
+upstream-bug-350.patch
+upstream-bug-367.patch

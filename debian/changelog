@@ -1,3 +1,9 @@
+audacity (1.3.13-2) unstable; urgency=low
+
+  * Apply two upstream fixes for the upstream bugs #350 and #367.
+
+ -- Benjamin Drung <bdrung@debian.org>  Sun, 17 Apr 2011 18:43:04 +0200
+
 audacity (1.3.13-1ubuntu1) natty; urgency=low
 
   * Merge from Debian unstable (LP: #759314). Remaining changes:
