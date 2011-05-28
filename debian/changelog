@@ -1,3 +1,11 @@
+audacity (1.3.13-4) unstable; urgency=low
+
+  * libav-0.7.patch: Unbreak compilation against libav 0.7.
+    Thanks to Reinhard Tartler for the patch (Closes: #628201)
+  * Bump required libav version to 0.6 (Closes: #628138)
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 28 May 2011 13:41:09 +0200
+
 audacity (1.3.13-3) unstable; urgency=low
 
   * Apply followup commits for fixing upstream bug #367.
