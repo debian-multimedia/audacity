@@ -3,3 +3,4 @@ upstream-bug-350.patch
 upstream-bug-367.patch
 disable-dynamic-ffmpeg.patch
 disable-dynamic-lame.patch
+libav-0.7.patch
