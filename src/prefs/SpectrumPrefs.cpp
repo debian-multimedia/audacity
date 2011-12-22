@@ -47,14 +47,10 @@ void SpectrumPrefs::Populate()
    mSizeChoices.Add(_("512"));
    mSizeChoices.Add(_("1024"));
    mSizeChoices.Add(_("2048"));
-#ifdef EXPERIMENTAL_FIND_NOTES
    mSizeChoices.Add(_("4096"));
    mSizeChoices.Add(_("8192"));
    mSizeChoices.Add(_("16384"));
    mSizeChoices.Add(_("32768 - most narrowband"));
-#else
-   mSizeChoices.Add(_("4096 - most narrowband"));
-#endif //LOGARITHMIC_SPECTRUM
 
    for (size_t i = 0; i < mSizeChoices.GetCount(); i++) {
       mSizeCodes.Add(1 << (i + 3));
@@ -131,34 +127,34 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartTwoColumn();
       {
          mMinFreq =
-            S.TieTextBox(_("Mi&nimum Frequency (Hz):"),
-                         wxT("/Spectrum/MinFreq"),
-                         0,
-                         12);
+            S.TieNumericTextBox(_("Mi&nimum Frequency (Hz):"),
+                                wxT("/Spectrum/MinFreq"),
+                                0,
+                                12);
 
          mMaxFreq =
-            S.TieTextBox(_("Ma&ximum Frequency (Hz):"),
-                         wxT("/Spectrum/MaxFreq"),
-                         8000,
-                         12);
+            S.TieNumericTextBox(_("Ma&ximum Frequency (Hz):"),
+                                wxT("/Spectrum/MaxFreq"),
+                                8000,
+                                12);
 
          mGain =
-            S.TieTextBox(_("&Gain (dB):"),
-                         wxT("/Spectrum/Gain"),
-                         20,
-                         8);
+            S.TieNumericTextBox(_("&Gain (dB):"),
+                                wxT("/Spectrum/Gain"),
+                                20,
+                                8);
 
          mRange =
-            S.TieTextBox(_("&Range (dB):"),
-                         wxT("/Spectrum/Range"),
-                         80,
-                         8);
+            S.TieNumericTextBox(_("&Range (dB):"),
+                                wxT("/Spectrum/Range"),
+                                80,
+                                8);
 
          mFrequencyGain =
-			 S.TieTextBox(_("Frequency g&ain (dB/dec):"),
-                    wxT("/Spectrum/FrequencyGain"),
-                    0,
-                    4);
+			 S.TieNumericTextBox(_("Frequency g&ain (dB/dec):"),
+                              wxT("/Spectrum/FrequencyGain"),
+                              0,
+                              4);
       }
       S.EndTwoColumn();
 
@@ -180,16 +176,16 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartTwoColumn();
       {
          mFindNotesMinA =
-            S.TieTextBox(_("Minimum Amplitude (dB):"),
-                         wxT("/Spectrum/FindNotesMinA"),
-                         -30L,
-                         8);
+            S.TieNumericTextBox(_("Minimum Amplitude (dB):"),
+                                wxT("/Spectrum/FindNotesMinA"),
+                                -30L,
+                                8);
 
          mFindNotesN =
-            S.TieTextBox(_("Max. Number of Notes (1..128):"),
-                         wxT("/Spectrum/FindNotesN"),
-                         5L,
-                         8);
+            S.TieNumericTextBox(_("Max. Number of Notes (1..128):"),
+                                wxT("/Spectrum/FindNotesN"),
+                                5L,
+                                8);
       }
       S.EndTwoColumn();
 
@@ -212,8 +208,8 @@ bool SpectrumPrefs::Validate()
       wxMessageBox(_("The maximum frequency must be an integer"));
       return false;
    }
-   if (maxFreq < 100 || maxFreq > 100000) {
-      wxMessageBox(_("Maximum frequency must be in the range 100 Hz - 100,000 Hz"));
+   if (maxFreq < 100) {
+      wxMessageBox(_("Maximum frequency must be 100 Hz or above"));
       return false;
    }
 

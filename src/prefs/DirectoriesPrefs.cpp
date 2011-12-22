@@ -108,10 +108,10 @@ void DirectoriesPrefs::PopulateOrExchange(ShuttleGui & S)
 
       S.StartTwoColumn();
       {
-         S.TieTextBox(_("Mi&nimum Free Memory (MB):"),
-                      wxT("/Directories/CacheLowMem"),
-                      16,
-                      9);
+         S.TieNumericTextBox(_("Mi&nimum Free Memory (MB):"),
+                             wxT("/Directories/CacheLowMem"),
+                             16,
+                             9);
       }
       S.EndTwoColumn();
 
@@ -224,7 +224,7 @@ bool DirectoriesPrefs::Validate()
    if (tempDir != oldDir) {
       wxMessageBox(
          _("Changes to temporary directory will not take effect until Audacity is restarted"),
-         wxT("Temp Directory Update"),
+         _("Temp Directory Update"),
          wxOK | wxCENTRE | wxICON_INFORMATION);
    }
 

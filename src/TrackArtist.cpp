@@ -52,7 +52,7 @@ Audacity, the "2-level" invalidation works like this: Anything
 that invalidates the bitmap calls TrackPanel::Refresh(), which
 has an eraseBackground parameter. This flag says to redraw the 
 bitmap when OnPaint() is called. If eraseBackground is false, the
-existing bitmap can be used for waveform imges. Audacity also
+existing bitmap can be used for waveform images. Audacity also
 draws directly to the screen to update the time indicator during
 playback. To move the indicator, one column of pixels is drawn to 
 the screen to remove the indicator. Then the indicator is drawn at
@@ -969,7 +969,8 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, const wxRect &r, const double env[],
       double v;
 
       v = min[x] * env[x];
-      if (mShowClipping && v <= -MAX_AUDIO) {
+      if (clipped && mShowClipping && (v <= -MAX_AUDIO)) 
+      {
          if (clipcnt == 0 || clipped[clipcnt - 1] != xx) {
             clipped[clipcnt++] = xx;
          }
@@ -978,7 +979,8 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, const wxRect &r, const double env[],
                        r.height, dB, true, mdBrange, true);
 
       v = max[x] * env[x];
-      if (mShowClipping && v >= MAX_AUDIO) {
+      if (clipped && mShowClipping && (v >= MAX_AUDIO)) 
+      {
          if (clipcnt == 0 || clipped[clipcnt - 1] != xx) {
             clipped[clipcnt++] = xx;
          }
@@ -1128,9 +1130,8 @@ void TrackArtist::DrawIndividualSamples(wxDC &dc, const wxRect &r,
 
       // t0 + clip->GetOffset() is 'h' (the absolute time of the left edge) for 'r'.
       tt = buffer[s] * clip->GetEnvelope()->GetValueAtX(xx + r.x, r, t0 + clip->GetOffset(), pps);
-      if (mShowClipping && (tt <= -MAX_AUDIO || tt >= MAX_AUDIO)) {
+      if (clipped && mShowClipping && ((tt <= -MAX_AUDIO) || (tt >= MAX_AUDIO))) 
          clipped[clipcnt++] = xx;
-      }
       ypos[s] = GetWaveYPos(tt, zoomMin, zoomMax,
                             r.height, dB, true, mdBrange, false);
       if (ypos[s] < -1) {
@@ -1806,8 +1807,9 @@ void TrackArtist::DrawClipSpectrum(WaveTrack *track,
 #endif
    }
 
-   int minSamples = int (minFreq * windowSize / rate + 0.5);   // units are fft bins
-   int maxSamples = int (maxFreq * windowSize / rate + 0.5);
+   int minSamples = int ((double)minFreq * (double)windowSize / rate + 0.5);   // units are fft bins
+   int maxSamples = int ((double)maxFreq * (double)windowSize / rate + 0.5);
+   int temp = sizeof(int);
    float binPerPx = float(maxSamples - minSamples) / float(mid.height);
 
    int x = 0;
@@ -2182,7 +2184,6 @@ static const char *LookupStringAttribute(Alg_note_ptr note, Alg_attribute attr, 
 static const char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def);
 //static int PITCH_TO_Y(double p, int bottom);
 
-
 // returns NULL if note is not a shape,
 // returns atom (string) value of note if note is a shape
 const char *IsShape(Alg_note_ptr note)
@@ -2422,7 +2423,10 @@ void TrackArtist::DrawNoteTrack(NoteTrack *track,
    Alg_seq_ptr seq = track->mSeq;
    if (!seq) {
       assert(track->mSerializationBuffer);
-      Alg_track_ptr alg_track = seq->unserialize(track->mSerializationBuffer,
+      // JKC: Previously this indirected via seq->, a NULL pointer.
+      // This was actually OK, since unserialize is a static function.
+      // Alg_seq:: is clearer.
+      Alg_track_ptr alg_track = Alg_seq::unserialize(track->mSerializationBuffer,
             track->mSerializationLength);
       assert(alg_track->get_type() == 's');
       track->mSeq = seq = (Alg_seq_ptr) alg_track;
@@ -2810,7 +2814,11 @@ void TrackArtist::UpdatePrefs()
    mMaxFreq = gPrefs->Read(wxT("/Spectrum/MaxFreq"), -1);
    mMinFreq = gPrefs->Read(wxT("/Spectrum/MinFreq"), -1);
    mLogMaxFreq = gPrefs->Read(wxT("/SpectrumLog/MaxFreq"), -1);
+   if( mLogMaxFreq < 0 )
+      mLogMaxFreq = mMaxFreq;
    mLogMinFreq = gPrefs->Read(wxT("/SpectrumLog/MinFreq"), -1);
+   if( mLogMinFreq < 0 )
+      mLogMinFreq = mMinFreq;
 
    mWindowSize = gPrefs->Read(wxT("/Spectrum/FFTSize"), 256);
    mIsGrayscale = (gPrefs->Read(wxT("/Spectrum/Grayscale"), 0L) != 0);

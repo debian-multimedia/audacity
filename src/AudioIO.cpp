@@ -1751,10 +1751,12 @@ void AudioIO::StopStream()
                   }
                   if( appendRecord )
                   {  // append-recording
+                     bool bResult = true;
                      if (recordingOffset < 0)
-                        track->Clear(mT0, mT0 - recordingOffset); // cut the latency out
+                        bResult = track->Clear(mT0, mT0 - recordingOffset); // cut the latency out
                      else
-                        track->InsertSilence(mT0, recordingOffset); // put silence in
+                        bResult = track->InsertSilence(mT0, recordingOffset); // put silence in
+                     wxASSERT(bResult); // TO DO: Actually handle this.
                   }
                   else
                   {  // recording into a new track
@@ -1902,7 +1904,6 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
    const PaDeviceInfo* devInfo = NULL;
    int i;
 
-   wxLogDebug(wxT("Getting supported playback rates for device %d"), devIndex);
    devInfo = Pa_GetDeviceInfo(devIndex);
    
    if (!devInfo)
@@ -1922,19 +1923,13 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
    for (i = 0; i < NumRatesToTry; i++)
    {
       if (Pa_IsFormatSupported(NULL, &pars, RatesToTry[i]) == 0)
-      {
-         wxLogDebug(wxT("Rate %ld Hz is supported"), RatesToTry[i]);
          supported.Add(RatesToTry[i]);
-      }
    }
 
    if (irate != 0 && supported.Index(irate) == wxNOT_FOUND)
    {
       if (Pa_IsFormatSupported(NULL, &pars, irate) == 0)
-      {
-         wxLogDebug(wxT("Suggested rate %ld Hz is supported"), irate);
          supported.Add(irate);
-      }
    }
 
    return supported;
@@ -1959,7 +1954,6 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
    const PaDeviceInfo* devInfo = NULL;
    int i;
 
-   wxLogDebug(wxT("Getting supported capture rates for device %d"), devIndex);
    devInfo = Pa_GetDeviceInfo(devIndex);
 
    if (!devInfo)
@@ -1984,19 +1978,13 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
    for (i = 0; i < NumRatesToTry; i++)
    {
       if (Pa_IsFormatSupported(&pars, NULL, RatesToTry[i]) == 0)
-      {
-         wxLogDebug(wxT("Rate %ld Hz is supported"), RatesToTry[i]);
          supported.Add(RatesToTry[i]);
-      }
    }
 
    if (irate != 0 && supported.Index(irate) == wxNOT_FOUND)
    {
       if (Pa_IsFormatSupported(&pars, NULL, irate) == 0)
-      {
-         wxLogDebug(wxT("Suggested rate %ld Hz is supported"), irate);
          supported.Add(irate);
-      }
    }
 
    return supported;
@@ -3401,9 +3389,29 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                linkFlag = vt->GetLinked();
             }
             
+#define ORIGINAL_DO_NOT_PLAY_ALL_MUTED_TRACKS_TO_END
+#ifdef ORIGINAL_DO_NOT_PLAY_ALL_MUTED_TRACKS_TO_END
+            // this is original code prior to r10680 -RBD
+            if (cut)
+               {
+                  gAudioIO->mPlaybackBuffers[t]->Discard(framesPerBuffer);
+                  continue;
+               }
+
+            unsigned int len = (unsigned int)
+               gAudioIO->mPlaybackBuffers[t]->Get((samplePtr)tempFloats,
+                                                  floatSample,
+                                                  (int)framesPerBuffer);
+#else
             // This code was reorganized so that if all audio tracks
             // are muted, we still return paComplete when the end of
             // a selection is reached.
+            // Vaughan, 2011-10-20: Further comments from Roger, by off-list email:
+            //    ...something to do with what it means to mute all audio tracks. E.g. if you
+            // mute all and play, does the playback terminate immediately or play
+            // silence? If it terminates immediately, does that terminate any MIDI
+            // playback that might also be going on? ...Maybe muted audio tracks + MIDI,
+            // the playback would NEVER terminate. ...I think the #else part is probably preferable...
             unsigned int len;
             if (cut)
             {
@@ -3416,6 +3424,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                                                      floatSample,
                                                      (int)framesPerBuffer);
             }
+#endif
             // If our buffer is empty and the time indicator is past
             // the end, then we've actually finished playing the entire
             // selection.
@@ -3425,9 +3434,10 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             {
                callbackReturn = paComplete;
             }
-
+#ifndef ORIGINAL_DO_NOT_PLAY_ALL_MUTED_TRACKS_TO_END
             if (cut) // no samples to process, they've been discarded
                continue;
+#endif
 
             if (vt->GetChannel() == Track::LeftChannel ||
                 vt->GetChannel() == Track::MonoChannel)

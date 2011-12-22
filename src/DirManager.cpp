@@ -43,6 +43,21 @@
   when reading a project from disk, multiple copies of the
   same block still get mapped to the same BlockFile object.
 
+  The blockfile/directory scheme is rather complicated with two different schemes.
+  The current scheme uses two levels of subdirectories - up to 256 'eXX' and up to
+  256 'dYY' directories within each of the 'eXX' dirs, where XX and YY are hex chars.
+  In each of the dXX directories there are up to 256 audio files (e.g. .au or .auf).
+  They have a filename scheme of 'eXXYYZZZZ', where XX and YY refers to the 
+  subdirectories as above.  The 'ZZZZ' component is generated randomly for some reason.
+  The XX and YY components are sequential.
+  DirManager fills up the current dYY subdir until 256 are created, and moves on to the next one.
+
+  So for example, the first blockfile created may be 'e00/d00/e0000a23b.au' and the next
+  'e00/d00/e000015e8.au', and the 257th may be 'e00/d01/e0001f02a.au'.
+  On close the blockfiles that are no longer referenced by the project (edited or deleted) are removed,
+  along with the consequent empty directories.
+  
+
 *//*******************************************************************/
 
 
@@ -246,7 +261,7 @@ static int RecursivelyRemoveEmptyDirs(wxString dirPath,
          }
       }
       // Have to recheck dir.HasSubDirs() again, in case they all were deleted in recursive calls.
-      if (!dir.HasSubDirs() && !dir.HasFiles())
+      if (!dir.HasSubDirs() && !dir.HasFiles() && (dirPath.Right(5) != wxT("_data")))
       {
          // No subdirs or files. It's empty so delete it. 
          // Vaughan, 2010-07-07: 
@@ -566,7 +581,7 @@ wxFileName DirManager::MakeBlockFilePath(wxString value){
       dir.AppendDir(middir);
 
       if(!dir.DirExists() && !dir.Mkdir(0777,wxPATH_MKDIR_FULL))
-         wxLogSysError(_("mkdir in DirManager::MakeBlockFilePath failed.\n"));
+         wxLogSysError(_("mkdir in DirManager::MakeBlockFilePath failed."));
    }
    return dir;
 }
@@ -596,7 +611,7 @@ bool DirManager::AssignFile(wxFileName &fileName,
          wxString collision;
          checkit.GetFirst(&collision,filespec);
          
-         wxLogWarning(_("Audacity found an orphan blockfile: %s. \nPlease consider saving and reloading the project to perform a complete project check.\n"),
+         wxLogWarning(_("Audacity found an orphan block file: %s. \nPlease consider saving and reloading the project to perform a complete project check."),
                       collision.c_str());
          
          return FALSE;
@@ -809,7 +824,7 @@ wxFileName DirManager::MakeBlockFileName()
          topnum  = (int)(256.*rand()/(RAND_MAX+1.));
          midkey=(topnum<<8)+midnum;
 
-            
+
       }else{
          
          DirHash::iterator iter = dirMidPool.begin();
@@ -910,9 +925,15 @@ BlockFile *DirManager::NewODDecodeBlockFile(
    return newBlockFile;
 }
 
-bool DirManager::ContainsBlockFile(BlockFile *b) {
+bool DirManager::ContainsBlockFile(BlockFile *b)
+{
+   return b ? mBlockFileHash[b->GetFileName().GetName()] == b : false;
+}
+
+bool DirManager::ContainsBlockFile(wxString filepath)
+{
    // check what the hash returns in case the blockfile is from a different project
-   return b ? mBlockFileHash[b->GetFileName().GetName()] == b : NULL;
+   return mBlockFileHash[filepath] != NULL;
 }
 
 // Adds one to the reference count of the block file,
@@ -1023,12 +1044,18 @@ bool DirManager::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
    }
    else
       return false;
-      
-   if ((pBlockFile == NULL) || 
-         // Check the length here so we don't have to do it in each BuildFromXML method.
-         ((mMaxSamples > -1) && // is initialized
-            (pBlockFile->GetLength() > mMaxSamples)))
+
+   if (!pBlockFile)
+      // BuildFromXML failed, or we didn't find a valid blockfile tag.
+      return false;
+
+   // Check the length here so we don't have to do it in each BuildFromXML method.
+   if ((mMaxSamples > -1) && // is initialized
+         (pBlockFile->GetLength() > mMaxSamples))
    {
+      // See http://bugzilla.audacityteam.org/show_bug.cgi?id=451#c13. 
+      // Lock pBlockFile so that the ~BlockFile() will not delete the file on disk. 
+      pBlockFile->Lock();
       delete pBlockFile;
       return false;
    }
@@ -1326,16 +1353,6 @@ void DirManager::Deref()
 // recent savefile.
 int DirManager::ProjectFSCK(const bool bForceError, const bool bAutoRecoverMode)
 {
-   wxArrayString filePathArray; // *all* files in the project directory/subdirectories
-   wxString dirPath = (projFull != wxT("") ? projFull : mytemp);
-   RecursivelyEnumerateWithProgress(
-      dirPath, 
-      filePathArray,          // output: all files in project directory tree
-      wxEmptyString, 
-      true, false, 
-      mBlockFileHash.size(),  // rough guess of how many BlockFiles will be found/processed, for progress
-      _("Inspecting project file data"));
-
    // In earlier versions of this method, enumerations of errors were 
    // all done in sequence, then the user was prompted for each type of error. 
    // The enumerations are now interleaved with prompting, because, for example, 
@@ -1348,15 +1365,40 @@ int DirManager::ProjectFSCK(const bool bForceError, const bool bAutoRecoverMode)
    int action; // choice of action for each type of error
    int nResult = 0;
    
+   if (bForceError && !bAutoRecoverMode)
+   {
+      wxString msg = _("Project check read faulty Sequence tags.");
+      const wxChar *buttons[] = 
+         {_("Close project immediately with no changes"),
+            _("Continue with repairs noted in log, and check for more errors. This will save the project in its current state, unless you \"Close project immediately\" on further error alerts."),
+            NULL};
+      wxLog::FlushActive(); // MultiDialog has "Show Log..." button, so make sure log is current.
+      action = ShowMultiDialog(msg, _("Warning - Problems Reading Sequence Tags"), buttons);
+      if (action == 0) 
+         nResult = FSCKstatus_CLOSE_REQ;
+      else 
+         nResult = FSCKstatus_CHANGED | FSCKstatus_SAVE_AUP; 
+   }
+
+   wxArrayString filePathArray; // *all* files in the project directory/subdirectories
+   wxString dirPath = (projFull != wxT("") ? projFull : mytemp);
+   RecursivelyEnumerateWithProgress(
+      dirPath, 
+      filePathArray,          // output: all files in project directory tree
+      wxEmptyString, 
+      true, false, 
+      mBlockFileHash.size(),  // rough guess of how many BlockFiles will be found/processed, for progress
+      _("Inspecting project file data"));
+
    //
    // MISSING ALIASED AUDIO FILES
    //
+   wxGetApp().SetMissingAliasedFileWarningShouldShow(false);
    BlockHash missingAliasedFileAUFHash;   // (.auf) AliasBlockFiles whose aliased files are missing
    BlockHash missingAliasedFilePathHash;  // full paths of missing aliased files
    this->FindMissingAliasedFiles(missingAliasedFileAUFHash, missingAliasedFilePathHash);
 
-   // No need to check (nResult != FSCKstatus_CLOSE_REQ) as this is first check.
-   if (!missingAliasedFileAUFHash.empty()) 
+   if ((nResult != FSCKstatus_CLOSE_REQ) && !missingAliasedFileAUFHash.empty()) 
    {
       // In auto-recover mode, we always create silent blocks, and do not ask user.
       // This makes sure the project is complete next time we open it.
@@ -1365,8 +1407,9 @@ int DirManager::ProjectFSCK(const bool bForceError, const bool bAutoRecoverMode)
       else
       {
          wxString msgA =
-_("Project check detected %d missing external audio \
-\nfile(s) ('aliased files'). There is no way for Audacity \
+_("Project check of \"%s\" folder \
+\ndetected %d missing external audio file(s) \
+\n('aliased files'). There is no way for Audacity \
 \nto recover these files automatically. \
 \n\nIf you choose the first or second option below, \
 \nyou can try to find and restore the missing files \
@@ -1374,11 +1417,11 @@ _("Project check detected %d missing external audio \
 \n\nNote that for the second option, the waveform \
 \nmay not show silence.");
          wxString msg;
-         msg.Printf(msgA, missingAliasedFilePathHash.size());
+         msg.Printf(msgA, this->projName.c_str(), missingAliasedFilePathHash.size());
          const wxChar *buttons[] = 
             {_("Close project immediately with no changes"),
                _("Treat missing audio as silence (this session only)"), 
-               _("Replace missing audio with silence (permanent immediately)"),
+               _("Replace missing audio with silence (permanent immediately). This will save the project in its current state, unless you \"Close project immediately\" on further error alerts."),
                NULL};
          wxLog::FlushActive(); // MultiDialog has "Show Log..." button, so make sure log is current.
          action = ShowMultiDialog(msg, _("Warning - Missing Aliased File(s)"), buttons);
@@ -1431,11 +1474,12 @@ _("Project check detected %d missing external audio \
       else
       {
          wxString msgA =
-_("Project check detected %d missing alias (.auf) \
-\nblockfile(s). Audacity can fully regenerate these \
-\nfiles from the original audio in the project.");
+_("Project check of \"%s\" folder \
+\ndetected %d missing alias (.auf) blockfile(s). \
+\nAudacity can fully regenerate these files \
+\nfrom the current audio in the project.");
          wxString msg;
-         msg.Printf(msgA, missingAUFHash.size());
+         msg.Printf(msgA, this->projName.c_str(), missingAUFHash.size());
          const wxChar *buttons[] = {_("Regenerate alias summary files (safe and recommended)"),
                                     _("Fill in silence for missing display data (this session only)"),
                                     _("Close project immediately with no further changes"), 
@@ -1455,7 +1499,7 @@ _("Project check detected %d missing alias (.auf) \
             if(action==0){
                //regenerate from data
                b->Recover();
-               nResult = FSCKstatus_CHANGED; 
+               nResult |= FSCKstatus_CHANGED; 
             }else if (action==1){
                // Silence error logging for this block in this session.
                b->SilenceLog(); 
@@ -1481,24 +1525,25 @@ _("Project check detected %d missing alias (.auf) \
       else
       {
          wxString msgA =
-_("Project check detected %d missing audio data \
-\n(.au) blockfile(s), probably due to a bug, system \
-\ncrash, or accidental deletion. There is no way for \
-\nAudacity to recover these missing files automatically. \
+_("Project check of \"%s\" folder \
+\ndetected %d missing audio data (.au) blockfile(s), \
+\nprobably due to a bug, system crash, or accidental \
+\ndeletion. There is no way for Audacity to recover \
+\nthese missing files automatically. \
 \n\nIf you choose the first or second option below, \
 \nyou can try to find and restore the missing files \
 \nto their previous location. \
 \n\nNote that for the second option, the waveform \
 \nmay not show silence.");
          wxString msg;
-         msg.Printf(msgA, missingAUHash.size());
+         msg.Printf(msgA, this->projName.c_str(), missingAUHash.size());
          const wxChar *buttons[] = 
             {_("Close project immediately with no further changes"), 
                _("Treat missing audio as silence (this session only)"), 
                _("Replace missing audio with silence (permanent immediately)"),
                NULL};
          wxLog::FlushActive(); // MultiDialog has "Show Log..." button, so make sure log is current.
-         action = ShowMultiDialog(msg, _("Warning - Missing Audio Data Blockfile(s)"), buttons);
+         action = ShowMultiDialog(msg, _("Warning - Missing Audio Data Block File(s)"), buttons);
       }
       
       if (action == 0)
@@ -1520,7 +1565,7 @@ _("Project check detected %d missing audio data \
             iter++;
          }
          if ((action == 2) && bAutoRecoverMode)
-            wxLogWarning(_("   Project check replaced missing audio data blockfile(s) with silence."));
+            wxLogWarning(_("   Project check replaced missing audio data block file(s) with silence."));
       }
    }
 
@@ -1536,29 +1581,32 @@ _("Project check detected %d missing audio data \
       // They will be deleted when project is saved the first time.
       if (bAutoRecoverMode)
       {
-         wxLogWarning(_("   Project check ignored orphan blockfile(s). They will be deleted when project is saved."));
+         wxLogWarning(_("   Project check ignored orphan block file(s). They will be deleted when project is saved."));
          action = 1;
       }
       else
       {
          wxString msgA =
-_("Project check found %d orphan blockfile(s). These files are \
-\nunused and probably left over from a crash or some other bug. \
-\n\nThey should be deleted to avoid disk contention.");
-      wxString msg;
-         msg.Printf(msgA, (int)orphanFilePathArray.GetCount());
+_("Project check of \"%s\" folder \
+\nfound %d orphan block file(s). These files are \
+\nunused by this project, but might belong to \
+other projects. \
+\nThey are doing no harm and are small.");
+         wxString msg;
+         msg.Printf(msgA, this->projName.c_str(), (int)orphanFilePathArray.GetCount());
 
-         const wxChar *buttons[] = {_("Close project immediately with no further changes"),
-                                    _("Continue without deleting; ignore the extra files this session"),
-                                    _("Delete orphan files immediately"),
-                                    NULL};
+         const wxChar *buttons[] = 
+            {_("Continue without deleting; ignore the extra files this session"),
+            _("Close project immediately with no further changes"),
+            _("Delete orphan files (permanent immediately)"),
+            NULL};
          wxLog::FlushActive(); // MultiDialog has "Show Log..." button, so make sure log is current.
-         action = ShowMultiDialog(msg, _("Warning - Orphan Blockfile(s)"), buttons);
+         action = ShowMultiDialog(msg, _("Warning - Orphan Block File(s)"), buttons);
       }
 
-      if (action == 0)
+      if (action == 1)
          nResult = FSCKstatus_CLOSE_REQ;
-      // Nothing is done if (action == 1).
+      // Nothing is done if (action == 0).
       else if (action == 2)
       {
          // FSCKstatus_CHANGED was bogus here. 
@@ -1571,7 +1619,7 @@ _("Project check found %d orphan blockfile(s). These files are \
       }
    }
 
-   if (nResult != FSCKstatus_CLOSE_REQ)
+   if ((nResult != FSCKstatus_CLOSE_REQ) && !ODManager::HasLoadedODFlag())
    {
       // Remove any empty directories.
       ProgressDialog* pProgress = 
@@ -1601,6 +1649,7 @@ _("Project check found %d orphan blockfile(s). These files are \
             wxOK  | wxICON_EXCLAMATION);
    }
 
+   wxGetApp().SetMissingAliasedFileWarningShouldShow(true);
    return nResult;
 }
 
@@ -1658,7 +1707,7 @@ void DirManager::FindMissingAUFs(
          if (!fileName.FileExists()) 
          {
             missingAUFHash[key] = b;
-            wxLogWarning(_("Missing alias (.auf) blockfile: '%s'"), 
+            wxLogWarning(_("Missing alias (.auf) block file: '%s'"), 
                            fileName.GetFullPath().c_str());
          }
       }
@@ -1682,7 +1731,7 @@ void DirManager::FindMissingAUs(
          if (!fileName.FileExists())
          {
             missingAUHash[key] = b;
-            wxLogWarning(_("Missing data blockfile: '%s'"), 
+            wxLogWarning(_("Missing data block file: '%s'"), 
                            fileName.GetFullPath().c_str());
          }
       }
@@ -1695,6 +1744,8 @@ void DirManager::FindOrphanBlockFiles(
       const wxArrayString& filePathArray,       // input: all files in project directory
       wxArrayString& orphanFilePathArray)       // output: orphan files
 {
+   DirManager *clipboardDM = NULL;
+
    for (size_t i = 0; i < filePathArray.GetCount(); i++) 
    {
       wxFileName fullname = filePathArray[i];
@@ -1705,11 +1756,24 @@ void DirManager::FindOrphanBlockFiles(
             (fullname.GetExt().IsSameAs(wxT("au")) ||
                fullname.GetExt().IsSameAs(wxT("auf"))))
       {
-         orphanFilePathArray.Add(fullname.GetFullPath());
+         if (!clipboardDM) {
+            TrackList *clipTracks = AudacityProject::GetClipboardTracks();
+            
+            if (clipTracks) {
+               TrackListIterator clipIter(clipTracks);
+               Track *track = clipIter.First();
+               if (track)
+                  clipboardDM = track->GetDirManager();
+            }
+         }
+         
+         // Ignore it if it exists in the clipboard (from a previously closed project)
+         if (!(clipboardDM && clipboardDM->ContainsBlockFile(basename)))
+            orphanFilePathArray.Add(fullname.GetFullPath());
       }
    }
    for (size_t i = 0; i < orphanFilePathArray.GetCount(); i++) 
-      wxLogWarning(_("Orphan blockfile: '%s'"), orphanFilePathArray[i].c_str());
+      wxLogWarning(_("Orphan block file: '%s'"), orphanFilePathArray[i].c_str());
 }
 
 

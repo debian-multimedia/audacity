@@ -72,13 +72,13 @@ bool EffectDtmf::Init()
       mIsSelection = true;
    } else {
       // retrieve last used values
-      gPrefs->Read(wxT("/CsPresets/DtmfGen_SequenceDuration"), &mDuration, 1L);
+      gPrefs->Read(wxT("/Effects/DtmfGen/SequenceDuration"), &mDuration, 1L);
       mIsSelection = false;
    }
    /// \todo this code shouldn't be using /CsPresets - need to review its use
-   gPrefs->Read(wxT("/CsPresets/DtmfGen_String"), &dtmfString, wxT("audacity"));
-   gPrefs->Read(wxT("/CsPresets/DtmfGen_DutyCycle"), &dtmfDutyCycle, 550L);
-   gPrefs->Read(wxT("/CsPresets/DtmfGen_Amplitude"), &dtmfAmplitude, 0.8f);
+   gPrefs->Read(wxT("/Effects/DtmfGen/String"), &dtmfString, wxT("audacity"));
+   gPrefs->Read(wxT("/Effects/DtmfGen/DutyCycle"), &dtmfDutyCycle, 550L);
+   gPrefs->Read(wxT("/Effects/DtmfGen/Amplitude"), &dtmfAmplitude, 0.8f);
 
    dtmfNTones = wxStrlen(dtmfString);
 
@@ -374,11 +374,11 @@ void EffectDtmf::Success()
       when user explicitely setup a value
       */
    if (mT1 == mT0)
-      gPrefs->Write(wxT("/CsPresets/DtmfGen_SequenceDuration"), mDuration);
+      gPrefs->Write(wxT("/Effects/DtmfGen/SequenceDuration"), mDuration);
 
-   gPrefs->Write(wxT("/CsPresets/DtmfGen_String"), dtmfString);
-   gPrefs->Write(wxT("/CsPresets/DtmfGen_DutyCycle"), dtmfDutyCycle);
-   gPrefs->Write(wxT("/CsPresets/DtmfGen_Amplitude"), dtmfAmplitude);
+   gPrefs->Write(wxT("/Effects/DtmfGen/String"), dtmfString);
+   gPrefs->Write(wxT("/Effects/DtmfGen/DutyCycle"), dtmfDutyCycle);
+   gPrefs->Write(wxT("/Effects/DtmfGen/Amplitude"), dtmfAmplitude);
 }
 
 //----------------------------------------------------------------------------
@@ -449,7 +449,7 @@ void DtmfDialog::PopulateOrExchange( ShuttleGui & S )
       // The added colon to improve visual consistency was placed outside 
       // the translatable strings to avoid breaking translations close to 2.0. 
       // TODO: Make colon part of the translatable string after 2.0.
-      S.TieTextBox(_("Amplitude (0-1)") + wxString(wxT(":")),  dAmplitude, 10);
+      S.TieNumericTextBox(_("Amplitude (0-1)") + wxString(wxT(":")),  dAmplitude, 10);
 
       S.AddPrompt(_("Duration:"));
       if (mDtmfDurationT == NULL)

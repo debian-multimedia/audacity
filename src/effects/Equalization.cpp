@@ -194,27 +194,27 @@ static wxString interpChoiceStrings[NUM_INTERP_CHOICES];
 void EffectEqualization::ReadPrefs()
 {
 
-   gPrefs->Read(wxT("/CsPresets/EQFilterLength"),
+   gPrefs->Read(wxT("/Effects/Equalization/FilterLength"),
          &mM, 4001);
    if ((mM < 21) || (mM > 8191)) {  // corrupted Prefs?
       mM = 4001;  //default
-      gPrefs->Write(wxT("/CsPresets/EQFilterLength"), mM);
+      gPrefs->Write(wxT("/Effects/Equalization/FilterLength"), mM);
    }
-   gPrefs->Read(wxT("/CsPresets/EQCurveName"), &mCurveName, wxT("unnamed"));
-   gPrefs->Read(wxT("/CsPresets/EQLin"), &mLin, false);
-   gPrefs->Read(wxT("/CsPresets/EQdBMin"), &mdBMin, -30.0);
+   gPrefs->Read(wxT("/Effects/Equalization/CurveName"), &mCurveName, wxT("unnamed"));
+   gPrefs->Read(wxT("/Effects/Equalization/Lin"), &mLin, false);
+   gPrefs->Read(wxT("/Effects/Equalization/dBMin"), &mdBMin, -30.0);
    if ((mdBMin < -120) || (mdBMin > -10)) {  // corrupted Prefs?
       mdBMin = -30;  //default
-      gPrefs->Write(wxT("/CsPresets/EQFilterLength"), mdBMin);
+      gPrefs->Write(wxT("/Effects/Equalization/FilterLength"), mdBMin);
    }
-   gPrefs->Read(wxT("/CsPresets/EQdBMax"), &mdBMax, 30.);
+   gPrefs->Read(wxT("/Effects/Equalization/dBMax"), &mdBMax, 30.);
    if ((mdBMax < 0) || (mdBMax > 60)) {  // corrupted Prefs?
       mdBMax = 30;  //default
-      gPrefs->Write(wxT("/CsPresets/EQFilterLength"), mdBMax);
+      gPrefs->Write(wxT("/Effects/Equalization/FilterLength"), mdBMax);
    }
-   gPrefs->Read(wxT("/CsPresets/EQDrawMode"), &mDrawMode, true);
-   gPrefs->Read(wxT("/CsPresets/EQInterp"), &mInterp, 0);
-   gPrefs->Read(wxT("/CsPresets/EQDrawGrid"), &mDrawGrid, true);
+   gPrefs->Read(wxT("/Effects/Equalization/DrawMode"), &mDrawMode, true);
+   gPrefs->Read(wxT("/Effects/Equalization/Interp"), &mInterp, 0);
+   gPrefs->Read(wxT("/Effects/Equalization/DrawGrid"), &mDrawGrid, true);
 }
 
 EffectEqualization::EffectEqualization()
@@ -303,14 +303,14 @@ bool EffectEqualization::PromptUser()
 
    if (!mEditingBatchParams)
    {
-      gPrefs->Write(wxT("/CsPresets/EQFilterLength"),mM);
-      gPrefs->Write(wxT("/CsPresets/EQCurveName"),mCurveName);
-      gPrefs->Write(wxT("/CsPresets/EQLin"),mLin);
-      gPrefs->Write(wxT("/CsPresets/EQdBMin"),mdBMin);
-      gPrefs->Write(wxT("/CsPresets/EQdBMax"),mdBMax);
-      gPrefs->Write(wxT("/CsPresets/EQDrawMode"),mDrawMode);
-      gPrefs->Write(wxT("/CsPresets/EQInterp"), mInterp);
-      gPrefs->Write(wxT("/CsPresets/EQDrawGrid"), mDrawGrid);
+      gPrefs->Write(wxT("/Effects/Equalization/FilterLength"),mM);
+      gPrefs->Write(wxT("/Effects/Equalization/CurveName"),mCurveName);
+      gPrefs->Write(wxT("/Effects/Equalization/Lin"),mLin);
+      gPrefs->Write(wxT("/Effects/Equalization/dBMin"),mdBMin);
+      gPrefs->Write(wxT("/Effects/Equalization/dBMax"),mdBMax);
+      gPrefs->Write(wxT("/Effects/Equalization/DrawMode"),mDrawMode);
+      gPrefs->Write(wxT("/Effects/Equalization/Interp"), mInterp);
+      gPrefs->Write(wxT("/Effects/Equalization/DrawGrid"), mDrawGrid);
    }
 
    return true;
@@ -531,7 +531,8 @@ bool EffectEqualization::ProcessOne(int count, WaveTrack * t,
          if(toClipOutput)
          {
             //put the processed audio in
-            t->Paste(clipStartEndTimes[i].first,toClipOutput);
+            bool bResult = t->Paste(clipStartEndTimes[i].first, toClipOutput);
+            wxASSERT(bResult); // TO DO: Actually handle this.
             //if the clip was only partially selected, the Paste will have created a split line.  Join is needed to take care of this
             //This is not true when the selection is fully contained within one clip (second half of conditional)
             if( (clipRealStartEndTimes[i].first  != clipStartEndTimes[i].first || 
@@ -1020,7 +1021,7 @@ void EqualizationDialog::LoadCurves(wxString fileName, bool append)
    {
       // Inform user of load failure
       wxMessageBox( reader.GetErrorStr(),
-                    _("Error loading EQ curve"),
+                    _("Error Loading EQ Curve"),
                     wxOK | wxCENTRE,
                     this );
    }
@@ -1085,7 +1086,7 @@ void EqualizationDialog::SaveCurves(wxString fileName)
       wxMessageBox(wxString::Format(
          _("Couldn't write to file \"%s\": %s"),
          fn.GetFullPath().c_str(), pException->GetMessage().c_str()),
-         _("Error saving equalization curves"), wxICON_ERROR, this);
+         _("Error Saving Equalization Curves"), wxICON_ERROR, this);
 
       delete pException;
    }
@@ -1379,7 +1380,7 @@ bool EqualizationDialog::Validate()
    // we offer to save it.
    while (mDisallowCustom && curveName.IsSameAs(wxT("unnamed")))
    {
-      wxMessageBox(_("To use this EQ curve in a batch chain, please choose a new name for it.\nChoose the 'Manage curves list...' button and rename the 'unnamed' curve, then use that one."),
+      wxMessageBox(_("To use this EQ curve in a batch chain, please choose a new name for it.\nChoose the 'Save/Manage Curves...' button and rename the 'unnamed' curve, then use that one."),
             _("EQ Curve needs a different name"),
             wxOK | wxCENTRE,
             this);

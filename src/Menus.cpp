@@ -130,54 +130,43 @@ enum {
    kAlign
 };
 
-typedef void (AudacityProject::*audCommandFunction)();
-typedef void (AudacityProject::*audCommandListFunction)(int);
 
-class AudacityProjectCommandFunctor:public CommandFunctor
+AudacityProjectCommandFunctor::AudacityProjectCommandFunctor(AudacityProject *project,
+                              audCommandFunction commandFunction)
 {
-public:
-   AudacityProjectCommandFunctor(AudacityProject *project,
-                                 audCommandFunction commandFunction)
-   {
-      mProject = project;
-      mCommandFunction = commandFunction;
-      mCommandListFunction = NULL;
-   }
+   mProject = project;
+   mCommandFunction = commandFunction;
+   mCommandListFunction = NULL;
+}
 
-   AudacityProjectCommandFunctor(AudacityProject *project,
-                                 audCommandListFunction commandFunction)
-   {
-      mProject = project;
-      mCommandFunction = NULL;
-      mCommandListFunction = commandFunction;
-   }
+AudacityProjectCommandFunctor::AudacityProjectCommandFunctor(AudacityProject *project,
+                              audCommandListFunction commandFunction)
+{
+   mProject = project;
+   mCommandFunction = NULL;
+   mCommandListFunction = commandFunction;
+}
 
-   AudacityProjectCommandFunctor(AudacityProject *project,
-                                 audCommandListFunction commandFunction,
-                                 wxArrayInt explicitIndices)
-   {
-      mProject = project;
-      mCommandFunction = NULL;
-      mCommandListFunction = commandFunction;
-      mExplicitIndices = explicitIndices;
-   }
+AudacityProjectCommandFunctor::AudacityProjectCommandFunctor(AudacityProject *project,
+                              audCommandListFunction commandFunction,
+                              wxArrayInt explicitIndices)
+{
+   mProject = project;
+   mCommandFunction = NULL;
+   mCommandListFunction = commandFunction;
+   mExplicitIndices = explicitIndices;
+}
 
-   virtual void operator()(int index = 0)
-   {
-      if (mCommandListFunction && mExplicitIndices.GetCount() > 0)
-         (mProject->*(mCommandListFunction)) (mExplicitIndices[index]);
-      else if (mCommandListFunction)
-         (mProject->*(mCommandListFunction)) (index);
-      else
-         (mProject->*(mCommandFunction)) ();
-   }
+void AudacityProjectCommandFunctor::operator()(int index )
+{
+   if (mCommandListFunction && mExplicitIndices.GetCount() > 0)
+      (mProject->*(mCommandListFunction)) (mExplicitIndices[index]);
+   else if (mCommandListFunction)
+      (mProject->*(mCommandListFunction)) (index);
+   else
+      (mProject->*(mCommandFunction)) ();
+}
 
-private:
-   AudacityProject *mProject;
-   audCommandFunction mCommandFunction;
-   audCommandListFunction mCommandListFunction;
-   wxArrayInt mExplicitIndices;
-};
 
 #define FN(X) new AudacityProjectCommandFunctor(this, &AudacityProject:: X )
 #define FNI(X, I) new AudacityProjectCommandFunctor(this, &AudacityProject:: X, I)
@@ -351,11 +340,34 @@ void AudacityProject::CreateMenusAndCommands()
    ModifyUndoMenuItems();
 
    c->AddSeparator();
-
+   
+   c->BeginSubMenu(_("R&emove Audio"));
    c->AddItem(wxT("Cut"), _("Cu&t"), FN(OnCut), wxT("Ctrl+X"),
               AudioIONotBusyFlag | CutCopyAvailableFlag,
               AudioIONotBusyFlag | CutCopyAvailableFlag);
+   c->AddItem(wxT("Delete"), _("&Delete"), FN(OnDelete), wxT("Ctrl+K"));
+   c->AddSeparator();
    c->AddItem(wxT("SplitCut"), _("Spl&it Cut"), FN(OnSplitCut), wxT("Ctrl+Alt+X"));
+   c->AddItem(wxT("SplitDelete"), _("Split D&elete"), FN(OnSplitDelete), wxT("Ctrl+Alt+K"));
+   c->AddSeparator();
+   c->AddItem(wxT("Silence"), _("Silence Audi&o"), FN(OnSilence), wxT("Ctrl+L"));
+   c->AddItem(wxT("Trim"), _("Tri&m"), FN(OnTrim), wxT("Ctrl+T"));
+   c->EndSubMenu();
+   
+   c->BeginSubMenu(_("Clip Boun&daries"));
+   c->AddItem(wxT("Split"), _("Sp&lit"), FN(OnSplit), wxT("Ctrl+I"),
+              AudioIONotBusyFlag | WaveTracksSelectedFlag,
+              AudioIONotBusyFlag | WaveTracksSelectedFlag);
+   c->AddItem(wxT("SplitNew"), _("Split Ne&w"), FN(OnSplitNew), wxT("Ctrl+Alt+I"),
+              AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
+              AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
+   c->AddSeparator();
+   c->AddItem(wxT("Join"), _("&Join"), FN(OnJoin), wxT("Ctrl+J"));
+   c->AddItem(wxT("Disjoin"), _("Detac&h at Silences"), FN(OnDisjoin), wxT("Ctrl+Alt+J"));
+   c->EndSubMenu();
+
+   c->AddSeparator();
+
    c->AddItem(wxT("Copy"), _("&Copy"), FN(OnCopy), wxT("Ctrl+C"),
               AudioIONotBusyFlag | CutCopyAvailableFlag,
               AudioIONotBusyFlag | CutCopyAvailableFlag);
@@ -364,26 +376,9 @@ void AudacityProject::CreateMenusAndCommands()
               AudioIONotBusyFlag | ClipboardFlag);
    c->AddItem(wxT("PasteNewLabel"), _("Paste Te&xt to New Label"), FN(OnPasteNewLabel), wxT("Ctrl+Alt+V"),
               AudioIONotBusyFlag, AudioIONotBusyFlag);
-   c->AddItem(wxT("Trim"), _("Tri&m"), FN(OnTrim), wxT("Ctrl+T"));
 
    c->AddSeparator();
 
-   c->AddItem(wxT("Delete"), _("&Delete"), FN(OnDelete), wxT("Ctrl+K"));
-   c->AddItem(wxT("SplitDelete"), _("Split D&elete"), FN(OnSplitDelete), wxT("Ctrl+Alt+K"));
-   c->AddItem(wxT("Silence"), _("Silence Audi&o"), FN(OnSilence), wxT("Ctrl+L"));
-
-   c->AddSeparator();
-
-   c->AddItem(wxT("Split"), _("Sp&lit"), FN(OnSplit), wxT("Ctrl+I"),
-              AudioIONotBusyFlag | WaveTracksSelectedFlag,
-              AudioIONotBusyFlag | WaveTracksSelectedFlag);
-
-   c->AddItem(wxT("SplitNew"), _("Split Ne&w"), FN(OnSplitNew), wxT("Ctrl+Alt+I"),
-              AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
-              AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
-
-   c->AddItem(wxT("Join"), _("&Join"), FN(OnJoin), wxT("Ctrl+J"));
-   c->AddItem(wxT("Disjoin"), _("Detac&h at Silences"), FN(OnDisjoin), wxT("Ctrl+Alt+J"));
    c->AddItem(wxT("Duplicate"), _("Duplic&ate"), FN(OnDuplicate), wxT("Ctrl+D"));
 
    // An anomaly... StereoToMono is added here for CleanSpeech, 
@@ -405,16 +400,20 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddItem(wxT("CutLabels"), _("&Cut"), FN(OnCutLabels), wxT("Alt+X"),
               AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | IsNotSyncLockedFlag,
               AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | IsNotSyncLockedFlag);
-   c->AddItem(wxT("SplitCutLabels"), _("&Split Cut"), FN(OnSplitCutLabels), wxT("Alt+Shift+X"));
-   c->AddItem(wxT("CopyLabels"), _("Co&py"), FN(OnCopyLabels), wxT("Alt+Shift+C"));
-
-   c->AddSeparator();
-
    c->AddItem(wxT("DeleteLabels"), _("&Delete"), FN(OnDeleteLabels), wxT("Alt+K"),
               AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | IsNotSyncLockedFlag,
               AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag | IsNotSyncLockedFlag);
+
+   c->AddSeparator();
+
+   c->AddItem(wxT("SplitCutLabels"), _("&Split Cut"), FN(OnSplitCutLabels), wxT("Alt+Shift+X"));
    c->AddItem(wxT("SplitDeleteLabels"), _("Sp&lit Delete"), FN(OnSplitDeleteLabels), wxT("Alt+Shift+K"));
+
+   c->AddSeparator();
+
+
    c->AddItem(wxT("SilenceLabels"), _("Silence &Audio"), FN(OnSilenceLabels), wxT("Alt+L"));
+   c->AddItem(wxT("CopyLabels"), _("Co&py"), FN(OnCopyLabels), wxT("Alt+Shift+C"));
 
    c->AddSeparator();
 
@@ -1517,7 +1516,7 @@ void AudacityProject::ModifyAllProjectToolbarMenus()
 {
    AProjectArray::iterator i;
    for (i = gAudacityProjects.begin(); i != gAudacityProjects.end(); ++i) {
-      (*i)->ModifyToolbarMenus();
+      ((AudacityProject *)*i)->ModifyToolbarMenus();
    }
 }
 
@@ -2588,6 +2587,7 @@ double AudacityProject::NearestZeroCrossing(double t0)
          dist[i] += 0.1 * (abs(i - windowSize/2)) / float(windowSize/2);
       }
 
+      delete [] oneDist;
       track = iter.Next();
    }
 
@@ -2600,6 +2600,8 @@ double AudacityProject::NearestZeroCrossing(double t0)
          min = dist[i];
       }
    }
+
+   delete [] dist;
 
    return t0 + (argmin - windowSize/2)/GetRate();
 }
@@ -2965,7 +2967,9 @@ void AudacityProject::OnExportMIDI(){
       return;
    }
 
-   assert(nt);
+   wxASSERT(nt);
+   if (!nt) 
+      return;
 
    while(true){
 
@@ -3463,7 +3467,8 @@ void AudacityProject::OnPaste()
             }else{
                WaveTrack *tmp;
                tmp = mTrackFactory->NewWaveTrack( ((WaveTrack*)n)->GetSampleFormat(), ((WaveTrack*)n)->GetRate());
-               tmp->InsertSilence(0.0, msClipT1 - msClipT0); // MJS: Is this correct?
+               bool bResult = tmp->InsertSilence(0.0, msClipT1 - msClipT0); // MJS: Is this correct?
+               wxASSERT(bResult); // TO DO: Actually handle this.
                tmp->Flush();
 
                bPastedSomething |= 
@@ -3588,19 +3593,17 @@ bool AudacityProject::HandlePasteNothingSelected()
             pNewTrack = mTrackFactory->NewTimeTrack();
             break;
          default:
-            // Vaughan, 2010-08-05: 
-            //    This is probably an error, but was never checked...
-            //    The only kinds of tracks not checked above are Track::None and Track::All. 
             pClip = iterClip.Next();
             continue;
          }
+         wxASSERT(pClip);
 
          pNewTrack->SetLinked(pClip->GetLinked());
          pNewTrack->SetChannel(pClip->GetChannel());
          pNewTrack->SetName(pClip->GetName());
 
-         // Vaughan, 2010-08-05: This code never checked the paste result...
-         pNewTrack->Paste(0.0, pClip); 
+         bool bResult = pNewTrack->Paste(0.0, pClip);
+         wxASSERT(bResult); // TO DO: Actually handle this.
          mTracks->Add(pNewTrack);
          pNewTrack->SetSelected(true);         
          
@@ -4110,87 +4113,84 @@ void AudacityProject::OnSplitNew()
    RedrawProject();
 }
 
-void AudacityProject::OnSplitLabelsToTracks()
-{
-   TrackListIterator iter(mTracks);
-
-   Track *n = iter.First();
-   Track *srcRight = 0;
-   Track *srcLeft = 0;
-   bool stereo = false;
-   LabelTrack *label = 0;
-
-   while(n) {
-      if(n->GetSelected()) {
-         if(n->GetKind() == Track::Wave) {
-            if(n->GetLinked() == true) {
-               stereo = true;
-               srcLeft = n;
-               srcRight  = iter.Next();
-            }
-            else {
-               srcRight = n;
-               stereo = false;
-            }
-         }
-         else if(n->GetKind() == Track::Label)
-            label = (LabelTrack*)n;  // cast necessary to call LabelTrack specific methods
-      }
-      n = iter.Next();
-   }
-
-   // one new track for every label, from that label to the next
-   
-   TrackList newTracks;
-
-   for(int i = 0; i < label->GetNumLabels(); i++) {
-      wxString name = label->GetLabel(i)->title;
-      double begin = label->GetLabel(i)->t;
-      double end;
-
-      // if on the last label, extend to the end of the wavetrack
-      if(i == label->GetNumLabels() - 1) {
-         if(stereo)
-            end = wxMax(srcLeft->GetEndTime(), srcRight->GetEndTime());
-         else
-            end = srcLeft->GetEndTime();
-      }
-      else
-         end = label->GetLabel(i+1)->t;
-
-      Track *destLeft = 0;
-      Track *destRight = 0;
-
-      srcLeft->Copy(begin, end, &destLeft);
-      if (destLeft) {
-         destLeft->Init(*srcLeft);
-         destLeft->SetOffset(wxMax(begin, srcLeft->GetOffset()));
-         destLeft->SetName(name);
-         
-         mTracks->Add(destLeft);
-      }
-
-      if(stereo) {
-         srcRight->Copy(begin, end, &destRight);
-         if (destRight) {
-            destRight->Init(*srcRight);
-            destRight->SetOffset(wxMax(begin, srcRight->GetOffset()));
-            destRight->SetName(name);
-            
-            mTracks->Add(destRight);
-         }
-         else if(destLeft)
-            // account for possibility of a non-aligned linked track, which could
-            // cause the left channel to be eligible for creating a new track,
-            // but not the right.
-            destLeft->SetLinked(false);
-      }
-   }
-
-   PushState(_("Split at labels"), _("Split at labels"));
-
-   RedrawProject();
-}
+//void AudacityProject::OnSplitLabelsToTracks()
+//{
+//   TrackListIterator iter(mTracks);
+//
+//   Track *n = iter.First();
+//   Track *srcRight = 0;
+//   Track *srcLeft = 0;
+//   bool stereo = false;
+//   LabelTrack *label = 0;
+//
+//   while(n) {
+//      if(n->GetSelected()) {
+//         if(n->GetKind() == Track::Wave) {
+//            if(n->GetLinked() == true) {
+//               stereo = true;
+//               srcLeft = n;
+//               srcRight  = iter.Next();
+//            }
+//            else {
+//               srcRight = n;
+//               stereo = false;
+//            }
+//         }
+//         else if(n->GetKind() == Track::Label)
+//            label = (LabelTrack*)n;  // cast necessary to call LabelTrack specific methods
+//      }
+//      n = iter.Next();
+//   }
+//
+//   wxASSERT(label); // per Vigilant Sentry report on possible null deref, FIX-ME: Report error or validate?
+//   for(int i = 0; i < label->GetNumLabels(); i++) {
+//      wxString name = label->GetLabel(i)->title;
+//      double begin = label->GetLabel(i)->t;
+//      double end;
+//
+//      // if on the last label, extend to the end of the wavetrack
+//      if(i == label->GetNumLabels() - 1) {
+//         if(stereo)
+//            end = wxMax(srcLeft->GetEndTime(), srcRight->GetEndTime());
+//         else
+//            end = srcLeft->GetEndTime();
+//      }
+//      else
+//         end = label->GetLabel(i+1)->t;
+//
+//      Track *destLeft = 0;
+//      Track *destRight = 0;
+//
+//      srcLeft->Copy(begin, end, &destLeft);
+//      if (destLeft) {
+//         destLeft->Init(*srcLeft);
+//         destLeft->SetOffset(wxMax(begin, srcLeft->GetOffset()));
+//         destLeft->SetName(name);
+//         
+//         mTracks->Add(destLeft);
+//      }
+//
+//      if(stereo) {
+//         srcRight->Copy(begin, end, &destRight);
+//         if (destRight) {
+//            destRight->Init(*srcRight);
+//            destRight->SetOffset(wxMax(begin, srcRight->GetOffset()));
+//            destRight->SetName(name);
+//            
+//            mTracks->Add(destRight);
+//         }
+//         else if(destLeft)
+//            // account for possibility of a non-aligned linked track, which could
+//            // cause the left channel to be eligible for creating a new track,
+//            // but not the right.
+//            destLeft->SetLinked(false);
+//      }
+//   }
+//
+//   PushState(_("Split at labels"), _("Split at labels"));
+//
+//   RedrawProject();
+//}
 
 void AudacityProject::OnSelectAll()
 {

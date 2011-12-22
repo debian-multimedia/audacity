@@ -89,9 +89,9 @@ void ExtImportPrefs::PopulateOrExchange(ShuttleGui & S)
 {
    S.SetBorder(2);
 
-   S.TieCheckBox(_("Filter chosen in OpenFile dialog overrides any rules"),
+   S.TieCheckBox(_("Attempt to use filter in OpenFile dialog first"),
          wxT("/ExtendedImport/OverrideExtendedImportByOpenFileDialogChoice"),
-         false);
+         true);
    S.StartStatic(_("Rules to choose import filters"), 1);
    {
       S.SetSizerProportion(1);
@@ -401,7 +401,7 @@ void ExtImportPrefs::DoOnRuleTableSelect (int toprow)
 {
    ExtImportItems *items = wxGetApp().mImporter->GetImportItems();
    
-   if (toprow < 0 || toprow > items->GetCount())
+   if (toprow < 0 || toprow > (int)items->GetCount())
    {
       return;
    }

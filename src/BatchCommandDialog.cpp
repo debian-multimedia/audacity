@@ -56,8 +56,7 @@ END_EVENT_TABLE();
 BatchCommandDialog::BatchCommandDialog(wxWindow * parent, wxWindowID id):
    wxDialog(parent, id, _("Select Command"),
             wxDefaultPosition, wxSize(250,200),
-            wxCAPTION)
-//            wxCAPTION | wxTHICK_FRAME)
+            wxCAPTION | wxRESIZE_BORDER)
 {
    SetLabel(_("Select Command"));         // Provide visual label
    SetName(_("Select Command"));          // Provide audible label
@@ -82,6 +81,7 @@ void BatchCommandDialog::PopulateOrExchange(ShuttleGui &S)
          mCommand = S.AddTextBox(_("&Command"), wxT(""), 20);
          mCommand->SetEditable(false);
          mEditParams = S.Id(EditParamsButtonID).AddButton(_("&Edit Parameters"));
+         mEditParams->Enable( false ); // disable button as box is empty
       }
       S.EndMultiColumn();
 
@@ -200,6 +200,7 @@ void BatchCommandDialog::SetCommandAndParams(const wxString &Command, const wxSt
    if( item != -1 )
    {
       mChoices->SetItemState(item, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+      mEditParams->Enable( true );
    }
 }
 

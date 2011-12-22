@@ -70,8 +70,10 @@ class DirManager: public XMLTagHandler {
    BlockFile *NewODDecodeBlockFile( wxString aliasedFile, sampleCount aliasStart,
                                  sampleCount aliasLen, int aliasChannel, int decodeType);
 
-   /// Returns true if the blockfile is contained by the DirManager
+   /// Returns true if the blockfile pointed to by b is contained by the DirManager
    bool ContainsBlockFile(BlockFile *b);
+   /// Check for existing using filename using complete filename
+   bool ContainsBlockFile(wxString filepath);
 
    // Adds one to the reference count of the block file,
    // UNLESS it is "locked", then it makes a new copy of
@@ -103,7 +105,7 @@ class DirManager: public XMLTagHandler {
    void SetMaxSamples(sampleCount max) { mMaxSamples = max; }
    bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
    XMLTagHandler *HandleXMLChild(const wxChar *tag) { return NULL; }
-   void WriteXML(XMLWriter &xmlFile) { };
+   void WriteXML(XMLWriter &xmlFile) { wxASSERT(false); }; // This class only reads tags.
    bool AssignFile(wxFileName &filename,wxString value,bool check);
 
    // Clean the temp dir. Note that now where we have auto recovery the temp
