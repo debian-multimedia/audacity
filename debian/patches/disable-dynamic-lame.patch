@@ -367,7 +367,7 @@ Author: Benjamin Drung <bdrung@debian.org>
     }
 --- a/src/prefs/PrefsDialog.cpp
 +++ b/src/prefs/PrefsDialog.cpp
-@@ -101,7 +101,9 @@
+@@ -131,7 +131,9 @@
           w = new ImportExportPrefs(mCategories);mCategories->AddPage(w, w->GetName(), false, 0);
           w = new ExtImportPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
           w = new ProjectsPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
