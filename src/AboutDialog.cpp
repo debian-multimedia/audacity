@@ -56,12 +56,11 @@ void AboutDialog::CreateCreditsList()
    // The Audacity 1.3.x and 2.0.x team: developers and support
    AddCredit(wxT("Richard Ash"), roleTeamDeveloper);
    AddCredit(wxT("Michael Chinen"), roleTeamDeveloper);
+#if IS_BETA
    AddCredit(wxT("James Crook"), roleTeamDeveloper);
-   AddCredit(wxT("Roger Dannenberg"), roleTeamDeveloper);
-   AddCredit(wxT("Al Dimond"), roleTeamDeveloper);
-   AddCredit(wxT("Ruslan Ijbulatov"), roleTeamDeveloper);
+#endif
+   AddCredit(wxT("Roger Dannenberg - co-founder"), roleTeamDeveloper);
    AddCredit(wxT("Vaughan Johnson"), roleTeamDeveloper);
-   AddCredit(wxT("Dominic Mazzoni"), roleTeamDeveloper);
    AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
 
    AddCredit(wxT("Gale Andrews"), roleTeamSupport);
@@ -77,8 +76,11 @@ void AboutDialog::CreateCreditsList()
    // longer active.
  
    AddCredit(wxT("Matt Brubeck"), roleEmeritusDeveloper);
+   AddCredit(wxT("Al Dimond"), roleEmeritusDeveloper);
    AddCredit(wxT("Joshua Haberman"), roleEmeritusDeveloper);
+   AddCredit(wxT("Ruslan Ijbulatov"), roleEmeritusDeveloper);
    AddCredit(wxT("Leland Lucius"), roleEmeritusDeveloper);
+   AddCredit(wxT("Dominic Mazzoni - co-founder"), roleEmeritusDeveloper);
    AddCredit(wxT("Markus Meyer"), roleEmeritusDeveloper);
    AddCredit(wxT("Monty Montgomery"), roleEmeritusDeveloper);
    AddCredit(wxT("Shane Mueller"), roleEmeritusDeveloper);
@@ -278,7 +280,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 
 
    // New way to add to About box....
-   S.StartNotebookPage( _("Audacity") );
+   S.StartNotebookPage( wxT("Audacity") );
    S.StartVerticalLay(1);
 
    //v For now, change to AudacityLogoWithName via old-fashioned way, not Theme.

@@ -53,11 +53,15 @@ static double gFrameSum; //lda odd ... having this as member var crashed on exit
 
 bool EffectNormalize::Init()
 {
-   int boolProxy = gPrefs->Read(wxT("/CsPresets/Norm_AmpDbGain"), 1);
-   mGain = (boolProxy == 1);
-   boolProxy = gPrefs->Read(wxT("/CsPresets/Norm_RemoveDcOffset"), 1);
+   int boolProxy = gPrefs->Read(wxT("/Effects/Normalize/RemoveDcOffset"), 1);
    mDC = (boolProxy == 1);
-   gPrefs->Read(wxT("/CsPresets/Norm_Level"), &mLevel, 0.0);
+   boolProxy = gPrefs->Read(wxT("/Effects/Normalize/Normalize"), 1);
+   mGain = (boolProxy == 1);
+   gPrefs->Read(wxT("/Effects/Normalize/Level"), &mLevel, -1.0);
+   if(mLevel > 0.0)  // this should never happen
+      mLevel = -mLevel;
+   boolProxy = gPrefs->Read(wxT("/Effects/Normalize/StereoIndependent"), 0L);
+   mStereoInd = (boolProxy == 1);
    return true;
 }
 
@@ -67,14 +71,15 @@ wxString EffectNormalize::GetEffectDescription() // useful only after parameter 
    wxString strResult =
       /* i18n-hint: First %s is the effect name, 2nd and 3rd are either true or
        * false (translated below) if those options were selected */
-      wxString::Format(_("Applied effect: %s remove dc offset = %s, normalize amplitude = %s"), 
+      wxString::Format(_("Applied effect: %s remove dc offset = %s, normalize amplitude = %s, stereo independent %s"), 
                         this->GetEffectName().c_str(), 
                         /* i18n-hint: true here means that the option was
                          * selected. Opposite false if not selected */
                         mDC ? _("true") : _("false"), 
-                        mGain ? _("true") : _("false"));
+                        mGain ? _("true") : _("false"),
+                        mStereoInd ? _("true") : _("false"));
    if (mGain)
-      strResult += wxString::Format(_(", maximum amplitude = %.1f dB"), -mLevel); 
+      strResult += wxString::Format(_(", maximum amplitude = %.1f dB"), mLevel); 
 
    return strResult;
 } 
@@ -84,6 +89,7 @@ bool EffectNormalize::TransferParameters( Shuttle & shuttle )
    shuttle.TransferBool( wxT("ApplyGain"), mGain, true );
    shuttle.TransferBool( wxT("RemoveDcOffset"), mDC, true );
    shuttle.TransferDouble( wxT("Level"), mLevel, 0.0);
+   shuttle.TransferBool( wxT("StereoIndependent"), mStereoInd, false );
    return true;
 }
 
@@ -96,7 +102,7 @@ bool EffectNormalize::CheckWhetherSkipEffect()
 void EffectNormalize::End()
 {
 	bool bValidate;
-	gPrefs->Read(wxT("/Validate/Enabled"), &bValidate, false );
+	gPrefs->Read(wxT("/Validate/Enabled"), &bValidate, false ); // this never get written!  Why is this here? MJS
 	if( bValidate )
 	{
       int checkOffset = abs((int)(mOffset * 1000.0));
@@ -114,6 +120,7 @@ bool EffectNormalize::PromptUser()
    dlog.mGain = mGain;
    dlog.mDC = mDC;
    dlog.mLevel = mLevel;
+   dlog.mStereoInd = mStereoInd;
    dlog.TransferDataToWindow();
 
    dlog.CentreOnParent();
@@ -125,15 +132,19 @@ bool EffectNormalize::PromptUser()
    mGain = dlog.mGain;
    mDC = dlog.mDC;
    mLevel = dlog.mLevel;
-   gPrefs->Write(wxT("/CsPresets/Norm_AmpDbGain"), mGain);
-   gPrefs->Write(wxT("/CsPresets/Norm_RemoveDcOffset"), mDC);
-   gPrefs->Write(wxT("/CsPresets/Norm_Level"), mLevel);
+   mStereoInd = dlog.mStereoInd;
+   gPrefs->Write(wxT("/Effects/Normalize/RemoveDcOffset"), mDC);
+   gPrefs->Write(wxT("/Effects/Normalize/Normalize"), mGain);
+   gPrefs->Write(wxT("/Effects/Normalize/Level"), mLevel);
+   gPrefs->Write(wxT("/Effects/Normalize/StereoIndependent"), mStereoInd);
 
    return true;
 }
 
 bool EffectNormalize::Process()
 {
+   bool wasLinked = false; // set when a track has a linked (stereo) track
+
    if (mGain == false &&
        mDC == false)
       return true;
@@ -165,6 +176,28 @@ bool EffectNormalize::Process()
          //Get the track rate and samples
          mCurRate = track->GetRate();
          mCurChannel = track->GetChannel();
+
+         if(mStereoInd) // do stereo tracks independently (the easy way)
+            track->GetMinMax(&mMin, &mMax, mCurT0, mCurT1);
+         else
+         {
+            if(!wasLinked) // new mono track or first of a stereo pair
+            {
+               track->GetMinMax(&mMin, &mMax, mCurT0, mCurT1);
+               if(track->GetLinked())
+               {
+                  wasLinked = true; // so we use these values for the next (linked) track
+                  track = (WaveTrack *) iter.Next();  // get the next one for the max/min
+                  float min, max;
+                  track->GetMinMax(&min, &max, mCurT0, mCurT1);
+                  mMin = min < mMin ? min : mMin;
+                  mMax = max > mMax ? max : mMax;
+                  track = (WaveTrack *) iter.Prev();  // back to the one we are on
+               }
+            }
+            else
+               wasLinked = false;   // second of the stereo pair, next one is mono or first
+         }
 
          //ProcessOne() (implemented below) processes a single track
          if (!ProcessOne(track, start, end))
@@ -202,10 +235,12 @@ bool EffectNormalize::ProcessOne(WaveTrack * track,
 
    int pass;
 
-   for(pass=0; pass<2; pass++) {
-
+   for(pass=0; pass<2; pass++)
+   {
+      if(pass==0 && !mDC)  // we don't need an analysis pass if not doing dc removal
+         continue;
       if (pass==0)
-         StartAnalysis();
+         StartAnalysis();  // dc offset only.  Max/min done in Process().
       if (pass==1)
          StartProcessing();
 
@@ -256,8 +291,6 @@ bool EffectNormalize::ProcessOne(WaveTrack * track,
 
 void EffectNormalize::StartAnalysis()
 {
-   mMin = 1.0;
-   mMax = -1.0;
    mSum = 0.0;
    mCount = 0;
 }
@@ -266,14 +299,8 @@ void EffectNormalize::AnalyzeData(float *buffer, sampleCount len)
 {
    int i;
 
-   for(i=0; i<len; i++) {
-      if (buffer[i] < mMin)
-         mMin = buffer[i];
-      if (buffer[i] > mMax)
-         mMax = buffer[i];
+   for(i=0; i<len; i++)
       mSum += (double)buffer[i];
-   }
-
    mCount += len;
 }
 
@@ -282,7 +309,7 @@ void EffectNormalize::StartProcessing()
    mMult = 1.0;
    mOffset = 0.0;
    
-   float ratio = pow(10.0,TrapDouble(-mLevel,
+   float ratio = pow(10.0,TrapDouble(mLevel,
                                      NORMALIZE_DB_MIN,
                                      NORMALIZE_DB_MAX)/20.0);
 
@@ -315,11 +342,15 @@ void EffectNormalize::ProcessData(float *buffer, sampleCount len)
 // NormalizeDialog
 //----------------------------------------------------------------------------
 
-#define ID_NORMALIZE_AMPLITUDE 10002
+#define ID_DC_REMOVE 10002
+#define ID_NORMALIZE_AMPLITUDE 10003
+#define ID_LEVEL_TEXT 10004
 
 BEGIN_EVENT_TABLE(NormalizeDialog, EffectDialog)
-	EVT_CHECKBOX(ID_NORMALIZE_AMPLITUDE, NormalizeDialog::OnUpdateUI)
-	EVT_BUTTON(ID_EFFECT_PREVIEW, NormalizeDialog::OnPreview)
+   EVT_CHECKBOX(ID_DC_REMOVE, NormalizeDialog::OnUpdateUI)
+   EVT_CHECKBOX(ID_NORMALIZE_AMPLITUDE, NormalizeDialog::OnUpdateUI)
+   EVT_BUTTON(ID_EFFECT_PREVIEW, NormalizeDialog::OnPreview)
+   EVT_TEXT(ID_LEVEL_TEXT, NormalizeDialog::OnUpdateUI)
 END_EVENT_TABLE()
 
 NormalizeDialog::NormalizeDialog(EffectNormalize *effect,
@@ -330,12 +361,15 @@ NormalizeDialog::NormalizeDialog(EffectNormalize *effect,
    mDC = false;
    mGain = false;
    mLevel = 0;
+   mStereoInd = false;
 
    Init();
 }
 
 void NormalizeDialog::PopulateOrExchange(ShuttleGui & S)
 {
+   wxTextValidator vld(wxFILTER_NUMERIC);
+
    S.StartHorizontalLay(wxCENTER, false);
    {
       S.AddTitle(_("by Dominic Mazzoni"));
@@ -352,27 +386,25 @@ void NormalizeDialog::PopulateOrExchange(ShuttleGui & S)
    {
       S.StartVerticalLay(false);
       {
-         mDCCheckBox = S.AddCheckBox(_("Remove any DC offset (center on 0.0 vertically)"),
+         mDCCheckBox = S.Id(ID_DC_REMOVE).AddCheckBox(_("Remove any DC offset (center on 0.0 vertically)"),
                                      mDC ? wxT("true") : wxT("false"));
    
          mGainCheckBox = S.Id(ID_NORMALIZE_AMPLITUDE).AddCheckBox(_("Normalize maximum amplitude to:"),
                                        mGain ? wxT("true") : wxT("false"));
    
-         S.StartHorizontalLay(wxALIGN_LEFT, false);
+         S.StartHorizontalLay(wxALIGN_CENTER, false);
          {
-            wxCheckBox *c = S.AddCheckBox(wxT(""), wxT("false"));
-            S.AddSpace(c->GetSize().GetWidth() + (S.GetBorder() * 2));
-            c->Hide();
-            mLevelMinux = S.AddVariableText(_("-"), false,
-                                            wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
-            mLevelTextCtrl = S.AddTextBox(wxT(""),
-                                          Internat::ToString(mLevel, 1),
-                                          10);
+            mLevelTextCtrl = S.Id(ID_LEVEL_TEXT).AddTextBox(wxT(""), wxT(""), 10);
+            mLevelTextCtrl->SetValidator(vld);
             mLevelTextCtrl->SetName(_("Maximum amplitude dB"));
             mLeveldB = S.AddVariableText(_("dB"), false,
                                          wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT);
+            mWarning = S.AddVariableText( wxT(""), false,
+                                         wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT);
          }
          S.EndHorizontalLay();
+         mStereoIndCheckBox = S.AddCheckBox(_("Normalize stereo channels independently"),
+                                     mStereoInd ? wxT("true") : wxT("false"));
       }
       S.EndVerticalLay();
    }
@@ -384,6 +416,7 @@ bool NormalizeDialog::TransferDataToWindow()
    mGainCheckBox->SetValue(mGain);
    mDCCheckBox->SetValue(mDC);
    mLevelTextCtrl->SetValue(Internat::ToString(mLevel, 1));
+   mStereoIndCheckBox->SetValue(mStereoInd);
    
    UpdateUI();
 
@@ -397,6 +430,7 @@ bool NormalizeDialog::TransferDataFromWindow()
    mGain = mGainCheckBox->GetValue();
    mDC = mDCCheckBox->GetValue();
    mLevel = Internat::CompatibleToDouble(mLevelTextCtrl->GetValue());
+   mStereoInd = mStereoIndCheckBox->GetValue();
 
    return true;
 }
@@ -408,10 +442,39 @@ void NormalizeDialog::OnUpdateUI(wxCommandEvent& evt)
 
 void NormalizeDialog::UpdateUI()
 {
+   // Disallow level stuff if not normalizing
    bool enable = mGainCheckBox->GetValue();
-   mLevelMinux->Enable(enable);
    mLevelTextCtrl->Enable(enable);
    mLeveldB->Enable(enable);
+   mStereoIndCheckBox->Enable(enable);
+
+   // Disallow OK/Preview if doing nothing
+   wxButton *ok = (wxButton *) FindWindow(wxID_OK);
+   wxButton *preview = (wxButton *) FindWindow(ID_EFFECT_PREVIEW);
+   bool dc = mDCCheckBox->GetValue();
+   if( !enable && !dc )
+   {
+      ok->Enable(false);
+      preview->Enable(false);
+   }
+   else
+   {
+      ok->Enable(true);
+      preview->Enable(true);
+   }
+
+   // Disallow OK/Preview if requested level is > 0
+   wxString val = mLevelTextCtrl->GetValue();
+   double r;
+   val.ToDouble(&r);
+   if(r > 0.0)
+   {
+      ok->Enable(false);
+      preview->Enable(false);
+      mWarning->SetLabel(_(".  Maximum 0dB."));
+   }
+   else
+      mWarning->SetLabel(wxT(""));
 }
 
 void NormalizeDialog::OnPreview(wxCommandEvent &event)
@@ -422,16 +485,19 @@ void NormalizeDialog::OnPreview(wxCommandEvent &event)
    bool oldGain = mEffect->mGain;
    bool oldDC = mEffect->mDC;
    double oldLevel = mEffect->mLevel;
+   bool oldStereoInd = mEffect->mStereoInd;
 
    mEffect->mGain = mGain;
    mEffect->mDC = mDC;
    mEffect->mLevel = mLevel;
+   mEffect->mStereoInd = mStereoInd;
 
    mEffect->Preview();
    
 	mEffect->mGain = oldGain;
    mEffect->mDC = oldDC;
    mEffect->mLevel = oldLevel;
+   mEffect->mStereoInd = oldStereoInd;
 }
 
 // Indentation settings for Vim and Emacs and unique identifier for Arch, a

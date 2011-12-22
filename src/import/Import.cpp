@@ -343,13 +343,14 @@ int Importer::Import(wxString fName,
    // False if override filter is not found
    bool foundOverride = false;
    gPrefs->Read(wxT("/ExtendedImport/OverrideExtendedImportByOpenFileDialogChoice"), &usersSelectionOverrides, false);
+
    wxLogDebug(wxT("LastOpenType is %s"),type.c_str());
    wxLogDebug(wxT("OverrideExtendedImportByOpenFileDialogChoice is %i"),usersSelectionOverrides);
+
    if (usersSelectionOverrides)
    {
-      
       importPluginNode = mImportPluginList->GetFirst();
-      while(importPluginNode)
+      while (importPluginNode)
       {
          ImportPlugin *plugin = importPluginNode->GetData();
          if (plugin->GetPluginFormatDescription().CompareTo(type) == 0)
@@ -362,9 +363,11 @@ int Importer::Import(wxString fName,
          importPluginNode = importPluginNode->GetNext();
       }
    }
-   bool foundItem = false;
+
    wxLogMessage(wxT("File name is %s"),fName.Lower().c_str());
    wxLogMessage(wxT("Mime type is %s"),mime_type.Lower().c_str());
+
+   bool foundItem = false;
    for (size_t i = 0; i < mExtImportItems->Count(); i++)
    {
       ExtImportItem *item = &(*mExtImportItems)[i];
@@ -415,44 +418,70 @@ int Importer::Import(wxString fName,
       }
    }
 
-   if (!foundItem || (usersSelectionOverrides && !foundOverride))
+   // Add all plugins that support the extension
+   importPluginNode = mImportPluginList->GetFirst();
+
+   // Here we rely on the fact that the first plugin in mImportPluginList is libsndfile.
+   // We want to save this for later insertion ahead of libmad, if libmad supports the extension.
+   // The order of plugins in mImportPluginList is determined by the Importer constructor alone and
+   // is not changed by user selection overrides or any other mechanism, but we include an assert
+   // in case subsequent code revisions to the constructor should break this assumption that 
+   // libsndfile is first. 
+   ImportPlugin *libsndfilePlugin = importPluginNode->GetData();
+   wxASSERT(libsndfilePlugin->GetPluginStringID().IsSameAs(wxT("libsndfile")));
+
+   while (importPluginNode)
    {
-      bool prioritizeMp3 = false;
-      if (usersSelectionOverrides && !foundOverride)
-         importPlugins.Clear();
-      wxLogDebug(wxT("Applying default rule"));
-      // Special treatment for mp3 files
-      if (wxMatchWild (wxT("*.mp3"),fName.Lower(), false))
-         prioritizeMp3 = true;
-      // By default just add all plugins (except for MP3)
-      importPluginNode = mImportPluginList->GetFirst();
-      while(importPluginNode)
+      ImportPlugin *plugin = importPluginNode->GetData();
+      // Make sure its not already in the list
+      if (importPlugins.Find(plugin) == NULL)
       {
-         ImportPlugin *plugin = importPluginNode->GetData();
+         if (plugin->SupportsExtension(extension))
+         {
+            // If libmad is accidentally fed a wav file which has been incorrectly
+            // given an .mp3 extension then it can choke on the contents and crash.
+            // To avoid this, put libsndfile ahead of libmad in the lists created for 
+            // mp3 files, or for any of the extensions supported by libmad. 
+            // A genuine .mp3 file will first fail an attempted import with libsndfile
+            // but then get processed as desired by libmad.
+            // But a wav file which bears an incorrect .mp3 extension will be successfully 
+            // processed by libsndfile and thus avoid being submitted to libmad.
+            if (plugin->GetPluginStringID().IsSameAs(wxT("libmad")))
+            {
+               // Make sure libsndfile is not already in the list
+               if (importPlugins.Find(libsndfilePlugin) == NULL)
+               {
+                  wxLogDebug(wxT("Appending %s"),libsndfilePlugin->GetPluginStringID().c_str());
+                  importPlugins.Append(libsndfilePlugin);
+               }
+            }
+            wxLogDebug(wxT("Appending %s"),plugin->GetPluginStringID().c_str());
+            importPlugins.Append(plugin);
+         }
+      }
+
+      importPluginNode = importPluginNode->GetNext();
+   }
+
+   // Add remaining plugins, except for libmad, which should not be used as a fallback for anything.
+   // Otherwise, if FFmpeg (libav) has not been installed, libmad will still be there near the 
+   // end of the preference list importPlugins, where it will claim success importing FFmpeg file
+   // formats unsuitable for it, and produce distorted results.
+   importPluginNode = mImportPluginList->GetFirst();
+   while (importPluginNode)
+   {
+      ImportPlugin *plugin = importPluginNode->GetData();
+      if (!(plugin->GetPluginStringID().IsSameAs(wxT("libmad"))))
+      {
+         // Make sure its not already in the list
          if (importPlugins.Find(plugin) == NULL)
          {
-            // Skip MP3 import plugin. Opens some non-mp3 audio files (ac3 for example) as garbage.
-            if (plugin->GetPluginFormatDescription().CompareTo( _("MP3 files") ) != 0)
-            {
-               wxLogDebug(wxT("Inserting %s"),plugin->GetPluginStringID().c_str());
-               importPlugins.Append(plugin);
-            }
-            else if (prioritizeMp3)
-            {
-               if (usersSelectionOverrides)
-               {
-                  wxLogDebug(wxT("Inserting %s at 1"),plugin->GetPluginStringID().c_str());
-                  importPlugins.Insert((size_t) 1, plugin);
-               }
-               else
-               {
-                  wxLogDebug(wxT("Inserting %s at 0"),plugin->GetPluginStringID().c_str());
-                  importPlugins.Insert((size_t) 0, plugin);
-               }
-            }
+            wxLogDebug(wxT("Appending %s"),plugin->GetPluginStringID().c_str());
+            importPlugins.Append(plugin);
          }
-         importPluginNode = importPluginNode->GetNext();
       }
+
+      importPluginNode = importPluginNode->GetNext();
    }
 
    importPluginNode = importPlugins.GetFirst();
@@ -511,6 +540,7 @@ int Importer::Import(wxString fName,
       importPluginNode = importPluginNode->GetNext();
    }
    wxLogError(wxT("Importer::Import: Opening failed."));
+
    // None of our plugins can handle this file.  It might be that
    // Audacity supports this format, but support was not compiled in.
    // If so, notify the user of this fact

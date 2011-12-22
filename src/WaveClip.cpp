@@ -993,10 +993,11 @@ bool WaveClip::GetRMS(float *rms, double t0,
 
 void WaveClip::ConvertToSampleFormat(sampleFormat format)
 {
-   bool result;
-   result = mSequence->ConvertToSampleFormat(format);
-   MarkChanged();
-   wxASSERT(result);
+   bool bChanged;
+   bool bResult = mSequence->ConvertToSampleFormat(format, &bChanged);
+   if (bResult && bChanged)
+      MarkChanged();
+   wxASSERT(bResult); // TO-DO: Throw an actual error.
 }
 
 void WaveClip::UpdateEnvelopeTrackLen()
@@ -1034,7 +1035,7 @@ bool WaveClip::Append(samplePtr buffer, sampleFormat format,
                       sampleCount len, unsigned int stride /* = 1 */,
                       XMLWriter* blockFileLog /*=NULL*/)
 {
-   //wxLogDebug(wxT("Append: len=%i\n"), len);
+   //wxLogDebug(wxT("Append: len=%i"), len);
    
    sampleCount maxBlockSize = mSequence->GetMaxBlockSize();
    sampleCount blockSize = mSequence->GetIdealAppendLen();
@@ -1109,8 +1110,8 @@ bool WaveClip::AppendCoded(wxString fName, sampleCount start,
 bool WaveClip::Flush()
 {
    //wxLogDebug(wxT("WaveClip::Flush"));
-   //wxLogDebug(wxT("   mAppendBufferLen=%i\n"), mAppendBufferLen);
-   //wxLogDebug(wxT("   previous sample count %i\n"), mSequence->GetNumSamples());
+   //wxLogDebug(wxT("   mAppendBufferLen=%i"), mAppendBufferLen);
+   //wxLogDebug(wxT("   previous sample count %i"), mSequence->GetNumSamples());
 
    bool success = true;
    if (mAppendBufferLen > 0) {
@@ -1122,7 +1123,7 @@ bool WaveClip::Flush()
       }
    }
 
-   //wxLogDebug(wxT("now sample count %i\n"), mSequence->GetNumSamples());
+   //wxLogDebug(wxT("now sample count %i"), mSequence->GetNumSamples());
 
    return success;
 }
@@ -1240,9 +1241,17 @@ bool WaveClip::Paste(double t0, WaveClip* other)
 
    sampleCount s0;
    TimeToSamplesClip(t0, &s0);
-   
-   bool result = false;
 
+   // Check whether sample formats match.
+   if (pastedClip->mSequence->GetSampleFormat() != mSequence->GetSampleFormat())
+   {
+      // In debug mode, fail because that's probably a bad call to this method.
+      // In release, adjust the source to match the destination, so we don't do a bad paste.
+      wxASSERT(false);
+      pastedClip->ConvertToSampleFormat(mSequence->GetSampleFormat());
+   }
+
+   bool result = false;
    if (mSequence->Paste(s0, pastedClip->mSequence))
    {
       MarkChanged();

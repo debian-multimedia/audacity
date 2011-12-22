@@ -14,12 +14,12 @@
 #include "../EffectManager.h"
 #include "AudioUnitEffect.h"
 
-void LoadAudioUnits()
+void LoadAudioUnitsOfType(OSType inAUType)
 {
    ComponentDescription desc;
    Component component;
    
-   desc.componentType = kAudioUnitType_Effect; //'aufx'
+   desc.componentType = inAUType;
    desc.componentSubType = 0;
    desc.componentManufacturer = 0;
    desc.componentFlags = 0;
@@ -42,15 +42,8 @@ void LoadAudioUnits()
    }
 }
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 
-
-
+void LoadAudioUnits()
+{
+   LoadAudioUnitsOfType(kAudioUnitType_Effect); //'aufx'
+   LoadAudioUnitsOfType(kAudioUnitType_MusicEffect); //'aumf'
+}

@@ -32,7 +32,7 @@
 
 bool EffectNoise::Init()
 {
-   gPrefs->Read(wxT("/CsPresets/NoiseGen_Duration"), &mDuration, 1L);
+   gPrefs->Read(wxT("/Effects/Noise/Duration"), &mDuration, 1L);
    return true;
 }
 
@@ -57,12 +57,12 @@ bool EffectNoise::PromptUser()
       mDuration = mT1 - mT0;
       dlog.nIsSelection = true;
    } else {
-      gPrefs->Read(wxT("/CsPresets/NoiseGen_Duration"), &mDuration, 1L);
+      gPrefs->Read(wxT("/Effects/Noise/Duration"), &mDuration, 1L);
       dlog.nIsSelection = false;
    }
 
-   gPrefs->Read(wxT("/CsPresets/NoiseGen_Type"), &noiseType, 0L);
-   gPrefs->Read(wxT("/CsPresets/NoiseGen_Amp"), &noiseAmplitude, 0.8f);
+   gPrefs->Read(wxT("/Effects/Noise/Type"), &noiseType, 0L);
+   gPrefs->Read(wxT("/Effects/Noise/Amplitude"), &noiseAmplitude, 0.8f);
 
    // Initialize dialog locals
    dlog.nDuration = mDuration;
@@ -157,10 +157,10 @@ void EffectNoise::Success()
       when user explicitely setup a value
       */
    if (mT1 == mT0)
-      gPrefs->Write(wxT("/CsPresets/NoiseGen_Duration"), mDuration);
+      gPrefs->Write(wxT("/Effects/Noise/Duration"), mDuration);
 
-   gPrefs->Write(wxT("/CsPresets/NoiseGen_Type"), noiseType);
-   gPrefs->Write(wxT("/CsPresets/NoiseGen_Amp"), noiseAmplitude);
+   gPrefs->Write(wxT("/Effects/Noise/Type"), noiseType);
+   gPrefs->Write(wxT("/Effects/Noise/Amplitude"), noiseAmplitude);
 }
 
 //----------------------------------------------------------------------------
@@ -196,7 +196,7 @@ void NoiseDialog::PopulateOrExchange( ShuttleGui & S )
       // the translatable strings to avoid breaking translations close to 2.0. 
       // TODO: Make colon part of the translatable string after 2.0.
       S.TieChoice(_("Noise type") + wxString(wxT(":")), nType, nTypeList);
-      S.TieTextBox(_("Amplitude (0-1)") + wxString(wxT(":")), nAmplitude, 10);
+      S.TieNumericTextBox(_("Amplitude (0-1)") + wxString(wxT(":")), nAmplitude, 10);
       S.AddPrompt(_("Duration") + wxString(wxT(":")));
       if (mNoiseDurationT == NULL)
       {

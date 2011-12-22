@@ -616,7 +616,7 @@ public:
    IPCServ()
    : wxServer()
    {
-      Create(wxT("audacity"));
+      Create(IPC_APPL);
    };
 
    ~IPCServ()
@@ -938,10 +938,11 @@ void AudacityApp::InitLang( const wxString & lang )
       //      catalogs are search in LIFO order, so add wxstd first.
       mLocale->AddCatalog(wxT("wxstd"));
 
+// AUDACITY_NAME is legitimately used on some *nix configurations. 
 #ifdef AUDACITY_NAME
       mLocale->AddCatalog(wxT(AUDACITY_NAME));
 #else
-      mLocale->AddCatalog(wxT("audacity"));
+      mLocale->AddCatalog(IPC_APPL);
 #endif
    } else
       mLocale = NULL;
@@ -1010,6 +1011,7 @@ bool AudacityApp::OnInit()
       mLogger->SetActiveTarget(mLogger);
       mLogger->EnableLogging(true);
       mLogger->SetLogLevel(wxLOG_Max);
+      wxLogMessage(wxString::Format(wxT("Audacity %s"), AUDACITY_VERSION_STRING));
    #endif
 
    // Unused strings that we want to be translated, even though
@@ -1043,31 +1045,34 @@ bool AudacityApp::OnInit()
    // AColor depends on theTheme.
    AColor::Init(); 
 
-   /* On Unix systems, the default temp dir is in /tmp. */
    /* Search path (for plug-ins, translations etc) is (in this order):
       * The AUDACITY_PATH environment variable
       * The current directory
       * The user's .audacity-files directory in their home directory
       * The "share" and "share/doc" directories in their install path */
    #ifdef __WXGTK__
-   defaultTempDir.Printf(wxT("/tmp/audacity-%s"), wxGetUserId().c_str());
+   /* On Unix systems, the default temp dir is in /var/tmp. */
+   defaultTempDir.Printf(wxT("/var/tmp/audacity-%s"), wxGetUserId().c_str());
    
    wxString pathVar = wxGetenv(wxT("AUDACITY_PATH"));
    if (pathVar != wxT(""))
       AddMultiPathsToPathList(pathVar, audacityPathList);
    AddUniquePathToPathList(::wxGetCwd(), audacityPathList);
-   AddUniquePathToPathList(wxString::Format(wxT("%s/.audacity-files"),
-                                            home.c_str()),
-                           audacityPathList);
    #ifdef AUDACITY_NAME
-      AddUniquePathToPathList(wxString::Format(wxT("%s/share/%s"),
+     AddUniquePathToPathList(wxString::Format(wxT("%s/.%s-files"),
+                                            home.c_str(), wxT(AUDACITY_NAME)),
+                              audacityPathList);
+     AddUniquePathToPathList(wxString::Format(wxT("%s/share/%s"),
                                                wxT(INSTALL_PREFIX), wxT(AUDACITY_NAME)),
                               audacityPathList);
       AddUniquePathToPathList(wxString::Format(wxT("%s/share/doc/%s"),
                                                wxT(INSTALL_PREFIX), wxT(AUDACITY_NAME)),
                               audacityPathList);
    #else //AUDACITY_NAME
-      AddUniquePathToPathList(wxString::Format(wxT("%s/share/audacity"),
+     AddUniquePathToPathList(wxString::Format(wxT("%s/.audacity-files"),
+                                              home.c_str()),
+                              audacityPathList);
+    AddUniquePathToPathList(wxString::Format(wxT("%s/share/audacity"),
                                                wxT(INSTALL_PREFIX)),
                               audacityPathList);
       AddUniquePathToPathList(wxString::Format(wxT("%s/share/doc/audacity"),
@@ -1223,6 +1228,7 @@ bool AudacityApp::OnInit()
       mLogger->SetActiveTarget(mLogger);
       mLogger->EnableLogging(true);
       mLogger->SetLogLevel(wxLOG_Max);
+      wxLogMessage(wxString::Format(wxT("Audacity %s"), AUDACITY_VERSION_STRING));
    #endif
 
    #ifdef USE_FFMPEG
@@ -1398,8 +1404,6 @@ bool AudacityApp::OnInit()
 
    mWindowRectAlreadySaved = FALSE;
 
-   wxLog::FlushActive(); // Make sure all log messages are written.
-
    mTimer = new wxTimer(this, kAudacityAppTimerID);
    mTimer->Start(200);
    return TRUE;
@@ -1574,7 +1578,7 @@ bool AudacityApp::CreateSingleInstanceChecker(wxString dir)
          runningTwoCopiesStr +
          _("Do you still want to start Audacity?");
       int action = wxMessageBox(prompt,
-                                _("Error locking temporary folder"),
+                                _("Error Locking Temporary Folder"),
                                 wxYES_NO | wxICON_EXCLAMATION,
                                 NULL);
       if (action == wxNO) {

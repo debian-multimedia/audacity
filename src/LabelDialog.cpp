@@ -330,6 +330,9 @@ bool LabelDialog::TransferDataFromWindow()
             break;
          }
       }
+      wxASSERT(t);
+      if (!t)
+         return false;
 
       // Add the label to it
       if (!rd->title.IsEmpty()) {
@@ -632,17 +635,14 @@ void LabelDialog::OnSelectCell(wxGridEvent &event)
 {
    TrackListIterator iter(mTracks);
    Track *t = iter.First();
-   RowData *rd;
-
-   rd = mData[event.GetRow()];
-
-   t = iter.First();
    while( t )
    {
       t->SetSelected( true );
       t = iter.Next();
    }
 
+   RowData *rd;
+   rd = mData[event.GetRow()];
    mViewInfo->sel0 = rd->stime;
    mViewInfo->sel1 = rd->etime;
 

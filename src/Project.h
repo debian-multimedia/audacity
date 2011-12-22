@@ -275,7 +275,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void UpdateLayout();
 
    // Other commands
-
+   static TrackList *GetClipboardTracks();
    static void DeleteClipboard();
    static void DeleteAllProjectsDeleteLock();
 
@@ -334,7 +334,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    virtual void TP_OnPlayKey();
    virtual void TP_PushState(wxString longDesc, wxString shortDesc,
-                             bool consolidate);
+                             int flags);
    virtual void TP_ModifyState();
    virtual void TP_RedrawScrollbars();
    virtual void TP_ScrollLeft();
@@ -397,7 +397,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static void AllProjectsDeleteUnlock();
    
    void PushState(wxString desc, wxString shortDesc,
-                  bool consolidate = false);
+                  int flags = PUSH_AUTOSAVE | PUSH_CALC_SPACE);
 
  private:
 
@@ -531,9 +531,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Last auto-save file name and path (empty if none)
    wxString mAutoSaveFileName;
    
-   // When the last auto-save took place (as returned wx wxGetLocalTime)
-   long mLastAutoSaveTime;
-   
    // Are we currently auto-saving or not?
    bool mAutoSaving;
 
@@ -569,6 +566,29 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
  public:
     DECLARE_EVENT_TABLE()
+};
+
+typedef void (AudacityProject::*audCommandFunction)();
+typedef void (AudacityProject::*audCommandListFunction)(int);
+
+// Previously this was in menus.cpp, and the declaration of the
+// command functor was not visible anywhere else.
+class AUDACITY_DLL_API AudacityProjectCommandFunctor : public CommandFunctor
+{
+public:
+   AudacityProjectCommandFunctor(AudacityProject *project,
+      audCommandFunction commandFunction);
+   AudacityProjectCommandFunctor(AudacityProject *project,
+      audCommandListFunction commandFunction);
+   AudacityProjectCommandFunctor(AudacityProject *project,
+      audCommandListFunction commandFunction,
+      wxArrayInt explicitIndices);
+   virtual void operator()(int index = 0);
+private:
+   AudacityProject *mProject;
+   audCommandFunction mCommandFunction;
+   audCommandListFunction mCommandListFunction;
+   wxArrayInt mExplicitIndices;
 };
 
 #endif

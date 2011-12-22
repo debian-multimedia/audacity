@@ -244,6 +244,7 @@ bool Track::SyncLockAdjust(double oldT1, double newT1)
       if (!ret) return false;
 
       ret = Paste(newT1, tmp);
+      wxASSERT(ret);
 
       delete tmp;
       return ret;
@@ -831,6 +832,7 @@ Track *TrackList::GetLink(Track * t) const
    return NULL;
 }
 
+/// Return a track in the list that comes after Track t
 Track *TrackList::GetNext(Track * t, bool linked) const
 {
    if (t) {

@@ -576,7 +576,8 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
                // falls within it and this isn't the first clip in the track.
                if (fabs(t1 - clip->GetStartTime()) < WAVETRACK_MERGE_POINT_TOLERANCE) {
                   if (i > 0) {
-                     MergeClips(GetClipIndex(clips[i - 1]), GetClipIndex(clip));
+                     bool bResult = MergeClips(GetClipIndex(clips[i - 1]), GetClipIndex(clip));
+                     wxASSERT(bResult); // TO DO: Actually handle this.
                   }
                   break;
                }
@@ -594,7 +595,8 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
                // falls within it and this isn't the last clip in the track.
                if (fabs(t0 - clip->GetEndTime()) < WAVETRACK_MERGE_POINT_TOLERANCE) {
                   if (i < clips.GetCount() - 1) {
-                     MergeClips(GetClipIndex(clip), GetClipIndex(clips[i + 1]));
+                     bool bResult = MergeClips(GetClipIndex(clip), GetClipIndex(clips[i + 1]));
+                     wxASSERT(bResult); // TO DO: Actually handle this.
                   }
                   break;
                }
@@ -653,7 +655,7 @@ bool WaveTrack::SplitDelete(double t0, double t1)
 
 WaveClip* WaveTrack::RemoveAndReturnClip(WaveClip* clip)
 {
-   wxWaveClipListNode* node = mClips.Find(clip);
+   WaveClipList::compatibility_iterator node = mClips.Find(clip);
    WaveClip* clipReturn = node->GetData();
    mClips.DeleteNode(node);
    return clipReturn;
@@ -814,6 +816,7 @@ bool WaveTrack::SyncLockAdjust(double oldT1, double newT1)
             if (!ret) return false;
 
             ret = Paste(newT1, tmp);
+            wxASSERT(ret);
             delete tmp;
          }
 
@@ -828,9 +831,11 @@ bool WaveTrack::SyncLockAdjust(double oldT1, double newT1)
          if (!f) return false;
          WaveTrack *tmp = f->NewWaveTrack(GetSampleFormat(), GetRate());
 
-         tmp->InsertSilence(0.0, newT1 - oldT1);
+         bool bResult = tmp->InsertSilence(0.0, newT1 - oldT1);
+         wxASSERT(bResult); // TO DO: Actually handle this.
          tmp->Flush();
-         Paste(oldT1, tmp);
+         bResult = Paste(oldT1, tmp);
+         wxASSERT(bResult); // TO DO: Actually handle this.
          delete tmp;
       }
    }
@@ -846,18 +851,13 @@ bool WaveTrack::Paste(double t0, Track *src)
 {
    bool editClipCanMove = true;
    gPrefs->Read(wxT("/GUI/EditClipCanMove"), &editClipCanMove);
-   
-   //printf("paste: entering WaveTrack::Paste\n");
-   
-   // JKC Added...
+
    if( src == NULL )
       return false;
 
    if (src->GetKind() != Track::Wave)
       return false;
       
-   //printf("paste: we have a wave track\n");
-
    WaveTrack* other = (WaveTrack*)src;
    
    //
@@ -902,7 +902,8 @@ bool WaveTrack::Paste(double t0, Track *src)
          if (!IsEmpty(t0, GetEndTime())) {
             Track *tmp = NULL;
             Cut(t0, GetEndTime()+1.0/mRate, &tmp);
-            Paste(t0 + insertDuration, tmp);
+            bool bResult = Paste(t0 + insertDuration, tmp);
+            wxASSERT(bResult); // TO DO: Actually handle this.
             delete tmp;
          }
       } else
@@ -1137,9 +1138,9 @@ bool WaveTrack::Disjoin(double t0, double t1)
                   
                   //consider the end case, where selection ends in zeroes
                   if( curSamplePos == end - 1 && buffer[ i ] == 0.0 )
-                     seqEnd = end - 1;
+                     seqEnd = end;
                   else
-                     seqEnd = curSamplePos - 1;
+                     seqEnd = curSamplePos;
                   if( seqEnd - seqStart + 1 > minSamples )
                   {
                      Region *region = new Region;
@@ -1206,12 +1207,14 @@ bool WaveTrack::Join(double t0, double t1)
       if (clip->GetOffset() - t > (1.0 / mRate)) {
          double addedSilence = (clip->GetOffset() - t);
          //printf("Adding %.6f seconds of silence\n");
-         newClip->InsertSilence(t, addedSilence);
+         bool bResult = newClip->InsertSilence(t, addedSilence);
+         wxASSERT(bResult); // TO DO: Actually handle this.
          t += addedSilence;
       }
 
       //printf("Pasting at %.6f\n", t);
-      newClip->Paste(t, clip);
+      bool bResult = newClip->Paste(t, clip);
+      wxASSERT(bResult); // TO DO: Actually handle this.
       t = newClip->GetEndTime();      
 
       mClips.DeleteObject(clip);
@@ -1751,6 +1754,24 @@ WaveClip* WaveTrack::GetClipAtX(int xcoord)
    return NULL;
 }
 
+WaveClip* WaveTrack::GetClipAtSample(sampleCount sample)
+{
+   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   {
+      WaveClip *clip;
+      sampleCount start, len;
+
+      clip  = it->GetData();
+      start = clip->GetStartSample();
+      len   = clip->GetNumSamples();
+
+      if (sample >= start && sample < start + len)
+         return clip;
+   }
+
+   return NULL;
+}
+
 Envelope* WaveTrack::GetEnvelopeAtX(int xcoord)
 {
    WaveClip* clip = GetClipAtX(xcoord);
@@ -2096,6 +2117,7 @@ bool WaveTrack::MergeClips(int clipidx1, int clipidx2)
    WaveClip* clip1 = GetClipByIndex(clipidx1);
    WaveClip* clip2 = GetClipByIndex(clipidx2);
 
+   wxASSERT(clip2);
    if(clip2 == NULL) // could happen if one track of a linked pair had a split and the other didn't
       return false;
    
@@ -2115,6 +2137,7 @@ bool WaveTrack::Resample(int rate, ProgressDialog *progress)
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       if (!it->GetData()->Resample(rate, progress))
       {
+         wxLogDebug( wxT("Resampling problem!  We're partially resampled") );
          // FIX-ME: The track is now in an inconsistent state since some
          //        clips are resampled and some are not
          return false;
