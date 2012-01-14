@@ -1,0 +1,13 @@
+Description: Add missing include to support building Audacity with libav 0.8.
+Bug-Debian: http://bugs.debian.org/654212
+
+--- a/src/FFmpeg.h
++++ b/src/FFmpeg.h
+@@ -39,6 +39,7 @@
+    #include <libavcodec/avcodec.h>
+    #include <libavformat/avformat.h>
+    #include <libavutil/fifo.h>
++   #include <libavutil/mathematics.h>
+ 
+    #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 102, 0)
+    #define AVIOContext ByteIOContext
