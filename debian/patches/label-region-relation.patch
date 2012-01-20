@@ -1,0 +1,46 @@
+Description: Change the behaviour of point labels to behave like region labels.
+Author: Benjamin Drung <bdrung@debian.org>
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=466
+
+--- a/src/LabelTrack.cpp
++++ b/src/LabelTrack.cpp
+@@ -1240,31 +1240,21 @@
+ {
+     wxASSERT(reg_t0 <= reg_t1);
+ 
+-    // AWD: Desired behavior for edge cases: point labels bordered by the
+-    // selection are included within it. Region labels are included in the
+-    // selection to the extent that the selection covers them; specifically,
+-    // they're not included at all if the selection borders them, and they're
+-    // fully included if the selection covers them fully, even if it just
+-    // borders their endpoints. This is just one of many possible schemes.
++    // Desired behavior for edge cases: The length of the selection is smaller
++    // than the length of the label if the selection is within the label.
++    // Selections matching exactly a (region) label surround the label.
+ 
+-    // The first test catches bordered point-labels and selected-through
+-    // region-labels; move it to third and selection edges become inclusive WRT
+-    // point-labels.
+-    if (reg_t0 <= t && reg_t1 >= t1)
++    if ((reg_t0 < t && reg_t1 > t1) || (reg_t0 == t && reg_t1 == t1))
+         return SURROUNDS_LABEL;
+-    else if (reg_t1 <= t)
++    else if (reg_t1 < t)
+         return BEFORE_LABEL;
+-    else if (reg_t0 >= t1)
++    else if (reg_t0 > t1)
+         return AFTER_LABEL;
+ 
+-    // At this point, all point labels should have returned.
+-
+-    else if (reg_t0 > t && reg_t0 < t1 && reg_t1 > t && reg_t1 < t1)
++    else if (reg_t0 >= t && reg_t0 <= t1 && reg_t1 >= t && reg_t1 <= t1)
+         return WITHIN_LABEL;
+     
+-    // Knowing that none of the other relations match simplifies remaining
+-    // tests
+-    else if (reg_t0 > t && reg_t0 < t1)
++    else if (reg_t0 >= t && reg_t0 <= t1)
+         return BEGINS_IN_LABEL;
+     else
+         return ENDS_IN_LABEL;
