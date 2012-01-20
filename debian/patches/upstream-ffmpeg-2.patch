@@ -1,4 +1,5 @@
 Author: Leland Lucius <llucius@homerow.net>
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=467
 
 --- a/src/FFmpeg.h
 +++ b/src/FFmpeg.h

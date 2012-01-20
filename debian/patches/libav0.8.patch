@@ -1,4 +1,5 @@
 Description: Add missing include to support building Audacity with libav 0.8.
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=467
 Bug-Debian: http://bugs.debian.org/654212
 
 --- a/src/FFmpeg.h
