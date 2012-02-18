@@ -1,5 +1,6 @@
 Description: Add support to disable dynamic loading of LAME.
 Author: Benjamin Drung <bdrung@debian.org>
+Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 
 --- /dev/null
 +++ b/m4/audacity_checklib_lame.m4
