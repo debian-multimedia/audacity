@@ -281,15 +281,22 @@ void Importer::WriteImportItems()
       name.Printf (wxT("/ExtImportItems/Item%d"), i);
       gPrefs->Write (name, val);
    }
-   /* If we had more items than we have now, delete the excess */
-   for (i = this->mExtImportItems->Count(); i >= 0; i++)
-   {
+   /* If we used to have more items than we have now, delete the excess items.
+   We just keep deleting items and incrementing until we find there aren't any 
+   more to delete.*/
+   i = this->mExtImportItems->Count();
+   do {
      name.Printf (wxT("/ExtImportItems/Item%d"), i);
-     if (gPrefs->Read(name, &val))
-       gPrefs->DeleteEntry (name, false);
-     else
-       break;
-   }
+     // No item to delete?  Then it's time to finish.
+     if (!gPrefs->Read(name, &val))
+        break;
+     // Failure to delete probably means a read-only config file.
+     // no point continuing.  
+     // TODO: Possibly report (once).
+     if( !gPrefs->DeleteEntry (name, false))
+        break;
+     i++;
+   } while( true );
 }
 
 ExtImportItem *Importer::CreateDefaultImportItem()

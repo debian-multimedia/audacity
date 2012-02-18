@@ -1175,6 +1175,17 @@ ProgressDialog::ProgressDialog(const wxString & title, const wxString & message,
       }
    }
 #endif
+
+#if defined(__WXMSW__)
+   // See Bug #334
+   // LL:  On Windows, the application message loop is still active even though
+   //      all of the windows have been disabled.  So, keyboard shortcuts still
+   //      work in windows not related to the progress diawhich allows interaction 
+   //      when it should be blocked.
+   //      This disabled the application message loop so keyboard shortcuts will
+   //      no longer be processed.
+   wxTheApp->SetEvtHandlerEnabled(false);
+#endif
 }
 
 //
@@ -1188,6 +1199,11 @@ ProgressDialog::~ProgressDialog()
 
       Beep();
    }
+
+#if defined(__WXMSW__)
+   // Undo above fix for bug 334.
+   wxTheApp->SetEvtHandlerEnabled(true);
+#endif
 
 #if defined(__WXMAC__)
    wxWindow *w = wxTheApp->GetTopWindow();
@@ -1256,6 +1272,21 @@ ProgressDialog::Show(bool show)
       if (!mDisable)
       {
          mDisable = new wxWindowDisabler(this);
+
+         #if defined(__WXMAC__)
+            // LL:  On the Mac, the parent windows get disabled, but they still respond
+            //      to the close button being clicked and the application quit menu item
+            //      is still enabled.  We do not want the parent window to be destroyed
+            //      while we're active, so we have to kludge around a bit to keep this
+            //      from happening.
+            WindowRef windowRef = (WindowRef) MacGetWindowRef();
+            SetWindowModality( windowRef, kWindowModalityAppModal, NULL ) ;
+            BeginAppModalStateForWindow(windowRef);
+
+            wxMenuBar *bar = wxStaticCast(wxGetTopLevelParent(wxTheApp->GetTopWindow()), wxFrame)->GetMenuBar();
+            bar->Enable(wxID_PREFERENCES, false);
+            bar->Enable(wxID_EXIT, false);
+         #endif
       }
    }
 

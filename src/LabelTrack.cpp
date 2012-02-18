@@ -1220,16 +1220,16 @@ void LabelStruct::AdjustEdge( int iEdge, double fNewTime)
 // We're moving the label.  Adjust both left and right edge.
 void LabelStruct::MoveLabel( int iEdge, double fNewTime)
 {
-   double width = getDuration();
+   double fTimeSpan = getDuration();
 
    if( iEdge < 0 )
    {
       t  = fNewTime;
-      t1 = fNewTime+width;
+      t1 = fNewTime+fTimeSpan;
    }
    else
    {
-      t  = fNewTime-width;
+      t  = fNewTime-fTimeSpan;
       t1 = fNewTime;
    }
    updated = true;

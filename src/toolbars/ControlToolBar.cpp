@@ -539,7 +539,7 @@ void ControlToolBar::PlayPlayRegion(double t0, double t1,
       int token;
       if (cutpreview) {
          double beforeLen, afterLen;
-         gPrefs->Read(wxT("/AudioIO/CutPreviewBeforeLen"), &beforeLen, 1.0);
+         gPrefs->Read(wxT("/AudioIO/CutPreviewBeforeLen"), &beforeLen, 2.0);
          gPrefs->Read(wxT("/AudioIO/CutPreviewAfterLen"), &afterLen, 1.0);
          double tcp0 = t0-beforeLen;
          double tcp1 = (t1+afterLen) - (t1-t0);
@@ -742,7 +742,8 @@ void ControlToolBar::StopPlaying(bool stopStream /* = true*/)
 void ControlToolBar::OnBatch(wxCommandEvent &evt)
 {
    AudacityProject *proj = GetActiveProject();
-   proj->OnApplyChain();
+   if (proj)
+      proj->OnApplyChain();
 
    mPlay->Enable();
    mStop->Enable();
@@ -762,8 +763,7 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
    AudacityProject *p = GetActiveProject();
    if (p && p->GetCleanSpeechMode()) {
       size_t numProjects = gAudacityProjects.Count();
-      bool tracks = (p && !p->GetTracks()->IsEmpty());
-      if (tracks || (numProjects > 1)) {
+      if (!p->GetTracks()->IsEmpty() || (numProjects > 1)) {
          wxMessageBox(_("Recording in CleanSpeech mode is not possible when a track, or more than one project, is already open."),
             _("Recording not permitted"),
             wxOK | wxICON_INFORMATION,
@@ -817,7 +817,6 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       int recordingChannels = 0;
       bool shifted = mRecord->WasShiftDown();
       if (shifted) {
-         TrackListIterator it(t);
          WaveTrack *wt;
          bool sel = false;
          double allt0 = t0;

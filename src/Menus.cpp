@@ -1042,7 +1042,7 @@ void AudacityProject::CreateMenusAndCommands()
 
       c->AddSeparator();   
 
-      c->AddItem(wxT("DeviceInfo"), _("&Audio Device Info..."), FN(OnAudioDeviceInfo));
+      c->AddItem(wxT("DeviceInfo"), _("Au&dio Device Info..."), FN(OnAudioDeviceInfo));
       c->AddItem(wxT("Log"), _("Show &Log..."), FN(OnShowLog));
    }
 
@@ -5573,6 +5573,8 @@ void AudacityProject::OnExportCleanSpeechPresets()
 
          int lenPreset = sizeof(preset);
          int count = presetsFile.Write(preset, lenPreset);
+         // ANSWER-ME: Vigilant Sentry notes "count" is unused after this assignment. 
+         //    Should be checked against expectedCount -- but CleanSpeech is going away!!! ;-)
          count = presetsFile.Write(pNoiseGate, expectedCount);
 
          presetsFile.Close();
@@ -5628,6 +5630,8 @@ void AudacityProject::OnImportCleanSpeechPresets()
          }
          int expectedCount = wxGetApp().GetCleanSpeechNoiseGateExpectedCount();
          float* pNoiseGate = wxGetApp().GetCleanSpeechNoiseGate();
+         // ANSWER-ME: Vigilant Sentry notes "count" is unused after this assignment. 
+         //    Should be checked against expectedCount -- but CleanSpeech is going away!!! ;-)
          count = presetsFile.Read(pNoiseGate, expectedCount);
 
          gPrefs->Write(wxT("/CsPresets/ClickThresholdLevel"), preset[2]);
@@ -5805,6 +5809,9 @@ void AudacityProject::OnManual()
 void AudacityProject::OnShowLog()
 {
    wxLogWindow* pLogger = wxGetApp().mLogger;
+   // It's possible a log window was not created.
+   if( !pLogger )
+      return;
    wxFrame* pLoggerFrame = pLogger->GetFrame();
    if (!pLoggerFrame->IsShown())
    {

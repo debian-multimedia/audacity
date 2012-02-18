@@ -118,7 +118,7 @@ PrefsDialog::PrefsDialog(wxWindow * parent)
          S.AddWindow(mCategories, wxEXPAND);
 
          wxWindow *w;
-         // Parameters are: AppPage( page, name, IsSelected, imageId)
+         // Parameters are: AddPage(page, name, IsSelected, imageId).
          w = new DevicePrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
          w = new PlaybackPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
          w = new RecordingPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
@@ -187,7 +187,11 @@ PrefsDialog::PrefsDialog(wxWindow * parent)
       sz.y = 600;
    }
 
-   SetSizeHints(sz.x, sz.y, 800, 600);
+   // Set the minimum height to be slightly bigger than default, as fix for bug 161. 
+   // The magic number 7 was determined by Ed's experimentation. 
+   // Frankly, this is a hack to work around a bug in wxTreebook, and 
+   // will have to be revisited if we add another category to mCategories.
+   SetSizeHints(sz.x, sz.y + 7, 800, 600);
 
    // Center after all that resizing, but make sure it doesn't end up
    // off-screen
@@ -249,7 +253,7 @@ void PrefsDialog::OnOK(wxCommandEvent & event)
       // set AudioIONotBusyFlag/AudioIOBusyFlag according to monitoring, as well. 
       // Instead allow it because unlike recording, for example, monitoring 
       // is not clearly something that should prohibit opening prefs. 
-      // TO-DO: We *could* be smarter in this method and call HandleDeviceChange()  
+      // TODO: We *could* be smarter in this method and call HandleDeviceChange()  
       // only when the device choices actually changed. True of lots of prefs!
       // As is, we always stop monitoring before handling the device change.
       if (gAudioIO->IsMonitoring()) 

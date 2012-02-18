@@ -391,7 +391,7 @@ void KeyConfigPrefs::SetKeyForSelected( const wxString & key )
 
 void KeyConfigPrefs::OnSet(wxCommandEvent & e)
 {
-   if (mCommandSelected < 0 || mCommandSelected >= mNames.GetCount())
+   if ( mCommandSelected >= (int)mNames.GetCount())
       return;
 
    wxString newKey = mKey->GetValue();
@@ -414,7 +414,8 @@ void KeyConfigPrefs::OnSet(wxCommandEvent & e)
 void KeyConfigPrefs::OnClear(wxCommandEvent& event)
 {
    mKey->Clear();
-   if (mCommandSelected < 0 || mCommandSelected >= mNames.GetCount()) {
+
+   if (mCommandSelected < 0 || mCommandSelected >= (int)mNames.GetCount()) {
       return;
    }
    SetKeyForSelected( wxT("") );
@@ -500,7 +501,8 @@ void KeyConfigPrefs::OnCategory(wxCommandEvent & e)
 void KeyConfigPrefs::OnItemSelected(wxListEvent & e)
 {
    mCommandSelected = e.GetIndex();
-   if (mCommandSelected < 0 || mCommandSelected >= mNames.GetCount()) {
+
+   if (mCommandSelected < 0 || mCommandSelected >= (int)mNames.GetCount()) {
       mKey->SetLabel(wxT(""));
       return;
    }
