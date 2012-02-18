@@ -3,7 +3,7 @@
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-unicode-1.3.13
+OutputBaseFilename=audacity-win-2.0
 SetupIconFile=audacity.ico
 
 WizardImageFile=audacity_InnoWizardImage.bmp
@@ -12,8 +12,8 @@ WizardSmallImageFile=audacity_InnoWizardSmallImage.bmp
 SolidCompression=yes
 
 ; installer-related directives
-AppName=Audacity 1.3 Beta (Unicode)
-AppVerName=Audacity 1.3.13 (Unicode)
+AppName=Audacity 2.0
+AppVerName=Audacity 2.0
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
@@ -22,7 +22,7 @@ ChangesAssociations=yes
 
 ; For a beta release, e.g.:   DefaultDirName={pf}\Audacity 1.3 Beta (Unicode)
 ; For a stable release:   DefaultDirName={pf}\Audacity
-DefaultDirName={pf}\Audacity 1.3 Beta (Unicode)
+DefaultDirName={pf}\Audacity
 
 ; Always warn if dir exists, because we'll overwrite previous Audacity.
 DirExistsWarning=yes
@@ -72,7 +72,7 @@ Source: "..\win\unicode release\audacity.exe"; DestDir: "{app}"; Flags: ignoreve
 
 ; Manual, which should be got from the manual wiki using ..\scripts\mw2html_audacity\wiki2htm.bat
 ; //FIX-ME    Why mandatory? I thought we were avoiding that. And if mandatory, why not automatic, or in code repository (SVN)? "should be got" is a step one should not have to do.  
-;    Source: "..\help\manual\*"; DestDir: "{app}\help\manual\"; Flags: ignoreversion recursesubdirs
+Source: "..\help\manual\*"; DestDir: "{app}\help\manual\"; Flags: ignoreversion recursesubdirs
 
 Source: "..\presets\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
@@ -91,9 +91,9 @@ Source: "..\win\unicode release\wxmsw28u_html_vc_custom.dll"; DestDir: "{app}"; 
 ; This is not an ideal solution, but should need the least tech support.
 ; We'll know we have the right version, don't step on anybody else's older version, and
 ; it's easy to make the zip (and they match better).
-Source: "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcp90.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcr90.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\Microsoft.VC90.CRT.manifest"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcp90.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcr90.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 Source: "..\win\unicode release\languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
 Source: "..\win\unicode release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
@@ -101,8 +101,8 @@ Source: "..\win\unicode release\nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ig
 Source: "..\win\unicode release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny"; Flags: ignoreversion
 
 [Icons]
-Name: "{commonprograms}\Audacity 1.3 Beta (Unicode)"; Filename: "{app}\audacity.exe"
-Name: "{userdesktop}\Audacity 1.3 Beta (Unicode)"; Filename: "{app}\audacity.exe"; Tasks: desktopicon
+Name: "{commonprograms}\Audacity 2.0"; Filename: "{app}\audacity.exe"
+Name: "{userdesktop}\Audacity 2.0"; Filename: "{app}\audacity.exe"; Tasks: desktopicon
 
 [InstallDelete]
 ; Get rid of Audacity 1.0.0 stuff that's no longer used.
@@ -125,6 +125,18 @@ Type: filesandordirs; Name: "{app}\help"
 Type: files; Name: "{commonprograms}\Audacity\audacity.exe"
 Type: files; Name: "{commonprograms}\Audacity\unins000.exe"
 Type: dirifempty; Name: "{commonprograms}\Audacity"
+
+;Get rid of previous uninstall item
+Type: files; Name: "{app}\unins*.*"
+
+; Get rid of no longer used test.lsp.
+Type: files; Name: "{app}\Nyquist\test.lsp"
+
+; Get rid of specific LADSPA plug-ins that we now ship with different names.
+Type: files; Name: "{app}\Plug-Ins\GVerb.dll"
+Type: files; Name: "{app}\Plug-Ins\Hard Limiter.dll"
+Type: files; Name: "{app}\Plug-Ins\sc4.dll"
+
 
 [Registry]
 ; No longer allow user to choose whether to associate AUP file type with Audacity.

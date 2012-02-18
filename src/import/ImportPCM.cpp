@@ -127,6 +127,23 @@ ImportFileHandle *PCMImportPlugin::Open(wxString filename)
 
    wxFile f;   // will be closed when it goes out of scope
 
+#ifdef __WXGTK__
+   if (filename.Lower().EndsWith(wxT("mp3"))) {
+      // There is a bug in libsndfile where mp3s with duplicated metadata tags
+      // will crash libsndfile and thus audacity.
+      // We have patched the lib-src version of libsndfile, but
+      // for linux the user can build against the system libsndfile which
+      // still has this bug.
+      // This happens in sf_open_fd, which is the very first point of
+      // interaction with libsndfile, so the only workaround is to hardcode
+      // ImportPCM to not handle .mp3.  Of couse, this will still fail for mp3s
+      // that are mislabeled with a .wav or other extension.
+      // So, in the future we may want to write a simple parser to detect mp3s here.
+      return NULL;
+   }
+#endif
+
+
    if (f.Open(filename)) {
       // Even though there is an sf_open() that takes a filename, use the one that
       // takes a file descriptor since wxWidgets can open a file with a Unicode name and
@@ -143,6 +160,20 @@ ImportFileHandle *PCMImportPlugin::Open(wxString filename)
       // TODO: Handle error
       //char str[1000];
       //sf_error_str((SNDFILE *)NULL, str, 1000);
+
+      return NULL;
+   } else if (file &&
+              (info.format & SF_FORMAT_TYPEMASK) == SF_FORMAT_OGG) {
+      // mchinen 15.1.2012 - disallowing libsndfile to handle
+      // ogg files because seeking is broken at this date (very slow,
+      // seeks from beginning of file each seek).
+      // This was said by Erik (libsndfile maintainer).
+      // Note that this won't apply to our local libsndfile, so only
+      // linux builds that use --with-libsndfile=system are affected,
+      // as our local libsndfile doesn't do OGG.
+      // In particular ubuntu 10.10 and 11.04 are known to be affected
+      // When the bug is fixed, we can check version to avoid only
+      // the broken builds.
 
       return NULL;
    }

@@ -468,7 +468,7 @@ void FreqWindow::DrawPlot()
    wxMemoryDC memDC;
    memDC.SelectObject(*mBitmap);
 
-   memDC.SetBackground(wxBrush(wxColour(254, 254, 254)));// DONT-THEM Mask colour.
+   memDC.SetBackground(wxBrush(wxColour(254, 254, 254)));// DONT-THEME Mask colour.
    memDC.Clear();
 
    wxRect r = mPlotRect;
@@ -517,14 +517,12 @@ void FreqWindow::DrawPlot()
 
    int width = r.width - 2;
 
-   float xMin, xMax, xPos, xRatio, xLast, xStep;
+   float xMin, xMax, xRatio, xStep;
 
    if (alg == 0) {
       xMin = mRate / mWindowSize;
       xMax = mRate / 2;
       xRatio = xMax / xMin;
-      xPos = xMin;
-      xLast = xPos / 2.0;
       if (mLogAxis)
       {
          xStep = pow(2.0f, (log(xRatio) / log(2.0f)) / width);
@@ -539,8 +537,6 @@ void FreqWindow::DrawPlot()
    } else {
       xMin = 0;
       xMax = mProcessedSize / mRate;
-      xPos = xMin;
-      xLast = xPos / 2.0;
       xStep = (xMax - xMin) / width;
       hRuler->ruler.SetLog(false);
       hRuler->ruler.SetUnits(_("s"));
@@ -549,13 +545,12 @@ void FreqWindow::DrawPlot()
    hRuler->Refresh(false);
 
    // Draw the plot
-
    if (alg == 0)
       memDC.SetPen(wxPen(theTheme.Colour( clrHzPlot ), 1, wxSOLID));
    else
       memDC.SetPen(wxPen(theTheme.Colour( clrWavelengthPlot), 1, wxSOLID));
 
-   xPos = xMin;
+   float xPos = xMin;
 
    for (i = 0; i < width; i++) {
       float y;
@@ -594,8 +589,6 @@ void FreqWindow::DrawPlot()
    }
 
    memDC.SelectObject( wxNullBitmap );
-
-   mBitmap->SetMask( new wxMask( *mBitmap, wxColour(254, 254, 254) ) );
 }
 
 
@@ -782,14 +775,12 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
 
    int width = r.width - 2;
 
-   float xMin, xMax, xPos, xRatio, xLast, xStep;
+   float xMin, xMax, xRatio, xStep;
 
    if (alg == 0) {
       xMin = mRate / mWindowSize;
       xMax = mRate / 2;
       xRatio = xMax / xMin;
-      xPos = xMin;
-      xLast = xPos / 2.0;
       if (mLogAxis)
          xStep = pow(2.0f, (log(xRatio) / log(2.0f)) / width);
       else
@@ -797,13 +788,12 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
    } else {
       xMin = 0;
       xMax = mProcessedSize / mRate;
-      xPos = xMin;
-      xLast = xPos / 2.0;
       xStep = (xMax - xMin) / width;
    }
 
-   // Find the peak nearest the cursor and plot it
+   float xPos = xMin;
 
+   // Find the peak nearest the cursor and plot it
    float bestpeak = float(0.0);
    if ( r.Contains(mMouseX, mMouseY) & (mMouseX!=0) & (mMouseX!=r.width-1) ) {
       if (mLogAxis)
@@ -998,8 +988,7 @@ void FreqWindow::Recalc()
       wss = 1.0;
 
    //Progress dialog over FFT operation
-   //wxLogDebug(wxT("Starting progress dialogue in FreqWindow::Recalc()"));
-   ProgressDialog *mProgress = new ProgressDialog(_("FreqWindow"),_("Drawing Spectrum"));
+   ProgressDialog *mProgress = new ProgressDialog(_("Plot Spectrum"),_("Drawing Spectrum"));
 
    int start = 0;
    int windows = 0;

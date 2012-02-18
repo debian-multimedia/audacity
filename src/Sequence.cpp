@@ -181,10 +181,10 @@ bool Sequence::ConvertToSampleFormat(sampleFormat format, bool* pbChanged)
       if (pOldBlockFile->IsAlias()) 
       {
          // No conversion of aliased data. 
-         //vvvvv Should the user be alerted, as we're not actually converting the aliased file? 
+         //v Should the user be alerted, as we're not actually converting the aliased file? 
          //   James (2011-12-01, offlist) believes this is okay because we are assuring 
          //   the user we'll do the format conversion if we turn this into a non-aliased block.
-         //   TO-DO: Confirm that.
+         //   TODO: Confirm that.
          pNewBlockArray->Add(pOldSeqBlock);
       }
       else
@@ -336,14 +336,15 @@ bool Sequence::GetMinMax(sampleCount start, sampleCount len,
 bool Sequence::GetRMS(sampleCount start, sampleCount len,
                          float * outRMS) const
 {
-   wxASSERT(len <= mMaxSamples); // Vaughan, 2011-10-19
+   // len is the number of samples that we want the rms of.
+   // it may be longer than a block, and the code is carefully set up to handle that.
    if (len == 0 || mBlock->GetCount() == 0) {
       *outRMS = float(0.0);
       return true;
    }
 
    double sumsq = 0.0;
-   sampleCount length = 0;
+   sampleCount length = 0; // this is the cumulative length of the bits we have the ms of so far, and should end up == len
 
    unsigned int block0 = FindBlock(start);
    unsigned int block1 = FindBlock(start + len);
@@ -361,7 +362,6 @@ bool Sequence::GetRMS(sampleCount start, sampleCount len,
 
       sumsq += blockRMS * blockRMS * mBlock->Item(block0)->f->GetLength();
       length += mBlock->Item(block0)->f->GetLength();
-      wxASSERT(length <= mMaxSamples); // Vaughan, 2011-10-19
    }
 
    // Now we take the first and last blocks into account, noting that the
@@ -369,7 +369,6 @@ bool Sequence::GetRMS(sampleCount start, sampleCount len,
    // If not, we need read some samples and summaries from disk.
    s0 = start - mBlock->Item(block0)->start;
    l0 = len;
-   wxASSERT(len <= mMaxSamples); // Vaughan, 2011-10-19
    maxl0 = mBlock->Item(block0)->start + mBlock->Item(block0)->f->GetLength() - start;
    wxASSERT(maxl0 <= mMaxSamples); // Vaughan, 2011-10-19
    if (l0 > maxl0)
@@ -389,7 +388,6 @@ bool Sequence::GetRMS(sampleCount start, sampleCount len,
                                          &partialMin, &partialMax, &partialRMS);
       sumsq += partialRMS * partialRMS * l0;
       length += l0;
-      wxASSERT(length <= mMaxSamples); // Vaughan, 2011-10-19
    }
 
    *outRMS = sqrt(sumsq/length);
@@ -513,6 +511,7 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
       return ConsistencyCheck(wxT("Paste branch one"));
    }
 
+   // FIX-ME: "b" is unsigned, so it's pointless to check that it's >= 0.
    if (b >= 0 && b < numBlocks
        && ((mBlock->Item(b)->f->GetLength() + addedLen) < mMaxSamples)) {
       // Special case: we can fit all of the new samples inside of
@@ -628,8 +627,10 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
 
          insertBlock->f = mDirManager->CopyBlockFile(srcBlock->Item(i)->f);
          if (!insertBlock->f) {
-            // TODO error: Could not paste!  (Out of disk space?)
-            wxASSERT(false);
+            wxASSERT(false); // TODO: Handle this better, alert the user of failure.
+            delete insertBlock;
+            newBlock->Clear();
+            delete newBlock;
             return false;
          }
 
@@ -774,6 +775,8 @@ bool Sequence::AppendBlock(SeqBlock * b)
    newBlock->f = mDirManager->CopyBlockFile(b->f);
    if (!newBlock->f) {
       /// \todo Error Could not paste!  (Out of disk space?)
+      wxASSERT(false); // TODO: Handle this better, alert the user of failure.
+      delete newBlock;
       return false;
    }
 

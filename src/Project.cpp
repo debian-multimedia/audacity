@@ -1650,6 +1650,14 @@ bool AudacityProject::HandleKeyDown(wxKeyEvent & event)
    if (event.GetKeyCode() == WXK_CONTROL)
       mTrackPanel->HandleControlKey(true);
 
+   // Allow PageUp and PageDown keys to 
+   //scroll the Track Panel left and right
+   if (event.GetKeyCode() == WXK_PAGEUP)
+      mTrackPanel->HandlePageUpKey();
+   
+   if (event.GetKeyCode() == WXK_PAGEDOWN)
+      mTrackPanel->HandlePageDownKey();
+
    // If a window has captured the keyboard, then allow it
    // first dibs at the event.  If it does an event.Skip(false)
    // then allow the event to process as normal, bypassing the
@@ -1949,6 +1957,16 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
       mLastSavedTracks = NULL;
    }
 
+   // Get rid of the history window
+   // LL:  Destroy it before the TrackPanel and ToolBars since they
+   //      may/will get additional wxEVT_PAINT events since window
+   //      destruction may be queued.  This seems to only be a problem
+   //      on the Mac.
+   if (mHistoryWindow) {
+      mHistoryWindow->Destroy();
+      mHistoryWindow = NULL;
+   }
+
    // Destroy the TrackPanel early so it's not around once we start
    // deleting things like tracks and such out from underneath it.
    mTrackPanel->Destroy();
@@ -1958,12 +1976,6 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
    // to save the state of the toolbars.
    delete mToolManager;
    mToolManager = NULL;
-
-   // Get rid of the history window
-   if (mHistoryWindow) {
-      mHistoryWindow->Destroy();
-      mHistoryWindow = NULL;
-   }
 
    DestroyChildren();
 
@@ -2022,7 +2034,8 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
    
    if (gAudacityProjects.IsEmpty() && !gIsQuitting) {
 
-      wxGetApp().mLogger->Show(false);
+      if( wxGetApp().mLogger )
+         wxGetApp().mLogger->Show(false);
       
 #if !defined(__WXMAC__)
       // LL:  On the Mac, we don't want the logger open after all projects
@@ -3501,22 +3514,25 @@ bool AudacityProject::SaveAs(bool bWantSaveCompressed /*= false*/)
    }
    else
    {
-      wxString DialogTitle;
+      wxString sProjName = this->GetName();
+      if (sProjName.IsEmpty())
+         sProjName = _("<untitled>");
+      wxString sDialogTitle;
       if (bWantSaveCompressed)
       {
          ShowWarningDialog(this, wxT("FirstProjectSave"),
                            _("Audacity compressed project files (.aup) save your work in a smaller, compressed (.ogg) format. \nCompressed project files are a good way to transmit your project online, because they are much smaller. \nTo open a compressed project takes longer than usual, as it imports each compressed track. \n\nMost other programs can't open Audacity project files.\nWhen you want to save a file that can be opened by other programs, select one of the\nExport commands."));
-         DialogTitle = _("Save Compressed Project As...");
+         sDialogTitle.Printf(_("Save Compressed Project \"%s\" As..."), sProjName.c_str());
       }
       else
       {
          ShowWarningDialog(this, wxT("FirstProjectSave"),
                            _("You are saving an Audacity project file (.aup).\n\nSaving a project creates a file that only Audacity can open.\n\nTo save an audio file for other programs, use one of the \"File > Export\" commands.\n"));
-         DialogTitle = _("Save Project As...");
+         sDialogTitle.Printf(_("Save Project \"%s\" As..."), sProjName.c_str());
       }
 
       fName = FileSelector(
-         DialogTitle,
+         sDialogTitle,
          path, fName, wxT(""),
          _("Audacity projects") + static_cast<wxString>(wxT(" (*.aup)|*.aup")),
          // JKC: I removed 'wxFD_OVERWRITE_PROMPT' because we are checking 

@@ -321,6 +321,11 @@ void TrackArtist::DrawTracks(TrackList * tracks,
    dc.DrawRectangle(clip);
 #endif
 
+   wxFont labelFont(12, wxSWISS, wxNORMAL, wxNORMAL);
+   dc.SetFont(labelFont);
+   dc.SetTextForeground(wxColour(255, 255, 0));
+   gPrefs->Read(wxT("/GUI/ShowTrackNameInWaveform"), &mbShowTrackNameInWaveform, false);
+
    t = iter.StartWith(start);
    while (t) {
       trackRect.y = t->GetY() - viewInfo->vpos;
@@ -414,6 +419,8 @@ void TrackArtist::DrawTrack(const Track * t,
          DrawSpectrum(wt, dc, r, viewInfo, true, false);
          break;
       }
+      if (mbShowTrackNameInWaveform && wt->GetChannel() != Track::RightChannel)    // so left or mono only
+         dc.DrawText (wt->GetName(), r.x+10, r.y);  // move right 10 pixels to avoid overwriting <- symbol
       break;              // case Wave
    }
    #ifdef USE_MIDI
@@ -611,7 +618,7 @@ void TrackArtist::UpdateVRuler(Track *t, wxRect & r)
 
          float min, max;
          wt->GetDisplayBounds(&min, &max);
-
+// This assumes that wt->GetDisplayBounds(&min, &max); is in dB, and it isn't, it's linear
          if (max > 0) {
             int top = 0;
             float topval = 0;
@@ -1809,7 +1816,6 @@ void TrackArtist::DrawClipSpectrum(WaveTrack *track,
 
    int minSamples = int ((double)minFreq * (double)windowSize / rate + 0.5);   // units are fft bins
    int maxSamples = int ((double)maxFreq * (double)windowSize / rate + 0.5);
-   int temp = sizeof(int);
    float binPerPx = float(maxSamples - minSamples) / float(mid.height);
 
    int x = 0;

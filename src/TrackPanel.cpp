@@ -1375,6 +1375,16 @@ void TrackPanel::HandleControlKey(bool down)
    HandleCursorForLastMouseEvent();
 }
 
+void TrackPanel::HandlePageUpKey()
+{
+   mListener->TP_ScrollWindow(mViewInfo->h + mViewInfo->screen);
+}
+
+void TrackPanel::HandlePageDownKey()
+{
+   mListener->TP_ScrollWindow(mViewInfo->h - mViewInfo->screen);
+}
+
 void TrackPanel::HandleCursorForLastMouseEvent()
 {
    HandleCursor(mLastMouseEvent);
@@ -4609,7 +4619,7 @@ void TrackPanel::HandleResize(wxMouseEvent & event)
    }
 }
 
-/// Handle mouse wheel rotation (for zoom in/out and vertical scrolling)
+/// Handle mouse wheel rotation (for zoom in/out, vertical and horizontal scrolling)
 void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
 {
    double steps = event.m_wheelRotation /
@@ -4637,7 +4647,7 @@ void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
       Refresh(false);
    } else
    {
-      // MM: Zoom up/down when used without modifier keys
+      // MM: Scroll up/down when used without modifier keys
       double lines = steps * 4 + mVertScrollRemainder;
       mVertScrollRemainder = lines - floor(lines);
       lines = floor(lines);
