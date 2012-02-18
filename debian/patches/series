@@ -1,5 +1,3 @@
-upstream-ffmpeg-2.patch
-libav0.8.patch
 disable-dynamic-ffmpeg.patch
 disable-dynamic-lame.patch
 label-region-relation.patch
