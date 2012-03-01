@@ -1,9 +1,10 @@
 #!/usr/bin/make -f
 
-# Do not link against unused libraries (make dpkg-shlibdeps happy).
-LDFLAGS += -Wl,-z,defs -Wl,--as-needed
-
 configure_flags := \
+	CFLAGS="$(shell dpkg-buildflags --get CFLAGS)" \
+	CPPFLAGS="$(shell dpkg-buildflags --get CPPFLAGS)" \
+	CXXFLAGS="$(shell dpkg-buildflags --get CXXFLAGS)" \
+	LDFLAGS="$(shell dpkg-buildflags --get LDFLAGS) -Wl,-z,defs -Wl,--as-needed" \
 	--disable-dynamic-loading \
 	--with-expat=system \
 	--with-ffmpeg=system \
