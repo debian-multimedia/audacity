@@ -1839,19 +1839,20 @@ int WaveTrack::GetNumClips() const
    return mClips.GetCount();
 }
 
-void WaveTrack::MoveClipToTrack(int clipIndex, WaveTrack* dest)
-{
-   WaveClipList::compatibility_iterator node = mClips.Item(clipIndex);
-   WaveClip* clip = node->GetData();
-   mClips.DeleteNode(node);
-   dest->mClips.Append(clip);
-}
+// unused
+//void WaveTrack::MoveClipToTrack(int clipIndex, WaveTrack* dest)
+//{
+//   WaveClipList::compatibility_iterator node = mClips.Item(clipIndex);
+//   WaveClip* clip = node->GetData();
+//   mClips.DeleteNode(node);
+//   dest->mClips.Append(clip);
+//}
 
 void WaveTrack::MoveClipToTrack(WaveClip *clip, WaveTrack* dest)
 {
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext()) {
       if (it->GetData() == clip) {
-         WaveClip* clip = it->GetData();
+         WaveClip* clip = it->GetData(); //vvv ANSWER-ME: Why declare and assign this to another variable, when we just verified the 'clip' parameter is the right value?!
          mClips.DeleteNode(it);
          dest->mClips.Append(clip);
          return; // JKC iterator is now 'defunct' so better return straight away.

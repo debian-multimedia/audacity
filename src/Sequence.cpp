@@ -177,59 +177,48 @@ bool Sequence::ConvertToSampleFormat(sampleFormat format, bool* pbChanged)
    {
       SeqBlock* pOldSeqBlock = mBlock->Item(i);
       BlockFile* pOldBlockFile = pOldSeqBlock->f;
-
-      if (pOldBlockFile->IsAlias()) 
+      
+      sampleCount len = pOldSeqBlock->f->GetLength();
+      samplePtr bufferOld = NewSamples(len, oldFormat);
+      samplePtr bufferNew = NewSamples(len, mSampleFormat);
+      
+      bSuccess = (pOldBlockFile->ReadData(bufferOld, oldFormat, 0, len) > 0);
+      if (!bSuccess)
+         break;
+      
+      CopySamples(bufferOld, oldFormat, bufferNew, mSampleFormat, len);
+      
+      // Note this fix for http://bugzilla.audacityteam.org/show_bug.cgi?id=451, 
+      // using Blockify, allows (len < mMinSamples).
+      // This will happen consistently when going from more bytes per sample to fewer...
+      // This will create a block that's smaller than mMinSamples, which 
+      // shouldn't be allowed, but we agreed it's okay for now.
+      //vvvvv ANSWER-ME: Does this cause any bugs, or failures on write, elsewhere?
+      //    If so, need to special-case (len < mMinSamples) and start combining data 
+      //    from the old blocks... Oh no!
+      
+      // Using Blockify will handle the cases where len > the new mMaxSamples. Previous code did not.
+      BlockArray* pSplitBlockArray = Blockify(bufferNew, len);
+      bSuccess = (pSplitBlockArray->GetCount() > 0);
+      if (bSuccess)
       {
-         // No conversion of aliased data. 
-         //v Should the user be alerted, as we're not actually converting the aliased file? 
-         //   James (2011-12-01, offlist) believes this is okay because we are assuring 
-         //   the user we'll do the format conversion if we turn this into a non-aliased block.
-         //   TODO: Confirm that.
-         pNewBlockArray->Add(pOldSeqBlock);
-      }
-      else
-      {
-         sampleCount len = pOldSeqBlock->f->GetLength();
-         samplePtr bufferOld = NewSamples(len, oldFormat);
-         samplePtr bufferNew = NewSamples(len, mSampleFormat);
-
-         bSuccess = (pOldBlockFile->ReadData(bufferOld, oldFormat, 0, len) > 0);
-         if (!bSuccess)
-            break;
-
-         CopySamples(bufferOld, oldFormat, bufferNew, mSampleFormat, len);
-
-         // Note this fix for http://bugzilla.audacityteam.org/show_bug.cgi?id=451, 
-         // using Blockify, allows (len < mMinSamples).
-         // This will happen consistently when going from more bytes per sample to fewer...
-         // This will create a block that's smaller than mMinSamples, which 
-         // shouldn't be allowed, but we agreed it's okay for now.
-         //vvvvv ANSWER-ME: Does this cause any bugs, or failures on write, elsewhere?
-         //    If so, need to special-case (len < mMinSamples) and start combining data 
-         //    from the old blocks... Oh no!
-
-         // Using Blockify will handle the cases where len > the new mMaxSamples. Previous code did not.
-         BlockArray* pSplitBlockArray = Blockify(bufferNew, len);
-         bSuccess = (pSplitBlockArray->GetCount() > 0);
-         if (bSuccess)
+         for (size_t j = 0; j < pSplitBlockArray->GetCount(); j++)
          {
-            for (size_t j = 0; j < pSplitBlockArray->GetCount(); j++)
-            {
-               pSplitBlockArray->Item(j)->start += mBlock->Item(i)->start;
-               pNewBlockArray->Add(pSplitBlockArray->Item(j));
-            }
-            *pbChanged = true;
+            pSplitBlockArray->Item(j)->start += mBlock->Item(i)->start;
+            pNewBlockArray->Add(pSplitBlockArray->Item(j));
          }
-         delete pSplitBlockArray;
-
-         DeleteSamples(bufferNew);
-         DeleteSamples(bufferOld);
+         *pbChanged = true;
       }
+      delete pSplitBlockArray;
+      
+      DeleteSamples(bufferNew);
+      DeleteSamples(bufferOld);
    }
 
    if (bSuccess)
    {
-      // Invalidate all the old block files.
+      // Invalidate all the old, non-aliased block files.
+      // Aliased files will be converted at save, per comment above.
       for (size_t i = 0; (i < mBlock->GetCount() && bSuccess); i++) 
       {
          SeqBlock* pOldSeqBlock = mBlock->Item(i);
@@ -243,6 +232,15 @@ bool Sequence::ConvertToSampleFormat(sampleFormat format, bool* pbChanged)
    }
    else
    {
+      /* vvvvv We *should do the following, but TrackPanel::OnFormatChange() doesn't actually check the conversion results, 
+         it just assumes the conversion was successful. 
+         TODO: Uncomment this section when TrackPanel::OnFormatChange() is upgraded to check the results.
+
+         // Conversion failed. Revert these member vars.
+         mSampleFormat = oldFormat;
+         mMaxSamples = oldMaxSamples;
+         */
+
       delete pNewBlockArray; // Failed. Throw out the scratch array. 
       *pbChanged = false;  // Revert overall change flag, in case we had some partial success in the loop.
    }
@@ -422,7 +420,7 @@ bool Sequence::Copy(sampleCount s0, sampleCount s1, Sequence **dest)
       blocklen = (mBlock->Item(b0)->start + mBlock->Item(b0)->f->GetLength() - s0);
       if (blocklen > (s1 - s0))
          blocklen = s1 - s0;
-      wxASSERT(blocklen <= mMaxSamples); // Vaughan, 2011-10-19
+      wxASSERT(mBlock->Item(b0)->f->IsAlias() || (blocklen <= mMaxSamples)); // Vaughan, 2012-02-29
       Get(buffer, mSampleFormat, s0, blocklen);
 
       (*dest)->Append(buffer, mSampleFormat, blocklen);
@@ -438,7 +436,7 @@ bool Sequence::Copy(sampleCount s0, sampleCount s1, Sequence **dest)
    // Do the last block
    if (b1 > b0 && b1 < numBlocks) {
       blocklen = (s1 - mBlock->Item(b1)->start);
-      wxASSERT(blocklen <= mMaxSamples); // Vaughan, 2011-10-19
+      wxASSERT(mBlock->Item(b1)->f->IsAlias() || (blocklen <= mMaxSamples)); // Vaughan, 2012-02-29
       Get(buffer, mSampleFormat, mBlock->Item(b1)->start, blocklen);
       (*dest)->Append(buffer, mSampleFormat, blocklen);
    }
@@ -1030,7 +1028,10 @@ void Sequence::WriteXML(XMLWriter &xmlFile)
       SeqBlock *bb = mBlock->Item(b);
 
       // See http://bugzilla.audacityteam.org/show_bug.cgi?id=451.
-      if (bb->f->GetLength() > mMaxSamples)
+      // Also, don't check against mMaxSamples for AliasBlockFiles, because if you convert sample format,  
+      // mMaxSample gets changed to match the format, but the number of samples in the aliased file 
+      // has not changed (because sample format conversion was not actually done in the aliased file.
+      if (!bb->f->IsAlias() && (bb->f->GetLength() > mMaxSamples))
       {
          wxString sMsg = 
             wxString::Format(
@@ -1795,9 +1796,14 @@ bool Sequence::ConsistencyCheck(const wxChar *whereStr)
    bool bError = false;
 
    for (i = 0; i < numBlocks; i++) {
-      if (pos != mBlock->Item(i)->start)
+      SeqBlock* pSeqBlock = mBlock->Item(i);
+      if (pos != pSeqBlock->start)
          bError = true;
-      pos += mBlock->Item(i)->f->GetLength();
+
+      if (pSeqBlock->f)
+         pos += mBlock->Item(i)->f->GetLength();
+      else
+         bError = true;
    }
    if (pos != mNumSamples)
       bError = true;
@@ -1820,18 +1826,26 @@ void Sequence::DebugPrintf(wxString *dest)
    int pos = 0;
 
    for (i = 0; i < mBlock->GetCount(); i++) {
+      SeqBlock* pSeqBlock = mBlock->Item(i);
       *dest += wxString::Format
-         (wxT("   Block %3d: start %8d len %8d refs %d %s"),
+         (wxT("   Block %3d: start %8d, len %8d, refs %d, "),
           i,
-          mBlock->Item(i)->start,
-          mBlock->Item(i)->f->GetLength(),
-          mDirManager->GetRefCount(mBlock->Item(i)->f),
-          mBlock->Item(i)->f->GetFileName().GetFullName().c_str());
-      if (pos != mBlock->Item(i)->start)
+          pSeqBlock->start,
+          pSeqBlock->f ? pSeqBlock->f->GetLength() : 0,
+          pSeqBlock->f ? mDirManager->GetRefCount(pSeqBlock->f) : 0);
+
+      if (pSeqBlock->f)
+         *dest += pSeqBlock->f->GetFileName().GetFullName();
+      else
+         *dest += wxT("<missing block file>");
+
+      if ((pos != pSeqBlock->start) || !pSeqBlock->f)
          *dest += wxT("      ERROR\n");
       else
          *dest += wxT("\n");
-      pos += mBlock->Item(i)->f->GetLength();
+
+      if (pSeqBlock->f)
+         pos += pSeqBlock->f->GetLength();
    }
    if (pos != mNumSamples)
       *dest += wxString::Format
