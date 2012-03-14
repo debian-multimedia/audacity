@@ -2,4 +2,3 @@ disable-dynamic-ffmpeg.patch
 disable-dynamic-lame.patch
 label-region-relation.patch
 additional-mime-types.patch
-fix-glib-include-error.patch
