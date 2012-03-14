@@ -1,3 +1,12 @@
+audacity (2.0.0-1) unstable; urgency=low
+
+  * New upstream release.
+  * Drop fix-glib-include-error.patch (fixed upstream).
+  * Use build flags from the environment for portmixer.
+    Thanks to Simon Ruderich <simon@ruderich.org> (Closes: #663275)
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 14 Mar 2012 14:43:28 +0100
+
 audacity (2.0.0~rc8-1) unstable; urgency=low
 
   * New upstream release.
