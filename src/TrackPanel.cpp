@@ -620,7 +620,7 @@ void TrackPanel::BuildMenus(void)
    mRateMenu->AppendCheckItem(OnRate44ID, wxT("44100 Hz"));
    mRateMenu->AppendCheckItem(OnRate48ID, wxT("48000 Hz"));
    mRateMenu->AppendCheckItem(OnRate96ID, wxT("96000 Hz"));
-   mRateMenu->AppendCheckItem(OnRateOtherID, _("Other..."));
+   mRateMenu->AppendCheckItem(OnRateOtherID, _("&Other..."));
 
    mFormatMenu = new wxMenu();
    mFormatMenu->AppendCheckItem(On16BitID, GetSampleFormatStr(int16Sample));
@@ -628,52 +628,53 @@ void TrackPanel::BuildMenus(void)
    mFormatMenu->AppendCheckItem(OnFloatID, GetSampleFormatStr(floatSample));
 
    mWaveTrackMenu = new wxMenu();
-   mWaveTrackMenu->Append(OnSetNameID, _("Name..."));
+   mWaveTrackMenu->Append(OnSetNameID, _("N&ame..."));
    mWaveTrackMenu->AppendSeparator();
-   mWaveTrackMenu->Append(OnMoveUpID, _("Move Track Up"));
-   mWaveTrackMenu->Append(OnMoveDownID, _("Move Track Down"));
+   mWaveTrackMenu->Append(OnMoveUpID, _("Move Track U&p"));
+   mWaveTrackMenu->Append(OnMoveDownID, _("Move Track &Down"));
    mWaveTrackMenu->AppendSeparator();
-   mWaveTrackMenu->Append(OnWaveformID, _("Waveform"));
-   mWaveTrackMenu->Append(OnWaveformDBID, _("Waveform (dB)"));
-   mWaveTrackMenu->Append(OnSpectrumID, _("Spectrogram"));
-   mWaveTrackMenu->Append(OnSpectrumLogID, _("Spectrogram log(f)"));  // i18n-hint: short form of 'logarithm'
-   mWaveTrackMenu->Append(OnPitchID, _("Pitch (EAC)"));
+   mWaveTrackMenu->Append(OnWaveformID, _("Wa&veform"));
+   mWaveTrackMenu->Append(OnWaveformDBID, _("Waveform (d&B)"));
+   mWaveTrackMenu->Append(OnSpectrumID, _("&Spectrogram"));
+   /* i18n-hint: short form of 'logarithm'*/
+   mWaveTrackMenu->Append(OnSpectrumLogID, _("Spectrogram l&og(f)")); 
+   mWaveTrackMenu->Append(OnPitchID, _("Pitc&h (EAC)"));
    mWaveTrackMenu->AppendSeparator();
-   mWaveTrackMenu->AppendCheckItem(OnChannelMonoID, _("Mono"));
-   mWaveTrackMenu->AppendCheckItem(OnChannelLeftID, _("Left Channel"));
-   mWaveTrackMenu->AppendCheckItem(OnChannelRightID, _("Right Channel"));
-   mWaveTrackMenu->Append(OnMergeStereoID, _("Make Stereo Track"));
-   mWaveTrackMenu->Append(OnSplitStereoID, _("Split Stereo Track"));
-   mWaveTrackMenu->Append(OnSplitStereoMonoID, _("Split Stereo to Mono"));
+   mWaveTrackMenu->AppendCheckItem(OnChannelMonoID, _("&Mono"));
+   mWaveTrackMenu->AppendCheckItem(OnChannelLeftID, _("&Left Channel"));
+   mWaveTrackMenu->AppendCheckItem(OnChannelRightID, _("&Right Channel"));
+   mWaveTrackMenu->Append(OnMergeStereoID, _("Ma&ke Stereo Track"));
+   mWaveTrackMenu->Append(OnSplitStereoID, _("Spli&t Stereo Track"));
+   mWaveTrackMenu->Append(OnSplitStereoMonoID, _("Split Stereo to Mo&no"));
    mWaveTrackMenu->AppendSeparator();
-   mWaveTrackMenu->Append(0, _("Set Sample Format"), mFormatMenu);
+   mWaveTrackMenu->Append(0, _("Set Sample &Format"), mFormatMenu);
    mWaveTrackMenu->AppendSeparator();
-   mWaveTrackMenu->Append(0, _("Set Rate"), mRateMenu);
+   mWaveTrackMenu->Append(0, _("Set Rat&e"), mRateMenu);
 
    mNoteTrackMenu = new wxMenu();
-   mNoteTrackMenu->Append(OnSetNameID, _("Name..."));
+   mNoteTrackMenu->Append(OnSetNameID, _("N&ame..."));
    mNoteTrackMenu->AppendSeparator();
-   mNoteTrackMenu->Append(OnMoveUpID, _("Move Track Up"));
-   mNoteTrackMenu->Append(OnMoveDownID, _("Move Track Down"));
+   mNoteTrackMenu->Append(OnMoveUpID, _("Move Track U&p"));
+   mNoteTrackMenu->Append(OnMoveDownID, _("Move Track &Down"));
    mNoteTrackMenu->AppendSeparator();
-   mNoteTrackMenu->Append(OnUpOctaveID, _("Up Octave"));
-   mNoteTrackMenu->Append(OnDownOctaveID, _("Down Octave"));
+   mNoteTrackMenu->Append(OnUpOctaveID, _("Up &Octave"));
+   mNoteTrackMenu->Append(OnDownOctaveID, _("Down Octa&ve"));
 
    mLabelTrackMenu = new wxMenu();
-   mLabelTrackMenu->Append(OnSetNameID, _("Name..."));
+   mLabelTrackMenu->Append(OnSetNameID, _("N&ame..."));
    mLabelTrackMenu->AppendSeparator();
-   mLabelTrackMenu->Append(OnSetFontID, _("Font..."));
+   mLabelTrackMenu->Append(OnSetFontID, _("&Font..."));
    mLabelTrackMenu->AppendSeparator();
-   mLabelTrackMenu->Append(OnMoveUpID, _("Move Track Up"));
-   mLabelTrackMenu->Append(OnMoveDownID, _("Move Track Down"));
+   mLabelTrackMenu->Append(OnMoveUpID, _("Move Track U&p"));
+   mLabelTrackMenu->Append(OnMoveDownID, _("Move Track &Down"));
 
    mTimeTrackMenu = new wxMenu();
-   mTimeTrackMenu->Append(OnSetNameID, _("Name..."));
+   mTimeTrackMenu->Append(OnSetNameID, _("N&ame..."));
    mTimeTrackMenu->AppendSeparator();
-   mTimeTrackMenu->Append(OnMoveUpID, _("Move Track Up"));
-   mTimeTrackMenu->Append(OnMoveDownID, _("Move Track Down"));
+   mTimeTrackMenu->Append(OnMoveUpID, _("Move Track U&p"));
+   mTimeTrackMenu->Append(OnMoveDownID, _("Move Track &Down"));
    mTimeTrackMenu->AppendSeparator();
-   mTimeTrackMenu->Append(OnSetTimeTrackRangeID, _("Set Range..."));
+   mTimeTrackMenu->Append(OnSetTimeTrackRangeID, _("Set Ra&nge..."));
 
    mLabelTrackInfoMenu = new wxMenu();
    mLabelTrackInfoMenu->Append(OnCutSelectedTextID, _("Cut"));
@@ -2061,7 +2062,14 @@ void TrackPanel::SelectionHandleClick(wxMouseEvent & event,
       mStretching = true;
       mStretched = false;
 
-      MakeParentPushState(_("Stretch Note Track"), _("Stretch"));
+      /* i18n-hint: (noun) The track that is used for MIDI notes which can be 
+      dragged to change their duration.*/
+      MakeParentPushState(_("Stretch Note Track"), 
+      /* i18n-hint: In the history list, indicates a MIDI note has 
+      been dragged to change its duration (stretch it). Using either past 
+      or present tense is fine here.  If unsure, go for whichever is 
+      shorter.*/
+      _("Stretch"));
 
       // Full refresh since the label area may need to indicate
       // newly selected tracks. (I'm really not sure if the label area
@@ -2420,7 +2428,9 @@ void TrackPanel::HandleEnvelope(wxMouseEvent & event)
    if (event.LeftUp()) {
       mCapturedTrack = NULL;
       MakeParentPushState(
+         /* i18n-hint: (verb) Audacity has just adjusted the envelope .*/
          _("Adjusted envelope."),
+         /* i18n-hint: The envelope is a curve that controls the audio loudness.*/
          _("Envelope")
          );
    }
@@ -2585,7 +2595,11 @@ void TrackPanel::HandleSlide(wxMouseEvent & event)
          consolidate = false;
       }
       else {
-         wxString direction = mHSlideAmount>0 ? _("right") : _("left");
+         wxString direction = mHSlideAmount>0 ? 
+            /* i18n-hint: a direction as in left or right.*/
+            _("right") : 
+            /* i18n-hint: a direction as in left or right.*/
+            _("left");
          /* i18n-hint: %s is a direction like left or right */
          msg.Printf(_("Time shifted tracks/clips %s %.02f seconds"),
                     direction.c_str(), fabs(mHSlideAmount));
@@ -2931,8 +2945,8 @@ void TrackPanel::DoSlide(wxMouseEvent & event)
 
    //If the mouse is over a track that isn't the captured track,
    //drag the clip to the mousetrack
-   if (mCapturedClip && mouseTrack != mCapturedTrack &&
-       !mCapturedClipIsSelection)
+   if (mCapturedClip && mouseTrack != mCapturedTrack /*&&
+       !mCapturedClipIsSelection*/)
    {
       // Make sure we always have the first linked track of a stereo track
       if (!mouseTrack->GetLinked() && mTracks->GetLink(mouseTrack))
@@ -2948,6 +2962,12 @@ void TrackPanel::DoSlide(wxMouseEvent & event)
                           (WaveTrack*)mouseTrack)) {
          mCapturedTrack = mouseTrack;
          mDidSlideVertically = true;
+
+         if (mCapturedClipIsSelection) {
+            // Slide the selection, too
+            mViewInfo->sel0 += desiredSlideAmount;
+            mViewInfo->sel1 += desiredSlideAmount;
+         }
 
          // Make the offset permanent; start from a "clean slate"
          mHSlideAmount = 0.0;
@@ -4291,6 +4311,7 @@ void TrackPanel::HandleRearrange(wxMouseEvent & event)
    }
    else if (event.m_y > mMoveDownThreshold || event.m_y > GetRect().GetHeight()) {
       mTracks->MoveDown(mCapturedTrack);
+      /* i18n-hint: a direction as in up or down.*/
       dir = _("down");
 #ifdef EXPERIMENTAL_MIDI_OUT
       if (pMixerBoard && (mCapturedTrack->GetKind() == Track::Wave ||
@@ -4644,16 +4665,45 @@ void TrackPanel::HandleWheelRotation(wxMouseEvent & event)
          50.0 * -steps / mViewInfo->zoom);
    } else if (event.CmdDown())
    {
+#if 0
+      // JKC: Alternative scroll wheel zooming code
+      // using AudacityProject zooming, which is smarter,
+      // it keeps selections on screen and centred if it can,
+      // also this ensures mousewheel and zoom buttons give same result.
+      double ZoomFactor = pow(2.0, steps);
+      AudacityProject *p = GetProject();
+      if( steps > 0 )
+         p->ZoomInByFactor( ZoomFactor );
+      else 
+         p->ZoomOutByFactor( ZoomFactor );
+#endif
       // MM: Zoom in/out when used with Control key down
-      // MM: I don't understand what trackLeftEdge does
+      // We're converting pixel positions to times, 
+      // counting pixels from the left edge of the track.
       int trackLeftEdge = GetLeftOffset();
-      
+
+      // Time corresponding to mouse position
       double center_h = PositionToTime(event.m_x, trackLeftEdge);
-      mViewInfo->zoom = wxMin(mViewInfo->zoom * pow(2.0, steps), gMaxZoom);
+      // Time corresponding to last (most far right) audio.
+      double audioEndTime = mTracks->GetEndTime();
+
+      // When zooming in in empty space, it's easy to 'lose' the waveform.
+      // This prevents it.
+      // IF zooming in
+      if( steps > 0) 
+      {
+         // IF mouse is to right of audio
+         if( center_h > audioEndTime )
+            // Zooming brings far right of audio to mouse.
+            center_h = audioEndTime;
+      }
+      
+      // Constrain maximum as well as minimum zoom.
+      mViewInfo->zoom = wxMax( gMinZoom, wxMin(mViewInfo->zoom * pow(2.0, steps), gMaxZoom));
 
       double new_center_h = PositionToTime(event.m_x, trackLeftEdge);
       mViewInfo->h += (center_h - new_center_h);
-      
+
       MakeParentRedrawScrollbars();
       Refresh(false);
    } else
@@ -6097,6 +6147,9 @@ void TrackPanel::OnToggle()
 
    mTracks->Select( t, !t->GetSelected() );
    EnsureVisible( t );
+
+   mAx->Updated();
+
    return;
 }
 
@@ -7300,6 +7353,8 @@ void TrackPanel::OnSetTimeTrackRange(wxCommandEvent & /*event*/)
          MakeParentPushState(wxString::Format(_("Set range to '%d' - '%d'"),
                                               lower,
                                               upper),
+      /* i18n-hint: (verb)*/
+
                              _("Set Range"));
          Refresh(false);
       }
@@ -7317,11 +7372,18 @@ void TrackPanel::OnMoveTrack(wxCommandEvent & event)
       if (pMixerBoard && (mPopupMenuTarget->GetKind() == Track::Wave))
          pMixerBoard->MoveTrackCluster((WaveTrack*)mPopupMenuTarget, bUp);
 
-      MakeParentPushState(wxString::Format(_("Moved '%s' %s"),
+      MakeParentPushState(wxString::Format(
+      /* i18n-hint: the first %s is the name of a track, the second a direction as in up or down.
+       * If the word order is different in your language ask on the translators list about what 
+       * to do.*/
+         _("Moved '%s' %s"),
                                            mPopupMenuTarget->GetName().
                                            c_str(),
                                            event.GetId() ==
-                                           OnMoveUpID ? _("up") :
+                                           OnMoveUpID ?
+      /* i18n-hint: a direction as in up or down.*/
+                                           _("up") :
+      /* i18n-hint: a direction as in up or down.*/
                                            _("down")),
                           _("Move Track"));
       Refresh(false);
@@ -7437,6 +7499,7 @@ void TrackPanel::OnSetFont(wxCommandEvent &event)
    wxString facename = gPrefs->Read(wxT("/GUI/LabelFontFacename"), wxT(""));
    long fontsize = gPrefs->Read(wxT("/GUI/LabelFontSize"), 12);
 
+   /* i18n-hint: (noun) This is the font for the label track.*/
    wxDialog dlg(this, wxID_ANY, wxString(_("Label Track Font")));
    ShuttleGui S(&dlg, eIsCreating);
    wxListBox *lb;
@@ -7449,16 +7512,19 @@ void TrackPanel::OnSetFont(wxCommandEvent &event)
          S.SetStretchyRow(0);
          S.SetStretchyCol(1);
 
+         /* i18n-hint: (noun) The name of the typeface*/
          S.AddPrompt(_("Face name"));
          lb = new wxListBox(&dlg, wxID_ANY,
                             wxDefaultPosition,
                             wxDefaultSize,
                             facenames,
                             wxLB_SINGLE);
+
          lb->SetName(_("Face name"));
          lb->SetSelection(facenames.Index(facename));
          S.AddWindow(lb, wxALIGN_LEFT | wxEXPAND | wxALL);
 
+         /* i18n-hint: (noun) The size of the typeface*/
          S.AddPrompt(_("Face size"));
          sc = new wxSpinCtrl(&dlg, wxID_ANY,
                              wxString::Format(wxT("%d"), fontsize),
@@ -8030,7 +8096,11 @@ void TrackInfo::DrawMuteSolo(wxDC * dc, const wxRect r, Track * t,
    dc->DrawRectangle(bev);
 
    long textWidth, textHeight;
-   wxString str = (solo) ? _("Solo") : _("Mute");
+   wxString str = (solo) ?
+      /* i18n-hint: This is on a button that will silence this track.*/
+      _("Solo") : 
+      /* i18n-hint: This is on a button that will silence all the other tracks.*/
+      _("Mute");
 
    SetTrackInfoFont(dc);
    dc->GetTextExtent(str, &textWidth, &textHeight);

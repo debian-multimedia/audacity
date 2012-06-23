@@ -84,7 +84,7 @@
 // 2.0 release
 //#define EXPERIMENTAL_OD_FLAC
 // similarly for FFmpeg:
-//#define EXPERIMENTAL_OD_FFMPEG
+#define EXPERIMENTAL_OD_FFMPEG 1
 
 // Philip Van Baren 01 July 2009
 // Replace RealFFT() and PowerSpectrum function to use (faster) RealFFTf function
@@ -157,4 +157,4 @@
 //MJS: make the CleanSpeech stuff experimental, rather than deleting it directly
 // Normally disabled, for now.
 // CleanSpeech should be done somehow else and not be polluting the code
-//#define CLEANSPEECH
+//#define CLEANSPEECH 1

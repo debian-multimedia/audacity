@@ -64,10 +64,16 @@ BatchProcessDialog::BatchProcessDialog(wxWindow * parent):
             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
    AudacityProject * p = GetActiveProject();
+
+#ifdef CLEANSPEECH
    if (p->GetCleanSpeechMode())
    {
+      /*i18n-hint: CleanSpeech is the name of a mode Audacity can operate 
+       * in that was invented to process lots of sermons, remove long 
+       * pauses and background noise.*/
       SetTitle(_("CleanSpeech Batch Processing"));
    }
+#endif   // CLEANSPEECH
 
    SetLabel(_("Apply Chain"));         // Provide visual label
    SetName(_("Apply Chain"));          // Provide audible label
@@ -93,6 +99,8 @@ void BatchProcessDialog::PopulateOrExchange(ShuttleGui &S)
 {
    S.StartVerticalLay(true);
    {
+      /*i18n-hint: A chain is a sequence of commands that can be applied 
+       * to one or more audio files.*/
       S.StartStatic(_("&Select chain"), true);
       {
          S.SetStyle(wxSUNKEN_BORDER | wxLC_REPORT | wxLC_HRULES | wxLC_VRULES |
@@ -119,7 +127,12 @@ void BatchProcessDialog::PopulateOrExchange(ShuttleGui &S)
    }
 
    // Get and validate the currently active chain
+#ifdef CLEANSPEECH
    wxString name = gPrefs->Read(wxT("/Batch/ActiveChain"), wxT("CleanSpeech"));
+#else
+   wxString name = gPrefs->Read(wxT("/Batch/ActiveChain"), wxT(""));
+#endif   // CLEANSPEECH
+
    int item = mChains->FindItem(-1, name);
    if (item == -1) {
       item = 0;
@@ -202,10 +215,14 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent &event)
    }
 
    wxString path = gPrefs->Read(wxT("/DefaultOpenPath"), ::wxGetCwd());
+#ifdef CLEANSPEECH
    wxString prompt =  project->GetCleanSpeechMode() ? 
       _("Select vocal file(s) for batch CleanSpeech Chain...") :
       _("Select file(s) for batch processing...");
    // CleanSpeech used to hard-code a restricted file type list here
+#else
+   wxString prompt =  _("Select file(s) for batch processing...");
+#endif   // CLEANSPEECH
    
    FormatList l;
    wxString filter;
@@ -420,7 +437,11 @@ void EditChainsDialog::Populate()
    // ----------------------- End of main section --------------
 
    // Get and validate the currently active chain
+#ifdef CLEANSPEECH
    mActiveChain = gPrefs->Read(wxT("/Batch/ActiveChain"), wxT("CleanSpeech"));
+#else
+   mActiveChain = gPrefs->Read(wxT("/Batch/ActiveChain"), wxT(""));
+#endif   // CLEANSPEECH
 
    // Go populate the chains list.
    PopulateChains();
@@ -544,7 +565,7 @@ void EditChainsDialog::PopulateList()
       AddItem(mBatchCommands.GetCommand(i),
               mBatchCommands.GetParams(i));
    }
-
+   /*i18n-hint: This is the last item in a list.*/
    AddItem(_("- END -"), wxT(""));
 
    // Select the name in the list...this will fire an event.
@@ -681,6 +702,7 @@ void EditChainsDialog::OnAdd(wxCommandEvent &event)
 
       if (name.Contains(wxFILE_SEP_PATH) ||
           name.Contains(wxFILE_SEP_PATH_UNIX)) {
+         /*i18n-hint: The %c will be replaced with 'forbidden characters', like '/' and '\'.*/
          wxMessageBox(wxString::Format(_("Names may not contain '%c' and '%c'"),
                       wxFILE_SEP_PATH, wxFILE_SEP_PATH_UNIX),
                       GetTitle(),
@@ -711,10 +733,11 @@ void EditChainsDialog::OnRemove(wxCommandEvent &event)
 
    wxString name = mChains->GetItemText(item);
    wxMessageDialog m(this,
+   /*i18n-hint: %s will be replaced by the name of a file.*/
                      wxString::Format(_("Are you sure you want to delete %s?"), name.c_str()),
                      GetTitle(),
                      wxYES_NO | wxICON_QUESTION);
-   if (m.ShowModal() == wxNO) {
+   if (m.ShowModal() == wxID_NO) {
       return;
    }
 

@@ -104,7 +104,9 @@ void TimerRecordDialog::OnTimer(wxTimerEvent& event)
    wxDateTime dateTime_UNow = wxDateTime::UNow();
    if (m_DateTime_Start < dateTime_UNow) {
       m_DateTime_Start = dateTime_UNow;
+      if (m_DateTime_Start.GetDateOnly() < dateTime_UNow.GetDateOnly()) {
       m_pDatePickerCtrl_Start->SetValue(m_DateTime_Start);
+      }
       m_pTimeTextCtrl_Start->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_Start));
       this->UpdateEnd(); // Keep Duration constant and update End for changed Start.
    }
@@ -165,6 +167,9 @@ void TimerRecordDialog::OnDatePicker_End(wxDateEvent& event)
    // need to implement it for the TimeTextCtrls.
    if (m_DateTime_End < m_DateTime_Start) {
       m_DateTime_End = m_DateTime_Start;
+      m_pDatePickerCtrl_End->SetValue(m_DateTime_End);
+      m_pDatePickerCtrl_End->SetRange(m_DateTime_End, wxInvalidDateTime);
+      m_pDatePickerCtrl_End->Refresh();
       m_pTimeTextCtrl_End->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_End));
    }
 
@@ -246,7 +251,8 @@ bool TimerRecordDialog::RunWaitDialog()
       TimerProgressDialog 
          progress(m_TimeSpan_Duration.GetMilliseconds().GetValue(), 
                   _("Audacity Timer Record Progress"), 
-                  strMsg); 
+                  strMsg, 
+                  pdlgHideCancelButton); 
 
       // Make sure that start and end time are updated, so we always get the full 
       // duration, even if there's some delay getting here.
@@ -322,7 +328,13 @@ void TimerRecordDialog::PopulateOrExchange(ShuttleGui& S)
    S.SetBorder(5);
    S.StartVerticalLay(true);
    {
-      wxString strFormat = wxT("099 h 060 m 060 s");
+      /* i18n-hint: This string is used to configure the controls for times when the recording is
+	   * started and stopped. As such it is important that only the alphabetic parts of the string
+	   * are translated, with the numbers left exactly as they are.
+	   * The 'h' indicates the first number displayed is hours, the 'm' indicates the second number
+	   * displayed is minutes, and the 's' indicates that the third number displayed is seconds.
+	   */
+      wxString strFormat = _("099 h 060 m 060 s");
       S.StartStatic(_("Start Date and Time"), true);
       {
          m_pDatePickerCtrl_Start = 
@@ -363,7 +375,15 @@ void TimerRecordDialog::PopulateOrExchange(ShuttleGui& S)
 
       S.StartStatic(_("Duration"), true);
       {
-         wxString strFormat1 = wxT("099 days 024 h 060 m 060 s");
+        /* i18n-hint: This string is used to configure the controls which shows the recording 
+		 * duration. As such it is important that only the alphabetic parts of the string
+         * are translated, with the numbers left exactly as they are.
+         * The string 'days' indicates that the first number in the control will be the number of days,
+		 * then the 'h' indicates the second number displayed is hours, the 'm' indicates the third
+		 * number displayed is minutes, and the 's' indicates that the fourth number displayed is
+		 * seconds.
+         */
+         wxString strFormat1 = _("099 days 024 h 060 m 060 s");
          m_pTimeTextCtrl_Duration = new TimeTextCtrl(this, ID_TIMETEXT_DURATION, strFormat1);
          m_pTimeTextCtrl_Duration->SetName(_("Duration"));
          m_pTimeTextCtrl_Duration->SetTimeValue(m_TimeSpan_Duration.GetSeconds().ToDouble());
@@ -424,9 +444,11 @@ void TimerRecordDialog::UpdateEnd()
 {
    //v Use remaining disk -> record time calcs from AudacityProject::OnTimer to set range?
    m_DateTime_End = m_DateTime_Start + m_TimeSpan_Duration;
+   if (m_pDatePickerCtrl_End->GetValue().GetDateOnly() < m_DateTime_End.GetDateOnly()) {
    m_pDatePickerCtrl_End->SetValue(m_DateTime_End);
    m_pDatePickerCtrl_End->SetRange(m_DateTime_Start, wxInvalidDateTime); // No backdating.
    m_pDatePickerCtrl_End->Refresh();
+   }
    m_pTimeTextCtrl_End->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_End));
 }
 

@@ -16,8 +16,8 @@ The summary is eventually computed and written to a file in a background thread.
 
 *//*******************************************************************/
 
+#include <float.h>
 #include "ODDecodeBlockFile.h"
-
 
 #ifdef _WIN32
    #include <windows.h>
@@ -46,8 +46,10 @@ ODDecodeBlockFile::ODDecodeBlockFile(wxFileName baseFileName,wxFileName audioFil
    mAliasStart(aliasStart),
    mAliasChannel(aliasChannel)
 {
+   mDecoder = NULL;
    mDataAvailable=false;
    mAudioFileName = audioFileName;
+   mFormat = int16Sample;
 }
    
 /// Create the memory structure to refer to the given block file
@@ -60,8 +62,10 @@ ODDecodeBlockFile::ODDecodeBlockFile(wxFileName existingFile, wxFileName audioFi
    mAliasStart(aliasStart),
    mAliasChannel(aliasChannel)
 {
+   mDecoder = NULL;
    mDataAvailable=dataAvailable;
    mAudioFileName = audioFileName;
+   mFormat = int16Sample;
 }
 
 
@@ -324,8 +328,10 @@ int ODDecodeBlockFile::WriteODDecodeBlockFile()
    ret = mDecoder->Decode(sampleData, mFormat, mAliasStart, mLen, mAliasChannel);
    
    mDecoderMutex.Unlock();
-   if(ret < 0)
+   if(ret < 0) {
+      printf("ODDecodeBlockFile Decode failure\n");
       return ret; //failure
+   }
 
    //the summary is also calculated here.
    mFileNameMutex.Lock();
@@ -448,9 +454,10 @@ void *ODDecodeBlockFile::CalcSummary(samplePtr buffer, sampleCount len,
    }
    
    for (i = sumLen; i < mSummaryInfo.frames256; i++) {
-      summary256[i * 3] = 0.0f;
-      summary256[i * 3 + 1] = 0.0f;
-      summary256[i * 3 + 2] = 0.0f;
+      // filling in the remaining bits with non-harming/contributing values
+      summary256[i * 3] = FLT_MAX;  // min
+      summary256[i * 3 + 1] = -FLT_MAX;   // max
+      summary256[i * 3 + 2] = 0.0f; // rms
    }
 
    // Recalc 64K summaries
@@ -558,7 +565,7 @@ bool ODDecodeBlockFile::ReadSummary(void *data)
 void ODDecodeBlockFile::SetODFileDecoder(ODFileDecoder* decoder)
 {
    //since this is the only place that writes to mdecoder, it is totally thread-safe to read check without the mutex
-   if(decoder==mDecoder)
+   if(decoder == mDecoder)
       return;
    mDecoderMutex.Lock();
    mDecoder = decoder;

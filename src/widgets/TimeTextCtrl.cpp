@@ -322,7 +322,9 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
     * unless there aren't 60 seconds in a minute in your locale */
    BuiltinFormatStrings[5].formatStr = _("0100 h 060 m 060 s+.# samples");
    /* i18n-hint: Name of time display format that shows time in samples (at the
-    * current project sample rate) */
+    * current project sample rate).  For example the number of a sample at 1 
+    * second into a recording at 44.1KHz would be 44,100.
+    */
    BuiltinFormatStrings[6].name = _("samples");
    /* i18n-hint: Format string for displaying time in samples (lots of samples).
     * Change the ',' to the 1000s separator for your locale, and translate
@@ -379,7 +381,7 @@ TimeTextCtrl::TimeTextCtrl(wxWindow *parent,
     * for seconds and translate 'frames'. Nice simple time code! */
    BuiltinFormatStrings[12].formatStr = _("0100 h 060 m 060 s+.25 frames");
    /* i18n-hint: Name of time display format that shows time in frames at PAL
-    * TV frame rate (used for European TV */
+    * TV frame rate (used for European TV) */
    BuiltinFormatStrings[13].name = _("PAL frames (25 fps)");
    /* i18n-hint: Format string for displaying time in frames with NTSC frames.
     * Translate 'frames' and leave the rest alone. */
@@ -1327,12 +1329,13 @@ void TimeTextCtrl::ValueToControls()
 
 void TimeConverter::ValueToControls( double RawTime )
 {
+   //RawTime = 4.9995f; Only for testing!
    RawTime = (double)((sampleCount)floor(RawTime * mSampleRate + 0.5)) / mSampleRate; // put on a sample
    double theValue = RawTime * mScalingFactor + .000001; // what's this .000001 for?
    int t_int;
    bool round = true;
-   // If we have a fractional field further on then we will be using t_frac, and will round there.
-   // Otherwise round t_int to the nearest value
+   // We round on the last field.  If we have a fractional field we round using it.
+   // Otherwise we round to nearest integer.
    for(unsigned int i=0; i<mFields.GetCount(); i++) {
       if (mFields[i].frac)
          round = false;
@@ -1340,7 +1343,11 @@ void TimeConverter::ValueToControls( double RawTime )
    if(round)
       t_int = int(theValue + 0.5);
    else
+   {  
+      wxASSERT( mFields[mFields.GetCount()-1].frac );
+      theValue += 0.5f / mFields[mFields.GetCount()-1].base;
       t_int = int(theValue);
+   }
    double t_frac = (theValue - t_int);
    unsigned int i;
    int tenMins;
@@ -1380,16 +1387,24 @@ void TimeConverter::ValueToControls( double RawTime )
 
    for(i=0; i<mFields.GetCount(); i++) {
       int value;
+
       if (mFields[i].frac) {
-         value = (int)(t_frac * mFields[i].base + 0.5);  // +0.5 as rounding required
-         if (mFields[i].range > 0)
-            value = value % mFields[i].range;
+         // JKC: This old code looks bogus to me.
+         // The rounding is not propogating to earlier fields in the frac case.
+         //value = (int)(t_frac * mFields[i].base + 0.5);  // +0.5 as rounding required
+         // I did the rounding earlier.
+         value = (int)(t_frac * mFields[i].base); 
+         // JKC: TODO: Find out what the range is supposed to do.
+         // It looks bogus too.
+         //if (mFields[i].range > 0)
+         //   value = value % mFields[i].range;
       }
       else {
          value = (t_int / mFields[i].base);
          if (mFields[i].range > 0)
             value = value % mFields[i].range;
       }
+
       wxString field = wxString::Format(mFields[i].formatStr, value);
       mValueString += field;
       mValueString += mFields[i].label;

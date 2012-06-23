@@ -70,14 +70,14 @@ preferences.
 //#include "commands/CommandManager.h"
 //#include "effects/Effect.h"
 
-const int Enums::NumDbChoices = 14;
+const int Enums::NumDbChoices = 13;
 
 const wxString Enums::DbChoices[] = 
    {wxT("-20 dB"), wxT("-25 dB"), wxT("-30 dB"), 
     wxT("-35 dB"), wxT("-40 dB"), wxT("-45 dB"), 
     wxT("-50 dB"), wxT("-55 dB"), wxT("-60 dB"),
     wxT("-65 dB"), wxT("-70 dB"), wxT("-75 dB"), 
-    wxT("-80 dB"), wxT("Off-Skip")};
+    wxT("-80 dB")};
 
 const double Enums::Db2Signal[] = 
 //     -20dB    -25dB    -30dB    -35dB    -40dB    -45dB    -50dB    -55dB    -60dB    -65dB     -70dB     -75dB     -80dB    Off
@@ -204,10 +204,15 @@ bool Shuttle::TransferEnum( const wxString & Name, int & iValue,
       iValue = 0;// default index if none other selected.
       if( ExchangeWithMaster( Name ))
       {
-         int i;
-         for(i=0;i<nChoices;i++)
+         wxString str = mValueString;
+         if( str.Left( 1 ) == wxT('"') && str.Right( 1 ) == wxT('"') )
          {
-            if( mValueString.IsSameAs( pFirstStr[i] ))
+            str = str.Mid( 2, str.Length() - 2 );
+         }
+
+         for( int i = 0; i < nChoices; i++ )
+         {
+            if( str.IsSameAs( pFirstStr[i] ))
             {
                iValue = i;
                break;
@@ -223,6 +228,10 @@ bool Shuttle::TransferEnum( const wxString & Name, int & iValue,
       if( iValue < 0 )
          iValue = 0;
       mValueString = pFirstStr[iValue];
+      if( mValueString.Find( wxT(' ') ) != wxNOT_FOUND )
+      {
+         mValueString = wxT('"') + pFirstStr[iValue] + wxT('"');  //strings have quotes around them
+      }
       return ExchangeWithMaster( Name );
    }
    return true;

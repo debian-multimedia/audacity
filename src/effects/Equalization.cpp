@@ -227,6 +227,7 @@ EffectEqualization::EffectEqualization()
 
    mPrompting = false;
 
+   /* i18n-hint: Technical term for a kind of curve.*/
    interpChoiceStrings[0] = _("B-spline");
    interpChoiceStrings[1] = _("Cosine");
    interpChoiceStrings[2] = _("Cubic");
@@ -1021,6 +1022,7 @@ void EqualizationDialog::LoadCurves(wxString fileName, bool append)
    {
       // Inform user of load failure
       wxMessageBox( reader.GetErrorStr(),
+      /* i18n-hint: EQ stands for 'Equalization'.*/
                     _("Error Loading EQ Curve"),
                     wxOK | wxCENTRE,
                     this );
@@ -1703,7 +1705,7 @@ void EqualizationDialog::setCurve(wxString curveName)
          break;
    if( i == mCurves.GetCount())
    {
-      wxMessageBox( wxT("Requested curve not found, using 'unnamed'"), wxT("Curve not found"), wxOK|wxICON_ERROR );
+      wxMessageBox( _("Requested curve not found, using 'unnamed'"), _("Curve not found"), wxOK|wxICON_ERROR );
       setCurve((int) mCurves.GetCount()-1);
    }
    else

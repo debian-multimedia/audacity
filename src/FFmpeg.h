@@ -80,6 +80,8 @@ extern "C" {
 #include "../Prefs.h"
 #include <wx/checkbox.h>
 #include <wx/textctrl.h>
+// needed for sampleCount
+#include "Sequence.h"
 
 #include "Experimental.h"
 
@@ -102,6 +104,7 @@ wxString GetFFmpegVersion(wxWindow *parent);
 void FFmpegStartup();
 
 bool LoadFFmpeg(bool showerror);
+
 
 /// If Audacity failed to load libav*, this dialog
 /// shows up and tells user about that. It will pop-up
@@ -207,6 +210,7 @@ public:
 
    wxString GetLibraryTypeString()
    {
+      /* i18n-hint: do not translate avformat.  Preserve the computer gibberish.*/
       return _("Only avformat.dll|*avformat*.dll|Dynamically Linked Libraries (*.dll)|*.dll|All Files (*.*)|*");
    }
 
@@ -245,7 +249,7 @@ public:
 
    wxString GetLibAVFormatPath()
    {
-      return wxT("/usr/local/lib/audacity");
+      return wxT("/Library/Application Support/audacity/libs");
    }
 
    wxString GetLibAVFormatName()
@@ -327,29 +331,41 @@ void        DropFFmpegLibs();
 int ufile_fopen(AVIOContext **s, const wxString & name, int flags);
 int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name);
 
-//moving from ImportFFmpeg.cpp to FFMpeg.h so other cpp files can use this struct.
-#ifdef EXPERIMENTAL_OD_FFMPEG
 typedef struct _streamContext
 {
    bool                 m_use;                           // TRUE = this stream will be loaded into Audacity
-   AVStream            *m_stream;		      	         // an AVStream *
-   AVCodecContext      *m_codecCtx;			               // pointer to m_stream->codec
+   AVStream            *m_stream;                        // an AVStream *
+   AVCodecContext      *m_codecCtx;                      // pointer to m_stream->codec
 
-   AVPacket             m_pkt;				               // the last AVPacket we read for this stream
-   int                  m_pktValid;			               // is m_pkt valid?
-   uint8_t             *m_pktDataPtr;		           	   // pointer into m_pkt.data
-   int                  m_pktRemainingSiz;	
+   AVPacket             m_pkt;                           // the last AVPacket we read for this stream
+   int                  m_pktValid;                      // is m_pkt valid?
+   uint8_t             *m_pktDataPtr;                    // pointer into m_pkt.data
+   int                  m_pktRemainingSiz;  
 
-   int64_t			      m_pts;			              	   // the current presentation time of the input stream
-   int64_t			      m_ptsOffset;		    	         // packets associated with stream are relative to this
+   int64_t              m_pts;                           // the current presentation time of the input stream
+   int64_t              m_ptsOffset;                     // packets associated with stream are relative to this
 
-   int                  m_frameValid;		               // is m_decodedVideoFrame/m_decodedAudioSamples valid?
-   int16_t             *m_decodedAudioSamples;           // decoded audio samples stored here
-   unsigned int			m_decodedAudioSamplesSiz;        // current size of m_decodedAudioSamples
-   int			         m_decodedAudioSamplesValidSiz;   // # valid bytes in m_decodedAudioSamples
+   int                  m_frameValid;                    // is m_decodedVideoFrame/m_decodedAudioSamples valid?
+   uint8_t             *m_decodedAudioSamples;           // decoded audio samples stored here
+   unsigned int         m_decodedAudioSamplesSiz;        // current size of m_decodedAudioSamples
+   int                  m_decodedAudioSamplesValidSiz;   // # valid bytes in m_decodedAudioSamples
    int                  m_initialchannels;               // number of channels allocated when we begin the importing. Assumes that number of channels doesn't change on the fly.
+
+   int                  m_samplesize;                    // input sample size in bytes
+   SampleFormat         m_samplefmt;                     // input sample format
+
+   int                  m_osamplesize;                   // output sample size in bytes
+   sampleFormat         m_osamplefmt;                    // output sample format
+
 } streamContext;
-#endif
+
+// common utility functions
+// utility calls that are shared with ImportFFmpeg and ODDecodeFFmpegTask
+streamContext *import_ffmpeg_read_next_frame(AVFormatContext* formatContext,
+                                             streamContext** streams,
+                                             unsigned int numStreams);
+
+int import_ffmpeg_decode_frame(streamContext *sc, bool flushing);
 
 extern "C" {
    // A little explanation of what's going on here.

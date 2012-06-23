@@ -1268,6 +1268,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\effects\Paulstretch.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\effects\Paulstretch.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\effects\Phaser.cpp"
 				>
 			</File>
@@ -2488,6 +2496,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\plug-ins\sample-data-export.ny"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\plug-ins\SilenceMarker.ny"
 				>
 			</File>
@@ -2563,7 +2575,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
 					/>
 				</FileConfiguration>
@@ -2572,7 +2584,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
 					/>
 				</FileConfiguration>
@@ -2581,7 +2593,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
 					/>
 				</FileConfiguration>
@@ -2590,7 +2602,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;"
+						CommandLine="copy /Y &quot;$(InputDir)\$(InputFileName)&quot; &quot;$(OutDir)\$(ParentName)\$(InputFileName)&quot;&#x0D;&#x0A;"
 						Outputs="$(OutDir)\$(ParentName)\$(InputFileName)"
 					/>
 				</FileConfiguration>

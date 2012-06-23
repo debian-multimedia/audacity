@@ -101,12 +101,14 @@ It handles initialization and termination by subclassing wxApp.
 #include "effects/ScoreAlignDialog.h"
 #endif
 
+#if 0
 #ifdef _DEBUG
     #ifdef _MSC_VER
         #undef THIS_FILE
         static char*THIS_FILE= __FILE__;
         #define new new(_NORMAL_BLOCK, THIS_FILE, __LINE__)
     #endif
+#endif
 #endif
 
 // Windows specific linker control...only needed once so
@@ -406,7 +408,6 @@ void SaveWindowSize()
  * Happily we can avoid the hack, as we only need some of the headers, not
  * the full GTK headers
  */
-//#include <glib/gtypes.h>
 #include <glib-object.h>
 
 typedef struct _GnomeProgram GnomeProgram;
@@ -977,11 +978,13 @@ bool AudacityApp::OnInit()
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
 #endif
 
+#ifdef CLEANSPEECH
 //MERGE:
 //Everything now uses Audacity name for preferences.
 //(Audacity and CleanSpeech the same program and use
 //the same preferences file).
 //
+#endif   // CLEANSPEECH
 // LL: Moved here from InitPreferences() to ensure VST effect
 //     discovery writes configuration to the correct directory
 //     on OSX with case-sensitive file systems.
@@ -1006,8 +1009,12 @@ bool AudacityApp::OnInit()
    }
 #endif
 
+   mLogger=NULL;
+   /* i18n-hint: We translate the title of the log window, but
+    * we're not translating its contents, since the contents will be read by
+    * English speaking engineers */
    #ifndef __WXMAC__
-      mLogger = new wxLogWindow(NULL, wxT("Audacity Log"), false, false);
+      mLogger = new wxLogWindow(NULL, _("Audacity Log"), false, false);
       mLogger->SetActiveTarget(mLogger);
       mLogger->EnableLogging(true);
       mLogger->SetLogLevel(wxLOG_Max);
@@ -1039,7 +1046,9 @@ bool AudacityApp::OnInit()
    //
 
    wxString home = wxGetHomeDir();
+#ifdef CLEANSPEECH
    mAppHomeDir = home;
+#endif   // CLEANSPEECH
    theTheme.EnsureInitialised();
 
    // AColor depends on theTheme.
@@ -1140,6 +1149,7 @@ bool AudacityApp::OnInit()
    if (lang == wxT(""))
       lang = GetSystemLanguageCode();
 
+#ifdef CLEANSPEECH
 #ifdef NOT_RQD
 //TIDY-ME: (CleanSpeech) Language prompt??
 // The prompt for language only happens ONCE on a system.
@@ -1150,7 +1160,7 @@ bool AudacityApp::OnInit()
 //lda   if (lang == "")
 //lda      lang = ChooseLanguage(NULL);
 #endif
-
+#endif   // CLEANSPEECH
    mLocale = NULL;
    InitLang( lang );
 
@@ -1163,7 +1173,9 @@ bool AudacityApp::OnInit()
    }
 
    // More initialization
+#ifdef CLEANSPEECH
    InitCleanSpeech();
+#endif   // CLEANSPEECH
 
    InitDitherers();
    InitAudioIO();
@@ -1224,7 +1236,7 @@ bool AudacityApp::OnInit()
    project->MayStartMonitoring();
 
    #ifdef __WXMAC__
-      mLogger = new wxLogWindow(NULL, wxT("Audacity Log"), false, false);
+      mLogger = new wxLogWindow(NULL, _("Audacity Log"), false, false);
       mLogger->SetActiveTarget(mLogger);
       mLogger->EnableLogging(true);
       mLogger->SetLogLevel(wxLOG_Max);
@@ -1291,9 +1303,8 @@ bool AudacityApp::OnInit()
          }
 
          if (!handled && !wxString(wxT("-version")).CmpNoCase(argv[option])) {
-            wxPrintf(wxT("Audacity v%s (%s)\n"),
-                     AUDACITY_VERSION_STRING,
-                     (wxUSE_UNICODE ? wxT("Unicode") : wxT("ANSI")));
+            wxPrintf(wxT("Audacity v%s\n"),
+                     AUDACITY_VERSION_STRING);
             exit(0);
          }
 
@@ -1429,6 +1440,7 @@ void AudacityApp::OnReceiveCommand(AppCommandEvent &event)
    mCmdHandler->OnReceiveCommand(event);
 }
 
+#ifdef CLEANSPEECH   //is this actually useful?
 bool AudacityApp::InitCleanSpeech()
 {
    wxString userdatadir = FileNames::DataDir();
@@ -1477,6 +1489,7 @@ bool AudacityApp::InitCleanSpeech()
    gPrefs->Write(wxT("/Directories/PresetsDir"), presets);
    return true;
 }
+#endif   // CLEANSPEECH
 
 bool AudacityApp::InitTempDir()
 {

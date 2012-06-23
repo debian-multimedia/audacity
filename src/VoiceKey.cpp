@@ -85,6 +85,11 @@ sampleCount VoiceKey::OnForward (WaveTrack & t, sampleCount start, sampleCount l
 
    if((mWindowSize) >= len+10){
 
+      /* i18n-hint: Voice key is an experimental/incomplete feature that 
+         is used to navigate in vocal recordings, to move forwards and
+         backwards by words.  So 'key' is being used in the sense of an index.
+         This error message means that you've selected too short 
+         a region of audio to be able to use this feature.*/
       wxMessageBox(_("Selection is too small to use voice key."));
       return start;
    }
@@ -841,6 +846,7 @@ void VoiceKey::CalibrateNoise(WaveTrack & t, sampleCount start, sampleCount len)
 
 
    wxString text =   wxString::Format(_("Calibration Results\n"));
+   /* i18n-hint: %1.4f is replaced by a number.  sd stands for 'Standard Deviations'*/
    text +=           wxString::Format(_("Energy                  -- mean: %1.4f  sd: (%1.4f)\n"),mEnergyMean,mEnergySD);
    text+=            wxString::Format(_("Sign Changes        -- mean: %1.4f  sd: (%1.4f)\n"),mSignChangesMean,mSignChangesSD);
    text+=            wxString::Format(_("Direction Changes  -- mean: %1.4f  sd: (%1.4f)\n"),mDirectionChangesMean,mDirectionChangesSD);

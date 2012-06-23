@@ -31,6 +31,7 @@ Track classes.
 #include <wx/intl.h>
 #include <wx/debug.h>
 
+#include <float.h>
 #include <math.h>
 #include <algorithm>
 
@@ -1538,8 +1539,10 @@ double WaveTrack::GetEndTime()
 bool WaveTrack::GetMinMax(float *min, float *max,
                           double t0, double t1)
 {
-   *min = float(0.0);
-   *max = float(0.0);
+   bool clipFound = false;
+
+   *min = FLT_MAX;   // we need these at extremes to make sure we find true min and max
+   *max = -FLT_MAX;
 
    if (t0 > t1)
       return false;
@@ -1555,6 +1558,7 @@ bool WaveTrack::GetMinMax(float *min, float *max,
 
       if (t1 >= clip->GetStartTime() && t0 <= clip->GetEndTime())
       {
+         clipFound = true;
          float clipmin, clipmax;
          if (it->GetData()->GetMinMax(&clipmin, &clipmax, t0, t1))
          {
@@ -1567,6 +1571,12 @@ bool WaveTrack::GetMinMax(float *min, float *max,
             result = false;
          }
       }
+   }
+
+   if(!clipFound)
+   {
+      *min = float(0.0);   // sensible defaults if no clips found
+      *max = float(0.0);
    }
 
    return result;
@@ -1607,10 +1617,10 @@ bool WaveTrack::GetRMS(float *rms, double t0, double t1)
 }
 
 bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
-                    sampleCount start, sampleCount len)
+                    sampleCount start, sampleCount len, fillFormat fill )
 {
    // Simple optimization: When this buffer is completely contained within one clip,
-   // don't clear anything (because we never won't have to). Otherwise, just clear
+   // don't clear anything (because we won't have to). Otherwise, just clear
    // everything to be on the safe side.
    WaveClipList::compatibility_iterator it;
    
@@ -1625,7 +1635,23 @@ bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
       }
    }
    if (doClear)
-      ClearSamples(buffer, format, 0, len);
+   {
+      // Usually we fill in empty sapce with zero
+      if( fill == fillZero )
+         ClearSamples(buffer, format, 0, len);
+      // but we don't have to.
+      else if( fill==fillTwo )
+      {
+         wxASSERT( format==floatSample );
+         float * pBuffer = (float*)buffer;
+         for(int i=0;i<len;i++)
+            pBuffer[i]=2.0f;
+      }
+      else
+      {
+         wxFAIL_MSG(wxT("Invalid fill format"));
+      }
+   }
 
    for (it=GetClipIterator(); it; it=it->GetNext())
    {

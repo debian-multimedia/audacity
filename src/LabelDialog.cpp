@@ -49,13 +49,7 @@ enum Column
    Col_Max
 };
 
-static const wxChar *headers[Col_Max] =
-{
-   _("Track"),
-   _("Label"),
-   _("Start Time"),
-   _("End Time")
-};
+
 
 class RowData
 {
@@ -142,10 +136,14 @@ LabelDialog::LabelDialog(wxWindow *parent,
    mGrid->CreateGrid(0, Col_Max);
    mGrid->SetDefaultCellAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
 
-   int i;
-   for (i = 0; i < Col_Max; i++) {
-      mGrid->SetColLabelValue(i, headers[i]);
-   }
+   /* i18n-hint: (noun).  A track contains waves, audio etc.*/
+   mGrid->SetColLabelValue(0,_("Track"));
+   /* i18n-hint: (noun)*/
+   mGrid->SetColLabelValue(1,_("Label"));
+   /* i18n-hint: (noun) of a label*/
+   mGrid->SetColLabelValue(2,_("Start Time"));
+   /* i18n-hint: (noun) of a label*/
+   mGrid->SetColLabelValue(3,_("End Time"));
 
    // Create and remember editors.  No need to delete these as the wxGrid will
    // do it for us.
@@ -704,6 +702,7 @@ void LabelDialog::OnChangeTrack(wxGridEvent &event, int row, RowData *rd)
       wxTextEntryDialog d(this,
                           _("New Label Track"),
                           _("Enter track name"),
+                          /* i18n-hint: (noun) it's the name of a kind of track.*/
                           _("Label Track"));
 
       // User canceled so repopulating the grid will set the track

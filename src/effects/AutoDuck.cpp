@@ -139,6 +139,9 @@ bool EffectAutoDuck::Init()
          {
             wxMessageBox(
                _("You selected a track which does not contain audio. AutoDuck can only process audio tracks."),
+               /* i18n-hint: Auto duck is the name of an effect that 'ducks' (reduces the volume) 
+                * of the audio automatically when there is sound on another track.  Not as 
+                * in 'Donald-Duck'!*/
                _("Auto Duck"), wxICON_ERROR, mParent);
             return false;
          }
@@ -813,9 +816,11 @@ void EffectAutoDuckPanel::OnPaint(wxPaintEvent& evt)
          valueStr += wxT(" ");
          
          if (cp == duckAmount)
-            valueStr += _("dB"); // i18n-hint: short form of 'decibels'
+            /* i18n-hint: short form of 'decibels'.*/
+            valueStr += _("dB"); 
          else
-            valueStr += _("s"); // i18n-hint: short form of 'seconds'
+            /* i18n-hint: short form of 'seconds'.*/
+            valueStr += _("s"); 
    
          int textWidth = 0, textHeight = 0;
          GetTextExtent(valueStr, &textWidth, &textHeight);
