@@ -162,36 +162,7 @@ static const wxChar *exts[] =
 extern FFmpegLibs *FFmpegLibsInst;
 
 class FFmpegImportFileHandle;
-//moving from ImportFFmpeg.cpp to FFMpeg.h so other cpp files can use this struct.
-#ifndef EXPERIMENTAL_OD_FFMPEG
-typedef struct _streamContext
-{
-   bool                 m_use;                           // TRUE = this stream will be loaded into Audacity
-   AVStream            *m_stream;                        // an AVStream *
-   AVCodecContext      *m_codecCtx;                      // pointer to m_stream->codec
 
-   AVPacket             m_pkt;                           // the last AVPacket we read for this stream
-   int                  m_pktValid;                      // is m_pkt valid?
-   uint8_t             *m_pktDataPtr;                    // pointer into m_pkt.data
-   int                  m_pktRemainingSiz;  
-
-   int64_t              m_pts;                           // the current presentation time of the input stream
-   int64_t              m_ptsOffset;                     // packets associated with stream are relative to this
-
-   int                  m_frameValid;                    // is m_decodedVideoFrame/m_decodedAudioSamples valid?
-   uint8_t             *m_decodedAudioSamples;           // decoded audio samples stored here
-   unsigned int         m_decodedAudioSamplesSiz;        // current size of m_decodedAudioSamples
-   int                  m_decodedAudioSamplesValidSiz;   // # valid bytes in m_decodedAudioSamples
-   int                  m_initialchannels;               // number of channels allocated when we begin the importing. Assumes that number of channels doesn't change on the fly.
-
-   int                  m_samplesize;                    // input sample size in bytes
-   SampleFormat         m_samplefmt;                     // input sample format
-
-   int                  m_osamplesize;                   // output sample size in bytes
-   sampleFormat         m_osamplefmt;                    // output sample format
-
-} streamContext;
-#endif
 /// A representative of FFmpeg loader in
 /// the Audacity import plugin list
 class FFmpegImportPlugin : public ImportPlugin
@@ -583,63 +554,61 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
    int res = eProgressSuccess;
 
 #ifdef EXPERIMENTAL_OD_FFMPEG
-   mUsingOD = true; //TODO: for now just use it - later use a prefs 
+   mUsingOD = false;
+   gPrefs->Read(wxT("/Library/FFmpegOnDemand"), &mUsingOD);
    //at this point we know the file is good and that we have to load the number of channels in mScs[s]->m_stream->codec->channels;
    //so for OD loading we create the tracks and releasee the modal lock after starting the ODTask.
-   std::vector<ODDecodeFFmpegTask*> tasks;
-   //append blockfiles to each stream and add an individual ODDecodeTask for each one.
-   for (int s = 0; s < mNumStreams; s++)
-   {
-      ODDecodeFFmpegTask* odTask=new ODDecodeFFmpegTask(mScs,mNumStreams,mChannels,mFormatContext, s);
-      ODFileDecoder* odDecoder = (ODFileDecoder*)odTask->CreateFileDecoder(mFilename);
+   if (mUsingOD) {
+      std::vector<ODDecodeFFmpegTask*> tasks;
+      //append blockfiles to each stream and add an individual ODDecodeTask for each one.
+      for (int s = 0; s < mNumStreams; s++) {
+         ODDecodeFFmpegTask* odTask=new ODDecodeFFmpegTask(mScs,mNumStreams,mChannels,mFormatContext, s);
+         odTask->CreateFileDecoder(mFilename);
 
-      //each stream has different duration.  We need to know it if seeking is to be allowed.
-      sampleCount sampleDuration = 0;
-      if (mScs[s]->m_stream->duration > 0)
-         sampleDuration = ((sampleCount)mScs[s]->m_stream->duration * mScs[s]->m_stream->time_base.num) *mScs[s]->m_stream->codec->sample_rate / mScs[s]->m_stream->time_base.den;
-      else
-         sampleDuration = ((sampleCount)mFormatContext->duration *mScs[s]->m_stream->codec->sample_rate) / AV_TIME_BASE;
+         //each stream has different duration.  We need to know it if seeking is to be allowed.
+         sampleCount sampleDuration = 0;
+         if (mScs[s]->m_stream->duration > 0)
+            sampleDuration = ((sampleCount)mScs[s]->m_stream->duration * mScs[s]->m_stream->time_base.num) *mScs[s]->m_stream->codec->sample_rate / mScs[s]->m_stream->time_base.den;
+         else
+            sampleDuration = ((sampleCount)mFormatContext->duration *mScs[s]->m_stream->codec->sample_rate) / AV_TIME_BASE;
 
-//      printf(" OD duration samples %qi, sr %d, secs %d\n",sampleDuration, (int)mScs[s]->m_stream->codec->sample_rate,(int)sampleDuration/mScs[s]->m_stream->codec->sample_rate);
+         //      printf(" OD duration samples %qi, sr %d, secs %d\n",sampleDuration, (int)mScs[s]->m_stream->codec->sample_rate,(int)sampleDuration/mScs[s]->m_stream->codec->sample_rate);
          
-      //for each wavetrack within the stream add coded blockfiles
-      for (int c = 0; c < mScs[s]->m_stream->codec->channels; c++)
-      {
-         WaveTrack *t = mChannels[s][c];
-         odTask->AddWaveTrack(t);
+         //for each wavetrack within the stream add coded blockfiles
+         for (int c = 0; c < mScs[s]->m_stream->codec->channels; c++) {
+            WaveTrack *t = mChannels[s][c];
+            odTask->AddWaveTrack(t);
          
-         sampleCount maxBlockSize = t->GetMaxBlockSize();
-         //use the maximum blockfile size to divide the sections (about 11secs per blockfile at 44.1khz)
-         for (sampleCount i = 0; i < sampleDuration; i += maxBlockSize) 
-         {
-            sampleCount blockLen = maxBlockSize;
-            if (i + blockLen > sampleDuration)
-               blockLen = sampleDuration - i;
+            sampleCount maxBlockSize = t->GetMaxBlockSize();
+            //use the maximum blockfile size to divide the sections (about 11secs per blockfile at 44.1khz)
+            for (sampleCount i = 0; i < sampleDuration; i += maxBlockSize) {
+               sampleCount blockLen = maxBlockSize;
+               if (i + blockLen > sampleDuration)
+                  blockLen = sampleDuration - i;
             
-            t->AppendCoded(mFilename, i, blockLen, c,ODTask::eODFFMPEG);
+               t->AppendCoded(mFilename, i, blockLen, c,ODTask::eODFFMPEG);
             
-            // This only works well for single streams since we assume 
-            // each stream is of the same duration and channels
-            res = mProgress->Update(i+sampleDuration*c+ sampleDuration*mScs[s]->m_stream->codec->channels*s, 
-                                 sampleDuration*mScs[s]->m_stream->codec->channels*mNumStreams);
-            if (res != eProgressSuccess)
-               break;
+               // This only works well for single streams since we assume 
+               // each stream is of the same duration and channels
+               res = mProgress->Update(i+sampleDuration*c+ sampleDuration*mScs[s]->m_stream->codec->channels*s, 
+                                       sampleDuration*mScs[s]->m_stream->codec->channels*mNumStreams);
+               if (res != eProgressSuccess)
+                  break;
+            }
          }
+         tasks.push_back(odTask);
       }
-      tasks.push_back(odTask);
-   }
-   //Now we add the tasks and let them run, or delete them if the user cancelled
-   for(int i=0; i < (int)tasks.size(); i++)
-   {
-      if(res==eProgressSuccess)
-         ODManager::Instance()->AddNewTask(tasks[i]);
-      else
-      {
-         delete tasks[i];
+      //Now we add the tasks and let them run, or delete them if the user cancelled
+      for(int i=0; i < (int)tasks.size(); i++) {
+         if(res==eProgressSuccess)
+            ODManager::Instance()->AddNewTask(tasks[i]);
+         else
+            {
+               delete tasks[i];
+            }
       }
-   }
-#else //ifndef EXPERIMENTAL_OD_FFMPEG   
-
+   } else {
+#endif
    streamContext *sc = NULL;
 
    // Read next frame.
@@ -685,6 +654,8 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
          }
       }
    }
+#ifdef EXPERIMENTAL_OD_FFMPEG
+   } // else -- !mUsingOD == true
 #endif   //EXPERIMENTAL_OD_FFMPEG
 
    // Something bad happened - destroy everything!
@@ -730,128 +701,12 @@ int FFmpegImportFileHandle::Import(TrackFactory *trackFactory,
 
 streamContext *FFmpegImportFileHandle::ReadNextFrame()
 {
-   streamContext *sc = NULL;
-   AVPacket pkt;
-
-   if (av_read_frame(mFormatContext,&pkt) < 0)
-   {
-      return NULL;
-   }
-
-   // Find a stream to which this frame belongs to
-   for (int i = 0; i < mNumStreams; i++)
-   {
-      if (mScs[i]->m_stream->index == pkt.stream_index)
-         sc = mScs[i];
-   }
-
-   // Off-stream packet. Don't panic, just skip it.
-   // When not all streams are selected for import this will happen very often.
-   if (sc == NULL)
-   {
-      av_free_packet(&pkt);
-      return (streamContext*)1;
-   }
-
-   // Copy the frame to the stream context
-   memcpy(&sc->m_pkt, &pkt, sizeof(AVPacket));
-
-   sc->m_pktValid = 1;
-   sc->m_pktDataPtr = pkt.data;
-   sc->m_pktRemainingSiz = pkt.size;
-
-   return sc;
+   return import_ffmpeg_read_next_frame(mFormatContext, mScs, mNumStreams);
 }
 
 int FFmpegImportFileHandle::DecodeFrame(streamContext *sc, bool flushing)
 {
-   int      nBytesDecoded;          
-   wxUint8 *pDecode = sc->m_pktDataPtr;
-   int      nDecodeSiz = sc->m_pktRemainingSiz;
-
-   sc->m_frameValid = 0;
-
-   if (flushing)
-   {
-      // If we're flushing the decoders we don't actually have any new data to decode.
-      pDecode = NULL;
-      nDecodeSiz = 0;
-   }
-   else
-   {
-      if (!sc->m_pktValid || (sc->m_pktRemainingSiz <= 0))
-      {
-         //No more data
-         return -1;
-      }
-   }
-
-   sc->m_samplefmt = sc->m_codecCtx->sample_fmt;
-   sc->m_samplesize = av_get_bits_per_sample_fmt(sc->m_samplefmt) / 8;
-
-   unsigned int newsize = FFMAX(sc->m_pkt.size * sc->m_samplesize, AVCODEC_MAX_AUDIO_FRAME_SIZE);
-   // Reallocate the audio sample buffer if it's smaller than the frame size.
-   if (newsize > sc->m_decodedAudioSamplesSiz )
-   {
-      if (sc->m_decodedAudioSamples)
-      {
-         av_free(sc->m_decodedAudioSamples);
-      }
-
-      sc->m_decodedAudioSamples = (uint8_t *) av_malloc(newsize);
-      sc->m_decodedAudioSamplesSiz = newsize;
-
-      if (sc->m_decodedAudioSamples == NULL)
-      {
-         //Can't allocate bytes
-         return -1;
-      }
-   }
-
-
-   sc->m_decodedAudioSamplesValidSiz = sc->m_decodedAudioSamplesSiz;
-
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 25, 0)
-   // avcodec_decode_audio3() expects the size of the output buffer as the 3rd parameter but
-   // also returns the number of bytes it decoded in the same parameter.
-   AVPacket avpkt;
-   av_init_packet(&avpkt);
-   avpkt.data = pDecode;
-   avpkt.size = nDecodeSiz;
-   nBytesDecoded =
-      avcodec_decode_audio3(sc->m_codecCtx,
-                            (int16_t *)sc->m_decodedAudioSamples,    // out
-                            &sc->m_decodedAudioSamplesValidSiz,      // in/out
-                            &avpkt);                                 // in
-#else
-   // avcodec_decode_audio2() expects the size of the output buffer as the 3rd parameter but
-   // also returns the number of bytes it decoded in the same parameter.
-   nBytesDecoded =
-      avcodec_decode_audio2(sc->m_codecCtx, 
-                            (int16_t *) sc->m_decodedAudioSamples,   // out
-                            &sc->m_decodedAudioSamplesValidSiz,      // in/out
-                            pDecode,                                 // in
-                            nDecodeSiz);                             // in
-#endif
-   if (nBytesDecoded < 0)
-   {
-      // Decoding failed. Don't stop.
-      return -1;
-   }
-
-   // We may not have read all of the data from this packet. If so, the user can call again.
-   // Whether or not they do depends on if m_pktRemainingSiz == 0 (they can check).
-   sc->m_pktDataPtr += nBytesDecoded;
-   sc->m_pktRemainingSiz -= nBytesDecoded;
-
-   // At this point it's normally safe to assume that we've read some samples. However, the MPEG
-   // audio decoder is broken. If this is the case then we just return with m_frameValid == 0
-   // but m_pktRemainingSiz perhaps != 0, so the user can call again.
-   if (sc->m_decodedAudioSamplesValidSiz > 0)
-   {
-      sc->m_frameValid = 1;
-   }
-   return 0;
+   return import_ffmpeg_decode_frame(sc, flushing);
 }
 
 int FFmpegImportFileHandle::WriteData(streamContext *sc)

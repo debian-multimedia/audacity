@@ -24,6 +24,7 @@
 #include "Compressor.h"
 #include "DtmfGen.h"
 #include "Echo.h"
+#include "Paulstretch.h"
 #include "Equalization.h"
 #include "Fade.h"
 #include "Invert.h"
@@ -102,6 +103,7 @@ void LoadEffects()
    CatPtr gen = em.AddCategory(wxT(LV2PREFIX) wxT("GeneratorPlugin"),
                                _("Generator"));
    CatPtr inst = em.AddCategory(wxT(LV2PREFIX) wxT("InstrumentPlugin"),
+   /* i18n-hint: (noun).*/
                                 _("Instrument"));
    CatPtr osc = em.AddCategory(wxT(LV2PREFIX) wxT("OscillatorPlugin"),
                                _("Oscillator"));
@@ -236,7 +238,6 @@ void LoadEffects()
    const int SIMPLE_EFFECT = BUILTIN_EFFECT | PROCESS_EFFECT;
    // In this list, designating an effect as 'SIMPLE_EFFECT' just means
    // that it should be included in even the most basic of menus.
-   // This was introduced for CleanSpeech mode.
    
    em.RegisterEffect(new EffectAutoDuck());
    em.RegisterEffect(new EffectBassBoost());
@@ -248,6 +249,7 @@ void LoadEffects()
    em.RegisterEffect(new EffectClickRemoval());
    em.RegisterEffect(new EffectCompressor());
    em.RegisterEffect(new EffectEcho());
+   em.RegisterEffect(new EffectPaulstretch());
    em.RegisterEffect(new EffectEqualization());
    em.RegisterEffect(new EffectFadeIn(), SIMPLE_EFFECT);
    em.RegisterEffect(new EffectFadeOut(), SIMPLE_EFFECT);

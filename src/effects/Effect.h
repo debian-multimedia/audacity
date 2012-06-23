@@ -34,9 +34,10 @@ class TimeWarper;
 // ADVANCED_EFFECT was introduced for Lynn Allan's 'CleanSpeech'
 // it allows the list of effects to be filtered to exclude
 // the advanced effects.
+// Left in when CLEANSPEECH is removed, as it may be useful at some point.
 #define ADVANCED_EFFECT 0x0004
 // HIDDEN_EFFECT allows an item to be excluded from the effects
-// menu in both CleanSpeech and in normal builds.
+// menu in both CleanSpeech and in normal builds.  // CLEANSPEECH ??
 #define HIDDEN_EFFECT   0x0008
 
 #define INSERT_EFFECT   0x0010
@@ -107,7 +108,14 @@ class AUDACITY_DLL_API Effect {
       return mFlags;
    }
 
-   virtual bool TransferParameters( Shuttle & shuttle ){
+   // Return true if the effect supports processing via batch chains.
+   virtual bool SupportsChains() {
+      // All builtin effect support chains (???)
+      return (mFlags & BUILTIN_EFFECT) != 0;
+   }
+
+   // Called to set or retrieve parameter values.  Return true if successful.
+   virtual bool TransferParameters( Shuttle & shuttle ) {
       return true;
    }
 
@@ -219,7 +227,7 @@ class AUDACITY_DLL_API Effect {
    
    // Pass a fraction between 0.0 and 1.0, for the current track
    // (when doing one track at a time)
-   bool TrackProgress(int whichTrack, double frac);
+   bool TrackProgress(int whichTrack, double frac, wxString = wxT(""));
  
    // Pass a fraction between 0.0 and 1.0, for the current track group
    // (when doing stereo groups at a time)

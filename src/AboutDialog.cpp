@@ -56,18 +56,15 @@ void AboutDialog::CreateCreditsList()
    // The Audacity 1.3.x and 2.0.x team: developers and support
    AddCredit(wxT("Richard Ash"), roleTeamDeveloper);
    AddCredit(wxT("Michael Chinen"), roleTeamDeveloper);
-#if IS_BETA
    AddCredit(wxT("James Crook"), roleTeamDeveloper);
-#endif
-   AddCredit(wxT("Roger Dannenberg - co-founder"), roleTeamDeveloper);
+   AddCredit(wxString(wxT("Roger Dannenberg - ")) + _("co-founder"), roleTeamDeveloper);
    AddCredit(wxT("Vaughan Johnson"), roleTeamDeveloper);
    AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
 
-   AddCredit(wxT("Gale Andrews"), roleTeamSupport);
+   AddCredit(wxString(wxT("Gale Andrews - ")) + _("quality assurance"), roleTeamSupport);
    AddCredit(wxT("Christian Brochec"), roleTeamSupport);
    AddCredit(wxT("Steve Daulton"), roleTeamSupport);
    AddCredit(wxT("Greg Kozikowski"), roleTeamSupport);
-   AddCredit(wxT("Alexandre Prokoudine"), roleTeamSupport);
    AddCredit(wxT("Peter Sampson"), roleTeamSupport);
    AddCredit(wxT("Bill Wharrie"), roleTeamSupport);
 
@@ -80,11 +77,12 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Joshua Haberman"), roleEmeritusDeveloper);
    AddCredit(wxT("Ruslan Ijbulatov"), roleEmeritusDeveloper);
    AddCredit(wxT("Leland Lucius"), roleEmeritusDeveloper);
-   AddCredit(wxT("Dominic Mazzoni - co-founder"), roleEmeritusDeveloper);
+   AddCredit(wxString(wxT("Dominic Mazzoni - "))+_("co-founder"), roleEmeritusDeveloper);
    AddCredit(wxT("Markus Meyer"), roleEmeritusDeveloper);
    AddCredit(wxT("Monty Montgomery"), roleEmeritusDeveloper);
    AddCredit(wxT("Shane Mueller"), roleEmeritusDeveloper);
    AddCredit(wxT("Tony Oetzmann"), roleEmeritusSupport);
+   AddCredit(wxT("Alexandre Prokoudine"), roleEmeritusSupport);
 
    // All other contributors
    
@@ -173,7 +171,11 @@ AboutDialog::AboutDialog(wxWindow * parent)
       PopulateLicensePage( S );
    }
    S.EndNotebook();
-   
+   /* i18n-hint: "OK... Audacious" appears on a button at the 
+    * foot of the 'About Audacity' dialog box, after some text to read.
+    * In English it is slightly humorous alternative to an 'OK' button.  
+    * If the humour doesn't work in your language, then just use whatever 
+    * you would use for a translation for 'OK' on a button. */
    wxButton *ok = new wxButton(S.GetParent(), wxID_OK, _("OK... Audacious!"));
    ok->SetDefault();
    S.Prop(0).AddWindow( ok );
@@ -196,21 +198,16 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    wxString par1Str = _(
      "Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a>. We thank <a href=\"http://sourceforge.net\">SourceForge.net</a> and <a href=\"http://code.google.com\">Google Code</a> for our project hosting. Audacity is <a href=\"http://audacity.sourceforge.net/download/\">available</a> for Windows, Mac, and GNU/Linux (and other Unix-like systems).");
 
-   #if IS_BETA // Is this beta or not?
-   wxString par2Str = _(
-     "This is a Beta version of the program. It may contain bugs and unfinished features. We depend on your feedback: please send bug reports and feature requests to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, use the Help menu in the program, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">Wiki</a> or visit our <a href=\"http://forum.audacityteam.org/\">Forum</a>.");
-   #else
+   // No such thing as an official released 'beta' anymore, so keep this string simple.
    wxString par2Str = _(
      "If you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">Wiki</a> or visit our <a href=\"http://forum.audacityteam.org/\">Forum</a>.");
-   #endif
 
    wxString translatorCredits;
    /* i18n-hint: The translation of "translator_credits" will appear
-      in the credits in the About Audacity window.  Use this to add
-      your own name(s) to the credits.
-
-      For example:  "English translation by Dominic Mazzoni."
-      */
+    *  in the credits in the About Audacity window.  Use this to add
+    *  your own name(s) to the credits.
+    *
+    *  For example:  "English translation by Dominic Mazzoni." */
    if (_("translator_credits") != wxString(wxT("translator_credits"))) {
       translatorCredits += wxT("<p><center>");
       translatorCredits += _("translator_credits");
@@ -218,14 +215,12 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    }
    wxString localeStr = wxLocale::GetSystemEncodingName();
 
-   wxString csetStr = wxUSE_UNICODE ? wxT("(Unicode)") : wxT("(ANSI)");
-
    wxString creditStr = 
       wxT("<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=") + 
          localeStr + 
          wxT("\"></head>") + 
       wxT("<body bgcolor=\"#ffffff\"><center>") + 
-      wxT("<h3>Audacity &reg; ") + versionStr + wxT(" " ) + csetStr + wxT("</h3>")+ 
+      wxT("<h3>Audacity ") + versionStr + wxT("</h3>")+ 
       _("A Free Digital Audio Editor<br>") + 
 	  wxT("<a href=\"http://audacity.sourceforge.net/\">http://audacity.sourceforge.net/</a>") +
       wxT("</center><p>") + par1Str +
@@ -234,11 +229,13 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
       + translatorCredits +
       wxT("<p><center><b>") +
 
+      /* i18n-hint: %s will be replaced by the version number.*/
       wxString::Format(_("Audacity %s Development Team"), versionStr.c_str()) +
       wxT("</b><br>") +
       GetCreditsByRole(roleTeamDeveloper) +
       wxT("<p><br><b>") +
 
+      /* i18n-hint: %s will be replaced by the version number.*/
       wxString::Format(_("Audacity %s Support Team"), versionStr.c_str()) +
       wxT("</b><br>") +
       GetCreditsByRole(roleTeamSupport) +
@@ -430,8 +427,6 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    // wxWidgets version:
    informationStr += wxVERSION_STRING;
    informationStr += wxT("</td><td/><td>");
-   /* unicode or not? */
-   informationStr += wxUSE_UNICODE ? wxT("(Unicode)") : wxT("(ANSI)");
    informationStr += wxT("</td></tr>\n");   // end of row
 
    informationStr += wxT("</table>\n");  //end table of libraries
@@ -897,15 +892,3 @@ void AboutDialog::OnOK(wxCommandEvent & WXUNUSED(event))
 {
    EndModal(wxID_OK);
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: a8955864-40e2-47aa-923b-cace3994493a
-

@@ -46,8 +46,8 @@ KeyConfigPrefs and MousePrefs use.
 #define SetButtonID             17003
 #define ClearButtonID           17004
 #define CommandsListID          17005
-#define SaveButtonID            17006
-#define LoadButtonID            17007
+#define ExportButtonID          17006
+#define ImportButtonID          17007
 #define CategoryID              17008
 
 // The numbers of the columns of the mList.
@@ -61,8 +61,8 @@ BEGIN_EVENT_TABLE(KeyConfigPrefs, PrefsPanel)
    EVT_BUTTON(AssignDefaultsButtonID, KeyConfigPrefs::OnDefaults)
    EVT_BUTTON(SetButtonID, KeyConfigPrefs::OnSet)
    EVT_BUTTON(ClearButtonID, KeyConfigPrefs::OnClear)
-   EVT_BUTTON(SaveButtonID, KeyConfigPrefs::OnSave)
-   EVT_BUTTON(LoadButtonID, KeyConfigPrefs::OnLoad)
+   EVT_BUTTON(ExportButtonID, KeyConfigPrefs::OnExport)
+   EVT_BUTTON(ImportButtonID, KeyConfigPrefs::OnImport)
    EVT_CHOICE(CategoryID, KeyConfigPrefs::OnCategory)
    EVT_LIST_ITEM_SELECTED(CommandsListID, KeyConfigPrefs::OnItemSelected)
    EVT_LIST_KEY_DOWN(CommandsListID, KeyConfigPrefs::OnKeyDown)
@@ -157,6 +157,7 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
          }
          S.AddWindow(mKey);
 
+         /* i18n-hint: (verb)*/
          S.Id(SetButtonID).AddButton(_("Set"));
          S.Id(ClearButtonID).AddButton(_("Cl&ear"));
       }
@@ -168,8 +169,8 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
 
       S.StartThreeColumn();
       {
-         S.Id(LoadButtonID).AddButton(_("&Load..."));
-         S.Id(SaveButtonID).AddButton(_("&Save..."));
+         S.Id(ImportButtonID).AddButton(_("&Import..."));
+         S.Id(ExportButtonID).AddButton(_("&Export..."));
          S.Id(AssignDefaultsButtonID).AddButton(_("&Defaults"));
       }
       S.EndThreeColumn();
@@ -211,14 +212,26 @@ void KeyConfigPrefs::RepopulateBindingsList()
 
    mList->DeleteAllItems(); // Delete contents, but not the column headers.
    mNames.Clear();
-   mManager->GetAllCommandNames(mNames, false);
+   mDefaultKeys.Clear();
+   wxArrayString Keys,Labels,Categories;
+
+   mManager->GetAllCommandData(
+      mNames, 
+      Keys, 
+      mDefaultKeys,
+      Labels, 
+      Categories,
+// True to include effects (list items), false otherwise.
+      true 
+      );
+
    bool save = (mKeys.GetCount() == 0);
 
    size_t ndx = 0;
    int color = 0;
    for (size_t i = 0; i < mNames.GetCount(); i++) {
       wxString name = mNames[i];
-      wxString key = KeyStringDisplay(mManager->GetKeyFromName(name));
+      wxString key =  KeyStringDisplay(Keys[i]);
 
       // Save the original key value to support canceling
       if (save) {
@@ -227,10 +240,10 @@ void KeyConfigPrefs::RepopulateBindingsList()
          mNewKeys.Add(key);
       }
 
-      if (cat != _("All") && mManager->GetCategoryFromName(name) != cat) {
+//      if (cat != _("All") && ! Categories[i].StartsWith(cat)) {
+      if (cat != _("All") && ! (Categories[i]== cat)) {
          continue;
       }
-
       wxString label;
 
       // Labels for undo and redo change according to the last command
@@ -243,7 +256,7 @@ void KeyConfigPrefs::RepopulateBindingsList()
          label = _("Redo");
       }
       else {
-         label = mManager->GetPrefixedLabelFromName(name);
+         label = Labels[i];//mManager->GetPrefixedLabelFromName(name);
       }
 
       label = wxMenuItem::GetLabelFromText(label.BeforeFirst(wxT('\t')));
@@ -260,7 +273,7 @@ void KeyConfigPrefs::RepopulateBindingsList()
 //   mList->SortItems(SortCallback, (long) &mNames);
 }
 
-void KeyConfigPrefs::OnLoad(wxCommandEvent & e)
+void KeyConfigPrefs::OnImport(wxCommandEvent & e)
 {
    wxString file = wxT("Audacity-keys.xml");
    wxString path = gPrefs->Read(wxT("/DefaultOpenPath"),
@@ -284,14 +297,14 @@ void KeyConfigPrefs::OnLoad(wxCommandEvent & e)
    XMLFileReader reader;
    if (!reader.Parse(mManager, file)) {
       wxMessageBox(reader.GetErrorStr(),
-                   _("Error Loading Keyboard Shortcuts"),
+                   _("Error Importing Keyboard Shortcuts"),
                    wxOK | wxCENTRE, this);
    }
 
    RepopulateBindingsList();
 }
 
-void KeyConfigPrefs::OnSave(wxCommandEvent & e)
+void KeyConfigPrefs::OnExport(wxCommandEvent & e)
 {
    wxString file = wxT("Audacity-keys.xml");
    wxString path = gPrefs->Read(wxT("/DefaultExportPath"),
@@ -323,7 +336,7 @@ void KeyConfigPrefs::OnSave(wxCommandEvent & e)
    catch (XMLFileWriterException* pException)
    {
       wxMessageBox(_("Couldn't write to file: ") + file,
-                   _("Error Saving Keyboard Shortcuts"),
+                   _("Error Exporting Keyboard Shortcuts"),
                    wxOK | wxCENTRE, this);
 
       delete pException;
@@ -333,8 +346,8 @@ void KeyConfigPrefs::OnSave(wxCommandEvent & e)
 void KeyConfigPrefs::OnDefaults(wxCommandEvent & e)
 {
    for (size_t i = 0; i < mNames.GetCount(); i++) {
-      mManager->SetKeyFromName(mNames[i],
-                               mManager->GetDefaultKeyFromName(mNames[i]));
+      mManager->SetKeyFromIndex(i,mDefaultKeys[i]);
+      mNewKeys[i]=mDefaultKeys[i];
    }
    RepopulateBindingsList();
 }
@@ -378,14 +391,20 @@ wxString KeyConfigPrefs::NameFromKey( const wxString & key )
 // This is not yet a committed change, which will happen on a save.
 void KeyConfigPrefs::SetKeyForSelected( const wxString & key )
 {
-   wxString name = mNames[mList->GetItemData(mCommandSelected)];
+   int i = mList->GetItemData(mCommandSelected);
+   wxString name = mNames[i];
 
    mList->SetItem(mCommandSelected, KeyComboColumn, key);
-   mManager->SetKeyFromName(name, key);
+   mManager->SetKeyFromIndex(i, key);
 
+#if 0
    int i=mNames.Index( name );
    if( i!=wxNOT_FOUND ) 
       mNewKeys[i]=key;
+#endif
+
+   mNewKeys[i]=key;
+
 }
 
 
@@ -520,9 +539,11 @@ void KeyConfigPrefs::OnItemSelected(wxListEvent & e)
 bool KeyConfigPrefs::Apply()
 {
    for (size_t i = 0; i < mNames.GetCount(); i++) {
-      wxString dkey = KeyStringNormalize(mManager->GetDefaultKeyFromName(mNames[i]));
+//    wxString dkey = KeyStringNormalize(mManager->GetDefaultKeyFromName(mNames[i]));
+      wxString dkey = KeyStringNormalize(mDefaultKeys[i]);
       wxString name = wxT("/NewKeys/") + mNames[i];
-      wxString key = KeyStringNormalize(mManager->GetKeyFromName(mNames[i]));
+//    wxString key = KeyStringNormalize(mManager->GetKeyFromName(mNames[i]));
+      wxString key = KeyStringNormalize(mNewKeys[i]);
 
       if (gPrefs->HasEntry(name)) {
          if (key != KeyStringNormalize(gPrefs->Read(name, key))) {
@@ -546,7 +567,7 @@ void KeyConfigPrefs::Cancel()
 {
    // Restore original key values
    for (size_t i = 0; i < mNames.GetCount(); i++) {
-      mManager->SetKeyFromName(mNames[i], mKeys[i]);
+      mManager->SetKeyFromIndex(i, mKeys[i]);
    }
 
    return;

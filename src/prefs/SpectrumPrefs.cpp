@@ -39,17 +39,17 @@ SpectrumPrefs::~SpectrumPrefs()
 void SpectrumPrefs::Populate()
 {
    mSizeChoices.Add(_("8 - most wideband"));
-   mSizeChoices.Add(_("16"));
-   mSizeChoices.Add(_("32"));
-   mSizeChoices.Add(_("64"));
-   mSizeChoices.Add(_("128"));
+   mSizeChoices.Add(wxT("16"));
+   mSizeChoices.Add(wxT("32"));
+   mSizeChoices.Add(wxT("64"));
+   mSizeChoices.Add(wxT("128"));
    mSizeChoices.Add(_("256 - default"));
-   mSizeChoices.Add(_("512"));
-   mSizeChoices.Add(_("1024"));
-   mSizeChoices.Add(_("2048"));
-   mSizeChoices.Add(_("4096"));
-   mSizeChoices.Add(_("8192"));
-   mSizeChoices.Add(_("16384"));
+   mSizeChoices.Add(wxT("512"));
+   mSizeChoices.Add(wxT("1024"));
+   mSizeChoices.Add(wxT("2048"));
+   mSizeChoices.Add(wxT("4096"));
+   mSizeChoices.Add(wxT("8192"));
+   mSizeChoices.Add(wxT("16384"));
    mSizeChoices.Add(_("32768 - most narrowband"));
 
    for (size_t i = 0; i < mSizeChoices.GetCount(); i++) {
@@ -98,6 +98,8 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
    S.EndStatic();
 
 #ifdef EXPERIMENTAL_FFT_SKIP_POINTS
+// Search and replace with _ if you want translation.
+#define TRANSLATABLE( x ) wxT(x)
    wxArrayString wskipn;
    wxArrayInt wskipv;
 
@@ -106,11 +108,13 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
       wskipv.Add((1 << i) - 1);
    }
 
-   S.StartStatic(_("FFT Skip Points"));
+   /* /////i18n-hint: (noun) Experimental.  Don't know what it does.  Don't translate.*/
+   S.StartStatic(TRANSLATABLE("FFT Skip Points"));
    {
       S.StartMultiColumn(2);
       {
-         S.TieChoice(_("Skip Points") + wxString(wxT(":")),
+         /* /////i18n-hint: (noun) here the user chooses points to skip.*/
+         S.TieChoice(TRANSLATABLE("Skip Points") + wxString(wxT(":")),
                      wxT("/Spectrum/FFTSkipPoints"),
                      0,
                      wskipn,
@@ -171,6 +175,7 @@ void SpectrumPrefs::PopulateOrExchange(ShuttleGui & S)
    S.EndStatic();
 
 #ifdef EXPERIMENTAL_FIND_NOTES
+   /* i18n-hint: FFT stands for Fast Fourier Transform and probably shouldn't be translated*/
    S.StartStatic(_("FFT Find Notes"));
    {
       S.StartTwoColumn();

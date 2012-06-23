@@ -598,7 +598,13 @@ void nyx_set_audio_params(double rate, long len)
 
    /* Bind the sample rate to the "*sound-srate*" global */
    flo = cvflonum(rate);
+   setvalue(xlenter("*DEFAULT-SOUND-SRATE*"), flo);
    setvalue(xlenter("*SOUND-SRATE*"), flo);
+
+   /* Bind the control sample rate to "*control-srate*" globals */
+   flo = cvflonum((double) rate / 20.0);
+   setvalue(xlenter("*DEFAULT-CONTROL-SRATE*"), flo);
+   setvalue(xlenter("*CONTROL-SRATE*"), flo);
 
    /* Bind selection len to "len" global */
    nyx_input_length = len;
@@ -875,7 +881,11 @@ int nyx_get_audio_num_channels()
    }
 
    if (vectorp(nyx_result)) {
-      return getsize(nyx_result);
+      if (getsize(nyx_result) == 1) {
+        return -1; // invalid number of channels in array
+      } else {
+        return getsize(nyx_result);
+      }
    }
 
    return 1;
