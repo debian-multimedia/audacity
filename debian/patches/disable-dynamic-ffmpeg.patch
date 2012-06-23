@@ -4,9 +4,9 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 
 --- a/configure.in
 +++ b/configure.in
-@@ -173,6 +173,12 @@
-             lib_preference=$withval,
-             lib_preference="system local")
+@@ -178,6 +178,12 @@
+ 
+ AC_ARG_ENABLE(universal_binary,[  --enable-universal_binary enable universal binary build: (default: disable)],[enable_universal_binary=$enableval],[enable_universal_binary=no])
  
 +AC_ARG_ENABLE(dynamic-loading,
 +            [AS_HELP_STRING([--enable-dynamic-loading],
@@ -32,7 +32,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
        FFMPEG_SYSTEM_OPTOBJS="import/ImportFFmpeg.o export/ExportFFmpeg.o \
 --- a/src/FFmpeg.cpp
 +++ b/src/FFmpeg.cpp
-@@ -621,6 +621,10 @@
+@@ -751,6 +751,10 @@
  
  bool FFmpegLibs::LoadLibs(wxWindow *parent, bool showerr)
  {
@@ -43,7 +43,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     wxLogMessage(wxT("Trying to load FFmpeg libraries..."));
     if (ValidLibsLoaded()) {
-@@ -691,6 +695,7 @@
+@@ -834,6 +838,7 @@
  
  bool FFmpegLibs::InitLibs(wxString libpath_format, bool showerr)
  {
@@ -51,7 +51,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     FreeLibs();
  
  #if defined(__WXMSW__)
-@@ -905,8 +910,10 @@
+@@ -1048,8 +1053,10 @@
     FFMPEG_INITDYN(avutil, av_rescale_q);
     FFMPEG_INITDYN(avutil, avutil_version);
  
@@ -63,7 +63,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     avcodec_init();
     avcodec_register_all();
     av_register_all();
-@@ -945,7 +952,11 @@
+@@ -1088,7 +1095,11 @@
        return false;
     }
  
@@ -97,15 +97,15 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 102, 0)
     #define AVIOContext ByteIOContext
     #endif
-@@ -351,6 +364,7 @@
- } streamContext;
- #endif
+@@ -367,6 +380,7 @@
+ 
+ int import_ffmpeg_decode_frame(streamContext *sc, bool flushing);
  
 +#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
  extern "C" {
     // A little explanation of what's going on here.
     //
-@@ -883,6 +897,7 @@
+@@ -899,6 +913,7 @@
        (protocol, size)
     );
  };

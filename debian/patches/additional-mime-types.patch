@@ -13,7 +13,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=483
 +MimeType=application/ogg;audio/basic;audio/mpeg;audio/x-aiff;audio/x-mp3;audio/x-wav;application/x-audacity-project;@MIMETYPES@
 --- a/configure.in
 +++ b/configure.in
-@@ -88,6 +88,8 @@
+@@ -89,6 +89,8 @@
  dnl audacity. Each name in the list should be a _target_ in lib-src/Makefile
  AC_SUBST(LIBSRC_BUILD)
  
@@ -22,7 +22,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=483
  dnl allow the user to specify options to configure that change the
  dnl name "audacity" anywhere it appears in a pathname.   This allows
  dnl multiple versions of Audacity to be installed concurrently
-@@ -454,6 +456,9 @@
+@@ -482,6 +484,9 @@
  for lib in $LIBRARIES ; do
     eval LIB_USE_LOCAL=\$${lib}_USE_LOCAL
     eval LIB_USE_SYSTEM=\$${lib}_USE_SYSTEM

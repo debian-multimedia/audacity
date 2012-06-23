@@ -48,7 +48,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 +])
 --- a/configure.in
 +++ b/configure.in
-@@ -311,7 +311,7 @@
+@@ -339,7 +339,7 @@
  dnl-------------------------------------------------------------
  dnl LIBRARIES="LIBVORBIS LIBMAD LIBSNDFILE LIBFLAC LIBID3TAG LIBSAMPLERATE LIBRESAMPLE LIBSBSMS LIBSOUNDTOUCH LIBNYQUIST LIBVAMP LIBEXPAT LIBTWOLAME FFMPEG LIBLRDF SLV2 REDLAND PORTSMF TAGLIB"
  dnl disable plugin categorisation and LV2 libs for 1.3.7 release
@@ -57,7 +57,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  AC_MSG_NOTICE([Determining what libraries are available in this tree and on the system])
  
-@@ -335,6 +335,7 @@
+@@ -363,6 +363,7 @@
  AUDACITY_CHECKLIB_PORTSMF
  dnl AUDACITY_CHECKLIB_TAGLIB
  AUDACITY_CHECKLIB_PORTAUDIO
@@ -91,16 +91,16 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  #ifdef USE_LIBID3TAG 
  #include <id3tag.h>
-@@ -561,6 +565,8 @@
+@@ -562,6 +566,8 @@
  {
  public:
  
 +#ifndef DISABLE_DYNAMIC_LOADING_LAME
 +
     FindDialog(wxWindow *parent, wxString path, wxString name, wxString type)
-    :  wxDialog(parent, wxID_ANY, wxString(_("Locate Lame")))
-    {
-@@ -653,28 +659,36 @@
+    :  wxDialog(parent, wxID_ANY, 
+    /* i18n-hint: LAME is the name of an MP3 converter and should not be translated*/
+@@ -659,28 +665,36 @@
        return mLibPath.GetFullPath();
     }
  
@@ -137,7 +137,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  typedef lame_global_flags *lame_init_t(void);
  typedef int lame_init_params_t(lame_global_flags*);
  typedef const char* get_lame_version_t(void);
-@@ -718,6 +732,8 @@
+@@ -724,6 +738,8 @@
  typedef size_t lame_get_lametag_frame_t(const lame_global_flags *, unsigned char* buffer, size_t size);
  typedef void lame_mp3_tags_fid_t(lame_global_flags *, FILE *);
  
@@ -146,7 +146,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  #if defined(__WXMSW__)
  // An alternative solution to give Windows an additional chance of writing the tag before
  // falling bato to lame_mp3_tag_fid().  The latter can have DLL sharing issues when mixing
-@@ -770,9 +786,11 @@
+@@ -776,9 +792,11 @@
     MP3Exporter();
     virtual ~MP3Exporter();
  
@@ -158,7 +158,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     /* These global settings keep state over the life of the object */
     void SetMode(int mode);
-@@ -814,9 +832,11 @@
+@@ -820,9 +838,11 @@
  
  private:
  
@@ -170,7 +170,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
  #if defined(__WXMSW__)
     wxString mBladeVersion;
-@@ -829,6 +849,7 @@
+@@ -835,6 +855,7 @@
     int mRoutine;
     int mChannel;
  
@@ -178,7 +178,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     /* function pointers to the symbols we get from the library */
     lame_init_t* lame_init;
     lame_init_params_t* lame_init_params;
-@@ -858,6 +879,7 @@
+@@ -864,6 +885,7 @@
     beWriteInfoTag_t *beWriteInfoTag;
     beVersion_t *beVersion;
  #endif
@@ -186,7 +186,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     lame_global_flags *mGF;
  
-@@ -874,13 +896,17 @@
+@@ -880,13 +902,17 @@
  
  MP3Exporter::MP3Exporter()
  {
@@ -204,7 +204,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     mBitrate = 128;
     mQuality = QUALITY_2;
-@@ -894,6 +920,8 @@
+@@ -900,6 +926,8 @@
     FreeLibrary();
  }
  
@@ -213,7 +213,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  bool MP3Exporter::FindLibrary(wxWindow *parent)
  {
     wxString path;
-@@ -992,6 +1020,8 @@
+@@ -998,6 +1026,8 @@
     return mLibraryLoaded;
  }
  
@@ -222,7 +222,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  void MP3Exporter::SetMode(int mode)
  {
     mMode = mode;
-@@ -1017,6 +1047,7 @@
+@@ -1023,6 +1053,7 @@
  {
     wxLogMessage(wxT("Loading LAME from %s"), libpath.c_str());
  
@@ -230,7 +230,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (!lame_lib.Load(libpath, wxDL_LAZY)) {
        wxLogMessage(wxT("load failed"));
        return false;
-@@ -1120,6 +1151,7 @@
+@@ -1126,6 +1157,7 @@
        lame_lib.Unload();
        return false;
     }
@@ -238,7 +238,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     mGF = lame_init();
     if (mGF == NULL) {
-@@ -1136,25 +1168,31 @@
+@@ -1142,25 +1174,31 @@
        mGF = NULL;
     }
  
@@ -270,7 +270,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     if (channels > 2) {
        return -1;
-@@ -1165,7 +1203,10 @@
+@@ -1171,7 +1209,10 @@
     lame_set_in_samplerate(mGF, sampleRate);
     lame_set_out_samplerate(mGF, sampleRate);
     lame_set_disable_reservoir(mGF, false);
@@ -281,7 +281,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     // Add the VbrTag for all types.  For ABR/VBR, a Xing tag will be created.
     // For CBR, it will be a Lame Info tag.
-@@ -1310,9 +1351,13 @@
+@@ -1316,9 +1357,13 @@
  
     int result = lame_encode_flush(mGF, outbuffer, mOutBufferSize);
  
@@ -295,7 +295,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
  
     return result;
  }
-@@ -1565,10 +1610,20 @@
+@@ -1571,10 +1616,20 @@
                         int subformat)
  {
     int rate = lrint(project->GetRate());
@@ -316,7 +316,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     if (!exporter.LoadLibrary(parent, MP3Exporter::Maybe)) {
        wxMessageBox(_("Could not open MP3 encoding library!"));
        gPrefs->Write(wxT("/MP3/MP3LibPath"), wxString(wxT("")));
-@@ -1582,7 +1637,8 @@
+@@ -1588,7 +1643,8 @@
        
        return false;
     }
@@ -326,7 +326,7 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
     // Retrieve preferences
     int highrate = 48000;
     int lowrate = 8000;
-@@ -2012,13 +2068,17 @@
+@@ -2018,13 +2074,17 @@
     MP3Exporter exporter;
     wxString versionString = _("MP3 export library not found");
  
