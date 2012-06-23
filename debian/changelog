@@ -1,3 +1,11 @@
+audacity (2.0.1~rc1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Build against system libsbsms.
+  * Refresh patches.
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 23 Jun 2012 23:50:34 +0200
+
 audacity (2.0.0-1) unstable; urgency=low
 
   * New upstream release.
