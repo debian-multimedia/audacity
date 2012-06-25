@@ -1,3 +1,4 @@
+fix-file-opening-with-audacity.patch
 disable-dynamic-ffmpeg.patch
 disable-dynamic-lame.patch
 label-region-relation.patch
