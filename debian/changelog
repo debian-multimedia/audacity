@@ -1,3 +1,9 @@
+audacity (2.0.1~rc1-2) unstable; urgency=low
+
+  * Allow opening files with Audacity with your file manager. (LP: #1006610)
+
+ -- Benjamin Drung <bdrung@debian.org>  Mon, 25 Jun 2012 02:06:15 +0200
+
 audacity (2.0.1~rc1-1) unstable; urgency=low
 
   * New upstream release.
