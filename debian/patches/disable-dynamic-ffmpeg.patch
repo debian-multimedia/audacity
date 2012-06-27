@@ -122,12 +122,12 @@ Bug: http://bugzilla.audacityteam.org/show_bug.cgi?id=233
 +/* Use system FFmpeg library and disable dynamic loading of it. */
 +#undef DISABLE_DYNAMIC_LOADING_FFMPEG
 +
- /* Define if LADSPA plug-ins are enabled */
- #undef USE_LADSPA
+ /* Use system LAME library and disable dynamic loading of it. */
+ #undef DISABLE_DYNAMIC_LOADING_LAME
  
 --- a/src/prefs/LibraryPrefs.cpp
 +++ b/src/prefs/LibraryPrefs.cpp
-@@ -129,7 +129,7 @@
+@@ -133,7 +133,7 @@
           S.Id(ID_FFMPEG_DOWN_BUTTON);
           wxButton *bdwn = S.AddButton(_("Dow&nload"),
                                        wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL);
