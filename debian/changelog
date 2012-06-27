@@ -1,3 +1,11 @@
+audacity (2.0.1~rc2-1) unstable; urgency=low
+
+  * New upstream release.
+  * Drop four patches that were applied upstream.
+  * Refresh remaining patches.
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 27 Jun 2012 12:44:13 +0200
+
 audacity (2.0.1~rc1-2) unstable; urgency=low
 
   * Allow opening files with Audacity with your file manager. (LP: #1006610)
