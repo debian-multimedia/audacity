@@ -1,6 +1,2 @@
-fix-file-opening-with-audacity.patch
 disable-dynamic-ffmpeg.patch
-disable-dynamic-lame.patch
-label-region-relation.patch
 additional-mime-types.patch
-portmixer-missing-dpkg-buildflags.patch
