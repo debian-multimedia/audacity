@@ -1,3 +1,10 @@
+audacity (2.0.1-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update patches.
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 30 Jun 2012 00:45:22 +0200
+
 audacity (2.0.1~rc2-1) unstable; urgency=low
 
   * New upstream release.
