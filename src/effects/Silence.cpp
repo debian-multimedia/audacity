@@ -41,7 +41,7 @@ bool EffectSilence::PromptUser()
    } else {
       // Retrieve last used values
       gPrefs->Read(wxT("/Effects/SilenceGen/Duration"), &mDuration, 30L);
-      dlog.SetFormatString(_("seconds"));
+      dlog.SetFormatString(_("hh:mm:ss + milliseconds"));
    }
    dlog.SetTimeValue(mDuration);
 
@@ -53,7 +53,10 @@ bool EffectSilence::PromptUser()
       Save duration unless value was got from selection, so we save only
       when user explicitly set up a value */
    if (mT1 == mT0)
+   {
       gPrefs->Write(wxT("/Effects/SilenceGen/Duration"), mDuration);
+      gPrefs->Flush();
+   }
 
    return true;
 }

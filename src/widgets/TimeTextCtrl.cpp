@@ -495,7 +495,7 @@ void TimeTextCtrl::Decrement()
 void TimeTextCtrl::EnableMenu(bool enable)
 {
 #if wxUSE_TOOLTIPS
-   wxString tip(_("Use right mouse button or context key to change format"));
+   wxString tip(_("(Use context menu to change format.)"));
    if (enable)
       SetToolTip(tip);
    else {
@@ -559,7 +559,7 @@ wxString TimeTextCtrl::GetBuiltinFormat(const int index)
 
 wxString TimeTextCtrl::GetBuiltinFormat(const wxString &name)
 {
-   int ndx = 1;
+   int ndx = 4; // Default to "hh:mm:ss + milliseconds".
    int i;
 
    for (i=0; i<TimeTextCtrl::GetNumBuiltins(); i++) {

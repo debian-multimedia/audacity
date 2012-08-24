@@ -122,8 +122,11 @@ bool EffectToneGen::PromptUser()
    /* Save last used values.
       Save duration unless value was got from selection, so we save only
       when user explicitly set up a value */
-   if (mT1 == mT0)
-      gPrefs->Write(wxT("/Effects/ToneGen/Duration"), mDuration);
+   if (mT1 == mT0) // ANSWER ME: Only if end time equals start time?
+   {
+      return (gPrefs->Write(wxT("/Effects/ToneGen/Duration"), mDuration) && 
+               gPrefs->Flush());
+   }
    return true;
 }
 
@@ -297,17 +300,17 @@ void ToneGenDialog::PopulateOrExchangeStandard( ShuttleGui & S )
       S.AddPrompt(_("Duration") + wxString(wxT(":")));
       if (mToneDurationT == NULL)
       {
-         mToneDurationT = new
-         TimeTextCtrl(this,
-                      wxID_ANY,
-                      wxT(""),
-                      mDuration,
-                      mEffect->mProjectRate,
-                      wxDefaultPosition,
-                      wxDefaultSize,
-                      true);
+         mToneDurationT = 
+            new TimeTextCtrl(this,
+                              wxID_ANY,
+                              wxT(""),
+                              mDuration,
+                              mEffect->mProjectRate,
+                              wxDefaultPosition,
+                              wxDefaultSize,
+                              true);
          mToneDurationT->SetName(_("Duration"));
-         mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(_("hh:mm:ss + samples")):(_("seconds"))));
+         mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(_("hh:mm:ss + samples")):(_("hh:mm:ss + milliseconds"))));
          mToneDurationT->EnableMenu();
       }
       S.AddWindow(mToneDurationT);
@@ -355,7 +358,7 @@ void ToneGenDialog::PopulateOrExchangeExtended( ShuttleGui & S )
                       wxDefaultSize,
                       true);
          mToneDurationT->SetName(_("Duration"));
-         mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(_("hh:mm:ss + samples")):(_("seconds"))));
+         mToneDurationT->SetFormatString(mToneDurationT->GetBuiltinFormat(isSelection==true?(_("hh:mm:ss + samples")):(_("hh:mm:ss + milliseconds"))));
          mToneDurationT->EnableMenu();
       }
       S.AddWindow(mToneDurationT);

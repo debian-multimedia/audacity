@@ -1,11 +1,14 @@
-/*
- *  ODDecodeFFmpegTask.cpp
- *  Audacity
- *
- *  Created by apple on 3/8/10.
- *  Copyright 2010 __MyCompanyName__. All rights reserved.
- *
- */
+/**********************************************************************
+
+   Audacity: A Digital Audio Editor
+   Audacity(R) is copyright (c) 1999-2012 Audacity Team.
+   License: GPL v2.  See License.txt.
+
+   ODDecodeFFmpegTask.cpp
+   Michael Chinen
+
+******************************************************************/
+
 #include <wx/wxprec.h>
  #include "../Experimental.h" 
 // For compilers that support precompilation, includes "wx/wx.h".
@@ -646,7 +649,7 @@ void ODFFmpegDecoder::InsertCache(FFMpegDecodeCache* cache) {
    {
       int dropindex;
       //drop which ever index is further from our newly added one.
-      dropindex = (guess > mDecodeCache.size()/2) ? 0 : (mDecodeCache.size()-1);
+      dropindex = (guess > (int)mDecodeCache.size()/2) ? 0 : (mDecodeCache.size()-1);
       mNumSamplesInCache-=mDecodeCache[dropindex]->len;
       free(mDecodeCache[dropindex]->samplePtr);
       delete mDecodeCache[dropindex];

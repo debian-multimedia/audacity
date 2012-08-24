@@ -215,6 +215,8 @@ void EffectEqualization::ReadPrefs()
    gPrefs->Read(wxT("/Effects/Equalization/DrawMode"), &mDrawMode, true);
    gPrefs->Read(wxT("/Effects/Equalization/Interp"), &mInterp, 0);
    gPrefs->Read(wxT("/Effects/Equalization/DrawGrid"), &mDrawGrid, true);
+
+   gPrefs->Flush();
 }
 
 EffectEqualization::EffectEqualization()
@@ -312,6 +314,7 @@ bool EffectEqualization::PromptUser()
       gPrefs->Write(wxT("/Effects/Equalization/DrawMode"),mDrawMode);
       gPrefs->Write(wxT("/Effects/Equalization/Interp"), mInterp);
       gPrefs->Write(wxT("/Effects/Equalization/DrawGrid"), mDrawGrid);
+      gPrefs->Flush();
    }
 
    return true;
@@ -1238,7 +1241,7 @@ void EqualizationDialog::MakeEqualizationDialog()
    mFaderOrDraw[1] = new wxRadioButton(
          this, sliderRadioID, _("&Graphic EQ"),
          wxDefaultPosition, wxDefaultSize, 0 );
-   mFaderOrDraw[0]->SetName(_("Graphic EQ"));
+   mFaderOrDraw[1]->SetName(_("Graphic EQ"));
    szrH->Add( mFaderOrDraw[1], 0, wxRIGHT, 4 );
 
    mInterpChoice = new wxChoice(this, ID_INTERP,

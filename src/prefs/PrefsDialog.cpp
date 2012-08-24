@@ -51,6 +51,7 @@
 #include "KeyConfigPrefs.h"
 #include "LibraryPrefs.h"
 #include "MousePrefs.h"
+#include "ModulePrefs.h"
 #include "PlaybackPrefs.h"
 #include "ProjectsPrefs.h"
 #include "QualityPrefs.h"
@@ -146,6 +147,7 @@ PrefsDialog::PrefsDialog(wxWindow * parent)
 //       w = new BatchPrefs(mCategories);       mCategories->AddPage(w, w->GetName(), false, 0);
          w = new KeyConfigPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
          w = new MousePrefs(mCategories);       mCategories->AddPage(w, w->GetName(), false, 0);
+         w = new ModulePrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
       }
       S.EndHorizontalLay();
    }
@@ -193,7 +195,8 @@ PrefsDialog::PrefsDialog(wxWindow * parent)
    // The magic number 7 was determined by Ed's experimentation. 
    // Frankly, this is a hack to work around a bug in wxTreebook, and 
    // will have to be revisited if we add another category to mCategories.
-   SetSizeHints(sz.x, sz.y + 7, 800, 600);
+   // JKC later added a category and 20 onto the 7.
+   SetSizeHints(sz.x, sz.y + 7 + 20, 800, 600);
 
    // Center after all that resizing, but make sure it doesn't end up
    // off-screen
@@ -242,6 +245,7 @@ void PrefsDialog::OnOK(wxCommandEvent & event)
    }
 
    gPrefs->Write(wxT("/Prefs/PrefsCategory"), (long)mCategories->GetSelection());
+   gPrefs->Flush();
 
 #if USE_PORTMIXER
    if (gAudioIO) {

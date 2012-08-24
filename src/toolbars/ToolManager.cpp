@@ -407,7 +407,7 @@ ToolManager::ToolManager( AudacityProject *parent )
 
    // Create all of the toolbars
    mBars[ ToolsBarID ]         = new ToolsToolBar();
-   mBars[ TransportBarID ]       = new ControlToolBar();
+   mBars[ TransportBarID ]     = new ControlToolBar();
    mBars[ MeterBarID ]         = new MeterToolBar();
    mBars[ EditBarID ]          = new EditToolBar();
    mBars[ MixerBarID ]         = new MixerToolBar();
@@ -602,7 +602,7 @@ void ToolManager::ReadConfig()
             bar->Layout();
          }
 #else
-         // note that this section is here because if you had been using linking and now you aren't,
+         // note that this section is here because if you had been using sync-lock and now you aren't,
          // the space for the extra button is stored in audacity.cfg, and so you get an extra space
          // in the EditToolbar.
          // It is needed so that the meterToolbar size gets preserved.
@@ -769,6 +769,7 @@ void ToolManager::WriteConfig()
 
    // Restore original config path
    gPrefs->SetPath( oldpath );
+   gPrefs->Flush();
 }
 
 //

@@ -348,10 +348,10 @@ void DeviceToolBar::EnableDisableButtons()
 void DeviceToolBar::RegenerateTooltips()
 {
 #if wxUSE_TOOLTIPS
-   mOutput->SetToolTip(_("Output Device"));
-   mInput->SetToolTip(_("Input Device"));
-   mHost->SetToolTip(_("Audio Host"));
-   mInputChannels->SetToolTip(_("Input Channels"));
+   mOutput->SetToolTip(mOutput->GetName() + wxT(" - ") + mOutput->GetStringSelection());
+   mInput->SetToolTip(mInput->GetName() + wxT(" - ") + mInput->GetStringSelection());
+   mHost->SetToolTip(mHost->GetName() + wxT(" - ") + mHost->GetStringSelection());
+   mInputChannels->SetToolTip(mInputChannels->GetName() + wxT(" - ") + mInputChannels->GetStringSelection());
 #endif
 }
 
@@ -419,6 +419,9 @@ void DeviceToolBar::RepositionCombos()
    // if the toolbar is docked then the width we should use is the project width.
    // as the toolbar's with can extend past this.
    GetClientSize(&w, &h);
+
+   // FIX-ME: Note that there's some bug in here, in that even if the prefs show the toolbar 
+   // docked, on initialization, this call to IsDocked() returns false.
    if (IsDocked()) {
       // If the toolbar is docked its width can be larger than what is actually viewable
       // So take the min.  We don't need to worry about having another toolbar to the left off us
@@ -459,16 +462,10 @@ void DeviceToolBar::RepositionCombos()
    // limit the amount of times we solve contraints to 5
    while (constrained && ratioUnused > 0.01f && i < 5) {
       i++;
-      constrained = false;
-
-      constrained = RepositionCombo(mHost,   w,   desiredHost,   hostRatio, ratioUnused,
-				    0, true) || constrained;
-      constrained = RepositionCombo(mInput,  w,  desiredInput,  inputRatio, ratioUnused,
-				    mRecordBitmap->GetWidth(), true) || constrained;
-      constrained = RepositionCombo(mOutput, w, desiredOutput, outputRatio, ratioUnused,
-				    mPlayBitmap->GetWidth(), true) || constrained;      
-      constrained = RepositionCombo(mInputChannels, w, desiredChannels, channelsRatio, ratioUnused,
-				    0, true) || constrained;
+      constrained = RepositionCombo(mHost,   w,   desiredHost,   hostRatio, ratioUnused, 0, true);
+      constrained |= RepositionCombo(mInput,  w,  desiredInput,  inputRatio, ratioUnused, mRecordBitmap->GetWidth(), true);
+      constrained |= RepositionCombo(mOutput, w, desiredOutput, outputRatio, ratioUnused, mPlayBitmap->GetWidth(), true);      
+      constrained |= RepositionCombo(mInputChannels, w, desiredChannels, channelsRatio, ratioUnused, 0, true);
    }
 
    Update();
@@ -560,6 +557,7 @@ void DeviceToolBar::FillHostDevices()
          if (host == wxT("")) {
             host = outMaps[i].hostString;
             gPrefs->Write(wxT("/AudioIO/Host"), host);
+            gPrefs->Flush();
             mHost->SetStringSelection(host);
          }
       }
@@ -584,6 +582,8 @@ int DeviceToolBar::ChangeHost()
    
    //change the host and switch to correct devices.
    gPrefs->Write(wxT("/AudioIO/Host"), newHost);
+   gPrefs->Flush();
+
    // populate the devices
    FillHostDevices();
 
@@ -646,6 +646,8 @@ void DeviceToolBar::SetDevices(const DeviceSourceMap *in, const DeviceSourceMap 
       } else {
          gPrefs->Write(wxT("/AudioIO/RecordingSource"), wxT(""));
       }
+      gPrefs->Flush();
+
       FillInputChannels();
    }
 
@@ -656,6 +658,7 @@ void DeviceToolBar::SetDevices(const DeviceSourceMap *in, const DeviceSourceMap 
       } else {
          gPrefs->Write(wxT("/AudioIO/PlaybackSource"), wxT(""));
       }
+      gPrefs->Flush();
    }
 }
 

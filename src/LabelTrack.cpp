@@ -1246,10 +1246,10 @@ LabelStruct::TimeRelations LabelStruct::RegionRelation(
    if(retainLabels) {
 
       // Desired behavior for edge cases: The length of the selection is smaller
-      // than the length of the label if the selection is within the label.
-      // Selections matching exactly a (region) label surround the label.
+      // than the length of the label if the selection is within the label or
+      // matching exactly a (region) label.
 
-      if ((reg_t0 < t && reg_t1 > t1) || (reg_t0 == t && reg_t1 == t1))
+      if (reg_t0 < t && reg_t1 > t1)
          return SURROUNDS_LABEL;
       else if (reg_t1 < t)
          return BEFORE_LABEL;
@@ -2162,6 +2162,9 @@ bool LabelTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          else if (!wxStrcmp(attr, wxT("minimized")) && 
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
             SetMinimized(nValue != 0);
+         else if (!wxStrcmp(attr, wxT("isSelected")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            this->SetSelected(nValue != 0);
       }
 
       return true;
@@ -2188,6 +2191,7 @@ void LabelTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("numlabels"), len);
    xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
    xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
+   xmlFile.WriteAttr(wxT("isSelected"), this->GetSelected());
 
    for (i = 0; i < len; i++) {
       xmlFile.StartTag(wxT("label"));

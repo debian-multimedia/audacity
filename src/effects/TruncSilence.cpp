@@ -78,7 +78,7 @@ bool EffectTruncSilence::Init()
       mSilenceCompressRatio = 4.0;
       gPrefs->Write(wxT("/Effects/TruncateSilence/CompressRatio"), 40L);
    }
-   return true;
+   return gPrefs->Flush();
 }
 
 bool EffectTruncSilence::CheckWhetherSkipEffect()
@@ -105,6 +105,7 @@ bool EffectTruncSilence::PromptUser()
    gPrefs->Write(wxT("/Effects/TruncateSilence/LongestAllowedSilentMs"), mTruncLongestAllowedSilentMs);
    gPrefs->Write(wxT("/Effects/TruncateSilence/DbChoiceIndex"), mTruncDbChoiceIndex);
    gPrefs->Write(wxT("/Effects/TruncateSilence/CompressRatio"), (int)floor(10.0*mSilenceCompressRatio+0.5));
+   gPrefs->Flush();
 
    return true;
 }
@@ -581,6 +582,7 @@ bool EffectTruncSilence::Process()
 
       delete [] buffer;
 
+      // Buffer has been freed, so we're OK to return if cancelled
       if (cancelled) 
       {
          ReplaceProcessedTracks(false);
@@ -620,8 +622,10 @@ bool EffectTruncSilence::Process()
          return false;
       }
 
-      // Intersection may create regions smaller than allowed; ignore them
-      if (r->end - r->start < mTruncInitialAllowedSilentMs / 1000.0)
+      // Intersection may create regions smaller than allowed; ignore them.
+      // FIX-ME: See http://bugzilla.audacityteam.org/show_bug.cgi?id=434#c10 and 
+      //    http://bugzilla.audacityteam.org/show_bug.cgi?id=434#c11 about the 0.0001 fudge factor. 
+      if ((r->end - r->start) < ((mTruncInitialAllowedSilentMs / 1000.0) - 0.0001))
          continue;
 
       // Find new silence length as requested
