@@ -1203,6 +1203,7 @@ void TagsEditor::OnSaveDefaults(wxCommandEvent & event)
    for (bool cont = mLocal.GetFirst(n, v); cont; cont = mLocal.GetNext(n, v)) {
       gPrefs->Write(wxT("/Tags/") + n, v);
    }
+   gPrefs->Flush();
 
    // Restore title
    if (!mEditTitle) {
@@ -1230,7 +1231,7 @@ void TagsEditor::OnRemove(wxCommandEvent & event)
    else if (!mEditTrack && mGrid->GetCellValue(row, 0).CmpNoCase(LABEL_TRACK) == 0) {
       return;
    }
-   else if (row < STATICCNT - 1) {
+   else if (row < STATICCNT) {
       mGrid->SetCellValue(row, 1, wxEmptyString);
    }
    else if (row >= STATICCNT) {
@@ -1257,6 +1258,7 @@ void TagsEditor::OnOk(wxCommandEvent & event)
    gPrefs->Write(wxT("/TagsEditor/y"), r.y);
    gPrefs->Write(wxT("/TagsEditor/width"), r.width);
    gPrefs->Write(wxT("/TagsEditor/height"), r.height);
+   gPrefs->Flush();
 
    EndModal(wxID_OK);
 }

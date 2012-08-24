@@ -1355,6 +1355,9 @@ bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          else if (!wxStrcmp(attr, wxT("minimized")) && 
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
             mMinimized = (nValue != 0);
+         else if (!wxStrcmp(attr, wxT("isSelected")) && 
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            this->SetSelected(nValue != 0);
          else if (!wxStrcmp(attr, wxT("gain")) && 
                   XMLValueChecker::IsGoodString(strValue) && 
                   Internat::CompatibleToDouble(strValue, &dblValue))
@@ -1437,6 +1440,7 @@ void WaveTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("solo"), mSolo);
    xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
    xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
+   xmlFile.WriteAttr(wxT("isSelected"), this->GetSelected());
    xmlFile.WriteAttr(wxT("rate"), mRate);
    xmlFile.WriteAttr(wxT("gain"), (double)mGain);
    xmlFile.WriteAttr(wxT("pan"), (double)mPan);
@@ -1734,7 +1738,12 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
    if( bufferLen <= 0 )
       return;
 
-   memset(buffer, 0, sizeof(double)*bufferLen);
+   // This is useful in debugging, to easily find null envelope settings, but 
+   // should not be necessary in release build. 
+   // If we were going to set it to failsafe values, better to set each element to 1.0.
+   #ifdef __WXDEBUG__
+      memset(buffer, 0, sizeof(double)*bufferLen);
+   #endif
 
    double startTime = t0;
    double endTime = t0+tstep*bufferLen;
@@ -1744,23 +1753,31 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
       WaveClip *clip = it->GetData();
       
       // IF clip intersects startTime..endTime THEN...
-      if (clip->GetStartTime() < endTime && clip->GetEndTime() > startTime)
+      double dClipStartTime = clip->GetStartTime();
+      double dClipEndTime = clip->GetEndTime();
+      if ((dClipStartTime < endTime) && (dClipEndTime > startTime))
       {
          double* rbuf = buffer;
          int rlen = bufferLen;
          double rt0 = t0;
 
-         if (rt0 < clip->GetStartTime())
+         if (rt0 < dClipStartTime)
          {
-            int dx = (int) floor((clip->GetStartTime() - rt0) / tstep + 0.5);
-            rbuf += dx;
-            rlen -= dx;
-            rt0 = clip->GetStartTime();
+            sampleCount nDiff = (sampleCount)floor((dClipStartTime - rt0) * mRate + 0.5);
+            rbuf += nDiff;
+            rlen -= nDiff;
+            rt0 = dClipStartTime;
          }
 
-         if (rt0+rlen*tstep > clip->GetEndTime())
+         if (rt0 + rlen*tstep > dClipEndTime)
          {
-            rlen = (int) ((clip->GetEndTime()-rt0) / tstep);
+            int nClipLen = clip->GetEndSample() - clip->GetStartSample();
+
+            // This check prevents problem cited in http://bugzilla.audacityteam.org/show_bug.cgi?id=528#c11, 
+            // Gale's cross_fade_out project, which was already corrupted by bug 528.
+            // This conditional prevents the previous write past the buffer end, in clip->GetEnvelope() call.
+            if (nClipLen < rlen) // Never increase rlen here. 
+               rlen = nClipLen;
          }
          clip->GetEnvelope()->GetValues(rbuf, rlen, rt0, tstep);
       }

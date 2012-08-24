@@ -1,16 +1,16 @@
-# Audacity Strings for Translation.
-# Copyright (C) YEAR Audacity Development Team
+# Audacity Ukrainian translation
+# Copyright (C) 2000-2012 Audacity Development Team
 # This file is distributed under the same license as Audacity.
 #
-# Audacity Team <audacity-translation@lists.sourceforge.net>, YEAR.
+# Audacity Team <audacity-translation@lists.sourceforge.net>, 2007.
 # Yuri Chornoivan <yurchor@ukr.net>, 2010, 2011, 2012.
 msgid ""
 msgstr ""
 "Project-Id-Version: Audacity 2.0.0\n"
 "Report-Msgid-Bugs-To: audacity-translation@lists.sourceforge.net\n"
 "POT-Creation-Date: 2012-01-20 18:14+0000\n"
-"PO-Revision-Date: 2012-06-16 23:09-0000\n"
-"Last-Translator: Yuri Chornoivan\n"
+"PO-Revision-Date: 2012-08-09 21:24-0000\n"
+"Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <translation@linux.org.ua>\n"
 "Language: ukX-Generator: Lokalize 1.2\n"
 "MIME-Version: 1.0\n"
@@ -54,9 +54,10 @@ msgstr "Якщо ви знайдете помилку або у вас вини�
 #: AboutDialog.cpp:216
 msgid "translator_credits"
 msgstr ""
-"Максим Дзюманенко <dziumanenko@gmail.com>\n"
-"Андрій Лагуш <Andrew Lahush alahush@yahoo.com>\n"
-"Юрій Чорноіван <yurchor@ukr.net>"
+"Переклад українською:<br />\n"
+"<a href=\"mailto:dziumanenko@gmail.com\">Максим Дзюманенко</a>,<br />\n"
+"<a href=\"mailto:alahush@yahoo.com\">Андрій Лагуш</a>,<br />\n"
+"<a href=\"mailto:yurchor@ukr.net\">Юрій Чорноіван</a>"
 
 #: AboutDialog.cpp:229
 msgid "A Free Digital Audio Editor<br>"
@@ -1788,11 +1789,6 @@ msgstr "Відсутні позначок для експорту."
 msgid "Export Labels As:"
 msgstr "Експортувати позначки як:"
 
-#: LabelDialog.cpp:573
-#: Menus.cpp:2885
-msgid "labels.txt"
-msgstr "labels.txt"
-
 #: LabelDialog.cpp:705
 msgid "New Label Track"
 msgstr "Нова доріжка позначок"
@@ -2826,6 +2822,11 @@ msgstr "Встановити праву точку обмеження вибра
 msgid "You must select a track first."
 msgstr "Спочатку виберіть доріжку."
 
+#: LabelDialog.cpp:573
+#: Menus.cpp:2885
+msgid "labels.txt"
+msgstr "labels.txt"
+
 #: Menus.cpp:2881
 msgid "There are no label tracks to export."
 msgstr "Немає доріжок з позначками для експорту."
@@ -3355,7 +3356,7 @@ msgstr "Доріжка приміток"
 msgid ""
 "Reset Preferences?\n"
 "\n"
-"This is a one-time question, after an 'install' where you asked to have the Preferences reset"
+"This is a one-time question, after an 'install' where you asked to have the Preferences reset."
 msgstr ""
 "Відновити початкові значення параметрів?\n"
 "\n"
@@ -5712,6 +5713,12 @@ msgid "Duration:"
 msgstr "Тривалість:"
 
 #. i18n-hint: Name of time display format that shows time in hours,
+#. * minutes, seconds and milliseconds (1/1000 second)
+#: widgets/TimeTextCtrl.cpp:308
+msgid "hh:mm:ss + milliseconds"
+msgstr "гг:хх:сс + мілісекунд"
+
+#. i18n-hint: Name of time display format that shows time in hours,
 #. * minutes, seconds and samples (at the current project sample rate)
 #: effects/DtmfGen.cpp:471
 #: effects/Noise.cpp:217
@@ -7306,6 +7313,10 @@ msgstr "Модуль Nyquist не повернув звукові дані.\n"
 msgid "Nyquist returned too many audio channels.\n"
 msgstr "Модуль Nyquist повернув занадто багато звукових каналів.\n"
 
+#: effects/nyquist/Nyquist.cpp:917
+msgid "Nyquist returned one audio channel as an array.\n"
+msgstr "Nyquist повернуто один звуковий канал у форматі масиву.\n"
+
 #: effects/vamp/VampEffect.cpp:81
 #, c-format
 msgid "Extracting features: %s"
@@ -8306,6 +8317,10 @@ msgstr "Лише libmp3lame.so|libmp3lame.so|Первинні спільні б�
 #: export/ExportMP3.cpp:1549
 msgid "MP3 Files"
 msgstr "Файли MP3"
+
+#: export/ExportMP3.cpp:1627
+msgid "Could not initialize MP3 encoding library!"
+msgstr "Не вдалося ініціалізувати бібліотеку кодування MP3!"
 
 #: export/ExportMP3.cpp:1573
 msgid "Could not open MP3 encoding library!"
@@ -9418,6 +9433,10 @@ msgstr "&Гудок після завершення довготривалих �
 msgid "&Show track name in waveform display"
 msgstr "&Показувати назву доріжки на панелі показу форм хвиль"
 
+#: prefs/GUIPrefs.cpp:131
+msgid "Re&tain labels if selection snaps to a label edge"
+msgstr "З&берігати мітки, якщо позначення прилипає до краю мітки"
+
 #: prefs/GUIPrefs.cpp:135
 msgid "Modes"
 msgstr "Режими"
@@ -9465,14 +9484,6 @@ msgstr "&Використовувати особливе мікшування (�
 #: prefs/ImportExportPrefs.cpp:81
 msgid "S&how Metadata Editor prior to export step"
 msgstr "По&казувати редактор метаданих перед кроком експорту"
-
-#: prefs/ImportExportPrefs.cpp:84
-msgid ""
-"Note: Export quality options can be chosen by clicking the Options\n"
-"button in the Export dialog."
-msgstr ""
-"Зауваження: параметри якості експорту можна вибрати після натискання кнопки «Параметри»\n"
-"у діалоговому вікні експорту."
 
 #: prefs/ImportExportPrefs.cpp:88
 msgid "When exporting track to an Allegro (.gro) file"
@@ -9656,6 +9667,34 @@ msgstr "MIDI-інтерфейсів немає"
 #: prefs/MidiIOPrefs.cpp:280
 msgid "The MIDI Synthesizer Latency must be an integer"
 msgstr "Латентність синтезатора MIDI має бути визначено цілим числом"
+
+#: prefs/ModulePrefs.cpp:31
+msgid "Modules"
+msgstr "Модулі"
+
+#: prefs/ModulePrefs.cpp:55
+msgid "Enable these Modules (if present), next time Audacity is started"
+msgstr "Увімкнути ці модулі (якщо їх встановлено) під час наступного запуску Audacity"
+
+#: prefs/ModulePrefs.cpp:57
+msgid ""
+"These are experimental. Enable them only if you've read the manual\n"
+"and know what you are doing."
+msgstr ""
+"Ці модулі є недостатньо перевіреними. Вмикайте їх, лише якщо ви ознайомилися\n"
+"з підручником, і вам відомі наслідки ваших дій."
+
+#: prefs/ModulePrefs.cpp:58
+msgid "mod-script-pipe"
+msgstr "mod-script-pipe"
+
+#: prefs/ModulePrefs.cpp:61
+msgid "mod-nyq-bench"
+msgstr "mod-nyq-bench"
+
+#: prefs/ModulePrefs.cpp:64
+msgid "mod-track-panel"
+msgstr "mod-track-panel"
 
 #: prefs/MousePrefs.cpp:57
 msgid "Mouse"
@@ -10550,13 +10589,13 @@ msgstr "Індикатор запису"
 msgid "Meter-Record"
 msgstr "Індикатор запису"
 
-#: toolbars/MeterToolBar.cpp:121
-msgid "Output level meter"
-msgstr "Індикатор рівня на виході"
+#: toolbars/MeterToolBar.cpp:129
+msgid "Output Level"
+msgstr "Рівень виведення"
 
-#: toolbars/MeterToolBar.cpp:122
-msgid "Input level meter - click to monitor input"
-msgstr "Індикатор рівня входу. Клацніть, щоб запустити контроль входу."
+#: toolbars/MeterToolBar.cpp:130
+msgid "Input Level (Click to monitor.)"
+msgstr "Вхідний рівень (натисніть, щоб спостерігати)"
 
 #: toolbars/MixerToolBar.cpp:89
 msgid "Output Volume"
@@ -10574,21 +10613,13 @@ msgstr "Рівень на вході"
 msgid "Slider Input"
 msgstr "Повзунок вводу"
 
-#: toolbars/MixerToolBar.cpp:286
-msgid "Input Volume Slider"
-msgstr "Повзунок гучності вхідного сигналу"
-
 #: toolbars/MixerToolBar.cpp:290
-msgid "Cannot control input volume; use system mixer."
-msgstr "Керування гучністю вхідного сигналу неможливе; використовуємо мікшер системи."
-
-#: toolbars/MixerToolBar.cpp:294
-msgid "Output Volume Slider"
-msgstr "Повзунок гучності вихідного сигналу"
+msgid "Input Volume (Unavailable; use system mixer.)"
+msgstr "Рівень вхідного сигналу (недоступний, скористайтеся мікшером системи)"
 
 #: toolbars/MixerToolBar.cpp:298
-msgid "Cannot control output volume; use system mixer."
-msgstr "Керування гучністю вихідного сигналу неможливе; використовуємо мікшер системи."
+msgid "Output Volume (Unavailable; use system mixer.)"
+msgstr "Рівень виідного сигналу (недоступний, скористайтеся мікшером системи)"
 
 #: toolbars/SelectionBar.cpp:86
 #: toolbars/SelectionBar.cpp:287
@@ -10624,6 +10655,12 @@ msgstr "Позиція у аудіо:"
 #: toolbars/SelectionBar.cpp:236
 msgid "Snap To"
 msgstr "Прив'язка"
+
+#: toolbars/SelectionBar.cpp:241
+#: toolbars/SelectionBar.cpp:372
+#, c-format
+msgid "Snap Clicks/Selections to %s"
+msgstr "Прив’язувати клацання/позначення до %s"
 
 #: toolbars/SelectionBar.cpp:255
 msgid "Selection "
@@ -10898,12 +10935,6 @@ msgstr "0100 днів 024 г 060 хв 060 с"
 msgid "0100 h 060 m 060.0100 s"
 msgstr "0100 г 060 хв 060.0100 с"
 
-#. i18n-hint: Name of time display format that shows time in hours,
-#. * minutes, seconds and milliseconds (1/1000 second)
-#: widgets/TimeTextCtrl.cpp:308
-msgid "hh:mm:ss + milliseconds"
-msgstr "гг:хх:сс + мілісекунд"
-
 #. i18n-hint: Format string for displaying time in hours, minutes, seconds
 #. * and milliseconds. Change the 'h' to the abbreviation for hours, 'm' to the
 #. * abbreviation for minutes and 's' to the abbreviation for seconds (the
@@ -11059,9 +11090,9 @@ msgstr "CDDA кадри (75 кд/с)"
 msgid "01000,01000 frames|75"
 msgstr "01000,01000 кадри|75"
 
-#: widgets/TimeTextCtrl.cpp:496
-msgid "Use right mouse button or context key to change format"
-msgstr "Використовуйте праву кнопку миші або контекстну клавішу для зміни формату"
+#: widgets/TimeTextCtrl.cpp:498
+msgid "(Use context menu to change format.)"
+msgstr "(Скористайтеся контекстним меню, щоб змінити формат.)"
 
 #: widgets/TimeTextCtrl.cpp:1597
 msgid "centiseconds"

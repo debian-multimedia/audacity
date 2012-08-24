@@ -155,14 +155,13 @@ void InitPreferences()
    if( fn.FileExists() )   // it will exist if the (win) installer put it there on request
    {
       // pop up a dialogue
-      wxString prompt = _("Reset Preferences?\n\nThis is a one-time question, after an 'install' where you asked to have the Preferences reset");
+      wxString prompt = _("Reset Preferences?\n\nThis is a one-time question, after an 'install' where you asked to have the Preferences reset.");
       int action = wxMessageBox(prompt, _("Reset Audacity Preferences"),
                                 wxYES_NO, NULL);
       if(action == wxYES)   // reset
       {
          gPrefs->DeleteAll();
          gPrefs->Write(wxT("/NewPrefsInitialized"), true);
-         gPrefs->Flush();
       }
       bool gone = wxRemoveFile(fn.GetFullPath());  // remove resetPrefs.txt
       if(!gone)
@@ -233,7 +232,9 @@ void InitPreferences()
   
    gPrefs->Write(wxT("/Version/Major"), AUDACITY_VERSION);
    gPrefs->Write(wxT("/Version/Minor"), AUDACITY_RELEASE); 
-   gPrefs->Write(wxT("/Version/Micro"), AUDACITY_REVISION);   
+   gPrefs->Write(wxT("/Version/Micro"), AUDACITY_REVISION);
+   
+   gPrefs->Flush();
 }
 
 void FinishPreferences()

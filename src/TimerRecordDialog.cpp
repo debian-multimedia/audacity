@@ -104,9 +104,7 @@ void TimerRecordDialog::OnTimer(wxTimerEvent& event)
    wxDateTime dateTime_UNow = wxDateTime::UNow();
    if (m_DateTime_Start < dateTime_UNow) {
       m_DateTime_Start = dateTime_UNow;
-      if (m_DateTime_Start.GetDateOnly() < dateTime_UNow.GetDateOnly()) {
       m_pDatePickerCtrl_Start->SetValue(m_DateTime_Start);
-      }
       m_pTimeTextCtrl_Start->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_Start));
       this->UpdateEnd(); // Keep Duration constant and update End for changed Start.
    }
@@ -168,8 +166,6 @@ void TimerRecordDialog::OnDatePicker_End(wxDateEvent& event)
    if (m_DateTime_End < m_DateTime_Start) {
       m_DateTime_End = m_DateTime_Start;
       m_pDatePickerCtrl_End->SetValue(m_DateTime_End);
-      m_pDatePickerCtrl_End->SetRange(m_DateTime_End, wxInvalidDateTime);
-      m_pDatePickerCtrl_End->Refresh();
       m_pTimeTextCtrl_End->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_End));
    }
 
@@ -220,6 +216,7 @@ void TimerRecordDialog::OnOK(wxCommandEvent& event)
    wxLongLong duration = m_TimeSpan_Duration.GetSeconds();
    // this will assert if the duration won't fit in a long
    gPrefs->Write(wxT("/TimerRecord/LastDuration"), duration.ToLong());
+   gPrefs->Flush();
 }
 
 ///Runs the wait for start dialog.  Returns false if the user clicks stop while we are recording
@@ -444,11 +441,9 @@ void TimerRecordDialog::UpdateEnd()
 {
    //v Use remaining disk -> record time calcs from AudacityProject::OnTimer to set range?
    m_DateTime_End = m_DateTime_Start + m_TimeSpan_Duration;
-   if (m_pDatePickerCtrl_End->GetValue().GetDateOnly() < m_DateTime_End.GetDateOnly()) {
    m_pDatePickerCtrl_End->SetValue(m_DateTime_End);
    m_pDatePickerCtrl_End->SetRange(m_DateTime_Start, wxInvalidDateTime); // No backdating.
    m_pDatePickerCtrl_End->Refresh();
-   }
    m_pTimeTextCtrl_End->SetTimeValue(wxDateTime_to_AudacityTime(m_DateTime_End));
 }
 

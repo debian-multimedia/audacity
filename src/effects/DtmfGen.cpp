@@ -380,6 +380,7 @@ void EffectDtmf::Success()
    gPrefs->Write(wxT("/Effects/DtmfGen/String"), dtmfString);
    gPrefs->Write(wxT("/Effects/DtmfGen/DutyCycle"), dtmfDutyCycle);
    gPrefs->Write(wxT("/Effects/DtmfGen/Amplitude"), dtmfAmplitude);
+   gPrefs->Flush();
 }
 
 //----------------------------------------------------------------------------
@@ -469,7 +470,7 @@ void DtmfDialog::PopulateOrExchange( ShuttleGui & S )
          * "seconds" this does not always work properly. For example, it rounds
          * down to zero... */
          mDtmfDurationT->SetName(_("Duration"));
-         mDtmfDurationT->SetFormatString(mDtmfDurationT->GetBuiltinFormat(dIsSelection==true?(_("hh:mm:ss + samples")):(_("seconds"))));
+         mDtmfDurationT->SetFormatString(mDtmfDurationT->GetBuiltinFormat(dIsSelection==true?(_("hh:mm:ss + samples")):(_("hh:mm:ss + milliseconds"))));
          mDtmfDurationT->EnableMenu();
       }
       S.AddWindow(mDtmfDurationT);

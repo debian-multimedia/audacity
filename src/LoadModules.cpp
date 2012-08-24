@@ -22,6 +22,7 @@ i.e. an alternative to the usual interface, for Audacity.
 #include <wx/list.h>
 #include <wx/log.h>
 #include <wx/string.h>
+#include <wx/filename.h>
 
 #include "Audacity.h"
 #include "AudacityApp.h"
@@ -30,6 +31,7 @@ i.e. an alternative to the usual interface, for Audacity.
 #include "commands/ScriptCommandRelay.h"
 #include <NonGuiThread.h>  // header from libwidgetextra
 
+#include "Prefs.h"
 #include "LoadModules.h"
 
 #define initFnName      "ExtensionModuleInit"
@@ -71,13 +73,34 @@ wxWindow * MakeHijackPanel()
 // starts a thread and reads script commands.
 tpRegScriptServerFunc scriptFn;
 
+bool IsAllowedModule( wxString fname )
+{
+   bool bLoad = false;
+   wxString ShortName = wxFileName( fname ).GetName();
+   if( (ShortName.CmpNoCase( wxT("mod-script-pipe")) == 0 ))
+   {
+      gPrefs->Read(wxT("/Module/mod-script-pipe"), &bLoad, false);
+   }
+   else if( (ShortName.CmpNoCase( wxT("mod-nyq-bench")) == 0 ))
+   {
+      gPrefs->Read(wxT("/Module/mod-nyq-bench"), &bLoad, false);
+   }
+   else if( (ShortName.CmpNoCase( wxT("mod-track-panel")) == 0 ))
+   {
+      gPrefs->Read(wxT("/Module/mod-track-panel"), &bLoad, false);
+   }
+   return bLoad;
+}
+
 void LoadModule(wxString fname)
 {
+   if( !IsAllowedModule( fname ) )
+      return;
+
    wxLogDebug(wxT("About to load module %s"), fname.c_str());
+   wxLogNull logNo; // Don't show wxWidgets Error if cannot load within this method. (Fix bug 544.)
+
    tModuleInit mainFn = NULL;
-#if defined(__WXMAC__)
-   wxLogNull logNo;
-#endif
 
    // As a courtesy to some modules that might be bridges to
    // open other modules, we set the current working
@@ -250,6 +273,7 @@ void ModuleManager::Initialize()
    wxString pathVar;
    size_t i;
 
+   // JKC: Is this code duplicating LoadModules() ????
    // Code from LoadLadspa that might be useful in load modules.
    pathVar = wxGetenv(wxT("AUDACITY_MODULES_PATH"));
    if (pathVar != wxT("")) {
@@ -271,13 +295,16 @@ void ModuleManager::Initialize()
    #endif
 
    for (i = 0; i < files.GetCount(); i++) {
-      Module *module = new Module(files[i]);
+      if( IsAllowedModule( files[i] ) )
+      {
+         Module *module = new Module(files[i]);
 
-      if (module->Load()) {
-         mInstance->mModules.Add(module);
-      }
-      else {
-         delete module;
+         if (module->Load()) {
+            mInstance->mModules.Add(module);
+         }
+         else {
+            delete module;
+         }
       }
    }
 }

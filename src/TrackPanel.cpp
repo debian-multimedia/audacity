@@ -2565,13 +2565,20 @@ void TrackPanel::HandleSlide(wxMouseEvent & event)
    if (event.LeftUp()) {
       if (mDidSlideVertically && mCapturedTrack) 
          // Now that user has dropped the clip into a different track, 
-         // make sure the sample rate matches the destination track.
+         // make sure the sample rate matches the destination track (mCapturedTrack).
          for (size_t i = 0; i < mCapturedClipArray.GetCount(); i++) 
             if (mCapturedTrack->GetKind() == Track::Wave) // Should always be true here, but make sure.
             {
-               WaveTrack* pWaveTrack = (WaveTrack*)mCapturedTrack;
-               mCapturedClipArray[i].clip->Resample(pWaveTrack->GetRate());
-               mCapturedClipArray[i].clip->MarkChanged();
+               WaveClip* pWaveClip = mCapturedClipArray[i].clip;
+               // Note that per TrackPanel::AddClipsToCaptured(Track *t, double t0, double t1), 
+               // in the non-WaveTrack case, the code adds a NULL clip to mCapturedClipArray, 
+               // so we have to check for that any time we're going to deref it. 
+               // Previous code did not check it here, and that caused bug 367 crash.
+               if (pWaveClip) 
+               {
+                  pWaveClip->Resample(((WaveTrack*)mCapturedTrack)->GetRate());
+                  pWaveClip->MarkChanged();
+               }
             }
 
       SetCapturedTrack( NULL );
@@ -2691,12 +2698,12 @@ void TrackPanel::StartSlide(wxMouseEvent & event)
          }
       }
 
-      // Now, if linking is enabled, capture any clip that's linked to a
-      // captured clip
+      // Now, if sync-lock is enabled, capture any clip that's linked to a
+      // captured clip.
       if (GetProject()->IsSyncLocked()) {
          // AWD: mCapturedClipArray expands as the loop runs, so newly-added
          // clips are considered (the effect is like recursion and terminates
-         // because AddClipsToCapture doesn't add duplicate clips); to remove
+         // because AddClipsToCaptured doesn't add duplicate clips); to remove
          // this behavior just store the array size beforehand.
          for (unsigned int i = 0; i < mCapturedClipArray.GetCount(); ++i) {
             // Capture based on tracks that have clips -- that means we
@@ -2943,6 +2950,9 @@ void TrackPanel::DoSlide(wxMouseEvent & event)
       desiredSlideAmount = 0.0;
    }
 
+   // Scroll during vertical drag.
+   // EnsureVisible(mouseTrack); //vvv Gale says this has problems on Linux, per bug 393 thread. Revert for 2.0.2.
+
    //If the mouse is over a track that isn't the captured track,
    //drag the clip to the mousetrack
    if (mCapturedClip && mouseTrack != mCapturedTrack /*&&
@@ -2950,7 +2960,11 @@ void TrackPanel::DoSlide(wxMouseEvent & event)
    {
       // Make sure we always have the first linked track of a stereo track
       if (!mouseTrack->GetLinked() && mTracks->GetLink(mouseTrack))
-         mouseTrack = mTracks->GetLink(mouseTrack);
+         mouseTrack = 
+#ifndef USE_MIDI
+                      (WaveTrack *)
+#endif
+                                    mTracks->GetLink(mouseTrack);
 
       // Temporary apply the offset because we want to see if the
       // track fits with the desired offset
@@ -3880,8 +3894,16 @@ void TrackPanel::HandleClosing(wxMouseEvent & event)
       }
       SetCapturedTrack( NULL );
    }
-   // BG: There are no more tracks on screen
-   if (mTracks->IsEmpty()) {
+
+   this->UpdateViewIfNoTracks();
+   this->Refresh(false);
+}
+
+void TrackPanel::UpdateViewIfNoTracks()
+{
+   if (mTracks->IsEmpty()) 
+   {
+      // BG: There are no more tracks on screen
       //BG: Set zoom to normal
       mViewInfo->zoom = 44100.0 / 512.0;
 
@@ -3891,8 +3913,6 @@ void TrackPanel::HandleClosing(wxMouseEvent & event)
 
       mListener->TP_RedrawScrollbars();
       mListener->TP_DisplayStatusMessage(wxT("")); //STM: Clear message if all tracks are removed
-      
-      Refresh(false);
    }
 }
 
@@ -7549,6 +7569,7 @@ void TrackPanel::OnSetFont(wxCommandEvent &event)
    
    gPrefs->Write(wxT("/GUI/LabelFontFacename"), lb->GetStringSelection());
    gPrefs->Write(wxT("/GUI/LabelFontSize"), sc->GetValue());
+   gPrefs->Flush();
 
    LabelTrack::ResetFont();
 
