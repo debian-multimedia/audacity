@@ -830,7 +830,7 @@ void EqualizationPanel::OnMouseEvent(wxMouseEvent & event)
    }
 
    if (mEnvelope->MouseEvent(event, mEnvRect, 0.0, mEnvRect.width, false,
-            dBMin, dBMax, dBMin, dBMax))
+            dBMin, dBMax))
    {
       mParent->EnvelopeUpdated();
       RecalcRequired = true;
@@ -918,10 +918,12 @@ EqualizationDialog::EqualizationDialog(EffectEqualization * effect,
    mLogEnvelope = new Envelope();
    mLogEnvelope->SetInterpolateDB(false);
    mLogEnvelope->Mirror(false);
+   mLogEnvelope->SetRange(-120.0, 60.0); // MB: this is the highest possible range
 
    mLinEnvelope = new Envelope();
    mLinEnvelope->SetInterpolateDB(false);
    mLinEnvelope->Mirror(false);
+   mLinEnvelope->SetRange(-120.0, 60.0); // MB: this is the highest possible range
 
    mLoFreq = loFreq;
    mHiFreq = hiFreq;
@@ -1023,12 +1025,16 @@ void EqualizationDialog::LoadCurves(wxString fileName, bool append)
    XMLFileReader reader;
    if( !reader.Parse( this, fn.GetFullPath() ) )
    {
-      // Inform user of load failure
-      wxMessageBox( reader.GetErrorStr(),
+      wxString msg;
       /* i18n-hint: EQ stands for 'Equalization'.*/
-                    _("Error Loading EQ Curve"),
+      msg.Printf(_("Error Loading EQ Curves from file:\n%s\nError message says:\n%s"), fn.GetFullPath().c_str(), reader.GetErrorStr().c_str());
+      // Inform user of load failure
+      wxMessageBox( msg,
+                    _("Error Loading EQ Curves"),
                     wxOK | wxCENTRE,
                     this );
+      mCurves.Add( _("unnamed") );  // we always need a default curve to use
+      return;
    }
    if( mCurves.Last().Name != _("unnamed") )
       mCurves.Add( _("unnamed") );   // we always need a default curve to use
@@ -1276,6 +1282,7 @@ void EqualizationDialog::MakeEqualizationDialog()
    wxString label;
    label.Printf( wxT("%d"), M );
    mMText = new wxStaticText(this, wxID_ANY, label);
+   mMText->SetName(label); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    szrH->Add( mMText, 0 );
 
    // Add the length / graphic / draw grouping
@@ -1487,6 +1494,7 @@ bool EqualizationDialog::TransferDataFromWindow()
       M = m;
       mPanel->M = M;
       mMText->SetLabel(wxString::Format(wxT("%d"), M));
+      mMText->SetName(mMText->GetLabel()); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 #if wxUSE_TOOLTIPS
       tip.Printf(wxT("%d"), M);
       MSlider->SetToolTip(tip);
@@ -3216,7 +3224,7 @@ void EditCurvesDialog::OnExport( wxCommandEvent &event )
          i++;
       }
       else
-         wxMessageBox(_("You cannot export 'unnamed' curve"), _("'unnamed' is special"));
+         wxMessageBox(_("You cannot export 'unnamed' curve, it is special."), _("Cannot Export 'unnamed'"));
       // get next selected item
       item = mList->GetNextItem(item, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
    }

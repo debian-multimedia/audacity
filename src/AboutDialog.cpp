@@ -111,12 +111,20 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("iAVC"), roleLibrary);
    AddCredit(wxT("LAME"), roleLibrary);
    AddCredit(wxT("libmad"), roleLibrary);
+   #if USE_LIBRESAMPLE
+      AddCredit(wxT("libresample"), roleLibrary);
+   #endif
+   #if USE_LIBSAMPLERATE
+      AddCredit(wxT("libsamplerate"), roleLibrary);
+   #endif
+   #if USE_LIBSOXR
+      AddCredit(wxT("libsoxr"), roleLibrary);
+   #endif
    AddCredit(wxT("libsndfile"), roleLibrary);
    AddCredit(wxT("Nyquist"), roleLibrary);
    AddCredit(wxT("Ogg Vorbis"), roleLibrary);
    AddCredit(wxT("PortAudio"), roleLibrary);
    AddCredit(wxT("portsmf"), roleLibrary);
-   AddCredit(wxT("Resample"), roleLibrary);
    AddCredit(wxT("sbsms"), roleLibrary);
    AddCredit(wxT("SoundTouch"), roleLibrary);
    AddCredit(wxT("TwoLAME"), roleLibrary);
@@ -267,7 +275,7 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
       wxT("<p><br></center>") +
 	  
       _("<b>Audacity&reg;</b> software is copyright")+
-      wxT("&copy; 1999-2012 Audacity Team.<br>") +
+      wxT("&copy; 1999-2013 Audacity Team.<br>") +
      
       _("The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
       wxT("</font></body></html>");
@@ -414,10 +422,18 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
          _("Sample rate conversion"), enabled);
    #else
-   AddBuildinfoRow(&informationStr, wxT("libresample"),
-         _("Sample rate conversion"), disabled);
-   AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
-         _("Sample rate conversion"), disabled);
+      AddBuildinfoRow(&informationStr, wxT("libresample"),
+            _("Sample rate conversion"), disabled);
+      AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
+            _("Sample rate conversion"), disabled);
+   #endif
+
+   #if USE_LIBSOXR
+      AddBuildinfoRow(&informationStr, wxT("libsoxr"),
+            _("Sample rate conversion"), enabled);
+   #else
+      AddBuildinfoRow(&informationStr, wxT("libsoxr"),
+            _("Sample rate conversion"), disabled);
    #endif
 
    AddBuildinfoRow(&informationStr, wxT("PortAudio"),

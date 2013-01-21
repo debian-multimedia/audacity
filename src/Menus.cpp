@@ -69,7 +69,7 @@ simplifies construction of menu items.
 #include "MixerBoard.h"
 #include "Internat.h"
 #include "FileFormats.h"
-#include "LoadModules.h"	
+#include "LoadModules.h"
 #include "Prefs.h"
 #include "Printing.h"
 #include "UploadDialog.h"
@@ -279,12 +279,12 @@ void AudacityProject::CreateMenusAndCommands()
 
    /////////////////////////////////////////////////////////////////////////////
 
-   // Enable Export commands only when there are tracks
-   c->AddItem(wxT("Export"), _("&Export..."), FN(OnExport),
+   // Enable Export audio commands only when there are audio tracks.
+   c->AddItem(wxT("Export"), _("&Export..."), FN(OnExport), wxT("Ctrl+Shift+E"),
               AudioIONotBusyFlag | WaveTracksExistFlag,
               AudioIONotBusyFlag | WaveTracksExistFlag);
 
-   // Enable Export Selection commands only when there's a selection
+   // Enable Export Selection commands only when there's a selection.
    c->AddItem(wxT("ExportSel"), _("Expo&rt Selection..."), FN(OnExportSelection),
               AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
               AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
@@ -296,9 +296,10 @@ void AudacityProject::CreateMenusAndCommands()
       c->AddItem(wxT("ExportLabels"), _("Export &Labels..."), FN(OnExportLabels),
                  AudioIONotBusyFlag | LabelTracksExistFlag,
                  AudioIONotBusyFlag | LabelTracksExistFlag);
-      c->AddItem(wxT("ExportMultiple"), _("Export &Multiple..."), FN(OnExportMultiple),
-                 AudioIONotBusyFlag | TracksExistFlag,
-                 AudioIONotBusyFlag | TracksExistFlag);
+      // Enable Export audio commands only when there are audio tracks.
+      c->AddItem(wxT("ExportMultiple"), _("Export &Multiple..."), FN(OnExportMultiple), wxT("Ctrl+Shift+L"),
+                 AudioIONotBusyFlag | WaveTracksExistFlag,
+                 AudioIONotBusyFlag | WaveTracksExistFlag);
 #if defined(USE_MIDI)
       c->AddItem(wxT("ExportMIDI"),   _("Export MIDI..."), FN(OnExportMIDI),
                  AudioIONotBusyFlag | NoteTracksSelectedFlag,
@@ -311,9 +312,10 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddItem(wxT("ExportLabels"), _("Export &Labels..."), FN(OnExportLabels),
               AudioIONotBusyFlag | LabelTracksExistFlag,
               AudioIONotBusyFlag | LabelTracksExistFlag);
-   c->AddItem(wxT("ExportMultiple"), _("Export &Multiple..."), FN(OnExportMultiple),
-              AudioIONotBusyFlag | TracksExistFlag,
-              AudioIONotBusyFlag | TracksExistFlag);
+   // Enable Export audio commands only when there are audio tracks.
+   c->AddItem(wxT("ExportMultiple"), _("Export &Multiple..."), FN(OnExportMultiple), wxT("Ctrl+Shift+L"),
+              AudioIONotBusyFlag | WaveTracksExistFlag,
+              AudioIONotBusyFlag | WaveTracksExistFlag);
 #if defined(USE_MIDI)
    c->AddItem(wxT("ExportMIDI"),   _("Export MIDI..."), FN(OnExportMIDI),
               AudioIONotBusyFlag | NoteTracksSelectedFlag,
@@ -405,7 +407,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->AddSeparator();
    
-   c->BeginSubMenu(_("R&emove Audio"));
+   c->BeginSubMenu(_("R&emove Audio or Labels"));
    /* i18n-hint: (verb)*/
    c->AddItem(wxT("Cut"), _("Cu&t"), FN(OnCut), wxT("Ctrl+X"),
               AudioIONotBusyFlag | CutCopyAvailableFlag,
@@ -418,10 +420,14 @@ void AudacityProject::CreateMenusAndCommands()
    c->AddItem(wxT("SplitDelete"), _("Split D&elete"), FN(OnSplitDelete), wxT("Ctrl+Alt+K"));
    c->AddSeparator();
    /* i18n-hint: (verb)*/
-   c->AddItem(wxT("Silence"), _("Silence Audi&o"), FN(OnSilence), wxT("Ctrl+L"));
-   /* i18n-hint: (verb)*/
-   c->AddItem(wxT("Trim"), _("Tri&m"), FN(OnTrim), wxT("Ctrl+T"));
-   c->EndSubMenu();
+   c->AddItem(wxT("Silence"), _("Silence Audi&o"), FN(OnSilence), wxT("Ctrl+L"),
+      AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
+      AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
+    /* i18n-hint: (verb)*/
+   c->AddItem(wxT("Trim"), _("Tri&m Audio"), FN(OnTrim), wxT("Ctrl+T"),
+      AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag,
+      AudioIONotBusyFlag | TimeSelectedFlag | WaveTracksSelectedFlag);
+    c->EndSubMenu();
    
    c->BeginSubMenu(_("Clip Boun&daries"));
    /* i18n-hint: (verb) It's an item on a menu. */
@@ -469,7 +475,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    /////////////////////////////////////////////////////////////////////////////
 
-   c->BeginSubMenu(_("La&beled Regions"));
+   c->BeginSubMenu(_("La&beled Audio"));
    c->SetDefaultFlags(AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag,
                       AudioIONotBusyFlag | LabelsSelectedFlag | TimeSelectedFlag);
 
@@ -755,17 +761,17 @@ void AudacityProject::CreateMenusAndCommands()
 
       c->BeginMenu(_("&Tracks"));
       c->SetDefaultFlags(AudioIONotBusyFlag, AudioIONotBusyFlag);
-		
+
       //////////////////////////////////////////////////////////////////////////
 
-		c->BeginSubMenu(_("Add &New"));
+      c->BeginSubMenu(_("Add &New"));
 
       c->AddItem(wxT("NewAudioTrack"),  _("&Audio Track"), FN(OnNewWaveTrack), wxT("Ctrl+Shift+N"));
       c->AddItem(wxT("NewStereoTrack"), _("&Stereo Track"), FN(OnNewStereoTrack));
       c->AddItem(wxT("NewLabelTrack"),  _("&Label Track"), FN(OnNewLabelTrack));
       c->AddItem(wxT("NewTimeTrack"),   _("&Time Track"), FN(OnNewTimeTrack));
 
-		c->EndSubMenu();
+      c->EndSubMenu();
 
       //////////////////////////////////////////////////////////////////////////
 
@@ -865,7 +871,7 @@ void AudacityProject::CreateMenusAndCommands()
 
       //////////////////////////////////////////////////////////////////////////
 
-      c->BeginSubMenu(_("S&ort tracks"));
+      c->BeginSubMenu(_("S&ort Tracks"));
 
       c->AddItem(wxT("SortByTime"), _("by &Start time"), FN(OnSortTime),
                  TracksExistFlag,
@@ -953,17 +959,17 @@ void AudacityProject::CreateMenusAndCommands()
 
    c->BeginMenu(_("&Tracks"));
    c->SetDefaultFlags(AudioIONotBusyFlag, AudioIONotBusyFlag);
-	
+   
    //////////////////////////////////////////////////////////////////////////
 
-	c->BeginSubMenu(_("Add &New"));
+   c->BeginSubMenu(_("Add &New"));
 
    c->AddItem(wxT("NewAudioTrack"),  _("&Audio Track"), FN(OnNewWaveTrack), wxT("Ctrl+Shift+N"));
    c->AddItem(wxT("NewStereoTrack"), _("&Stereo Track"), FN(OnNewStereoTrack));
    c->AddItem(wxT("NewLabelTrack"),  _("&Label Track"), FN(OnNewLabelTrack));
    c->AddItem(wxT("NewTimeTrack"),   _("&Time Track"), FN(OnNewTimeTrack));
 
-	c->EndSubMenu();
+   c->EndSubMenu();
 
    //////////////////////////////////////////////////////////////////////////
 
@@ -1065,7 +1071,7 @@ void AudacityProject::CreateMenusAndCommands()
 
    //////////////////////////////////////////////////////////////////////////
 
-   c->BeginSubMenu(_("S&ort tracks"));
+   c->BeginSubMenu(_("S&ort Tracks"));
 
    c->AddItem(wxT("SortByTime"), _("by &Start time"), FN(OnSortTime),
               TracksExistFlag,
@@ -1413,7 +1419,7 @@ void AudacityProject::CreateMenusAndCommands()
 
 #ifdef CLEANSPEECH
    if (mCleanSpeechMode) {
-   	c->AddItem(wxT("About"), _("&About Audacity CleanSpeech..."), FN(OnAbout));
+      c->AddItem(wxT("About"), _("&About Audacity CleanSpeech..."), FN(OnAbout));
    }
    else {
       c->AddItem(wxT("About"), _("&About Audacity..."), FN(OnAbout));
@@ -1988,9 +1994,9 @@ void AudacityProject::ModifyToolbarMenus()
 
 void AudacityProject::UpdateMenus()
 {
-	//ANSWER-ME: Why UpdateMenus only does active project?
-	//JKC: Is this test fixing a bug when multiple projects are open?
-	//so that menu states work even when different in different projects?
+   //ANSWER-ME: Why UpdateMenus only does active project?
+   //JKC: Is this test fixing a bug when multiple projects are open?
+   //so that menu states work even when different in different projects?
    if (this != GetActiveProject())
       return;
 
@@ -2659,11 +2665,10 @@ void AudacityProject::OnSetLeftSelection()
    }
    else
    {
-      TimeDialog dlg(this, _("Set Left Selection Boundary"), _("Position"));
       wxString fmt = gPrefs->Read(wxT("/SelectionFormat"), wxT(""));
-      dlg.SetFormatString(fmt);
-      dlg.SetSampleRate(mRate);
-      dlg.SetTimeValue(mViewInfo.sel0);
+      TimeDialog dlg(this, _("Set Left Selection Boundary"),
+         fmt, mRate, mViewInfo.sel0, _("Position"));
+
       if (wxID_OK == dlg.ShowModal())
       {
          //Get the value from the dialog
@@ -2702,11 +2707,10 @@ void AudacityProject::OnSetRightSelection()
    }
    else
    {
-      TimeDialog dlg(this, _("Set Right Selection Boundary"), _("Position"));
       wxString fmt = gPrefs->Read(wxT("/SelectionFormat"), wxT(""));
-      dlg.SetFormatString(fmt);
-      dlg.SetSampleRate(mRate);
-      dlg.SetTimeValue(mViewInfo.sel1);
+      TimeDialog dlg(this, _("Set Right Selection Boundary"),
+         fmt, mRate, mViewInfo.sel1, _("Position"));
+
       if (wxID_OK == dlg.ShowModal())
       {
          //Get the value from the dialog
@@ -3523,6 +3527,11 @@ void AudacityProject::OnUndo()
       return;
    }
 
+   // can't undo while dragging
+   if (mTrackPanel->IsMouseCaptured()) {
+      return;
+   }
+
    TrackList *l = mUndoManager.Undo(&mViewInfo.sel0, &mViewInfo.sel1);
    PopState(l);
 
@@ -4176,7 +4185,9 @@ void AudacityProject::OnTrim()
       n = iter.Next();
    }
 
-   PushState(_("Trim file to selection"), _("Trim"));
+   PushState(wxString::Format(_("Trim selected audio tracks from %.2f seconds to %.2f seconds"),
+       mViewInfo.sel0, mViewInfo.sel1),
+       _("Trim Audio"));
 
    RedrawProject();
 }
@@ -4325,10 +4336,10 @@ void AudacityProject::OnCutLabels()
   mViewInfo.sel1 = mViewInfo.sel0;
   
   PushState( 
-   /* i18n-hint: (verb) past tense.  Audacity has just cut the labeled regions.*/     
-     _( "Cut labeled regions to the clipboard" ), 
+   /* i18n-hint: (verb) past tense.  Audacity has just cut the labeled audio regions.*/     
+     _( "Cut labeled audio regions to clipboard" ), 
   /* i18n-hint: (verb)*/     
-     _( "Cut Labels" ) );
+     _( "Cut Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4343,10 +4354,10 @@ void AudacityProject::OnSplitCutLabels()
   msClipProject = this;
 
   PushState( 
-   /* i18n-hint: (verb) Audacity has just splitcut the labeled regions*/     
-     _( "SplitCut labeled regions to the clipboard" ), 
+   /* i18n-hint: (verb) Audacity has just split cut the labeled audio regions*/     
+     _( "Split Cut labeled audio regions to clipboard" ), 
   /* i18n-hint: (verb) Do a special kind of cut on the labels*/
-        _( "Split Cut Labels" ) );
+        _( "Split Cut Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4360,9 +4371,9 @@ void AudacityProject::OnCopyLabels()
   
   msClipProject = this;
   
-  PushState( _( "Copied labeled regions to the clipboard" ),
+  PushState( _( "Copied labeled audio regions to clipboard" ),
   /* i18n-hint: (verb)*/     
-     _( "Copy Labels" ) );
+     _( "Copy Labeled Audio" ) );
 
   mTrackPanel->Refresh( false );
 }
@@ -4377,10 +4388,10 @@ void AudacityProject::OnDeleteLabels()
   mViewInfo.sel1 = mViewInfo.sel0;
   
   PushState( 
-   /* i18n-hint: (verb) Audacity has just deleted the labeled regions*/     
-     _( "Deleted labeled regions" ), 
+   /* i18n-hint: (verb) Audacity has just deleted the labeled audio regions*/     
+     _( "Deleted labeled audio regions" ), 
   /* i18n-hint: (verb)*/     
-     _( "Delete Labels" ) );
+     _( "Delete Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4393,10 +4404,10 @@ void AudacityProject::OnSplitDeleteLabels()
   EditByLabel( &WaveTrack::SplitDelete, false );
   
   PushState( 
-  /* i18n-hint: (verb) Audacity has just done a special kind of delete on the labeled regions */
-     _( "Split Deleted labeled regions" ), 
-  /* i18n-hint: (verb) Do a special kind of delete on labels*/
-     _( "Split Delete Labels" ) );
+  /* i18n-hint: (verb) Audacity has just done a special kind of delete on the labeled audio regions */
+     _( "Split Deleted labeled audio regions" ), 
+  /* i18n-hint: (verb) Do a special kind of delete on labeled audio regions*/
+     _( "Split Delete Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4410,9 +4421,9 @@ void AudacityProject::OnSilenceLabels()
   
   PushState(
    /* i18n-hint: (verb)*/     
-     _( "Silenced labeled regions" ),
+     _( "Silenced labeled audio regions" ),
   /* i18n-hint: (verb)*/     
-     _( "Silence Labels" ) );
+     _( "Silence Labeled Audio" ) );
 
   mTrackPanel->Refresh( false );
 }
@@ -4422,10 +4433,10 @@ void AudacityProject::OnSplitLabels()
   EditByLabel( &WaveTrack::Split, false );
   
   PushState( 
-   /* i18n-hint: (verb) past tense.  Audacity has just split the labeled regions*/     
-     _( "Split labeled regions" ), 
+   /* i18n-hint: (verb) past tense.  Audacity has just split the labeled audio (a point or a region)*/     
+     _( "Split labeled audio (points or regions)" ), 
   /* i18n-hint: (verb)*/
-     _( "Split Labels" ) );
+     _( "Split Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4438,10 +4449,10 @@ void AudacityProject::OnJoinLabels()
   EditByLabel( &WaveTrack::Join, false );
   
   PushState( 
-   /* i18n-hint: (verb) Audacity has just joined the labeled regions*/     
-     _( "Joined labeled regions" ), 
+   /* i18n-hint: (verb) Audacity has just joined the labeled audio (points or regions)*/     
+     _( "Joined labeled audio (points or regions)" ), 
   /* i18n-hint: (verb)*/     
-     _( "Join Labels" ) );
+     _( "Join Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -4454,12 +4465,12 @@ void AudacityProject::OnDisjoinLabels()
   EditByLabel( &WaveTrack::Disjoin, false );
   
   PushState( 
-   /* i18n-hint: (verb) Audacity has just detached the labeled regions.
+   /* i18n-hint: (verb) Audacity has just detached the labeled audio regions.
       This message appears in history and tells you about something 
       Audacity has done.*/
-   _( "Detached labeled regions" ),
+   _( "Detached labeled audio regions" ),
    /* i18n-hint: (verb)*/     
-     _( "Detach Labels" ) );
+     _( "Detach Labeled Audio" ) );
 
   RedrawProject();
 }
@@ -6075,7 +6086,7 @@ void AudacityProject::OnExportCleanSpeechPresets()
       }
       else {
          wxMessageBox(_("Problem encountered exporting presets."),
-                     _("Unable to export"),
+                     _("Unable to Export"),
                      wxOK | wxICON_WARNING);
          fileOkay = false;
          continue;
@@ -6453,7 +6464,12 @@ void AudacityProject::OnResample()
       rates.Add(wxT("32000"));
       rates.Add(wxT("44100"));
       rates.Add(wxT("48000"));
+      rates.Add(wxT("88200"));
       rates.Add(wxT("96000"));
+      rates.Add(wxT("176400"));
+      rates.Add(wxT("192000"));
+      rates.Add(wxT("352800"));
+      rates.Add(wxT("384000"));
 
       S.StartVerticalLay(true);
       {

@@ -483,7 +483,7 @@ int import_ffmpeg_decode_frame(streamContext *sc, bool flushing)
    }
 
    sc->m_samplefmt = sc->m_codecCtx->sample_fmt;
-   sc->m_samplesize = av_get_bits_per_sample_fmt(sc->m_samplefmt) / 8;
+   sc->m_samplesize = av_get_bits_per_sample_format(sc->m_samplefmt) / 8;
 
    unsigned int newsize = FFMAX(sc->m_pkt.size * sc->m_samplesize, AVCODEC_MAX_AUDIO_FRAME_SIZE);
    // Reallocate the audio sample buffer if it's smaller than the frame size.
@@ -754,6 +754,10 @@ bool FFmpegLibs::FindLibs(wxWindow *parent)
 
 bool FFmpegLibs::LoadLibs(wxWindow *parent, bool showerr)
 {
+#if defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
+   mLibsLoaded = InitLibs(wxEmptyString, showerr);
+   return mLibsLoaded;
+#endif
 
    wxLogMessage(wxT("Trying to load FFmpeg libraries..."));
    if (ValidLibsLoaded()) {
@@ -837,6 +841,7 @@ bool FFmpegLibs::ValidLibsLoaded()
 
 bool FFmpegLibs::InitLibs(wxString libpath_format, bool showerr)
 {
+#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
    FreeLibs();
 
 #if defined(__WXMSW__)
@@ -1029,9 +1034,8 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool showerr)
    FFMPEG_INITDYN(avcodec, avcodec_version);
    FFMPEG_INITDYN(avcodec, av_fast_realloc);
    FFMPEG_INITDYN(avcodec, av_codec_next);
-   FFMPEG_INITDYN(avcodec, av_get_bits_per_sample_format);
 
-   FFMPEG_INITALT(avcodec, av_get_bits_per_sample_fmt, av_get_bits_per_sample_format);
+   FFMPEG_INITALT(avcodec, av_get_bits_per_sample_format, av_get_bits_per_sample_fmt);
 
    FFMPEG_INITDYN(avutil, av_free);
    FFMPEG_INITDYN(avutil, av_log_set_callback);
@@ -1051,8 +1055,10 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool showerr)
    FFMPEG_INITDYN(avutil, av_rescale_q);
    FFMPEG_INITDYN(avutil, avutil_version);
 
-   //FFmpeg initialization
    wxLogMessage(wxT("All symbols loaded successfully. Initializing the library."));
+#endif
+
+   //FFmpeg initialization
    avcodec_init();
    avcodec_register_all();
    av_register_all();
@@ -1091,7 +1097,11 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool showerr)
       return false;
    }
 
+#if defined(DISABLE_DYNAMIC_LOADING_FFMPEG) && (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 69, 0))
+   av_register_protocol(&ufile_protocol);
+#else
    av_register_protocol2(&ufile_protocol, sizeof(ufile_protocol));
+#endif
 
    return true;
 }

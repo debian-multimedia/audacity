@@ -292,7 +292,12 @@ enum {
    OnRate22ID,             //    |
    OnRate44ID,             //    |
    OnRate48ID,             //    | Leave these in order
-   OnRate96ID,             //    | see OnTrackMenu()
+   OnRate88ID,             //    |
+   OnRate96ID,             //    |
+   OnRate176ID,            //    | see OnTrackMenu()
+   OnRate192ID,            //    |
+   OnRate352ID,            //    |
+   OnRate384ID,            //    |
    OnRateOtherID,          //    |
                            //    |
    On16BitID,              //    |
@@ -313,6 +318,10 @@ enum {
    OnCutSelectedTextID,
    OnCopySelectedTextID,
    OnPasteSelectedTextID,
+   
+   OnTimeTrackLinID,
+   OnTimeTrackLogID,
+   OnTimeTrackLogIntID,
 };
 
 BEGIN_EVENT_TABLE(TrackPanel, wxWindow)
@@ -336,7 +345,7 @@ BEGIN_EVENT_TABLE(TrackPanel, wxWindow)
     EVT_MENU_RANGE(OnChannelLeftID, OnChannelMonoID,
                TrackPanel::OnChannelChange)
     EVT_MENU_RANGE(OnWaveformID, OnPitchID, TrackPanel::OnSetDisplay)
-    EVT_MENU_RANGE(OnRate8ID, OnRate96ID, TrackPanel::OnRateChange)
+    EVT_MENU_RANGE(OnRate8ID, OnRate384ID, TrackPanel::OnRateChange)
     EVT_MENU_RANGE(On16BitID, OnFloatID, TrackPanel::OnFormatChange)
     EVT_MENU(OnRateOtherID, TrackPanel::OnRateOther)
     EVT_MENU(OnSplitStereoID, TrackPanel::OnSplitStereo)
@@ -346,6 +355,10 @@ BEGIN_EVENT_TABLE(TrackPanel, wxWindow)
     EVT_MENU(OnCutSelectedTextID, TrackPanel::OnCutSelectedText)
     EVT_MENU(OnCopySelectedTextID, TrackPanel::OnCopySelectedText)
     EVT_MENU(OnPasteSelectedTextID, TrackPanel::OnPasteSelectedText)
+    
+    EVT_MENU(OnTimeTrackLinID, TrackPanel::OnTimeTrackLin)
+    EVT_MENU(OnTimeTrackLogID, TrackPanel::OnTimeTrackLog)
+    EVT_MENU(OnTimeTrackLogIntID, TrackPanel::OnTimeTrackLogInt)
 END_EVENT_TABLE()
 
 /// Makes a cursor from an XPM, uses CursorId as a fallback.
@@ -619,7 +632,12 @@ void TrackPanel::BuildMenus(void)
    mRateMenu->AppendCheckItem(OnRate22ID, wxT("22050 Hz"));
    mRateMenu->AppendCheckItem(OnRate44ID, wxT("44100 Hz"));
    mRateMenu->AppendCheckItem(OnRate48ID, wxT("48000 Hz"));
+   mRateMenu->AppendCheckItem(OnRate88ID, wxT("88200 Hz"));
    mRateMenu->AppendCheckItem(OnRate96ID, wxT("96000 Hz"));
+   mRateMenu->AppendCheckItem(OnRate176ID, wxT("176400 Hz"));
+   mRateMenu->AppendCheckItem(OnRate192ID, wxT("192000 Hz"));
+   mRateMenu->AppendCheckItem(OnRate352ID, wxT("352800 Hz"));
+   mRateMenu->AppendCheckItem(OnRate384ID, wxT("384000 Hz"));
    mRateMenu->AppendCheckItem(OnRateOtherID, _("&Other..."));
 
    mFormatMenu = new wxMenu();
@@ -674,7 +692,11 @@ void TrackPanel::BuildMenus(void)
    mTimeTrackMenu->Append(OnMoveUpID, _("Move Track U&p"));
    mTimeTrackMenu->Append(OnMoveDownID, _("Move Track &Down"));
    mTimeTrackMenu->AppendSeparator();
+   mTimeTrackMenu->Append(OnTimeTrackLinID, _("&Linear"));
+   mTimeTrackMenu->Append(OnTimeTrackLogID, _("L&ogarithmic"));
+   mTimeTrackMenu->AppendSeparator();
    mTimeTrackMenu->Append(OnSetTimeTrackRangeID, _("Set Ra&nge..."));
+   mTimeTrackMenu->AppendCheckItem(OnTimeTrackLogIntID, _("Logarithmic &Interpolation"));
 
    mLabelTrackInfoMenu = new wxMenu();
    mLabelTrackInfoMenu->Append(OnCutSelectedTextID, _("Cut"));
@@ -1221,17 +1243,8 @@ void TrackPanel::DoDrawCursor(wxDC & dc)
          wxCoord top = y + kTopInset;
          wxCoord bottom = y + t->GetHeight() - kTopInset;
 
-         if( t->GetKind() == Track::Time )
-         {
-            TimeTrack *tt = (TimeTrack *) t;
-            double t0 = tt->warp( mLastCursor - mViewInfo->h );
-            int warpedX = GetLeftOffset() + int ( t0 * mViewInfo->zoom );
-            AColor::Line( dc, warpedX, top, warpedX, bottom );
-         }
-         else
-         {
-            AColor::Line( dc, x, top, x, bottom ); // <-- The whole point of this routine.
-         }
+         // MB: warp() is not needed here as far as I know, in fact it creates a bug. Removing it fixes that.
+         AColor::Line( dc, x, top, x, bottom ); // <-- The whole point of this routine.
       }
    }
 
@@ -2446,11 +2459,18 @@ void TrackPanel::ForwardEventToTimeTrackEnvelope(wxMouseEvent & event)
    wxRect envRect = mCapturedRect;
    envRect.y++;
    envRect.height -= 2;
+   double lower = ptimetrack->GetRangeLower(), upper = ptimetrack->GetRangeUpper();
+   if(ptimetrack->GetDisplayLog()) {
+      // MB: silly way to undo the work of GetWaveYPos while still getting a logarithmic scale
+      double dBRange = gPrefs->Read(wxT("/GUI/EnvdBRange"), ENV_DB_RANGE);
+      lower = 20.0 * log10(std::max(1.0e-7, lower)) / dBRange + 1.0;
+      upper = 20.0 * log10(std::max(1.0e-7, upper)) / dBRange + 1.0;
+   }
    bool needUpdate =
       pspeedenvelope->MouseEvent(
          event, envRect,
          mViewInfo->h, mViewInfo->zoom,
-         false,0.,1.);
+         ptimetrack->GetDisplayLog(), lower, upper);
    if (needUpdate) {
       RefreshTrack(mCapturedTrack);
    }
@@ -3175,6 +3195,13 @@ bool TrackPanel::IsDragZooming()
    return (abs(mZoomEnd - mZoomStart) > DragThreshold);
 }
 
+/// Determines if drag zooming is active
+bool TrackPanel::IsMouseCaptured()
+{
+   return (mMouseCapture != IsUncaptured);
+}
+
+
 ///  This actually sets the Zoom value when you're done doing
 ///  a drag zoom.
 void TrackPanel::DragZoom(wxMouseEvent & event, int trackLeftEdge)
@@ -3228,6 +3255,7 @@ void TrackPanel::HandleVZoom(wxMouseEvent & event)
    else if (event.ButtonUp()) {
       HandleVZoomButtonUp( event );
    }
+   //TODO-MB: add timetrack zooming here!
 }
 
 /// VZoom click
@@ -6734,8 +6762,15 @@ void TrackPanel::OnTrackMenu(Track *t)
    Track *next = mTracks->GetNext(t);
    
    wxMenu *theMenu = NULL;
-   if (t->GetKind() == Track::Time)
+   if (t->GetKind() == Track::Time) {
       theMenu = mTimeTrackMenu;
+      
+      TimeTrack *tt = (TimeTrack*) t;
+      
+      theMenu->Enable(OnTimeTrackLinID, tt->GetDisplayLog());
+      theMenu->Enable(OnTimeTrackLogID, !tt->GetDisplayLog());
+      theMenu->Check(OnTimeTrackLogIntID, tt->GetInterpolateLog());
+   }
    
    if (t->GetKind() == Track::Wave) {
       theMenu = mWaveTrackMenu;
@@ -7244,18 +7279,19 @@ void TrackPanel::SetMenuCheck( wxMenu & menu, int newId )
    }
 }
 
-const int nRates=7;
+const int nRates=12;
 
 ///  gRates MUST CORRESPOND DIRECTLY TO THE RATES AS LISTED IN THE MENU!!
 ///  IN THE SAME ORDER!!
-int gRates[nRates] = { 8000, 11025, 16000, 22050, 44100, 48000, 96000 };
+int gRates[nRates] = { 8000, 11025, 16000, 22050, 44100, 48000, 88200, 96000,
+			 176400, 192000, 352800, 384000 };
 
 /// This method handles the selection from the Rate
 /// submenu of the track menu, except for "Other" (/see OnRateOther).
 void TrackPanel::OnRateChange(wxCommandEvent & event)
 {
    int id = event.GetId();
-   wxASSERT(id >= OnRate8ID && id <= OnRate96ID);
+   wxASSERT(id >= OnRate8ID && id <= OnRate384ID);
    wxASSERT(mPopupMenuTarget
             && mPopupMenuTarget->GetKind() == Track::Wave);
 
@@ -7303,7 +7339,12 @@ void TrackPanel::OnRateOther(wxCommandEvent &event)
       rates.Add(wxT("22050"));
       rates.Add(wxT("44100"));
       rates.Add(wxT("48000"));
+      rates.Add(wxT("88200"));
       rates.Add(wxT("96000"));
+      rates.Add(wxT("176400"));
+      rates.Add(wxT("192000"));
+      rates.Add(wxT("352800"));
+      rates.Add(wxT("384000"));
 
       S.StartVerticalLay(true);
       {
@@ -7350,26 +7391,28 @@ void TrackPanel::OnSetTimeTrackRange(wxCommandEvent & /*event*/)
    TimeTrack *t = (TimeTrack*)mPopupMenuTarget;
 
    if (t) {
-      long lower = t->GetRangeLower();
-      long upper = t->GetRangeUpper();
+      long lower = (long) (t->GetRangeLower() * 100.0 + 0.5);
+      long upper = (long) (t->GetRangeUpper() * 100.0 + 0.5);
       
+      // MB: these lower/upper limits match the maximum allowed range of the time track
+      // envelope, but this is not strictly required
       lower = wxGetNumberFromUser(_("Change lower speed limit (%) to:"),
                                   _("Lower speed limit"),
                                   _("Lower speed limit"),
                                   lower,
-                                  13,
-                                  1200);
+                                  10,
+                                  1000);
 
       upper = wxGetNumberFromUser(_("Change upper speed limit (%) to:"),
                                   _("Upper speed limit"),
                                   _("Upper speed limit"),
                                   upper,
                                   lower+1,
-                                  1200);
+                                  1000);
 
-      if( lower >= 13 && upper <= 1200 && lower < upper ) {
-         t->SetRangeLower(lower);
-         t->SetRangeUpper(upper);
+      if( lower >= 10 && upper <= 1000 && lower < upper ) {
+         t->SetRangeLower((double)lower / 100.0);
+         t->SetRangeUpper((double)upper / 100.0);
          MakeParentPushState(wxString::Format(_("Set range to '%d' - '%d'"),
                                               lower,
                                               upper),
@@ -7380,6 +7423,37 @@ void TrackPanel::OnSetTimeTrackRange(wxCommandEvent & /*event*/)
       }
    }
    mPopupMenuTarget = NULL;
+}
+
+void TrackPanel::OnTimeTrackLin(wxCommandEvent & /*event*/)
+{
+   TimeTrack *t = (TimeTrack*)mPopupMenuTarget;
+   t->SetDisplayLog(false);
+   UpdateVRuler(t);
+   MakeParentPushState(_("Set time track display to linear"), _("Set Display"));
+   Refresh(false);
+}
+
+void TrackPanel::OnTimeTrackLog(wxCommandEvent & /*event*/)
+{
+   TimeTrack *t = (TimeTrack*)mPopupMenuTarget;
+   t->SetDisplayLog(true);
+   UpdateVRuler(t);
+   MakeParentPushState(_("Set time track display to logarithmic"), _("Set Display"));
+   Refresh(false);
+}
+
+void TrackPanel::OnTimeTrackLogInt(wxCommandEvent & /*event*/)
+{
+   TimeTrack *t = (TimeTrack*)mPopupMenuTarget;
+   if(t->GetInterpolateLog()) {
+      t->SetInterpolateLog(false);
+      MakeParentPushState(_("Set time track interpolation to linear"), _("Set Interpolation"));
+   } else {
+      t->SetInterpolateLog(true);
+      MakeParentPushState(_("Set time track interpolation to logarithmic"), _("Set Interpolation"));
+   }
+   Refresh(false);
 }
 
 /// AS: Move a track up or down, depending.

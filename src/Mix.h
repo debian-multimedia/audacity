@@ -104,7 +104,8 @@ class AUDACITY_DLL_API Mixer {
    /// Process() is called.
    void Reposition(double t);
 
-   /// Current time in seconds
+   /// Current time in seconds (unwarped, i.e. always between startTime and stopTime)
+   /// This value is not accurate, it's useful for progress bars and indicators, but nothing else.
    double MixGetCurrentTime();
 
    /// Retrieve the main buffer or the interleaved buffer
@@ -122,7 +123,7 @@ class AUDACITY_DLL_API Mixer {
    sampleCount MixVariableRates(int *channelFlags, WaveTrack *track,
                                 sampleCount *pos, float *queue,
                                 int *queueStart, int *queueLen,
-                                Resample *SRC);
+                                Resample * pResample);
 
  private:
    // Input
@@ -133,10 +134,10 @@ class AUDACITY_DLL_API Mixer {
    bool             mApplyTrackGains;
    float           *mGains;
    double          *mEnvValues;
-   double           mT;  // Current time
    double           mT0; // Start time
    double           mT1; // Stop time (none if mT0==mT1)   
-   Resample       **mSRC;
+   double           mTime;  // Current time (renamed from mT to mTime for consistency with AudioIO - mT represented warped time there)
+   Resample       **mResample;
    float          **mSampleQueue;
    int             *mQueueStart;
    int             *mQueueLen;
@@ -159,15 +160,4 @@ class AUDACITY_DLL_API Mixer {
 };
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 9d4211b3-0241-4689-bc53-3e9460a04cb6
 

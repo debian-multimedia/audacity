@@ -218,6 +218,7 @@ void ShuttleGuiBase::AddPrompt(const wxString &Prompt)
    miProp=1;
    mpWind = new wxStaticText(mpParent, -1, Prompt, wxDefaultPosition, wxDefaultSize, 
       Style( wxALIGN_RIGHT ));
+   mpWind->SetName(wxStripMenuCodes(Prompt)); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    UpdateSizersCore( false, wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL );
 }
 
@@ -231,6 +232,7 @@ void ShuttleGuiBase::AddUnits(const wxString &Prompt)
    miProp=1;
    mpWind = new wxStaticText(mpParent, -1, Prompt, wxDefaultPosition, wxDefaultSize, 
       Style( wxALIGN_LEFT ));
+   mpWind->SetName(Prompt); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    UpdateSizersCore( false, wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL );
 }
 
@@ -243,6 +245,7 @@ void ShuttleGuiBase::AddTitle(const wxString &Prompt)
       return;
    mpWind = new wxStaticText(mpParent, -1, Prompt, wxDefaultPosition, wxDefaultSize, 
       Style( wxALIGN_CENTRE ));
+   mpWind->SetName(Prompt); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    UpdateSizers();
 }
 
@@ -268,7 +271,7 @@ wxCheckBox * ShuttleGuiBase::AddCheckBox( const wxString &Prompt, const wxString
    mpWind = pCheckBox = new wxCheckBox(mpParent, miId, Prompt, wxDefaultPosition, wxDefaultSize,
       Style( 0 ));
    pCheckBox->SetValue(Selected == wxT("true"));
-   pCheckBox->SetName(Prompt);
+   pCheckBox->SetName(wxStripMenuCodes(Prompt));
    UpdateSizers();
    return pCheckBox;
 }
@@ -287,7 +290,7 @@ wxCheckBox * ShuttleGuiBase::AddCheckBoxOnRight( const wxString &Prompt, const w
    mpWind = pCheckBox = new wxCheckBox(mpParent, miId, wxT(""), wxDefaultPosition, wxDefaultSize,
       Style( 0 ));
    pCheckBox->SetValue(Selected==wxT("true"));
-   pCheckBox->SetName(Prompt);
+   pCheckBox->SetName(wxStripMenuCodes(Prompt));
    UpdateSizers();
    return pCheckBox;
 }
@@ -300,7 +303,7 @@ wxButton * ShuttleGuiBase::AddButton(const wxString &Text, int PositionFlags)
    wxButton * pBtn;
    mpWind = pBtn = new wxButton( mpParent, miId, Text, wxDefaultPosition, wxDefaultSize,
       Style( 0 ) );
-   mpWind->SetName(Text);
+   mpWind->SetName(wxStripMenuCodes(Text));
    miProp=0;
    UpdateSizersCore(false, PositionFlags | wxALL);
    return pBtn;
@@ -340,7 +343,7 @@ wxChoice * ShuttleGuiBase::AddChoice( const wxString &Prompt, const wxString &Se
       Style( 0 ) );
 
    pChoice->SetSizeHints( 180,-1);// Use -1 for 'default size' - Platform specific.
-   pChoice->SetName( Prompt );
+   pChoice->SetName(wxStripMenuCodes(Prompt));
    pChoice->SetStringSelection( Selected );
 
    UpdateSizers();
@@ -354,6 +357,7 @@ void ShuttleGuiBase::AddFixedText(const wxString &Str, bool bCenter)
       return;
    mpWind = new wxStaticText(mpParent, miId, Str, wxDefaultPosition, wxDefaultSize, 
       Style( wxALIGN_LEFT ));
+   mpWind->SetName(wxStripMenuCodes(Str)); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    if( bCenter )
    {
       miProp=1;
@@ -372,6 +376,7 @@ wxStaticText * ShuttleGuiBase::AddVariableText(const wxString &Str, bool bCenter
    wxStaticText *pStatic;
    mpWind = pStatic = new wxStaticText(mpParent, miId, Str, wxDefaultPosition, wxDefaultSize, 
       Style( wxALIGN_LEFT ));
+   mpWind->SetName(wxStripMenuCodes(Str)); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    if( bCenter )
    {
       miProp=1;
@@ -409,7 +414,7 @@ wxComboBox * ShuttleGuiBase::AddCombo( const wxString &Prompt, const wxString &S
 
    mpWind = pCombo = new wxComboBox(mpParent, miId, Selected, wxDefaultPosition, wxDefaultSize, 
       n, Choices, Style( 0 ));
-   mpWind->SetName(Prompt);
+   mpWind->SetName(wxStripMenuCodes(Prompt));
 
    UpdateSizers();
    return pCombo;
@@ -426,7 +431,7 @@ wxRadioButton * ShuttleGuiBase::AddRadioButton(const wxString &Prompt)
    wxRadioButton * pRad;
    mpWind = pRad = new wxRadioButton( mpParent, miId, Prompt,
       wxDefaultPosition, wxDefaultSize, Style( wxRB_GROUP ) );
-   mpWind->SetName(Prompt);
+   mpWind->SetName(wxStripMenuCodes(Prompt));
    pRad->SetValue(true );
    UpdateSizers();
    return pRad;
@@ -440,7 +445,7 @@ wxRadioButton * ShuttleGuiBase::AddRadioButtonToGroup(const wxString &Prompt)
    wxRadioButton * pRad;
    mpWind = pRad = new wxRadioButton( mpParent, miId, Prompt,
       wxDefaultPosition, wxDefaultSize, Style( 0 ) );
-   mpWind->SetName(Prompt);
+   mpWind->SetName(wxStripMenuCodes(Prompt));
    UpdateSizers();
    return pRad;
 }
@@ -457,7 +462,7 @@ wxSlider * ShuttleGuiBase::AddSlider(const wxString &Prompt, int pos, int Max, i
       wxDefaultPosition, wxDefaultSize,
       Style( wxSL_HORIZONTAL | wxSL_LABELS | wxSL_AUTOTICKS )
       );
-   mpWind->SetName(Prompt);
+   mpWind->SetName(wxStripMenuCodes(Prompt));
    miProp=1;
    UpdateSizers();
    return pSlider;
@@ -476,7 +481,7 @@ wxSpinCtrl * ShuttleGuiBase::AddSpinCtrl(const wxString &Prompt, int Value, int 
       Style( wxSP_VERTICAL | wxSP_ARROW_KEYS ),
       Min, Max, Value
       );
-   mpWind->SetName(Prompt);
+   mpWind->SetName(wxStripMenuCodes(Prompt));
    miProp=1;
    UpdateSizers();
    return pSpinCtrl;
@@ -505,7 +510,7 @@ wxTextCtrl * ShuttleGuiBase::AddTextBox(const wxString &Caption, const wxString 
 
    mpWind = pTextCtrl = new wxTextCtrl(mpParent, miId, Value,
       wxDefaultPosition, Size, Style( flags ));
-   mpWind->SetName( Caption );
+   mpWind->SetName(wxStripMenuCodes(Caption));
    UpdateSizers();
    return pTextCtrl;
 }
@@ -535,7 +540,7 @@ wxTextCtrl * ShuttleGuiBase::AddNumericTextBox(const wxString &Caption, const wx
       wxDefaultPosition, Size, Style( flags ),
       Validator // It's OK to pass this.  It will be cloned.
       );
-   mpWind->SetName( Caption );
+   mpWind->SetName(wxStripMenuCodes(Caption));
    UpdateSizers();
    return pTextCtrl;
 }
@@ -570,6 +575,7 @@ void ShuttleGuiBase::AddConstTextBox(const wxString &Prompt, const wxString &Val
    miProp=0;
    mpWind = new wxStaticText(mpParent, miId, Value, wxDefaultPosition, wxDefaultSize,
       Style( 0 ));
+   mpWind->SetName(Value); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
    UpdateSizers();
 }
 
@@ -699,7 +705,7 @@ wxStaticBox * ShuttleGuiBase::StartStatic(const wxString &Str, int iProp)
    wxStaticBox * pBox = new wxStaticBox(mpParent, miId, 
       Str );
    pBox->SetLabel( Str );
-   pBox->SetName( Str );
+   pBox->SetName(wxStripMenuCodes(Str));
    mpSubSizer = new wxStaticBoxSizer( 
       pBox,
       wxVERTICAL );
@@ -1338,7 +1344,7 @@ wxRadioButton * ShuttleGuiBase::TieRadioButton(const wxString &Prompt, WrappedTy
             wxDefaultPosition, wxDefaultSize, 
             (mRadioCount==1)?wxRB_GROUP:0);
          pRadioButton->SetValue(WrappedRef.ValuesMatch( mRadioValue ));
-         pRadioButton->SetName(Prompt);
+         pRadioButton->SetName(wxStripMenuCodes(Prompt));
          UpdateSizers();
       }
       break;

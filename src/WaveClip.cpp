@@ -346,7 +346,10 @@ WaveClip::WaveClip(WaveClip& orig, DirManager *projDirManager)
 WaveClip::~WaveClip()
 {
    delete mSequence;
+   
    delete mEnvelope;
+   mEnvelope = NULL;
+
    delete mWaveCache;
    delete mSpecCache;
    delete mSpecPxCache;
@@ -1523,7 +1526,7 @@ bool WaveClip::Resample(int rate, ProgressDialog *progress)
       return true; // Nothing to do
 
    double factor = (double)rate / (double)mRate;
-   ::Resample* resample = new ::Resample(true, factor, factor);
+   ConstRateResample* resample = new ConstRateResample(true, factor);
    
    int bufsize = 65536;
    float* inBuffer = new float[bufsize];

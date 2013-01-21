@@ -60,6 +60,9 @@ Envelope::Envelope()
    mDirty = false;
    mIsDeleting = false;
    mMirror = true;
+   
+   mMinValue = 1.0e-7;
+   mMaxValue = 2.0;
 
    mButton = wxMOUSE_BTN_NONE;
 }
@@ -70,17 +73,34 @@ Envelope::~Envelope()
    WX_CLEAR_ARRAY(mEnv);
 }
 
-// TODO: Move Getters/Setters to Envelope.h and
-// name them consistently Get/Set
-
-void Envelope::SetInterpolateDB(bool db)
-{
-   mDB = db;
-}
-
 void Envelope::Mirror(bool mirror)
 {
    mMirror = mirror;
+}
+
+/// Rescale function for time tracks (could also be used for other tracks though).
+/// This is used to load old time track project files where the envelope used a 0 to 1
+/// range instead of storing the actual time track values. This function will change the range of the envelope
+/// and rescale all envelope points accordingly (unlike SetRange, which clamps the envelope points to the new range).
+/// @minValue - the new minimum value
+/// @maxValue - the new maximum value
+void Envelope::Rescale(double minValue, double maxValue)
+{
+   double oldMinValue = mMinValue;
+   double oldMaxValue = mMaxValue;
+   mMinValue = minValue;
+   mMaxValue = maxValue;
+
+   // rescale the default value
+   double factor = (mDefaultValue - oldMinValue) / (oldMaxValue - oldMinValue);
+   mDefaultValue = ClampValue(mMinValue + (mMaxValue - mMinValue) * factor);
+
+   // rescale all points
+   for( unsigned int i = 0; i < mEnv.Count(); i++ ) {
+      factor = (mEnv[i]->GetVal() - oldMinValue) / (oldMaxValue - oldMinValue);
+      mEnv[i]->SetVal(mMinValue + (mMaxValue - mMinValue) * factor);
+   }
+
 }
 
 /// Flatten removes all points from the envelope to 
@@ -89,7 +109,15 @@ void Envelope::Mirror(bool mirror)
 void Envelope::Flatten(double value)
 {
    WX_CLEAR_ARRAY(mEnv);
-   SetDefaultValue(value);
+   mDefaultValue = ClampValue(value);
+}
+
+void Envelope::SetRange(double minValue, double maxValue) {
+   mMinValue = minValue;
+   mMaxValue = maxValue;
+   mDefaultValue = ClampValue(mDefaultValue);
+   for( unsigned int i = 0; i < mEnv.Count(); i++ )
+      mEnv[i]->SetVal(mEnv[i]->GetVal()); // this clamps the value to the new range
 }
 
 EnvPoint * Envelope::AddPointAtEnd( double t, double val )
@@ -98,9 +126,7 @@ EnvPoint * Envelope::AddPointAtEnd( double t, double val )
    // TODO: switch over to using an array of EnvPoints
    // rather than an array of pointers to EnvPoints.
    //    What value does that add?
-   EnvPoint *pt = new EnvPoint();
-   pt->t = t;
-   pt->val = val;
+   EnvPoint *pt = new EnvPoint(this, t, val);
    mEnv.Add(pt);
    return pt;
 }
@@ -117,7 +143,7 @@ void Envelope::CopyFrom(const Envelope *e, double t0, double t1)
    int i = 0;
 
    // Skip the points that come before the copied region
-   while( (i < len) && e->mOffset + e->mEnv[i]->t <= t0)
+   while( (i < len) && e->mOffset + e->mEnv[i]->GetT() <= t0)
       i++;
 
    // Create the point at 0 if it needs interpolated representation
@@ -125,8 +151,8 @@ void Envelope::CopyFrom(const Envelope *e, double t0, double t1)
       AddPointAtEnd( 0, e->GetValue(mOffset) );
 
    // Copy points from inside the copied region
-   while ( (i < len) && e->mOffset + e->mEnv[i]->t - mOffset < mTrackLen) {
-      AddPointAtEnd( e->mOffset + e->mEnv[i]->t - mOffset, e->mEnv[i]->val );
+   while ( (i < len) && e->mOffset + e->mEnv[i]->GetT() - mOffset < mTrackLen) {
+      AddPointAtEnd( e->mOffset + e->mEnv[i]->GetT() - mOffset, e->mEnv[i]->GetVal() );
       i++;
    }
 
@@ -198,15 +224,15 @@ void Envelope::DrawPoints(wxDC & dc, const wxRect & r, double h, double pps, boo
    dc.SetBrush(*wxWHITE_BRUSH);
 
    for (int i = 0; i < (int)mEnv.Count(); i++) {
-      if (mEnv[i]->t >= h && mEnv[i]->t <= tright) {
+      if (mEnv[i]->GetT() >= h && mEnv[i]->GetT() <= tright) {
          // Change colour if this is the draggable point...
          if (i == mDragPoint) {
             dc.SetPen(AColor::envelopePen);
             dc.SetBrush(AColor::envelopeBrush);
          }
 
-         double v = mEnv[i]->val;
-         int x = int ((mEnv[i]->t - h) * pps);
+         double v = mEnv[i]->GetVal();
+         int x = int ((mEnv[i]->GetT() - h) * pps);
          int y, y2;
 
          y = GetWaveYPos(v, zoomMin, zoomMax, r.height, dB,
@@ -294,8 +320,8 @@ void Envelope::WriteXML(XMLWriter &xmlFile)
 
    for (ctrlPt = 0; ctrlPt < mEnv.GetCount(); ctrlPt++) {
       xmlFile.StartTag(wxT("controlpoint"));
-      xmlFile.WriteAttr(wxT("t"), mEnv[ctrlPt]->t, 12);
-      xmlFile.WriteAttr(wxT("val"), mEnv[ctrlPt]->val, 12);
+      xmlFile.WriteAttr(wxT("t"), mEnv[ctrlPt]->GetT(), 12);
+      xmlFile.WriteAttr(wxT("val"), mEnv[ctrlPt]->GetVal(), 12);
       xmlFile.EndTag(wxT("controlpoint"));
    }
 
@@ -313,10 +339,8 @@ void Envelope::WriteXML(XMLWriter &xmlFile)
 /// @dB - display mode either linear or log.
 /// @zoomMin - vertical scale, typically -1.0
 /// @zoomMax - vertical scale, typically +1.0
-/// @eMin - clips result to this range.
-/// @eMax - clips result to this range.
 float Envelope::ValueOfPixel( int y, int height, bool upper, bool dB,
-                              float zoomMin, float zoomMax, float eMin, float eMax )
+                              float zoomMin, float zoomMax)
 {
    float v;
 
@@ -332,22 +356,12 @@ float Envelope::ValueOfPixel( int y, int height, bool upper, bool dB,
    if (dB)
       v = fromDB(v);
 
-   // JC: The eMin/eMax code originally assumed a symmetrical range.
-   // so only eMin was needed.  I'm very dubious about the lower curve
-   // behaviour and expect some funny behaviour when dragging
-   // the lower curve when we have asymmetric ranges.
-
-   // Upper curve: gets clamped between eMin and eMax.  Looks OK.
-   // Lower curve: reset to eMin if > 0 otherwise made positive and <=eMax.
-   if ((upper && v < eMin) || (!upper && v > 0))
-      v = eMin;
-   else if (!upper)
-      v = -v;
-
-   if(v > eMax)
-      v = eMax;
-
-   return v;
+   // MB: this is mostly equivalent to what the old code did, I'm not sure
+   // if anything special is needed for asymmetric ranges
+   if(upper)
+      return ClampValue(v);
+   else
+      return ClampValue(-v);
 }
 
 /// HandleMouseButtonDown either finds an existing control point or adds a new one
@@ -358,10 +372,10 @@ float Envelope::ValueOfPixel( int y, int height, bool upper, bool dB,
 /// Also we may be showing an inner envelope (at 0.5 the range).
 bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
                                      double h, double pps, bool dB,
-                                     float zoomMin, float zoomMax, float eMin, float eMax)
+                                     float zoomMin, float zoomMax)
 {
    int ctr = (int)(r.height * zoomMax / (zoomMax - zoomMin));
-   bool upper = (zoomMin == eMin) || (event.m_y - r.y < ctr);
+   bool upper = !mMirror || (zoomMin >= 0.0) || (event.m_y - r.y < ctr);
 
    int clip_y = event.m_y - r.y;
    if(clip_y < 0) clip_y = 0; //keeps point in rect r, even if mouse isn't
@@ -386,22 +400,22 @@ bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
    // TODO: extract this into a function FindNearestControlPoint()
    // TODO: also fix it so that we can drag the last point on an envelope.
    for (int i = 0; i < len; i++) { //search for control point nearest click
-      if (mEnv[i]->t >= tleft && mEnv[i]->t <= tright) {
+      if (mEnv[i]->GetT() >= tleft && mEnv[i]->GetT() <= tright) {
          
-         int x = int ((mEnv[i]->t + mOffset - h) * pps) + r.x;
+         int x = int ((mEnv[i]->GetT() + mOffset - h) * pps) + r.x;
          int y[4];
          int numControlPoints;
 
          // Outer control points
-         y[0] = GetWaveYPos( mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[0] = GetWaveYPos( mEnv[i]->GetVal(), zoomMin, zoomMax, r.height,
                                 dB, true, dBr, false);
-         y[1] = GetWaveYPos( -mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[1] = GetWaveYPos( -mEnv[i]->GetVal(), zoomMin, zoomMax, r.height,
                                 dB, true, dBr, false);
 
          // Inner control points(contour)
-         y[2] = GetWaveYPos( mEnv[i]->val, zoomMin, zoomMax, r.height,
+         y[2] = GetWaveYPos( mEnv[i]->GetVal(), zoomMin, zoomMax, r.height,
                                 dB, false, dBr, false);
-         y[3] = GetWaveYPos( -mEnv[i]->val-.00000001, zoomMin, zoomMax, 
+         y[3] = GetWaveYPos( -mEnv[i]->GetVal()-.00000001, zoomMin, zoomMax, 
                                 r.height, dB, false, dBr, false);
 
          numControlPoints = 4;
@@ -458,7 +472,7 @@ bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
       }
 
       double newVal = ValueOfPixel(clip_y, r.height, upper, dB,
-                                   zoomMin, zoomMax, eMin, eMax);
+                                   zoomMin, zoomMax);
 
       mDragPoint = Insert(when, newVal);
       mDirty = true;
@@ -466,8 +480,8 @@ bool Envelope::HandleMouseButtonDown(wxMouseEvent & event, wxRect & r,
 
    mUpper = upper;
 
-   mInitialWhen = mEnv[mDragPoint]->t;
-   mInitialVal = mEnv[mDragPoint]->val;
+   mInitialWhen = mEnv[mDragPoint]->GetT();
+   mInitialVal = mEnv[mDragPoint]->GetVal();
 
    mInitialX = event.m_x;
    mInitialY = event.m_y+mContourOffset;
@@ -492,26 +506,26 @@ void Envelope::MarkDragPointForDeletion()
       // There is only one point - just move it
       // off screen and at default height.
       // temporary state when dragging only! 
-      mEnv[mDragPoint]->t = -1000000.0;
-      mEnv[mDragPoint]->val = mDefaultValue;
+      mEnv[mDragPoint]->SetT(-1000000.0);
+      mEnv[mDragPoint]->SetVal(mDefaultValue);
       return;
    }
 
    // Place it exactly on one of its neighbours.
    int iNeighbourPoint = mDragPoint + ((mDragPoint > 0) ? -1:+1);
-   mEnv[mDragPoint]->t   = mEnv[iNeighbourPoint]->t;
-   mEnv[mDragPoint]->val = mEnv[iNeighbourPoint]->val;
+   mEnv[mDragPoint]->SetT(mEnv[iNeighbourPoint]->GetT());
+   mEnv[mDragPoint]->SetVal(mEnv[iNeighbourPoint]->GetVal());
 }
 
 void Envelope::MoveDraggedPoint( wxMouseEvent & event, wxRect & r,
                                double h, double pps, bool dB,
-                               float zoomMin, float zoomMax, float eMin, float eMax)
+                               float zoomMin, float zoomMax)
 {
    int clip_y = event.m_y - r.y;
    if(clip_y < 0) clip_y = 0;
    if(clip_y > r.height) clip_y = r.height;
    double newVal = ValueOfPixel(clip_y, r.height, mUpper, dB,
-                                zoomMin, zoomMax, eMin, eMax);   
+                                zoomMin, zoomMax);  
 
    wxASSERT( pps > 0 );
    // We no longer tolerate multiple envelope points at the same t.
@@ -527,15 +541,15 @@ void Envelope::MoveDraggedPoint( wxMouseEvent & event, wxRect & r,
    double limitHi = mTrackLen;
 
    if (mDragPoint > 0)
-      limitLo = mEnv[mDragPoint - 1]->t + mTrackEpsilon;
+      limitLo = mEnv[mDragPoint - 1]->GetT() + mTrackEpsilon;
    if (mDragPoint < (int)mEnv.Count() - 1 )
-      limitHi = mEnv[mDragPoint + 1]->t - mTrackEpsilon;
+      limitHi = mEnv[mDragPoint + 1]->GetT() - mTrackEpsilon;
 
    newWhen = Limit( limitLo, newWhen, limitHi );
    newWhen = Limit( mTrackEpsilon, newWhen, mTrackLen - mTrackEpsilon);
 
-   mEnv[mDragPoint]->t = newWhen;
-   mEnv[mDragPoint]->val = newVal;
+   mEnv[mDragPoint]->SetT(newWhen);
+   mEnv[mDragPoint]->SetVal(newVal);
 
 }
 
@@ -553,7 +567,7 @@ bool Envelope::HandleDragging( wxMouseEvent & event, wxRect & r,
       // IF we're in the rect THEN we're not deleting this point (anymore).
       mIsDeleting = false;
       // ...we're dragging it.
-      MoveDraggedPoint( event, r,h,pps,dB, zoomMin, zoomMax, eMin, eMax );
+      MoveDraggedPoint( event, r,h,pps,dB, zoomMin, zoomMax);
       return true;
    }
    
@@ -588,14 +602,14 @@ void Envelope::Delete( int point )
 // Returns true if parent needs to be redrawn
 bool Envelope::MouseEvent(wxMouseEvent & event, wxRect & r,
                           double h, double pps, bool dB,
-                          float zoomMin, float zoomMax, float eMin, float eMax)
+                          float zoomMin, float zoomMax)
 {
    if (event.ButtonDown() && mButton == wxMOUSE_BTN_NONE)
       return HandleMouseButtonDown( event, r, h, pps,dB,
-                                    zoomMin, zoomMax, eMin, eMax);
+                                    zoomMin, zoomMax);
    if (event.Dragging() && mDragPoint >= 0) 
       return HandleDragging( event, r, h, pps,dB,
-                             zoomMin, zoomMax, eMin, eMax);
+                             zoomMin, zoomMax);
    if (event.ButtonUp() && event.GetButton() == mButton)
       return HandleMouseButtonUp( event, r, h, pps, dB,
                                   zoomMin, zoomMax);
@@ -619,7 +633,7 @@ void Envelope::CollapseRegion(double t0, double t1)
 
    // Remove points in deleted region.
    for (i = 0; i < len - 0; i++)
-      if (mEnv[i]->t >= t0 && mEnv[i]->t < t1) {
+      if (mEnv[i]->GetT() >= t0 && mEnv[i]->GetT() < t1) {
          delete mEnv[i];
          mEnv.RemoveAt(i);
          len--;
@@ -628,8 +642,8 @@ void Envelope::CollapseRegion(double t0, double t1)
 
    // Shift points left after deleted region.
    for (i = 0; i < len; i++)
-      if (mEnv[i]->t >= t1)
-         mEnv[i]->t -= (t1 - t0);
+      if (mEnv[i]->GetT() >= t1)
+         mEnv[i]->SetT(mEnv[i]->GetT() - (t1 - t0));
    
    mTrackLen -= (t1-t0);
 }
@@ -724,11 +738,11 @@ Old analysis of cases:
 
       // See if existing points need shifting to the right, and what Case we are in
       for (i = 0; i < len; i++) {
-         if (mEnv[i]->t > t0)
+         if (mEnv[i]->GetT() > t0)
             someToShift = true;
          else {
             pos = i; // last point not moved
-            if ( fabs(mEnv[i]->t - t0) - 1/500000.0 < 0.0 ) // close enough to a point
+            if ( fabs(mEnv[i]->GetT() - t0) - 1/500000.0 < 0.0 ) // close enough to a point
                onPoint = true;
          }
       }
@@ -746,7 +760,7 @@ Old analysis of cases:
       // Now test for the various Cases, and try to do the right thing
       if(atStart) {   // insertion at the beginning
          if(onPoint) {  // first env point is at LH end
-            mEnv[0]->t +=mTrackEpsilon;   // Case 1: move it R slightly to avoid duplicate point
+            mEnv[0]->SetT(mEnv[0]->GetT() + mTrackEpsilon);   // Case 1: move it R slightly to avoid duplicate point
             someToShift = true;  // there is now, even if there wasn't before
             //wxLogDebug(wxT("Case 1"));
          }
@@ -759,7 +773,7 @@ Old analysis of cases:
       else {
          if(atEnd) { // insertion at the end
             if(onPoint) {  // last env point is at RH end, Case 2: 
-               mEnv[0]->t -= mTrackEpsilon;  // move it L slightly to avoid duplicate point
+               mEnv[0]->SetT(mEnv[0]->GetT() - mTrackEpsilon);  // move it L slightly to avoid duplicate point
                //wxLogDebug(wxT("Case 2"));
             }
             else {   // Case 4:
@@ -769,7 +783,7 @@ Old analysis of cases:
          }
          else {
             if(onPoint) {  // Case 7: move the point L and insert a new one to the R
-               mEnv[pos]->t -= mTrackEpsilon;
+               mEnv[pos]->SetT(mEnv[pos]->GetT() - mTrackEpsilon);
                Insert(t0 + mTrackEpsilon, splitval);
                someToShift = true;
                //wxLogDebug(wxT("Case 7"));
@@ -797,8 +811,8 @@ Old analysis of cases:
       if(someToShift) {
          len = mEnv.Count();  // it may well have changed
          for (i = 0; i < len; i++)
-            if (mEnv[i]->t > t0)
-               mEnv[i]->t += deltat;
+            if (mEnv[i]->GetT() > t0)
+               mEnv[i]->SetT(mEnv[i]->GetT() + deltat);
       }
       mTrackLen += deltat;
    }
@@ -819,11 +833,11 @@ Old analysis of cases:
    // Copy points from inside the selection
    len = e->mEnv.Count();
    for (i = 0; i < len; i++)
-      pos=Insert(t0 + e->mEnv[i]->t, e->mEnv[i]->val);
+      pos=Insert(t0 + e->mEnv[i]->GetT(), e->mEnv[i]->GetVal());
 
 /*   if(len != 0)
       for (i = 0; i < mEnv.Count(); i++)
-         wxLogDebug(wxT("Fixed i %d when %.18f val %f"),i,mEnv[i]->t,mEnv[i]->val); */
+         wxLogDebug(wxT("Fixed i %d when %.18f val %f"),i,mEnv[i]->GetT(),mEnv[i]->GetVal()); */
 
    if(pointsAdded)
       while(e->mEnv.Count() != 0)
@@ -845,13 +859,13 @@ void Envelope::RemoveUnneededPoints(double time, double tolerence)
       return;
 
    for (i = 0; i < len; i++) {
-      when = mEnv[i]->t;
+      when = mEnv[i]->GetT();
       if(time >= 0)
       {
          if(fabs(when + mOffset - time) > 0.00025) // 2 samples at 8kHz, 11 at 44.1kHz
             continue;
       }
-      val = mEnv[i]->val;
+      val = mEnv[i]->GetVal();
       Delete(i);  // try it to see if it's doing anything
       val1 = GetValue(when + mOffset);
       bool bExcludePoint = true;
@@ -877,8 +891,8 @@ void Envelope::InsertSpace(double t0, double tlen)
    unsigned int i;
 
    for (i = 0; i < len; i++)
-      if (mEnv[i]->t > t0)
-         mEnv[i]->t += tlen;
+      if (mEnv[i]->GetT() > t0)
+         mEnv[i]->SetT(mEnv[i]->GetT() + tlen);
    mTrackLen += tlen;
 }
 
@@ -889,13 +903,13 @@ int Envelope::Move(double when, double value)
       return -1;
 
    int i = 0;
-   while (i < len && when > mEnv[i]->t)
+   while (i < len && when > mEnv[i]->GetT())
       i++;
 
-   if (i >= len || when < mEnv[i]->t)
+   if (i >= len || when < mEnv[i]->GetT())
       return -1;
 
-   mEnv[i]->val = value;
+   mEnv[i]->SetVal(value);
    return 0;
 }
 
@@ -914,8 +928,8 @@ void Envelope::GetPoints(double *bufferWhen,
       n = bufferLen;
    int i;
    for (i = 0; i < n; i++) {
-      bufferWhen[i] = mEnv[i]->t;
-      bufferValue[i] = mEnv[i]->val;
+      bufferWhen[i] = mEnv[i]->GetT();
+      bufferValue[i] = mEnv[i]->GetVal();
    }
 }
 
@@ -981,21 +995,19 @@ int Envelope::Insert(double when, double value)
 
    int i = 0;
    
-   while (i < len && when > mEnv[i]->t)
+   while (i < len && when > mEnv[i]->GetT())
       i++;
 
-   if(i < len && when == mEnv[i]->t) {
+   if(i < len && when == mEnv[i]->GetT()) {
 
      // modify existing
-     mEnv[i]->val = value;
+     mEnv[i]->SetVal(value);
 
    }
    else{
 
      // Add new
-     EnvPoint *e = new EnvPoint();
-     e->t = when;
-     e->val = value;
+     EnvPoint *e = new EnvPoint(this, when, value);
      if (i < len) {
         mEnv.Insert(e, i);
      } else {
@@ -1018,7 +1030,7 @@ void Envelope::SetTrackLen(double trackLen)
 
    int len = mEnv.Count();
    for (int i = 0; i < len; i++)
-      if (mEnv[i]->t > mTrackLen) {
+      if (mEnv[i]->GetT() > mTrackLen) {
          delete mEnv[i];
          mEnv.RemoveAt(i);
          len--;
@@ -1053,7 +1065,7 @@ void Envelope::BinarySearchForTime( int &Lo, int &Hi, double t ) const
    wxASSERT( Hi > Lo );
    while (Hi > (Lo + 1)) {
       int mid = (Lo + Hi) / 2;
-      if (t < mEnv[mid]->t)
+      if (t < mEnv[mid]->GetT())
          Hi = mid;
       else
          Lo = mid;
@@ -1068,13 +1080,11 @@ void Envelope::BinarySearchForTime( int &Lo, int &Hi, double t ) const
 /// @return value there, or its (safe) log10.
 double Envelope::GetInterpolationStartValueAtPoint( int iPoint ) const
 {
-   double v = mEnv[ iPoint ]->val;
+   double v = mEnv[ iPoint ]->GetVal();
    if( !mDB )
       return v;
-   // Special case for the log of zero
-   if (v <= 0.0)
-      return -7.0; // This corresponds to -140 dB
-   return log10( v );
+   else
+      return log10(v);
 }
 
 void Envelope::GetValues(double *buffer, int bufferLen,
@@ -1100,14 +1110,14 @@ void Envelope::GetValues(double *buffer, int bufferLen,
          continue;
       }
       // IF before envelope THEN first value
-      if (t <= mEnv[0]->t) {
-         buffer[b] = mEnv[0]->val;
+      if (t <= mEnv[0]->GetT()) {
+         buffer[b] = mEnv[0]->GetVal();
          t += tstep;
          continue;
       }
       // IF after envelope THEN last value
-      if (t >= mEnv[len - 1]->t) {
-         buffer[b] = mEnv[len - 1]->val;
+      if (t >= mEnv[len - 1]->GetT()) {
+         buffer[b] = mEnv[len - 1]->GetVal();
          t += tstep;
          continue;
       }
@@ -1121,8 +1131,8 @@ void Envelope::GetValues(double *buffer, int bufferLen,
 
          int lo,hi;
          BinarySearchForTime( lo, hi, t );
-         tprev = mEnv[lo]->t;
-         tnext = mEnv[hi]->t;
+         tprev = mEnv[lo]->GetT();
+         tnext = mEnv[hi]->GetT();
 
          vprev = GetInterpolationStartValueAtPoint( lo );
          vnext = GetInterpolationStartValueAtPoint( hi );
@@ -1164,16 +1174,16 @@ void Envelope::GetValues(double *buffer, int bufferLen,
 
 int Envelope::NumberOfPointsAfter(double t)
 {
-   if( t >= mEnv[mEnv.Count()-1]->t )
+   if( t >= mEnv[mEnv.Count()-1]->GetT() )
       return 0;
-   else if( t < mEnv[0]->t )
+   else if( t < mEnv[0]->GetT() )
       return mEnv.Count();
    else
    {
       int lo,hi;
       BinarySearchForTime( lo, hi, t );
 
-      if( mEnv[hi]->t == t )
+      if( mEnv[hi]->GetT() == t )
          return mEnv.Count() - (hi+1);
       else
          return mEnv.Count() - hi;
@@ -1182,18 +1192,18 @@ int Envelope::NumberOfPointsAfter(double t)
 
 double Envelope::NextPointAfter(double t)
 {
-   if( mEnv[mEnv.Count()-1]->t < t )
+   if( mEnv[mEnv.Count()-1]->GetT() < t )
       return t;
-   else if( t < mEnv[0]->t )
-      return mEnv[0]->t;
+   else if( t < mEnv[0]->GetT() )
+      return mEnv[0]->GetT();
    else
    {
       int lo,hi;
       BinarySearchForTime( lo, hi, t );
-      if( mEnv[hi]->t == t )
-         return mEnv[hi+1]->t;
+      if( mEnv[hi]->GetT() == t )
+         return mEnv[hi+1]->GetT();
       else
-         return mEnv[hi]->t;
+         return mEnv[hi]->GetT();
    }
 }
 
@@ -1205,111 +1215,281 @@ double Envelope::Average( double t0, double t1 )
     return Integral( t0, t1 ) / (t1 - t0);
 }
 
+double Envelope::AverageOfInverse( double t0, double t1 )
+{
+  if( t0 == t1 )
+    return 1.0 / GetValue( t0 );
+  else
+    return IntegralOfInverse( t0, t1 ) / (t1 - t0);
+}
+
 //
 // Integration and debugging functions
 //
 // The functions below are used by the TimeTrack and possibly for
 // other debugging.  They do not affect normal amplitude envelopes
 // for waveforms, nor frequency envelopes for equalization.
+// The 'Average' function also uses 'Integral'.
 //
+
+// A few helper functions to make the code below more readable.
+static double InterpolatePoints(double y1, double y2, double factor, bool logarithmic)
+{
+   if(logarithmic)
+      // you can use any base you want, it doesn't change the result
+      return exp(log(y1) * (1.0 - factor) + log(y2) * factor);
+   else
+      return y1 * (1.0 - factor) + y2 * factor;
+}
+static double IntegrateInterpolated(double y1, double y2, double time, bool logarithmic)
+{
+   // Calculates: integral(interpolate(y1, y2, x), x = 0 .. time)
+   // Integrating logarithmic interpolated segments is surprisingly simple. You can check this formula here:
+   // http://www.wolframalpha.com/input/?i=integrate+10%5E%28log10%28y1%29*%28T-x%29%2FT%2Blog10%28y2%29*x%2FT%29+from+0+to+T
+   // Again, the base you use for interpolation is irrelevant, the formula below should always use the natural
+   // logarithm (i.e. 'log' in C/C++). If the denominator is too small, it's better to use linear interpolation
+   // because the rounding errors would otherwise get too large. The threshold value is 1.0e-5 because at that
+   // point the rounding errors become larger than the difference between linear and logarithmic (I tested this in Octave).
+   if(logarithmic)
+   {
+      double l = log(y1 / y2);
+      if(fabs(l) < 1.0e-5) // fall back to linear interpolation
+         return (y1 + y2) * 0.5 * time;
+      return (y1 - y2) / l * time;
+   }
+   else
+   {
+      return (y1 + y2) * 0.5 * time;
+   }
+}
+static double IntegrateInverseInterpolated(double y1, double y2, double time, bool logarithmic)
+{
+   // Calculates: integral(1 / interpolate(y1, y2, x), x = 0 .. time)
+   // This one is a bit harder. Linear:
+   // http://www.wolframalpha.com/input/?i=integrate+1%2F%28y1*%28T-x%29%2FT%2By2*x%2FT%29+from+0+to+T
+   // Logarithmic:
+   // http://www.wolframalpha.com/input/?i=integrate+1%2F%2810%5E%28log10%28y1%29*%28T-x%29%2FT%2Blog10%28y2%29*x%2FT%29%29+from+0+to+T
+   // Here both cases need a special case for y1 == y2. The threshold is 1.0e5 again, this is still the
+   // best value in both cases.
+   double l = log(y1 / y2);
+   if(fabs(l) < 1.0e-5) // fall back to average
+      return 2.0 / (y1 + y2) * time;
+   if(logarithmic)
+      return (y1 - y2) / (l * y1 * y2) * time;
+   else
+      return l / (y1 - y2) * time;
+}
+static double SolveIntegrateInverseInterpolated(double y1, double y2, double time, double area, bool logarithmic)
+{
+   // Calculates: solve (integral(1 / interpolate(y1, y2, x), x = 0 .. res) = area) for res
+   // Don't try to derive these formulas by hand :). The threshold is 1.0e5 again.
+   double a = area / time, res;
+   if(logarithmic)
+   {
+      double l = log(y1 / y2);
+      if(fabs(l) < 1.0e-5) // fall back to average
+         res = a * (y1 + y2) * 0.5;
+      else if(1.0 + a * y1 * l <= 0.0)
+         res = 1.0;
+      else
+         res = log(1.0 + a * y1 * l) / l;
+   }
+   else
+   {
+      if(fabs(y2 - y1) < 1.0e-5) // fall back to average
+         res = a * (y1 + y2) * 0.5;
+      else
+         res = y1 * (exp(a * (y2 - y1)) - 1.0) / (y2 - y1);
+   }
+   return std::max(0.0, std::min(1.0, res)) * time;
+}
 
 // We should be able to write a very efficient memoizer for this
 // but make sure it gets reset when the envelope is changed.
 double Envelope::Integral( double t0, double t1 )
 {
-   //printf( "\n\nIntegral:  t0=%f, t1=%f\n", t0, t1 );
-   double total=0;
-   
-   if( t0 == t1 )
-      return 0;
-   if( t0 > t1 )
+   if(t0 == t1)
+      return 0.0;
+   if(t0 > t1)
    {
-      printf( "Odd things happening in Integral!\n" );
-      return mDefaultValue;
+      return -Integral(t1, t0); // this makes more sense than returning the default value
    }
    
-   unsigned int i = 0;
-   double lastT, lastVal;
+   unsigned int count = mEnv.Count();
+   if(count == 0) // 'empty' envelope
+      return (t1 - t0) * mDefaultValue;
    
-   // t0 is one of three cases:
-
-   // 0) in an 'empty' envelope
-   // 1) preceeding the first point
-   // 2) enclosed by points
-   // 3) following the last point
-
-   if( mEnv.Count() < 1 )                      // 0: 'empty' envelope
+   double total = 0.0, lastT, lastVal;
+   unsigned int i; // this is the next point to check
+   if(t0 < mEnv[0]->GetT()) // t0 preceding the first point
    {
-      return (t1 - t0) * mDefaultValue;  
+      if(t1 <= mEnv[0]->GetT())
+         return (t1 - t0) * mEnv[0]->GetVal();
+      i = 1;
+      lastT = mEnv[0]->GetT();
+      lastVal = mEnv[0]->GetVal();
+      total += (lastT - t0) * lastVal;
    }
-   else if( t0 < mEnv[0]->t )                  // 1: preceeds the first
+   else if(t0 >= mEnv[count - 1]->GetT()) // t0 following the last point
    {
-      if( t1 <= mEnv[0]->t ){
-         return (t1 - t0) * mEnv[0]->val;
-      }
-      total += (mEnv[0]->t - t0) * mEnv[0]->val;
-      lastT = mEnv[0]->t;
-      lastVal = mEnv[0]->val;
+      return (t1 - t0) * mEnv[count - 1]->GetVal();
    }
-   else if( t0 >= mEnv[mEnv.Count()-1]->t )    // 3: follows the last
+   else // t0 enclosed by points
    {
-      return (t1 - t0) * mEnv[mEnv.Count()-1]->val;
-   }
-   else 
-   {                                         // 2: bracketed
       // Skip any points that come before t0 using binary search
-      int lo,hi;
-      BinarySearchForTime( lo, hi, t0 );
-      i = lo;
-      // i is now the point immediately before t0.
-      lastVal = ((mEnv[i]->val * (mEnv[i+1]->t - t0))
-         + (mEnv[i+1]->val *(t0 - mEnv[i]->t)))
-         / (mEnv[i+1]->t - mEnv[i]->t); // value at t0
+      int lo, hi;
+      BinarySearchForTime(lo, hi, t0);
+      lastVal = InterpolatePoints(mEnv[lo]->GetVal(), mEnv[hi]->GetVal(), (t0 - mEnv[lo]->GetT()) / (mEnv[hi]->GetT() - mEnv[lo]->GetT()), mDB);
       lastT = t0;
+      i = hi; // the point immediately after t0.
    }
-
+   
    // loop through the rest of the envelope points until we get to t1
    while (1)
    {
-
-      if(i >= mEnv.Count()-1)
+      if(i >= count) // the requested range extends beyond the last point
       {
-         // the requested range extends beyond last point
          return total + (t1 - lastT) * lastVal;
       }
-      else if (mEnv[i+1]->t >= t1)
+      else if(mEnv[i]->GetT() >= t1) // this point follows the end of the range
       {
-         // last,i+1 bracket t1
-         double thisVal = ((mEnv[i]->val * (mEnv[i+1]->t - t1))
-            + (mEnv[i+1]->val *(t1 - mEnv[i]->t)))
-            / (mEnv[i+1]->t - mEnv[i]->t); 
-
-         return total + (t1 - lastT) * (thisVal + lastVal) / 2;
+         double thisVal = InterpolatePoints(mEnv[i - 1]->GetVal(), mEnv[i]->GetVal(), (t1 - mEnv[i - 1]->GetT()) / (mEnv[i]->GetT() - mEnv[i - 1]->GetT()), mDB);
+         return total + IntegrateInterpolated(lastVal, thisVal, t1 - lastT, mDB);
       }
-      else
+      else // this point preceeds the end of the range
       {
-         // t1 still follows last,i+1
-         total += (mEnv[i+1]->t - lastT) *  (mEnv[i+1]->val + lastVal) / 2;
-         lastT = mEnv[i+1]->t;
-         lastVal = mEnv[i+1]->val;
+         total += IntegrateInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, mDB);
+         lastT = mEnv[i]->GetT();
+         lastVal = mEnv[i]->GetVal();
          i++;
       }
    }
 }
 
-// This one scales the y-axis before integrating.
-// To re-scale [0,1] to [minY,maxY] we use the mapping y -> minY + (maxY - minY)y
-// So we want to find the integral of (minY + (maxY - minY)f(t)), where f is our envelope.
-// But that's just (t1 - t0)minY + (maxY - minY)Integral( t0, t1 ).
-double Envelope::Integral( double t0, double t1, double minY, double maxY )
+double Envelope::IntegralOfInverse( double t0, double t1 )
 {
-   return ((t1 - t0) * minY) + ((maxY - minY) * Integral( t0, t1 ));
+   if(t0 == t1)
+      return 0.0;
+   if(t0 > t1)
+   {
+      return -IntegralOfInverse(t1, t0); // this makes more sense than returning the default value
+   }
+   
+   unsigned int count = mEnv.Count();
+   if(count == 0) // 'empty' envelope
+      return (t1 - t0) / mDefaultValue;
+   
+   double total = 0.0, lastT, lastVal;
+   unsigned int i; // this is the next point to check
+   if(t0 < mEnv[0]->GetT()) // t0 preceding the first point
+   {
+      if(t1 <= mEnv[0]->GetT())
+         return (t1 - t0) / mEnv[0]->GetVal();
+      i = 1;
+      lastT = mEnv[0]->GetT();
+      lastVal = mEnv[0]->GetVal();
+      total += (lastT - t0) / lastVal;
+   }
+   else if(t0 >= mEnv[count - 1]->GetT()) // t0 following the last point
+   {
+      return (t1 - t0) / mEnv[count - 1]->GetVal();
+   }
+   else // t0 enclosed by points
+   {
+      // Skip any points that come before t0 using binary search
+      int lo, hi;
+      BinarySearchForTime(lo, hi, t0);
+      lastVal = InterpolatePoints(mEnv[lo]->GetVal(), mEnv[hi]->GetVal(), (t0 - mEnv[lo]->GetT()) / (mEnv[hi]->GetT() - mEnv[lo]->GetT()), mDB);
+      lastT = t0;
+      i = hi; // the point immediately after t0.
+   }
+   
+   // loop through the rest of the envelope points until we get to t1
+   while (1)
+   {
+      if(i >= count) // the requested range extends beyond the last point
+      {
+         return total + (t1 - lastT) / lastVal;
+      }
+      else if(mEnv[i]->GetT() >= t1) // this point follows the end of the range
+      {
+         double thisVal = InterpolatePoints(mEnv[i - 1]->GetVal(), mEnv[i]->GetVal(), (t1 - mEnv[i - 1]->GetT()) / (mEnv[i]->GetT() - mEnv[i - 1]->GetT()), mDB);
+         return total + IntegrateInverseInterpolated(lastVal, thisVal, t1 - lastT, mDB);
+      }
+      else // this point preceeds the end of the range
+      {
+         total += IntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, mDB);
+         lastT = mEnv[i]->GetT();
+         lastVal = mEnv[i]->GetVal();
+         i++;
+      }
+   }
+}
+
+double Envelope::SolveIntegralOfInverse( double t0, double area )
+{
+   if(area == 0.0)
+      return t0;
+   if(area < 0.0)
+   {
+      fprintf( stderr, "SolveIntegralOfInverse called with negative area, this is not supported!\n" );
+      return t0;
+   }
+   
+   unsigned int count = mEnv.Count();
+   if(count == 0) // 'empty' envelope
+      return t0 + area * mDefaultValue;
+   
+   double lastT, lastVal;
+   unsigned int i; // this is the next point to check
+   if(t0 < mEnv[0]->GetT()) // t0 preceding the first point
+   {
+      i = 1;
+      lastT = mEnv[0]->GetT();
+      lastVal = mEnv[0]->GetVal();
+      double added = (lastT - t0) / lastVal;
+      if(added >= area)
+         return t0 + area * mEnv[0]->GetVal();
+      area -= added;
+   }
+   else if(t0 >= mEnv[count - 1]->GetT()) // t0 following the last point
+   {
+      return t0 + area * mEnv[count - 1]->GetVal();
+   }
+   else // t0 enclosed by points
+   {
+      // Skip any points that come before t0 using binary search
+      int lo, hi;
+      BinarySearchForTime(lo, hi, t0);
+      lastVal = InterpolatePoints(mEnv[lo]->GetVal(), mEnv[hi]->GetVal(), (t0 - mEnv[lo]->GetT()) / (mEnv[hi]->GetT() - mEnv[lo]->GetT()), mDB);
+      lastT = t0;
+      i = hi; // the point immediately after t0.
+   }
+   
+   // loop through the rest of the envelope points until we get to t1
+   while (1)
+   {
+      if(i >= count) // the requested range extends beyond the last point
+      {
+         return lastT + area * lastVal;
+      }
+      else
+      {
+         double added = IntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, mDB);
+         if(added >= area)
+            return lastT + SolveIntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, area, mDB);
+         area -= added;
+         lastT = mEnv[i]->GetT();
+         lastVal = mEnv[i]->GetVal();
+         i++;
+      }
+   }
 }
 
 void Envelope::print()
 {
    for( unsigned int i = 0; i < mEnv.Count(); i++ )
-      printf( "(%.2f, %.2f)\n", mEnv[i]->t, mEnv[i]->val );
+      printf( "(%.2f, %.2f)\n", mEnv[i]->GetT(), mEnv[i]->GetVal() );
 }
 
 void checkResult( int n, double a, double b )
@@ -1328,24 +1508,20 @@ void Envelope::testMe()
    SetInterpolateDB(false);
    Mirror(false);
 
-   SetDefaultValue(0.5);
    Flatten(0.5);
    checkResult( 1, Integral(0.0,100.0), 50);
    checkResult( 2, Integral(-10.0,10.0), 10);
 
-   SetDefaultValue(1.0);
    Flatten(0.5);
    checkResult( 3, Integral(0.0,100.0), 50);
    checkResult( 4, Integral(-10.0,10.0), 10);
    checkResult( 5, Integral(-20.0,-10.0), 5);
 
-   SetDefaultValue(0.5);
    Flatten(0.5);
    Insert( 5.0, 0.5 );
    checkResult( 6, Integral(0.0,100.0), 50);
    checkResult( 7, Integral(-10.0,10.0), 10);
 
-   SetDefaultValue(0.5);
    Flatten(0.0);
    Insert( 0.0, 0.0 );
    Insert( 5.0, 1.0 );
@@ -1358,7 +1534,6 @@ void Envelope::testMe()
    // Integrals should be additive
    checkResult( 8, result - resulta - resultb, 0);
 
-   SetDefaultValue(0.5);
    Flatten(0.0);
    Insert( 0.0, 0.0 );
    Insert( 5.0, 1.0 );
@@ -1382,15 +1557,4 @@ void Envelope::testMe()
    checkResult( 18, NextPointAfter( 0 ), 5 );
    checkResult( 19, NextPointAfter( 5 ), 10 );
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 35b619bd-685f-45ee-89f0-bea14839de88
 
