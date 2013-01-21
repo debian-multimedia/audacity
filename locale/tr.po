@@ -7,13 +7,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Audacity 2.0.0\n"
 "Report-Msgid-Bugs-To: audacity-translation@lists.sourceforge.net\n"
-"POT-Creation-Date: 2012-08-09 07:29+0100\n"
-"PO-Revision-Date: 2012-08-12 22:01-0000\n"
+"POT-Creation-Date: 2013-01-10 05:23+0000\n"
+"PO-Revision-Date: 2013-01-11 04:51-0000\n"
 "Last-Translator: Kaya Zeren\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
 
 #: AboutDialog.cpp:60
 #: AboutDialog.cpp:80
@@ -24,7 +25,7 @@ msgstr "ortak kurucu"
 msgid "quality assurance"
 msgstr "kalite güvencesi"
 
-#: AboutDialog.cpp:160
+#: AboutDialog.cpp:161
 msgid "About Audacity..."
 msgstr "Audacity Hakkında..."
 
@@ -33,15 +34,15 @@ msgstr "Audacity Hakkında..."
 #. * In English it is slightly humorous alternative to an 'OK' button.
 #. * If the humour doesn't work in your language, then just use whatever
 #. * you would use for a translation for 'OK' on a button.
-#: AboutDialog.cpp:179
+#: AboutDialog.cpp:180
 msgid "OK... Audacious!"
 msgstr "Tamam... Audaharika!"
 
-#: AboutDialog.cpp:199
+#: AboutDialog.cpp:200
 msgid "Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a>. We thank <a href=\"http://sourceforge.net\">SourceForge.net</a> and <a href=\"http://code.google.com\">Google Code</a> for our project hosting. Audacity is <a href=\"http://audacity.sourceforge.net/download/\">available</a> for Windows, Mac, and GNU/Linux (and other Unix-like systems)."
 msgstr "Audacity, tüm Dünya üzerine yayılmış gönüllü <a href=\"http://audacity.sourceforge.net/community/developers\">geliştiricilerden</a> oluşan bir grup tarafından hazırlanmış özgürce ve ücretsiz olarak dağıtılan bir yazılımdır. Projemizi destekledikleri için <a href=\"http://sourceforge.net\">SourceForge.net</a> ve <a href=\"http://code.google.com\">Google Code</a> organizasyonlarına teşekkür ederiz. Windows, Mac ve GNU/Linux (ve diğer Unix benzeri) işletim sistemlerine uygun <a href=\"http://audacity.sourceforge.net/download/\">Audacity sürümünü indirebilirsiniz</a>."
 
-#: AboutDialog.cpp:203
+#: AboutDialog.cpp:204
 msgid "If you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">Feedback</a> address. For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">Wiki</a> or visit our <a href=\"http://forum.audacityteam.org/\">Forum</a>."
 msgstr "Yazılımda bir hata bulursanız ya da bir öneriniz varsa, lütfen bunları <a href=\"mailto:feedback@audacityteam.org\">Geribildirim</a> adresimize yazın. Yardım almak, ipuçları ve püf noktalarına erişmek için <a href=\"http://wiki.audacityteam.org/index.php?title=Audacity_Wiki_Home_Page\">Wiki</a> ya da <a href=\"http://audacityteam.org/forum/\">Forum</a> sayfalarımıza bakabilirsiniz."
 
@@ -50,182 +51,184 @@ msgstr "Yazılımda bir hata bulursanız ya da bir öneriniz varsa, lütfen bunl
 #. *  your own name(s) to the credits.
 #. *
 #. *  For example:  "English translation by Dominic Mazzoni."
-#: AboutDialog.cpp:211
-#: AboutDialog.cpp:213
+#: AboutDialog.cpp:212
+#: AboutDialog.cpp:214
 msgid "translator_credits"
 msgstr "Çevirmenler"
 
-#: AboutDialog.cpp:224
+#: AboutDialog.cpp:225
 msgid "A Free Digital Audio Editor<br>"
 msgstr "Özgür Sayısal Ses Düzenleyicisi<br>"
 
-#: AboutDialog.cpp:228
+#: AboutDialog.cpp:229
 msgid "Credits"
 msgstr "Emeği Geçenler"
 
 #. i18n-hint: %s will be replaced by the version number.
-#: AboutDialog.cpp:233
+#: AboutDialog.cpp:234
 #, c-format
 msgid "Audacity %s Development Team"
 msgstr "Audacity %s Geliştirici Takımı"
 
 #. i18n-hint: %s will be replaced by the version number.
-#: AboutDialog.cpp:239
+#: AboutDialog.cpp:240
 #, c-format
 msgid "Audacity %s Support Team"
 msgstr "Audacity %s Destek Takımı"
 
-#: AboutDialog.cpp:244
+#: AboutDialog.cpp:245
 msgid "Emeritus Developers"
 msgstr "Emekli Geliştiriciler"
 
-#: AboutDialog.cpp:249
+#: AboutDialog.cpp:250
 msgid "Other Emeritus Team Members"
 msgstr "Diğer Emekli Takım Üyeleri"
 
-#: AboutDialog.cpp:254
+#: AboutDialog.cpp:255
 msgid "Other Contributors"
 msgstr "Diğer Katılımcılar"
 
-#: AboutDialog.cpp:259
+#: AboutDialog.cpp:260
 msgid "Audacity is based on code from the following projects:"
 msgstr "Audacity, şu projelerdeki kodlar üzerine geliştirilmiştir:"
 
-#: AboutDialog.cpp:264
+#: AboutDialog.cpp:265
 msgid "Special thanks:"
 msgstr "Özel teşekkürler:"
 
-#: AboutDialog.cpp:269
+#: AboutDialog.cpp:270
 msgid "<b>Audacity&reg;</b> software is copyright"
 msgstr "<b>Audacity&reg;</b> yazılımının tüm hakları saklıdır"
 
-#: AboutDialog.cpp:272
+#: AboutDialog.cpp:273
 msgid "The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni."
 msgstr "<b>Audacity&reg;</b> adı Dominic Mazzoni adına tescillidir. "
 
 #. i18n-hint: Information about when audacity was compiled
-#: AboutDialog.cpp:327
-#: AboutDialog.cpp:340
-#: AboutDialog.cpp:489
+#: AboutDialog.cpp:328
+#: AboutDialog.cpp:341
+#: AboutDialog.cpp:498
 msgid "Build Information"
 msgstr "Sürüm Bilgileri"
 
-#: AboutDialog.cpp:333
+#: AboutDialog.cpp:334
 #: effects/AvcCompressor.cpp:674
 msgid "Enabled"
 msgstr "Etkin"
 
-#: AboutDialog.cpp:334
+#: AboutDialog.cpp:335
 msgid "Disabled"
 msgstr "Devre Dışı"
 
-#: AboutDialog.cpp:344
+#: AboutDialog.cpp:345
 msgid "File Format Support"
 msgstr "Dosya Biçimi Desteği"
 
 #. i18n-hint: This is what the library (libmad) does - imports MP3 files
-#: AboutDialog.cpp:354
-#: AboutDialog.cpp:356
+#: AboutDialog.cpp:355
+#: AboutDialog.cpp:357
 msgid "MP3 Importing"
 msgstr "MP3 Alma"
 
-#: AboutDialog.cpp:363
-#: AboutDialog.cpp:366
+#: AboutDialog.cpp:364
+#: AboutDialog.cpp:367
 msgid "Ogg Vorbis Import and Export"
 msgstr "Ogg Vorbis Alma ve Verme"
 
-#: AboutDialog.cpp:370
-#: AboutDialog.cpp:373
+#: AboutDialog.cpp:371
+#: AboutDialog.cpp:374
 msgid "ID3 tag support"
 msgstr "ID3 etiket desteği"
 
-#: AboutDialog.cpp:380
-#: AboutDialog.cpp:383
+#: AboutDialog.cpp:381
+#: AboutDialog.cpp:384
 msgid "FLAC import and export"
 msgstr "FLAC verme ve alma"
 
-#: AboutDialog.cpp:388
-#: AboutDialog.cpp:391
+#: AboutDialog.cpp:389
+#: AboutDialog.cpp:392
 msgid "MP2 export"
 msgstr "MP2 verme"
 
-#: AboutDialog.cpp:396
-#: AboutDialog.cpp:399
+#: AboutDialog.cpp:397
+#: AboutDialog.cpp:400
 msgid "Import via QuickTime"
 msgstr "QuickTime ile al"
 
 #. i18n-hint: Libraries that are essential to audacity
-#: AboutDialog.cpp:406
+#: AboutDialog.cpp:407
 msgid "Core Libraries"
 msgstr "Temel Kütüphaneler"
 
-#: AboutDialog.cpp:412
-#: AboutDialog.cpp:415
-#: AboutDialog.cpp:418
-#: AboutDialog.cpp:420
+#: AboutDialog.cpp:413
+#: AboutDialog.cpp:416
+#: AboutDialog.cpp:419
+#: AboutDialog.cpp:421
+#: AboutDialog.cpp:426
+#: AboutDialog.cpp:429
 msgid "Sample rate conversion"
 msgstr "Örnekleme hızı dönüşümü"
 
-#: AboutDialog.cpp:424
+#: AboutDialog.cpp:433
 msgid "Audio playback and recording"
 msgstr "Ses oaynatma ve kaydetme"
 
-#: AboutDialog.cpp:434
+#: AboutDialog.cpp:443
 msgid "Features"
 msgstr "Özellikler"
 
-#: AboutDialog.cpp:438
-#: AboutDialog.cpp:441
-#: AboutDialog.cpp:446
-#: AboutDialog.cpp:449
-#: AboutDialog.cpp:454
-#: AboutDialog.cpp:457
-#: AboutDialog.cpp:462
-#: AboutDialog.cpp:465
+#: AboutDialog.cpp:447
+#: AboutDialog.cpp:450
+#: AboutDialog.cpp:455
+#: AboutDialog.cpp:458
+#: AboutDialog.cpp:463
+#: AboutDialog.cpp:466
+#: AboutDialog.cpp:471
+#: AboutDialog.cpp:474
 msgid "Plug-in support"
 msgstr "Eklenti desteği"
 
-#: AboutDialog.cpp:470
-#: AboutDialog.cpp:473
+#: AboutDialog.cpp:479
+#: AboutDialog.cpp:482
 msgid "Sound card mixer support"
 msgstr "Ses kartı karıştırıcı desteği"
 
-#: AboutDialog.cpp:478
-#: AboutDialog.cpp:481
+#: AboutDialog.cpp:487
+#: AboutDialog.cpp:490
 msgid "Pitch and Tempo Change support"
 msgstr "HIz ve Tempo Değiştirme desteği"
 
-#: AboutDialog.cpp:493
+#: AboutDialog.cpp:502
 msgid "Program build date: "
 msgstr "Programın sürümü tarihi:"
 
-#: AboutDialog.cpp:496
-#: AboutDialog.cpp:498
+#: AboutDialog.cpp:505
+#: AboutDialog.cpp:507
 msgid "Build type:"
 msgstr "Sürüm tipi:"
 
-#: AboutDialog.cpp:496
+#: AboutDialog.cpp:505
 msgid "Debug build"
 msgstr "Hata ayıklama sürümü"
 
-#: AboutDialog.cpp:498
+#: AboutDialog.cpp:507
 msgid "Release build"
 msgstr "Yayın sürümü"
 
 #. i18n-hint: The directory audacity is installed into (on *nix systems)
-#: AboutDialog.cpp:503
+#: AboutDialog.cpp:512
 msgid "Installation Prefix: "
 msgstr "Yükleme Öneki:"
 
-#: AboutDialog.cpp:507
+#: AboutDialog.cpp:516
 msgid "Settings folder: "
 msgstr "Ayarlar klasörü:"
 
-#: AboutDialog.cpp:522
+#: AboutDialog.cpp:531
 msgid "GPL License"
 msgstr "GPL Lisansı"
 
-#: AudacityApp.cpp:789
+#: AudacityApp.cpp:793
 #, c-format
 msgid ""
 "%s could not be found.\n"
@@ -236,7 +239,7 @@ msgstr ""
 "\n"
 "Geçmiş dosyalar listesinden kaldırıldı."
 
-#: AudacityApp.cpp:850
+#: AudacityApp.cpp:854
 #, c-format
 msgid ""
 "One or more external audio files could not be found.\n"
@@ -255,66 +258,66 @@ msgstr ""
 "Daha başka kayıp dosyalar da olabilir.\n"
 "Dosya > Bağlılıkları Denetle komutuyla kayıp dosyaların listesini ve konumlarını görebilirsiniz."
 
-#: AudacityApp.cpp:864
+#: AudacityApp.cpp:868
 msgid "Files Missing"
 msgstr "Dosyalar Kayıp"
 
-#: AudacityApp.cpp:1020
-#: AudacityApp.cpp:1242
+#: AudacityApp.cpp:1024
+#: AudacityApp.cpp:1246
 msgid "Audacity Log"
 msgstr "Audacity Günlüğü"
 
-#: AudacityApp.cpp:1029
+#: AudacityApp.cpp:1033
 msgid "Master Gain Control"
 msgstr "Ana Kazanç Denetimi"
 
-#: AudacityApp.cpp:1030
+#: AudacityApp.cpp:1034
 msgid "Input Meter"
 msgstr "Giriş Ölçer"
 
-#: AudacityApp.cpp:1031
+#: AudacityApp.cpp:1035
 msgid "Output Meter"
 msgstr "Çıkış Ölçer"
 
 #. i18n-hint: "New" is an action (verb) to create a new project
-#: AudacityApp.cpp:1196
+#: AudacityApp.cpp:1200
 #: Menus.cpp:201
 msgid "&New"
 msgstr "Ye&ni"
 
 #. i18n-hint: (verb)
-#: AudacityApp.cpp:1197
+#: AudacityApp.cpp:1201
 #: Menus.cpp:206
 msgid "&Open..."
 msgstr "&Aç..."
 
-#: AudacityApp.cpp:1198
+#: AudacityApp.cpp:1202
 msgid "Open &Recent..."
 msgstr "&Son Kullanılanlar..."
 
-#: AudacityApp.cpp:1199
-#: Menus.cpp:1419
-#: Menus.cpp:1422
+#: AudacityApp.cpp:1203
+#: Menus.cpp:1425
+#: Menus.cpp:1428
 msgid "&About Audacity..."
 msgstr "&Audacity Hakkında..."
 
-#: AudacityApp.cpp:1200
+#: AudacityApp.cpp:1204
 msgid "&Preferences..."
 msgstr "&Ayarlar..."
 
-#: AudacityApp.cpp:1294
-#: AudacityApp.cpp:1373
+#: AudacityApp.cpp:1298
+#: AudacityApp.cpp:1377
 #, c-format
 msgid "Using block size of %ld\n"
 msgstr "%ld blok boyutu kullanılıyor\n"
 
-#: AudacityApp.cpp:1315
-#: AudacityApp.cpp:1388
+#: AudacityApp.cpp:1319
+#: AudacityApp.cpp:1392
 #, c-format
 msgid "Unknown command line option: %s\n"
 msgstr "Bilinmeyen komut satırı seçeneği:%s\n"
 
-#: AudacityApp.cpp:1547
+#: AudacityApp.cpp:1551
 msgid ""
 "Audacity could not find a place to store temporary files.\n"
 "Please enter an appropriate directory in the preferences dialog."
@@ -322,11 +325,11 @@ msgstr ""
 "Audacity geçici dosyaları kaydedecek bir yer bulamadı.\n"
 "Lütfen ayarlar bölümünden uygun bir klasör seçin."
 
-#: AudacityApp.cpp:1553
+#: AudacityApp.cpp:1557
 msgid "Audacity is now going to exit. Please launch Audacity again to use the new temporary directory."
 msgstr "Audacity şimdi kapanacak. Yeni geçici klasörü kullanmak için yeniden başlatmalısınız."
 
-#: AudacityApp.cpp:1585
+#: AudacityApp.cpp:1589
 msgid ""
 "Running two copies of Audacity simultaneously may cause\n"
 "data loss or cause your system to crash.\n"
@@ -336,7 +339,7 @@ msgstr ""
 "kaybına ya da sistem çökmesine neden olabilir.\n"
 "\n"
 
-#: AudacityApp.cpp:1592
+#: AudacityApp.cpp:1596
 msgid ""
 "Audacity was not able to lock the temporary files directory.\n"
 "This folder may be in use by another copy of Audacity.\n"
@@ -344,19 +347,19 @@ msgstr ""
 "Audacity geçici dosyalar klasörünü kilitleyemedi.\n"
 "Bu klasör çalışan başka bir Audacity kopyası tarafından kullanılıyor olabilir.\n"
 
-#: AudacityApp.cpp:1594
+#: AudacityApp.cpp:1598
 msgid "Do you still want to start Audacity?"
 msgstr "Audacity gene de başlatılsın mı?"
 
-#: AudacityApp.cpp:1596
+#: AudacityApp.cpp:1600
 msgid "Error Locking Temporary Folder"
 msgstr "Geçici Klasör Kilitlenirken Hata"
 
-#: AudacityApp.cpp:1634
+#: AudacityApp.cpp:1638
 msgid "The system has detected that another copy of Audacity is running.\n"
 msgstr "Sistem başka bir Audacity kopyasının çalıştığını algıladı.\n"
 
-#: AudacityApp.cpp:1636
+#: AudacityApp.cpp:1640
 msgid ""
 "Use the New or Open commands in the currently running Audacity\n"
 "process to open multiple projects simultaneously.\n"
@@ -364,29 +367,29 @@ msgstr ""
 "Aynı anda birden fazla projeyi açmak için çalışmakta olan\n"
 "Audacity içinden Yeni ya da Aç komutlarını kullanın.\n"
 
-#: AudacityApp.cpp:1637
+#: AudacityApp.cpp:1641
 msgid "Audacity is already running"
 msgstr "Audacity zaten çalışıyor"
 
-#: AudacityApp.cpp:1654
+#: AudacityApp.cpp:1658
 msgid "Command-line options supported:"
 msgstr "Desteklenen komut satırı seçenekleri:"
 
 #. i18n-hint: '-help' is the option and needs to stay in
 #. * English. This displays a list of available options
-#: AudacityApp.cpp:1657
+#: AudacityApp.cpp:1661
 msgid "\t-help (this message)"
 msgstr "\t-help (bu iletiyi gösterir)"
 
 #. i18n-hint '-version' needs to stay in English.
-#: AudacityApp.cpp:1659
+#: AudacityApp.cpp:1663
 msgid "\t-version (display Audacity version)"
 msgstr "\t-version (Audacity sürümünü gösterir)"
 
 #. i18n-hint '-test' is the option and needs to stay in
 #. * English. This runs a set of automatic tests on audacity
 #. * itself
-#: AudacityApp.cpp:1663
+#: AudacityApp.cpp:1667
 msgid "\t-test (run self diagnostics)"
 msgstr "\t-test (kendi kendini sına)"
 
@@ -394,15 +397,15 @@ msgstr "\t-test (kendi kendini sına)"
 #. * English. 'nnn' is any integer number. This controls the
 #. * size pieces that audacity uses when writing files to the
 #. * disk
-#: AudacityApp.cpp:1668
+#: AudacityApp.cpp:1672
 msgid "\t-blocksize nnn (set max disk block size in bytes)"
 msgstr "\t-blocksize nnn (bayt olarak en büyük disk bloğu boyutunu ayarlar)"
 
-#: AudacityApp.cpp:1669
+#: AudacityApp.cpp:1673
 msgid "In addition, specify the name of an audio file or Audacity project to open it."
 msgstr "Bununla birlikte, açılacak ses dosyasının ya da Audacity projesinin adını belirtin."
 
-#: AudacityApp.cpp:1981
+#: AudacityApp.cpp:1985
 msgid ""
 "Audacity project (.AUP) files are not currently \n"
 "associated with Audacity. \n"
@@ -414,15 +417,15 @@ msgstr ""
 "\n"
 "Çift tıklandığında açılacak şekilde ilişkilendirilsin mi?"
 
-#: AudacityApp.cpp:1982
+#: AudacityApp.cpp:1986
 msgid "Audacity Project Files"
 msgstr "Audacity Proje Dosyaları"
 
-#: AudioIO.cpp:552
+#: AudioIO.cpp:559
 msgid "Could not find any audio devices.\n"
 msgstr "Hiçbir ses aygıtı bulunamadı.\n"
 
-#: AudioIO.cpp:553
+#: AudioIO.cpp:560
 msgid ""
 "You will not be able to play or record audio.\n"
 "\n"
@@ -430,20 +433,20 @@ msgstr ""
 "Ses oynatıp kaydedemeyeceksiniz.\n"
 "\n"
 
-#: AudioIO.cpp:556
-#: AudioIO.cpp:576
+#: AudioIO.cpp:563
+#: AudioIO.cpp:583
 msgid "Error: "
 msgstr "Hata:"
 
-#: AudioIO.cpp:559
+#: AudioIO.cpp:566
 msgid "Error Initializing Audio"
 msgstr "Ses başlatılırken hata"
 
-#: AudioIO.cpp:572
+#: AudioIO.cpp:579
 msgid "There was an error initializing the midi i/o layer.\n"
 msgstr "Midi giriş/çıkış katmanı hazırlanırken hata oluştu.\n"
 
-#: AudioIO.cpp:573
+#: AudioIO.cpp:580
 msgid ""
 "You will not be able to play midi.\n"
 "\n"
@@ -451,16 +454,16 @@ msgstr ""
 "MIDI dosyasını oynatamayacaksınız.\n"
 "\n"
 
-#: AudioIO.cpp:579
+#: AudioIO.cpp:586
 msgid "Error Initializing Midi"
 msgstr "MIDI başlatılırken hata"
 
-#: AudioIO.cpp:1278
-#: AudioIO.cpp:1312
+#: AudioIO.cpp:1285
+#: AudioIO.cpp:1320
 msgid "Out of memory!"
 msgstr "Bellek doldu!"
 
-#: AudioIO.cpp:1778
+#: AudioIO.cpp:1786
 msgid ""
 "Latency Correction setting has caused the recorded audio to be hidden before zero.\n"
 "Audacity has brought it back to start at zero.\n"
@@ -470,37 +473,37 @@ msgstr ""
 "Audacity bu bölümü sıfırdan başlayacak şekilde geri getirdi.\n"
 "İzi doğru yere çekebilmek için Zaman Kaydırma Aracını (<---> ya da F5) kullanmanız gerekebilir."
 
-#: AudioIO.cpp:1779
+#: AudioIO.cpp:1787
 msgid "Latency problem"
 msgstr "Gecikme sorunu"
 
-#: AudioIO.cpp:3089
+#: AudioIO.cpp:3101
 msgid "Automated Input Level Adjustment stopped. It was not possible to optimize it more. Still too high."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması durduruldu. Daha fazla iyileştirme yapmak olanaksız. Hala çok yüksek."
 
-#: AudioIO.cpp:3097
+#: AudioIO.cpp:3109
 #, c-format
 msgid "Automated Input Level Adjustment decreased the volume to %f."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması ses düzeyini %f olarak azalttı."
 
-#: AudioIO.cpp:3112
+#: AudioIO.cpp:3124
 msgid "Automated Input Level Adjustment stopped. It was not possible to optimize it more. Still too low."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması durduruldu. Daha fazla iyileştirme yapmak olanaksız. Hala çok düşük."
 
-#: AudioIO.cpp:3124
+#: AudioIO.cpp:3136
 #, c-format
 msgid "Automated Input Level Adjustment increased the volume to %.2f."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması ses düzeyini %.2f. olarak arttırdı."
 
-#: AudioIO.cpp:3158
+#: AudioIO.cpp:3170
 msgid "Automated Input Level Adjustment stopped. The total number of analysis has been exceeded without finding an acceptable volume. Still too high."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması durduruldu. Kabul edilebilir bir ses düzeyi bulunamadan toplam inceleme sayısı aşıldı. Hala çok yüksek."
 
-#: AudioIO.cpp:3160
+#: AudioIO.cpp:3172
 msgid "Automated Input Level Adjustment stopped. The total number of analysis has been exceeded without finding an acceptable volume. Still too low."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması durduruldu. Kabul edilebilir bir ses düzeyi bulunamadan toplam inceleme sayısı aşıldı. Hala çok düşük."
 
-#: AudioIO.cpp:3163
+#: AudioIO.cpp:3175
 #, c-format
 msgid "Automated Input Level Adjustment stopped. %.2f seems an acceptable volume."
 msgstr "Kendiliğinden giriş düzeyi ayarlaması durduruldu. %.2f. kabul edilebilir bir ses düzeyi olarak görünüyor."
@@ -561,13 +564,13 @@ msgstr "Kendiliğinden kayıt klasöründeki dosyalar sayılamadı."
 
 #: AutoRecovery.cpp:150
 #: AutoRecovery.cpp:187
-#: Menus.cpp:3800
-#: Menus.cpp:3812
-#: Menus.cpp:6481
-#: Project.cpp:2543
-#: Project.cpp:4486
-#: Project.cpp:4505
-#: TrackPanel.cpp:7320
+#: Menus.cpp:3809
+#: Menus.cpp:3821
+#: Menus.cpp:6502
+#: Project.cpp:2549
+#: Project.cpp:4496
+#: Project.cpp:4515
+#: TrackPanel.cpp:7377
 #: WaveTrack.cpp:973
 #: WaveTrack.cpp:992
 #: WaveTrack.cpp:2116
@@ -580,7 +583,7 @@ msgstr "Kendiliğinden kayıt klasöründeki dosyalar sayılamadı."
 #: effects/Generator.cpp:54
 #: export/ExportFFmpeg.cpp:714
 #: export/ExportMP2.cpp:234
-#: prefs/DirectoriesPrefs.cpp:217
+#: prefs/DirectoriesPrefs.cpp:218
 #: prefs/KeyConfigPrefs.cpp:428
 #: toolbars/ControlToolBar.cpp:603
 #: toolbars/ControlToolBar.cpp:946
@@ -727,7 +730,7 @@ msgstr "Yığın işlemi için dosyaları seçin..."
 
 #. i18n-hint: The vertical bars and * are essential here.
 #: BatchProcessDialog.cpp:252
-#: Project.cpp:2143
+#: Project.cpp:2149
 msgid "All files|*|All supported files|"
 msgstr "Tüm dosyalar|*|Tüm desteklenen dosyalar|"
 
@@ -755,7 +758,7 @@ msgid "&Add"
 msgstr "&Ekle"
 
 #: BatchProcessDialog.cpp:500
-#: LabelDialog.cpp:124
+#: LabelDialog.cpp:127
 #: Tags.cpp:795
 msgid "&Remove"
 msgstr "&Kaldır"
@@ -793,17 +796,17 @@ msgid "De&lete"
 msgstr "Si&l"
 
 #: BatchProcessDialog.cpp:525
-#: effects/Equalization.cpp:2869
+#: effects/Equalization.cpp:2877
 msgid "Move &Up"
 msgstr "Y&ukarı Taşı"
 
 #: BatchProcessDialog.cpp:526
-#: effects/Equalization.cpp:2870
+#: effects/Equalization.cpp:2878
 msgid "Move &Down"
 msgstr "&Aşağı Taşı"
 
 #: BatchProcessDialog.cpp:527
-#: effects/Equalization.cpp:2876
+#: effects/Equalization.cpp:2884
 msgid "De&faults"
 msgstr "&Varsayılanlar"
 
@@ -1333,7 +1336,7 @@ msgstr "İndir"
 msgid "Where is '%s'?"
 msgstr "'%s' nerede?"
 
-#: FFmpeg.cpp:822
+#: FFmpeg.cpp:826
 msgid "Failed to find compatible FFmpeg libraries."
 msgstr "Uyumlu FFmpeg kütüphanesi bulunamadı."
 
@@ -1431,7 +1434,7 @@ msgid "Axis"
 msgstr "Eksen"
 
 #: FreqWindow.cpp:219
-#: LabelDialog.cpp:126
+#: LabelDialog.cpp:129
 #: Menus.cpp:283
 #: prefs/KeyConfigPrefs.cpp:173
 msgid "&Export..."
@@ -1440,7 +1443,7 @@ msgstr "V&er..."
 #: FreqWindow.cpp:220
 #: effects/Contrast.cpp:352
 #: export/ExportCL.cpp:430
-#: export/ExportMultiple.cpp:351
+#: export/ExportMultiple.cpp:361
 msgid "Export"
 msgstr "Ver"
 
@@ -1461,7 +1464,7 @@ msgstr "Kapat"
 
 #: FreqWindow.cpp:231
 #: FreqWindow.cpp:234
-#: effects/Equalization.cpp:1310
+#: effects/Equalization.cpp:1317
 msgid "Grids"
 msgstr "Izgaralar"
 
@@ -1473,12 +1476,12 @@ msgstr "Izgaralar"
 #: effects/AutoDuck.cpp:821
 #: effects/Compressor.cpp:480
 #: effects/Compressor.cpp:488
-#: effects/Equalization.cpp:1139
-#: effects/Equalization.cpp:1141
-#: effects/Equalization.cpp:1149
-#: effects/Equalization.cpp:1221
-#: effects/Equalization.cpp:1452
-#: effects/Equalization.cpp:1463
+#: effects/Equalization.cpp:1145
+#: effects/Equalization.cpp:1147
+#: effects/Equalization.cpp:1155
+#: effects/Equalization.cpp:1227
+#: effects/Equalization.cpp:1459
+#: effects/Equalization.cpp:1470
 #: effects/Normalize.cpp:493
 #: widgets/Meter.cpp:440
 msgid "dB"
@@ -1488,8 +1491,8 @@ msgstr "dB"
 #. cycles per second.
 #: FreqWindow.cpp:314
 #: FreqWindow.cpp:537
-#: effects/Equalization.cpp:1181
-#: effects/Equalization.cpp:1217
+#: effects/Equalization.cpp:1187
+#: effects/Equalization.cpp:1223
 #: import/ImportRaw.cpp:412
 msgid "Hz"
 msgstr "Hz"
@@ -1543,8 +1546,8 @@ msgid "Export Spectral Data As:"
 msgstr "Spektral veriyi şu şekilde ver:"
 
 #: FreqWindow.cpp:1229
-#: LabelDialog.cpp:608
-#: Menus.cpp:3356
+#: LabelDialog.cpp:611
+#: Menus.cpp:3360
 #: effects/Contrast.cpp:516
 #: prefs/KeyConfigPrefs.cpp:340
 msgid "Couldn't write to file: "
@@ -1746,53 +1749,53 @@ msgstr "Yeni Bir Dosya Adı Belirtin:"
 msgid "Edit Labels"
 msgstr "Etiketleri Düzenle"
 
-#: LabelDialog.cpp:111
+#: LabelDialog.cpp:112
 msgid "Press F2 or double click to edit cell contents."
 msgstr "Hücre içeriğini düzenlemek için F2 tuşuna basın ya da çift tıklayın."
 
-#: LabelDialog.cpp:122
+#: LabelDialog.cpp:125
 msgid "Insert &After"
 msgstr "&Ardına Ekle"
 
-#: LabelDialog.cpp:123
+#: LabelDialog.cpp:126
 msgid "Insert &Before"
 msgstr "Ö&nüne Ekle"
 
-#: LabelDialog.cpp:125
+#: LabelDialog.cpp:128
 #: prefs/KeyConfigPrefs.cpp:172
 msgid "&Import..."
 msgstr "&Al..."
 
 #. i18n-hint: (noun).  A track contains waves, audio etc.
-#: LabelDialog.cpp:140
+#: LabelDialog.cpp:143
 msgid "Track"
 msgstr "İz"
 
 #. i18n-hint: (noun)
-#: LabelDialog.cpp:142
+#: LabelDialog.cpp:145
 #: LabelTrack.cpp:1921
-#: Menus.cpp:5941
-#: Menus.cpp:5985
+#: Menus.cpp:5955
+#: Menus.cpp:5999
 msgid "Label"
 msgstr "Etiket"
 
 #. i18n-hint: (noun) of a label
-#: LabelDialog.cpp:144
+#: LabelDialog.cpp:147
 #: TimerRecordDialog.cpp:347
 msgid "Start Time"
 msgstr "Başlangıç Zamanı"
 
 #. i18n-hint: (noun) of a label
-#: LabelDialog.cpp:146
+#: LabelDialog.cpp:149
 #: TimerRecordDialog.cpp:366
 msgid "End Time"
 msgstr "Bitiş Zamanı"
 
-#: LabelDialog.cpp:157
+#: LabelDialog.cpp:160
 msgid "New..."
 msgstr "Yeni..."
 
-#: LabelDialog.cpp:357
+#: LabelDialog.cpp:360
 msgid ""
 "You have left blank label names.  These will be\n"
 "skipped when repopulating the Label Tracks.\n"
@@ -1804,54 +1807,54 @@ msgstr ""
 "\n"
 "Geri dönüp adları yazmak ister misiniz?"
 
-#: LabelDialog.cpp:358
+#: LabelDialog.cpp:361
 #: LangChoice.cpp:134
 msgid "Confirm"
 msgstr "Onaylıyor musunuz?"
 
-#: LabelDialog.cpp:519
-#: Menus.cpp:5125
+#: LabelDialog.cpp:522
+#: Menus.cpp:5136
 msgid "Select a text file containing labels..."
 msgstr "Etiketleri içeren metin dosyasını seçin..."
 
-#: LabelDialog.cpp:523
-#: Menus.cpp:5129
+#: LabelDialog.cpp:526
+#: Menus.cpp:5140
 msgid "Text files (*.txt)|*.txt|All files (*.*)|*.*"
 msgstr "Metin dosyaları (*.txt)|*.txt|Tüm dosyalar (*.*)|*.*"
 
-#: LabelDialog.cpp:538
-#: Menus.cpp:5142
-#: Project.cpp:2346
-#: Project.cpp:2354
+#: LabelDialog.cpp:541
+#: Menus.cpp:5153
+#: Project.cpp:2352
+#: Project.cpp:2360
 msgid "Could not open file: "
 msgstr "Dosya açılamadı: "
 
-#: LabelDialog.cpp:564
+#: LabelDialog.cpp:567
 msgid "No labels to export."
 msgstr "Verilecek etiket yok."
 
-#: LabelDialog.cpp:571
-#: Menus.cpp:3319
+#: LabelDialog.cpp:574
+#: Menus.cpp:3323
 msgid "Export Labels As:"
 msgstr "Etiketleri Farklı Ver:"
 
-#: LabelDialog.cpp:705
+#: LabelDialog.cpp:708
 msgid "New Label Track"
 msgstr "Yeni Etiket İzi"
 
-#: LabelDialog.cpp:706
+#: LabelDialog.cpp:709
 msgid "Enter track name"
 msgstr "İz adını yazın"
 
 #. i18n-hint: (noun) it's the name of a kind of track.
-#: LabelDialog.cpp:708
+#: LabelDialog.cpp:711
 #: LabelDialog.h:53
 #: LabelTrack.cpp:96
 msgid "Label Track"
 msgstr "Etiket İzi "
 
 #: LabelTrack.cpp:1921
-#: Menus.cpp:5941
+#: Menus.cpp:5955
 msgid "Added label"
 msgstr "Etiket eklendi"
 
@@ -1952,370 +1955,370 @@ msgid "Expo&rt Selection..."
 msgstr "Seçimi Ve&r..."
 
 #: Menus.cpp:296
-#: Menus.cpp:311
+#: Menus.cpp:312
 msgid "Export &Labels..."
 msgstr "Etiket&leri Ver..."
 
-#: Menus.cpp:299
-#: Menus.cpp:314
+#: Menus.cpp:300
+#: Menus.cpp:316
 msgid "Export &Multiple..."
 msgstr "Ç&oklu Ver..."
 
-#: Menus.cpp:303
-#: Menus.cpp:318
+#: Menus.cpp:304
+#: Menus.cpp:320
 msgid "Export MIDI..."
 msgstr "MIDI Ver..."
 
-#: Menus.cpp:324
+#: Menus.cpp:326
 msgid "Appl&y Chain..."
 msgstr "Zincir U&ygula..."
 
-#: Menus.cpp:327
+#: Menus.cpp:329
 msgid "Edit C&hains..."
 msgstr "Zincirleri Düze&nle..."
 
-#: Menus.cpp:331
+#: Menus.cpp:333
 msgid "Export CleanSpeech &Presets..."
 msgstr "Temiz Konuşma Ayarlarını &Ver..."
 
-#: Menus.cpp:332
+#: Menus.cpp:334
 msgid "I&mport CleanSpeech Presets..."
 msgstr "Temiz Konuşma Ayarlarını A&l..."
 
-#: Menus.cpp:338
-#: Menus.cpp:354
+#: Menus.cpp:340
+#: Menus.cpp:356
 msgid "&Upload File..."
 msgstr "&Dosyayı Karşıya Yükle..."
 
-#: Menus.cpp:343
-#: Menus.cpp:359
+#: Menus.cpp:345
+#: Menus.cpp:361
 msgid "Pa&ge Setup..."
 msgstr "Say&fa Düzeni..."
 
 #. i18n-hint: (verb) It's item on a menu.
-#: Menus.cpp:347
-#: Menus.cpp:363
+#: Menus.cpp:349
+#: Menus.cpp:365
 msgid "&Print..."
 msgstr "&Yazdır..."
 
 #. i18n-hint: (verb) It's item on a menu.
-#: Menus.cpp:373
+#: Menus.cpp:375
 msgid "E&xit"
 msgstr "Çı&kış"
 
-#: Menus.cpp:383
+#: Menus.cpp:385
 msgid "&Edit"
 msgstr "Düz&enle"
 
-#: Menus.cpp:388
-#: Menus.cpp:1716
+#: Menus.cpp:390
+#: Menus.cpp:1722
 msgid "&Undo"
 msgstr "&Geri Al"
 
-#: Menus.cpp:400
-#: Menus.cpp:1731
+#: Menus.cpp:402
+#: Menus.cpp:1737
 msgid "&Redo"
 msgstr "&Yinele"
 
-#: Menus.cpp:408
-msgid "R&emove Audio"
-msgstr "S&esi Kaldır"
+#: Menus.cpp:410
+msgid "R&emove Audio or Labels"
+msgstr "S&es ya da Etiketleri Kaldır"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:410
+#: Menus.cpp:412
 msgid "Cu&t"
 msgstr "Ke&s"
 
-#: Menus.cpp:413
-#: Menus.cpp:480
+#: Menus.cpp:415
+#: Menus.cpp:486
 msgid "&Delete"
 msgstr "&Sil"
 
 #. i18n-hint: (verb) Do a special kind of cut
-#: Menus.cpp:416
+#: Menus.cpp:418
 msgid "Spl&it Cut"
 msgstr "Bö&l ve Kes"
 
 #. i18n-hint: (verb) Do a special kind of delete
-#: Menus.cpp:418
+#: Menus.cpp:420
 msgid "Split D&elete"
 msgstr "Ayır ve S&il"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:421
+#: Menus.cpp:423
 msgid "Silence Audi&o"
 msgstr "Sesi Sus&tur"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:423
-msgid "Tri&m"
-msgstr "Kır&p"
+#: Menus.cpp:427
+msgid "Tri&m Audio"
+msgstr "&Sesi Buda"
 
-#: Menus.cpp:426
+#: Menus.cpp:432
 msgid "Clip Boun&daries"
 msgstr "&Parça Sınırları"
 
 #. i18n-hint: (verb) It's an item on a menu.
-#: Menus.cpp:428
+#: Menus.cpp:434
 msgid "Sp&lit"
 msgstr "Bö&l"
 
-#: Menus.cpp:431
+#: Menus.cpp:437
 msgid "Split Ne&w"
 msgstr "Ayır ve Ye&ni"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:436
-#: Menus.cpp:504
+#: Menus.cpp:442
+#: Menus.cpp:510
 msgid "&Join"
 msgstr "&Kat"
 
-#: Menus.cpp:437
-#: Menus.cpp:505
+#: Menus.cpp:443
+#: Menus.cpp:511
 msgid "Detac&h at Silences"
 msgstr "Sessizli&klerde Çıkar"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:443
+#: Menus.cpp:449
 msgid "&Copy"
 msgstr "&Kopyala"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:447
+#: Menus.cpp:453
 msgid "&Paste"
 msgstr "Ya&pıştır"
 
-#: Menus.cpp:450
+#: Menus.cpp:456
 msgid "Paste Te&xt to New Label"
 msgstr "Metni Y&eni Etikete Yapıştır"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:456
+#: Menus.cpp:462
 msgid "Duplic&ate"
 msgstr "Çoğ&alt"
 
-#: Menus.cpp:462
-#: Menus.cpp:776
-#: Menus.cpp:976
+#: Menus.cpp:468
+#: Menus.cpp:782
+#: Menus.cpp:982
 msgid "Stereo Trac&k to Mono"
 msgstr "Çift &Kanallı İzi Tek Kanallıya"
 
-#: Menus.cpp:472
-msgid "La&beled Regions"
-msgstr "Etiket&lenmiş Bölgeler"
+#: Menus.cpp:478
+msgid "La&beled Audio"
+msgstr "Etiket&lenmiş Ses"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:477
+#: Menus.cpp:483
 msgid "&Cut"
 msgstr "&Kes"
 
 #. i18n-hint: (verb) A special way to cut out a piece of audio
-#: Menus.cpp:487
+#: Menus.cpp:493
 msgid "&Split Cut"
 msgstr "&Ayır ve Kes"
 
-#: Menus.cpp:488
+#: Menus.cpp:494
 msgid "Sp&lit Delete"
 msgstr "Bö&l ve Sil"
 
-#: Menus.cpp:493
+#: Menus.cpp:499
 msgid "Silence &Audio"
 msgstr "Sesi S&ustur"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:495
+#: Menus.cpp:501
 msgid "Co&py"
 msgstr "Kopya&la"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:500
+#: Menus.cpp:506
 msgid "Spli&t"
 msgstr "Bö&l"
 
 #. i18n-hint: (verb) It's an item on a menu.
-#: Menus.cpp:512
+#: Menus.cpp:518
 msgid "&Select"
 msgstr "&Seç"
 
-#: Menus.cpp:515
+#: Menus.cpp:521
 msgid "&All"
 msgstr "&Tümü"
 
-#: Menus.cpp:516
+#: Menus.cpp:522
 msgid "&None"
 msgstr "&Hiç biri"
 
-#: Menus.cpp:518
+#: Menus.cpp:524
 msgid "&Left at Playback Position"
 msgstr "Oynatma Konumunda So&lda"
 
-#: Menus.cpp:519
+#: Menus.cpp:525
 msgid "&Right at Playback Position"
 msgstr "Oynatma Konumunda Sağ&da"
 
-#: Menus.cpp:523
+#: Menus.cpp:529
 msgid "Track &Start to Cursor"
 msgstr "İ&z Başını İmlece Getir"
 
-#: Menus.cpp:524
+#: Menus.cpp:530
 msgid "Cursor to Track &End"
 msgstr "İmleci İz Sonuna Götür"
 
-#: Menus.cpp:528
+#: Menus.cpp:534
 msgid "In All &Tracks"
 msgstr "&Tüm İzler İçinde"
 
-#: Menus.cpp:533
+#: Menus.cpp:539
 msgid "In All S&ync-Locked Tracks"
 msgstr "Tüm Eş Kilitlenmiş İ&zlerde"
 
-#: Menus.cpp:543
+#: Menus.cpp:549
 msgid "Find &Zero Crossings"
 msgstr "Sıfır &Geçişlerini Bul"
 
-#: Menus.cpp:547
+#: Menus.cpp:553
 msgid "Mo&ve Cursor"
 msgstr "İm&leci Taşı"
 
-#: Menus.cpp:549
+#: Menus.cpp:555
 msgid "to Selection Star&t"
 msgstr "S&eçim Başına"
 
-#: Menus.cpp:550
+#: Menus.cpp:556
 msgid "to Selection En&d"
 msgstr "Seçi&m Sonuna"
 
-#: Menus.cpp:552
+#: Menus.cpp:558
 msgid "to Track &Start"
 msgstr "İz &Başına"
 
-#: Menus.cpp:553
+#: Menus.cpp:559
 msgid "to Track &End"
 msgstr "İz &Sonuna"
 
-#: Menus.cpp:561
+#: Menus.cpp:567
 msgid "Re&gion Save"
 msgstr "Böl&geyi Kaydet"
 
-#: Menus.cpp:564
+#: Menus.cpp:570
 msgid "Regio&n Restore"
 msgstr "Bölgeyi Geri &Yükle"
 
-#: Menus.cpp:572
+#: Menus.cpp:578
 msgid "Pla&y Region"
 msgstr "Bölg&eyi Çal"
 
-#: Menus.cpp:574
+#: Menus.cpp:580
 msgid "&Lock"
 msgstr "Ki&litle"
 
-#: Menus.cpp:577
+#: Menus.cpp:583
 msgid "&Unlock"
 msgstr "Kili&di Aç"
 
-#: Menus.cpp:597
+#: Menus.cpp:603
 msgid "Pre&ferences..."
 msgstr "A&yarlar..."
 
-#: Menus.cpp:607
+#: Menus.cpp:613
 msgid "&View"
 msgstr "&Görünüm"
 
-#: Menus.cpp:610
+#: Menus.cpp:616
 msgid "Zoom &In"
 msgstr "&Yaklaştır"
 
-#: Menus.cpp:613
+#: Menus.cpp:619
 msgid "Zoom &Normal"
 msgstr "&Normal Görünüm"
 
-#: Menus.cpp:614
+#: Menus.cpp:620
 msgid "Zoom &Out"
 msgstr "&Uzaklaştır"
 
-#: Menus.cpp:618
+#: Menus.cpp:624
 msgid "&Fit in Window"
 msgstr "&Pencereye Sığdır"
 
-#: Menus.cpp:619
+#: Menus.cpp:625
 msgid "Fit &Vertically"
 msgstr "Dikey Olarak &Sığdır"
 
-#: Menus.cpp:620
+#: Menus.cpp:626
 msgid "&Zoom to Selection"
 msgstr "Seçimi &Yaklaştır"
 
-#: Menus.cpp:624
+#: Menus.cpp:630
 msgid "&Collapse All Tracks"
 msgstr "&Tüm İzleri Daralt"
 
-#: Menus.cpp:625
+#: Menus.cpp:631
 msgid "E&xpand All Tracks"
 msgstr "Tüm İ&zleri Genişlet"
 
-#: Menus.cpp:629
+#: Menus.cpp:635
 msgid "&Show Clipping"
 msgstr "Kırpılmaları Gö&ster"
 
 #. i18n-hint: Clicking this menu item shows the various editing steps that have been taken.
-#: Menus.cpp:657
+#: Menus.cpp:663
 msgid "&History..."
 msgstr "&Geçmiş..."
 
-#: Menus.cpp:661
+#: Menus.cpp:667
 msgid "&Karaoke..."
 msgstr "&Karaoke..."
 
-#: Menus.cpp:662
+#: Menus.cpp:668
 msgid "&Mixer Board..."
 msgstr "&Karıştırıcı Paneli..."
 
-#: Menus.cpp:668
+#: Menus.cpp:674
 msgid "&Toolbars"
 msgstr "&Araç Çubukları"
 
 #. i18n-hint: Clicking this menu item shows the toolbar that manages devices
-#: Menus.cpp:671
+#: Menus.cpp:677
 msgid "&Device Toolbar"
 msgstr "&Aygıt Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar for editing
-#: Menus.cpp:673
+#: Menus.cpp:679
 msgid "&Edit Toolbar"
 msgstr "&Düzenleme Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar which has sound level meters
-#: Menus.cpp:675
+#: Menus.cpp:681
 msgid "&Meter Toolbar"
 msgstr "&Ölçüm Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar with the mixer
-#: Menus.cpp:677
+#: Menus.cpp:683
 msgid "Mi&xer Toolbar"
 msgstr "Karış&tırıcı Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar for selecting audio
-#: Menus.cpp:679
+#: Menus.cpp:685
 msgid "&Selection Toolbar"
 msgstr "&Seçim Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows a toolbar that has some tools in it
-#: Menus.cpp:681
+#: Menus.cpp:687
 msgid "T&ools Toolbar"
 msgstr "A&raçlar Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar for transcription (currently just vary play speed)
-#: Menus.cpp:683
+#: Menus.cpp:689
 msgid "Transcri&ption Toolbar"
 msgstr "&Uyarlama Çubuğu"
 
 #. i18n-hint: Clicking this menu item shows the toolbar with the big buttons on it (play record etc)
-#: Menus.cpp:685
+#: Menus.cpp:691
 msgid "&Transport Toolbar"
 msgstr "&Hareketler Çubuğu"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:690
+#: Menus.cpp:696
 msgid "&Reset Toolbars"
 msgstr "A&raç Çubuklarını Sıfırla"
 
@@ -2324,660 +2327,660 @@ msgstr "A&raç Çubuklarını Sıfırla"
 #. * with !.  If your translation file is for a special use, that is if it is for a
 #. * simplified view with hidden menu items, then leave the ! out here, so that the
 #. * user can show/hide some of the menu items.
-#: Menus.cpp:701
+#: Menus.cpp:707
 msgid "!Simplified View"
 msgstr "!Sade Görünüm"
 
 #. i18n-hint: 'Transport' is the name given to the set of controls that
 #. play, record, pause etc.
-#: Menus.cpp:712
+#: Menus.cpp:718
 msgid "T&ransport"
 msgstr "Ha&reketler"
 
 #. i18n-hint: (verb) Start playing audio
-#: Menus.cpp:716
+#: Menus.cpp:722
 msgid "Pl&ay"
 msgstr "Oyn&at"
 
-#: Menus.cpp:717
+#: Menus.cpp:723
 msgid "&Loop Play"
 msgstr "Sürek&li Oynat"
 
-#: Menus.cpp:718
+#: Menus.cpp:724
 msgid "&Pause"
 msgstr "&Duraklat"
 
 #. i18n-hint: (verb) Stop playing audio
-#: Menus.cpp:722
+#: Menus.cpp:728
 msgid "&Stop"
 msgstr "D&urdur"
 
-#: Menus.cpp:725
+#: Menus.cpp:731
 msgid "S&kip to Start"
 msgstr "&Başlangıca Git"
 
-#: Menus.cpp:726
+#: Menus.cpp:732
 msgid "Skip to E&nd"
 msgstr "So&na Git"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:731
+#: Menus.cpp:737
 msgid "&Record"
 msgstr "&Kaydet"
 
-#: Menus.cpp:732
+#: Menus.cpp:738
 msgid "&Timer Record..."
 msgstr "&Zamanlanmış Kayı&t..."
 
-#: Menus.cpp:733
+#: Menus.cpp:739
 msgid "Appen&d Record"
 msgstr "&Sona Kayıt Ekle"
 
-#: Menus.cpp:737
+#: Menus.cpp:743
 msgid "&Overdub (on/off)"
 msgstr "&Bindirme (aç/kapat)"
 
-#: Menus.cpp:738
+#: Menus.cpp:744
 msgid "So&ftware Playthrough (on/off)"
 msgstr "&Yazılımsal Oynarken Kaydet (aç/kapat)"
 
-#: Menus.cpp:741
+#: Menus.cpp:747
 msgid "Sound A&ctivated Recording (on/off)"
 msgstr "Sese &Göre Kayıt (aç/kapat)"
 
-#: Menus.cpp:742
+#: Menus.cpp:748
 msgid "Sound Activation Le&vel..."
 msgstr "Kayıdı Başlatacak S&es Düzeyi..."
 
-#: Menus.cpp:745
+#: Menus.cpp:751
 msgid "A&utomated Input Level Adjustment (on/off)"
 msgstr "Kendiliğinden Giriş &Düzeyi Ayarlaması (aç/kapat)"
 
-#: Menus.cpp:747
+#: Menus.cpp:753
 msgid "R&escan Audio Devices"
 msgstr "S&es Aygıtlarını Yeniden Tara"
 
-#: Menus.cpp:756
-#: Menus.cpp:954
+#: Menus.cpp:762
+#: Menus.cpp:960
 msgid "&Tracks"
 msgstr "İ&zler"
 
-#: Menus.cpp:761
-#: Menus.cpp:959
+#: Menus.cpp:767
+#: Menus.cpp:965
 msgid "Add &New"
 msgstr "&Yeni İz Ekle"
 
-#: Menus.cpp:763
-#: Menus.cpp:961
+#: Menus.cpp:769
+#: Menus.cpp:967
 msgid "&Audio Track"
 msgstr "&Ses İzi"
 
-#: Menus.cpp:764
-#: Menus.cpp:962
+#: Menus.cpp:770
+#: Menus.cpp:968
 msgid "&Stereo Track"
 msgstr "&Çift Kanallı İz"
 
-#: Menus.cpp:765
-#: Menus.cpp:963
+#: Menus.cpp:771
+#: Menus.cpp:969
 msgid "&Label Track"
 msgstr "&Etiket İzi"
 
-#: Menus.cpp:766
-#: Menus.cpp:964
+#: Menus.cpp:772
+#: Menus.cpp:970
 msgid "&Time Track"
 msgstr "&Zaman İzi"
 
-#: Menus.cpp:779
-#: Menus.cpp:979
+#: Menus.cpp:785
+#: Menus.cpp:985
 msgid "Mi&x and Render"
 msgstr "&Karıştır ve Oluştur"
 
-#: Menus.cpp:782
-#: Menus.cpp:982
+#: Menus.cpp:788
+#: Menus.cpp:988
 msgid "Mix and Render to New Track"
 msgstr "Karıştır ve Yeni İz Oluştur"
 
-#: Menus.cpp:785
-#: Menus.cpp:985
+#: Menus.cpp:791
+#: Menus.cpp:991
 msgid "&Resample..."
 msgstr "Yeniden Ö&rnekle..."
 
-#: Menus.cpp:791
-#: Menus.cpp:991
+#: Menus.cpp:797
+#: Menus.cpp:997
 msgid "Remo&ve Tracks"
 msgstr "İzleri &Kaldır"
 
-#: Menus.cpp:797
-#: Menus.cpp:997
+#: Menus.cpp:803
+#: Menus.cpp:1003
 msgid "&Mute All Tracks"
 msgstr "Tü&m İzlerin Sesini Sustur"
 
-#: Menus.cpp:798
-#: Menus.cpp:998
-msgid "&UnMute All Tracks"
-msgstr "&Tüm İzlerin Sesini Aç"
-
-#: Menus.cpp:803
-#: Menus.cpp:1003
-msgid "Align with &Zero"
-msgstr "Sıfıra &Hizala"
-
 #: Menus.cpp:804
 #: Menus.cpp:1004
-msgid "Align with &Cursor"
-msgstr "İmle&c ile Hizala"
-
-#: Menus.cpp:805
-#: Menus.cpp:1005
-msgid "Align with Selection &Start"
-msgstr "&Seçim Başlangıcıyla Hizala"
-
-#: Menus.cpp:806
-#: Menus.cpp:1006
-msgid "Align with Selection &End"
-msgstr "S&eçim Sonuyla Hizala"
-
-#: Menus.cpp:807
-#: Menus.cpp:1007
-msgid "Align End with Cu&rsor"
-msgstr "Sonu İ&mlecle Hizala"
-
-#: Menus.cpp:808
-#: Menus.cpp:1008
-msgid "Align End with Selection Star&t"
-msgstr "Sonu Seçim &Başlangıcına Hizala"
+msgid "&Unmute All Tracks"
+msgstr "Tüm İzlerin &Sesini Aç"
 
 #: Menus.cpp:809
 #: Menus.cpp:1009
-msgid "Align End with Selection En&d"
-msgstr "Sonu Seçim Sonuna Hiza&la"
+msgid "Align with &Zero"
+msgstr "Sıfıra &Hizala"
 
 #: Menus.cpp:810
 #: Menus.cpp:1010
-msgid "Align Tracks To&gether"
-msgstr "İ&zleri Birlikte Hizala"
+msgid "Align with &Cursor"
+msgstr "İmle&c ile Hizala"
+
+#: Menus.cpp:811
+#: Menus.cpp:1011
+msgid "Align with Selection &Start"
+msgstr "&Seçim Başlangıcıyla Hizala"
 
 #: Menus.cpp:812
 #: Menus.cpp:1012
+msgid "Align with Selection &End"
+msgstr "S&eçim Sonuyla Hizala"
+
+#: Menus.cpp:813
+#: Menus.cpp:1013
+msgid "Align End with Cu&rsor"
+msgstr "Sonu İ&mlecle Hizala"
+
+#: Menus.cpp:814
+#: Menus.cpp:1014
+msgid "Align End with Selection Star&t"
+msgstr "Sonu Seçim &Başlangıcına Hizala"
+
+#: Menus.cpp:815
+#: Menus.cpp:1015
+msgid "Align End with Selection En&d"
+msgstr "Sonu Seçim Sonuna Hiza&la"
+
+#: Menus.cpp:816
+#: Menus.cpp:1016
+msgid "Align Tracks To&gether"
+msgstr "İ&zleri Birlikte Hizala"
+
+#: Menus.cpp:818
+#: Menus.cpp:1018
 msgid "&Align Tracks"
 msgstr "İzleri Hiz&ala"
 
-#: Menus.cpp:827
-#: Menus.cpp:1027
+#: Menus.cpp:833
+#: Menus.cpp:1033
 msgid "Ali&gn and Move Cursor"
 msgstr "&Hizala ve İmleci Taşı"
 
-#: Menus.cpp:839
-#: Menus.cpp:1039
-#: Menus.cpp:5603
+#: Menus.cpp:845
+#: Menus.cpp:1045
+#: Menus.cpp:5617
 msgid "Synchronize MIDI with Audio"
 msgstr "MIDI ile Sesi Eşleştir"
 
-#: Menus.cpp:847
-#: Menus.cpp:1047
+#: Menus.cpp:853
+#: Menus.cpp:1053
 msgid "Sync-&Lock Tracks"
 msgstr "Eş Ki&litlenmiş İzler"
 
-#: Menus.cpp:852
-#: Menus.cpp:1052
+#: Menus.cpp:858
+#: Menus.cpp:1058
 msgid "Add Label At &Selection"
 msgstr "&Seçime Etiket Ekle"
 
-#: Menus.cpp:854
-#: Menus.cpp:1054
+#: Menus.cpp:860
+#: Menus.cpp:1060
 msgid "Add Label At &Playback Position"
 msgstr "Oynatma Konumuna &Etiket Ekle"
 
-#: Menus.cpp:862
-#: Menus.cpp:1062
+#: Menus.cpp:868
+#: Menus.cpp:1068
 msgid "&Edit Labels..."
 msgstr "&Etiketleri Düzenle..."
 
-#: Menus.cpp:868
-#: Menus.cpp:1068
-msgid "S&ort tracks"
-msgstr "İzleri &Sırala"
+#: Menus.cpp:874
+#: Menus.cpp:1074
+msgid "S&ort Tracks"
+msgstr "İ&zleri Sırala"
 
-#: Menus.cpp:870
-#: Menus.cpp:1070
+#: Menus.cpp:876
+#: Menus.cpp:1076
 msgid "by &Start time"
 msgstr "&Başlama Zamanına Göre"
 
-#: Menus.cpp:873
-#: Menus.cpp:1073
+#: Menus.cpp:879
+#: Menus.cpp:1079
 msgid "by &Name"
 msgstr "&Ada Göre"
 
-#: Menus.cpp:887
-#: Menus.cpp:1087
+#: Menus.cpp:893
+#: Menus.cpp:1093
 msgid "&Generate"
 msgstr "&Oluştur"
 
-#: Menus.cpp:932
-#: Menus.cpp:1132
-#: Menus.cpp:1243
-#: Menus.cpp:1314
-#: Menus.cpp:1385
+#: Menus.cpp:938
+#: Menus.cpp:1138
+#: Menus.cpp:1249
+#: Menus.cpp:1320
+#: Menus.cpp:1391
 msgid "Unsorted"
 msgstr "Sıralanmamış"
 
-#: Menus.cpp:1154
+#: Menus.cpp:1160
 msgid "Effe&ct"
 msgstr "Et&kiler"
 
 #. i18n-hint: %s will be the name of the effect which will be
 #. * repeated if this menu item is chosen
-#: Menus.cpp:1160
-#: Menus.cpp:3150
+#: Menus.cpp:1166
+#: Menus.cpp:3154
 #, c-format
 msgid "Repeat %s"
 msgstr "%s yinele"
 
-#: Menus.cpp:1163
+#: Menus.cpp:1169
 msgid "Repeat Last Effect"
 msgstr "Son Etkiyi Yinele"
 
-#: Menus.cpp:1265
-#: Menus.cpp:1336
+#: Menus.cpp:1271
+#: Menus.cpp:1342
 msgid "&Analyze"
 msgstr "Çözü&mle"
 
-#: Menus.cpp:1267
-#: Menus.cpp:1338
+#: Menus.cpp:1273
+#: Menus.cpp:1344
 msgid "Contrast..."
 msgstr "Karşıtlık..."
 
-#: Menus.cpp:1270
-#: Menus.cpp:1341
+#: Menus.cpp:1276
+#: Menus.cpp:1347
 msgid "Plot Spectrum..."
 msgstr "Spektrum Çiz..."
 
-#: Menus.cpp:1408
-#: Menus.cpp:1411
+#: Menus.cpp:1414
+#: Menus.cpp:1417
 msgid "&Help"
 msgstr "&Yardım"
 
-#: Menus.cpp:1416
+#: Menus.cpp:1422
 msgid "&About Audacity CleanSpeech..."
 msgstr "&Audacity Temiz Konuşma Hakkında..."
 
-#: Menus.cpp:1425
+#: Menus.cpp:1431
 msgid "&Quick Help (in web browser)"
 msgstr "&Hızlı Yardım (web tarayıcısında)"
 
-#: Menus.cpp:1426
+#: Menus.cpp:1432
 msgid "&Manual (in web browser)"
 msgstr "Kullanı&m Kitabı (web tarayıcısında)"
 
-#: Menus.cpp:1433
-#: Menus.cpp:1451
+#: Menus.cpp:1439
+#: Menus.cpp:1457
 msgid "&Screenshot Tools..."
 msgstr "&Ekran Yakalama Araçları..."
 
-#: Menus.cpp:1440
-#: Menus.cpp:1458
+#: Menus.cpp:1446
+#: Menus.cpp:1464
 msgid "&Run Benchmark..."
 msgstr "&Hız Sınaması Yap..."
 
-#: Menus.cpp:1445
-#: Menus.cpp:1463
+#: Menus.cpp:1451
+#: Menus.cpp:1469
 msgid "Au&dio Device Info..."
 msgstr "&Ses Aygıtı Bilgisi..."
 
-#: Menus.cpp:1446
-#: Menus.cpp:1464
+#: Menus.cpp:1452
+#: Menus.cpp:1470
 msgid "Show &Log..."
 msgstr "Gün&lüğü Göster..."
 
-#: Menus.cpp:1475
+#: Menus.cpp:1481
 msgid "Move backward from toolbars to tracks"
 msgstr "Araç çubuklarından izlere geri git"
 
-#: Menus.cpp:1476
+#: Menus.cpp:1482
 msgid "Move forward from toolbars to tracks"
 msgstr "Araç çubuklarından izlere ileri git"
 
-#: Menus.cpp:1478
+#: Menus.cpp:1484
 #: toolbars/ToolsToolBar.cpp:146
 #: toolbars/ToolsToolBar.cpp:185
 msgid "Selection Tool"
 msgstr "Seçim Aracı"
 
-#: Menus.cpp:1479
+#: Menus.cpp:1485
 #: toolbars/ToolsToolBar.cpp:147
 #: toolbars/ToolsToolBar.cpp:186
 msgid "Envelope Tool"
 msgstr "Zarf Aracı"
 
-#: Menus.cpp:1480
+#: Menus.cpp:1486
 #: toolbars/ToolsToolBar.cpp:150
 #: toolbars/ToolsToolBar.cpp:187
 msgid "Draw Tool"
 msgstr "Çizim Aracı"
 
-#: Menus.cpp:1481
+#: Menus.cpp:1487
 #: toolbars/ToolsToolBar.cpp:149
 #: toolbars/ToolsToolBar.cpp:188
 msgid "Zoom Tool"
 msgstr "Yaklaştırma Aracı"
 
-#: Menus.cpp:1482
+#: Menus.cpp:1488
 #: toolbars/ToolsToolBar.cpp:148
 msgid "Time Shift Tool"
 msgstr "Zaman Kaydırma Aracı"
 
-#: Menus.cpp:1483
+#: Menus.cpp:1489
 #: toolbars/ToolsToolBar.cpp:190
 msgid "Multi Tool"
 msgstr "Çoklu Araç"
 
-#: Menus.cpp:1485
+#: Menus.cpp:1491
 msgid "Next Tool"
 msgstr "Sonraki Araç"
 
-#: Menus.cpp:1486
+#: Menus.cpp:1492
 msgid "Previous Tool"
 msgstr "Önceki Araç"
 
-#: Menus.cpp:1488
+#: Menus.cpp:1494
 msgid "Play/Stop"
 msgstr "Oynat/Durdur"
 
-#: Menus.cpp:1489
+#: Menus.cpp:1495
 msgid "Play/Stop and Set Cursor"
 msgstr "Oynat/Durdur ve İmleci Koy"
 
-#: Menus.cpp:1490
+#: Menus.cpp:1496
 msgid "Play One Second"
 msgstr "Bir Saniye Oynat"
 
-#: Menus.cpp:1491
+#: Menus.cpp:1497
 msgid "Play To Selection"
 msgstr "Seçimi Oynat"
 
-#: Menus.cpp:1492
+#: Menus.cpp:1498
 msgid "Play Cut Preview"
 msgstr "Oynama Kesimi Ön İzleme"
 
-#: Menus.cpp:1494
+#: Menus.cpp:1500
 msgid "Selection to Start"
 msgstr "Başlangıca Kadar Seç"
 
-#: Menus.cpp:1495
+#: Menus.cpp:1501
 msgid "Selection to End"
 msgstr "Sona Kadar Seç"
 
-#: Menus.cpp:1497
+#: Menus.cpp:1503
 msgid "DeleteKey"
 msgstr "SilmeTuşu"
 
-#: Menus.cpp:1501
+#: Menus.cpp:1507
 msgid "DeleteKey2"
 msgstr "SilmeTuşu2"
 
-#: Menus.cpp:1507
+#: Menus.cpp:1513
 msgid "Short seek left during playback"
 msgstr "Oynatmada sola doğru kısa arama"
 
-#: Menus.cpp:1508
+#: Menus.cpp:1514
 msgid "Short seek right during playback"
 msgstr "Oynatmada sağa doğru kısa arama"
 
-#: Menus.cpp:1509
+#: Menus.cpp:1515
 msgid "Long seek left during playback"
 msgstr "Oynatmada sola doğru uzun arama"
 
-#: Menus.cpp:1510
+#: Menus.cpp:1516
 msgid "Long Seek right during playback"
 msgstr "Oynatmada sağa doğru uzun arama"
 
-#: Menus.cpp:1515
+#: Menus.cpp:1521
 msgid "Move Focus to Previous Track"
 msgstr "Önceki İze Odaklan"
 
-#: Menus.cpp:1516
+#: Menus.cpp:1522
 msgid "Move Focus to Previous and Select"
 msgstr "Öncekine Odaklan ve Seç"
 
-#: Menus.cpp:1517
+#: Menus.cpp:1523
 msgid "Move Focus to Next Track"
 msgstr "Sonraki İze Odaklan"
 
-#: Menus.cpp:1518
+#: Menus.cpp:1524
 msgid "Move Focus to Next and Select"
 msgstr "Sonrakine Odaklan ve Seç"
 
-#: Menus.cpp:1519
-#: Menus.cpp:1520
+#: Menus.cpp:1525
+#: Menus.cpp:1526
 msgid "Toggle Focused Track"
 msgstr "Odaklanılan İzi Değiştir"
 
-#: Menus.cpp:1522
+#: Menus.cpp:1528
 msgid "Cursor Left"
 msgstr "İmleç Sola"
 
-#: Menus.cpp:1523
+#: Menus.cpp:1529
 msgid "Cursor Right"
 msgstr "İmleç Sağa"
 
-#: Menus.cpp:1524
+#: Menus.cpp:1530
 msgid "Cursor Short Jump Left"
 msgstr "İmleci Sola Doğru Kısa Atlat"
 
-#: Menus.cpp:1525
+#: Menus.cpp:1531
 msgid "Cursor Short Jump Right"
 msgstr "İmleci Sağa Doğru Kısa Atlat"
 
-#: Menus.cpp:1526
+#: Menus.cpp:1532
 msgid "Cursor Long Jump Left"
 msgstr "İmleci Sola Doğru Uzun Atlat"
 
-#: Menus.cpp:1527
+#: Menus.cpp:1533
 msgid "Cursor Long Jump Right"
 msgstr "İmleci Sağa Doğru Uzun Atlat"
 
-#: Menus.cpp:1529
+#: Menus.cpp:1535
 msgid "Selection Extend Left"
 msgstr "Seçimi Sola Genişlet"
 
-#: Menus.cpp:1530
+#: Menus.cpp:1536
 msgid "Selection Extend Right"
 msgstr "Seçimi Sağa Genişlet"
 
-#: Menus.cpp:1532
+#: Menus.cpp:1538
 msgid "Set (or Extend) Left Selection"
 msgstr "Soldan Seç ve Genişlet"
 
-#: Menus.cpp:1533
+#: Menus.cpp:1539
 msgid "Set (or Extend) Right Selection"
 msgstr "Sağdan Seç ve Genişlet"
 
-#: Menus.cpp:1535
+#: Menus.cpp:1541
 msgid "Selection Contract Left"
 msgstr "Seçimi Sola Daralt"
 
-#: Menus.cpp:1536
+#: Menus.cpp:1542
 msgid "Selection Contract Right"
 msgstr "Seçimi Sağa Daralt"
 
-#: Menus.cpp:1538
+#: Menus.cpp:1544
 msgid "Change pan on focused track"
 msgstr "Odaklanılmış izde konumu değiştir"
 
-#: Menus.cpp:1539
+#: Menus.cpp:1545
 msgid "Pan left on focused track"
 msgstr "Odaklanılmış izde sola kaydır"
 
-#: Menus.cpp:1540
+#: Menus.cpp:1546
 msgid "Pan right on focused track"
 msgstr "Odaklanılmış izde sağa kaydır"
 
-#: Menus.cpp:1541
+#: Menus.cpp:1547
 msgid "Change gain on focused track"
 msgstr "Odaklanılmış izin kazancını değiştir"
 
-#: Menus.cpp:1542
+#: Menus.cpp:1548
 msgid "Increase gain on focused track"
 msgstr "Odaklanılmış izin kazancını arttır"
 
-#: Menus.cpp:1543
+#: Menus.cpp:1549
 msgid "Decrease gain on focused track"
 msgstr "Odaklanılmış izin kazancını azalt"
 
-#: Menus.cpp:1544
+#: Menus.cpp:1550
 msgid "Open menu on focused track"
 msgstr "Odaklanılmış izin menüsünü aç"
 
-#: Menus.cpp:1545
+#: Menus.cpp:1551
 msgid "Mute/Unmute focused track"
 msgstr "Odaklanılmış izi sustur/dinlet"
 
-#: Menus.cpp:1546
+#: Menus.cpp:1552
 msgid "Solo/Unsolo focused track"
 msgstr "Odaklanılmış iz solo/değil"
 
-#: Menus.cpp:1547
+#: Menus.cpp:1553
 msgid "Close focused track"
 msgstr "Odaklanılmış izi kapat"
 
-#: Menus.cpp:1549
+#: Menus.cpp:1555
 msgid "Snap To On"
 msgstr "Hizalama Açık"
 
-#: Menus.cpp:1550
+#: Menus.cpp:1556
 msgid "Snap To Off"
 msgstr "Hizalama Kapalı"
 
-#: Menus.cpp:1554
+#: Menus.cpp:1560
 msgid "Full screen on/off"
 msgstr "Tam ekran aç/kapat"
 
-#: Menus.cpp:1561
+#: Menus.cpp:1567
 msgid "Change input device"
 msgstr "Giriş aygıtını değiştir"
 
-#: Menus.cpp:1564
+#: Menus.cpp:1570
 msgid "Change output device"
 msgstr "Çıkış aygıtını değiştir"
 
-#: Menus.cpp:1567
+#: Menus.cpp:1573
 msgid "Change audio host"
 msgstr "Ses sunucusunu değiştir"
 
-#: Menus.cpp:1570
+#: Menus.cpp:1576
 msgid "Change input channels"
 msgstr "Giriş kanallarını değiştir"
 
-#: Menus.cpp:1574
+#: Menus.cpp:1580
 msgid "Adjust output gain"
 msgstr "Çıkış kazancını ayarla"
 
-#: Menus.cpp:1575
+#: Menus.cpp:1581
 msgid "Increase output gain"
 msgstr "Çıkış kazancını arttır"
 
-#: Menus.cpp:1576
+#: Menus.cpp:1582
 msgid "Decrease output gain"
 msgstr "Çıkış kazancını azalt"
 
-#: Menus.cpp:1577
+#: Menus.cpp:1583
 msgid "Adjust input gain"
 msgstr "Giriş kazancını ayarla"
 
-#: Menus.cpp:1578
+#: Menus.cpp:1584
 msgid "Increase input gain"
 msgstr "Giriş kazancını arttır"
 
-#: Menus.cpp:1579
+#: Menus.cpp:1585
 msgid "Decrease input gain"
 msgstr "Giriş kazancını azalt"
 
-#: Menus.cpp:1581
+#: Menus.cpp:1587
 msgid "Play at speed"
 msgstr "Oynatma hızı"
 
-#: Menus.cpp:1582
+#: Menus.cpp:1588
 msgid "Adjust playback speed"
 msgstr "Oynatma hızını ayarla"
 
-#: Menus.cpp:1583
+#: Menus.cpp:1589
 msgid "Increase playback speed"
 msgstr "Oynatma hızını arttır"
 
-#: Menus.cpp:1584
+#: Menus.cpp:1590
 msgid "Decrease playback speed"
 msgstr "Oynatma hızını azalt"
 
 #. i18n-hint: This is the name of the menu item on Mac OS X only
-#: Menus.cpp:1669
+#: Menus.cpp:1675
 msgid "Open Recent"
 msgstr "Son Kullanılanları Aç"
 
 #. i18n-hint: This is the name of the menu item on Windows and Linux
-#: Menus.cpp:1672
+#: Menus.cpp:1678
 msgid "Recent &Files"
 msgstr "Son Kullanılan &Dosyalar"
 
-#: Menus.cpp:1690
+#: Menus.cpp:1696
 #, c-format
 msgid "&Undo %s"
 msgstr "%s &Geri Al"
 
-#: Menus.cpp:1725
+#: Menus.cpp:1731
 #, c-format
 msgid "&Redo %s"
 msgstr "%s &Yinele"
 
-#: Menus.cpp:2503
+#: Menus.cpp:2509
 msgid "Sort By Time"
 msgstr "Tarihe Göre Sırala"
 
-#: Menus.cpp:2503
+#: Menus.cpp:2509
 msgid "Tracks sorted by time"
 msgstr "Zamana göre sıralanmış izler"
 
-#: Menus.cpp:2512
+#: Menus.cpp:2518
 msgid "Sort By Name"
 msgstr "Ada Göre Sırala"
 
-#: Menus.cpp:2512
+#: Menus.cpp:2518
 msgid "Tracks sorted by name"
 msgstr "İsme göre sıralanmış izler"
 
-#: Menus.cpp:2662
-#: Menus.cpp:2705
-msgid "Position"
-msgstr "Konum"
-
-#: Menus.cpp:2662
+#: Menus.cpp:2669
 msgid "Set Left Selection Boundary"
 msgstr "Sol Seçim Sınırını Ayarla"
 
-#: Menus.cpp:2705
+#: Menus.cpp:2670
+#: Menus.cpp:2712
+msgid "Position"
+msgstr "Konum"
+
+#: Menus.cpp:2711
 msgid "Set Right Selection Boundary"
 msgstr "Sağ Seçim Sınırını Ayarla"
 
-#: Menus.cpp:3125
+#: Menus.cpp:3129
 msgid "You must select a track first."
 msgstr "Önce bir iz seçmelisiniz."
 
-#: Menus.cpp:3303
+#: Menus.cpp:3307
 msgid "labels.txt"
 msgstr "labels.txt"
 
-#: Menus.cpp:3315
+#: Menus.cpp:3319
 msgid "There are no label tracks to export."
 msgstr "Verilecek bir etiket izi bulunamadı."
 
-#: Menus.cpp:3410
+#: Menus.cpp:3414
 msgid "Export MIDI As:"
 msgstr "MIDI Farklı Ver:"
 
-#: Menus.cpp:3414
+#: Menus.cpp:3418
 msgid "MIDI file (*.mid)|*.mid|Allegro file (*.gro)|*.gro"
 msgstr "MIDI dosyası (*.mid)|*.mid|Allegro dosyası (*.gro)|*.gro"
 
-#: Menus.cpp:3446
+#: Menus.cpp:3450
 msgid ""
 "You have selected a filename with an unrecognized file extension.\n"
 "Do you want to continue?"
@@ -2985,468 +2988,466 @@ msgstr ""
 "Tanımlanmamış bir dosya uzantısına sahip bir dosya adı seçtiniz.\n"
 "Devam etmek istiyor musunuz?"
 
-#: Menus.cpp:3447
+#: Menus.cpp:3451
 msgid "Export MIDI"
 msgstr "MIDI Ver"
 
-#: Menus.cpp:3522
+#: Menus.cpp:3526
 msgid "Nothing to undo"
 msgstr "Geri alınacak birşey yok"
 
-#: Menus.cpp:3543
+#: Menus.cpp:3552
 msgid "Nothing to redo"
 msgstr "Yinelenecek birşey yok"
 
-#: Menus.cpp:3638
-#: TrackPanel.cpp:680
-#: toolbars/EditToolBar.cpp:131
+#: Menus.cpp:3647
+#: TrackPanel.cpp:702
 #: toolbars/EditToolBar.cpp:195
 msgid "Cut"
 msgstr "Kes"
 
-#: Menus.cpp:3638
+#: Menus.cpp:3647
 msgid "Cut to the clipboard"
 msgstr "Panoya kes"
 
-#: Menus.cpp:3679
+#: Menus.cpp:3688
 msgid "Split Cut"
 msgstr "Ayır ve Kes"
 
-#: Menus.cpp:3679
+#: Menus.cpp:3688
 msgid "Split-cut to the clipboard"
 msgstr "Panoya ayır ve kes"
 
-#: Menus.cpp:3799
+#: Menus.cpp:3808
 msgid "Pasting one type of track into another is not allowed."
 msgstr "Bir iz tipinden diğerine yapıştırma yapamazsınız."
 
-#: Menus.cpp:3811
+#: Menus.cpp:3820
 msgid "Copying stereo audio into a mono track is not allowed."
 msgstr "Çift kanallı ses tek kanallı ize kopyalanamaz"
 
-#: Menus.cpp:3930
-#: Menus.cpp:3953
-#: Menus.cpp:4056
-#: TrackPanel.cpp:682
+#: Menus.cpp:3939
+#: Menus.cpp:3962
+#: Menus.cpp:4065
+#: TrackPanel.cpp:704
 #: toolbars/EditToolBar.cpp:135
 #: toolbars/EditToolBar.cpp:197
 msgid "Paste"
 msgstr "Yapıştır"
 
-#: Menus.cpp:3930
-#: Menus.cpp:4056
-#: Menus.cpp:4131
+#: Menus.cpp:3939
+#: Menus.cpp:4065
+#: Menus.cpp:4140
 msgid "Pasted from the clipboard"
 msgstr "Panodan yapıştırılan"
 
-#: Menus.cpp:3953
+#: Menus.cpp:3962
 msgid "Pasted text from the clipboard"
 msgstr "Panodan yapıştırılan metin"
 
-#: Menus.cpp:4131
+#: Menus.cpp:4140
 msgid "Paste Text to New Label"
 msgstr "Metni Yeni Etikete Yapıştır"
 
-#: Menus.cpp:4179
+#: Menus.cpp:4188
+#, c-format
+msgid "Trim selected audio tracks from %.2f seconds to %.2f seconds"
+msgstr "Seçilmiş izleri %.2f ile %.2f saniyeleri arasında buda"
+
+#: Menus.cpp:4190
 #: toolbars/EditToolBar.cpp:198
-msgid "Trim"
-msgstr "Kırp"
+msgid "Trim Audio"
+msgstr "Sesi Buda"
 
-#: Menus.cpp:4179
-msgid "Trim file to selection"
-msgstr "Dosyayı seçime göre kırp"
-
-#: Menus.cpp:4208
+#: Menus.cpp:4219
 #, c-format
 msgid "Split-deleted %.2f seconds at t=%.2f"
 msgstr "%.2f saniye t=%.2f zamanında ayrılıp-silindi"
 
-#: Menus.cpp:4211
+#: Menus.cpp:4222
 msgid "Split Delete"
 msgstr "Ayır ve Sil"
 
-#: Menus.cpp:4232
+#: Menus.cpp:4243
 #, c-format
 msgid "Detached %.2f seconds at t=%.2f"
 msgstr "t=%.2f zamanındaki %.2f saniye çıkartıldı"
 
-#: Menus.cpp:4235
+#: Menus.cpp:4246
 msgid "Detach"
 msgstr "Çıkart"
 
-#: Menus.cpp:4256
+#: Menus.cpp:4267
 #, c-format
 msgid "Joined %.2f seconds at t=%.2f"
 msgstr "%.2f saniye t=%.2f zamanında birleştirildi"
 
-#: Menus.cpp:4259
+#: Menus.cpp:4270
 msgid "Join"
 msgstr "Birleştir"
 
-#: Menus.cpp:4272
+#: Menus.cpp:4283
 #, c-format
 msgid "Silenced selected tracks for %.2f seconds at %.2f"
 msgstr "Seçilen izler %.2f' zamanında %.2f saniye için susturuldu"
 
-#: Menus.cpp:4274
-#: toolbars/EditToolBar.cpp:199
+#: Menus.cpp:4285
 msgid "Silence"
 msgstr "Sustur"
 
-#: Menus.cpp:4304
+#: Menus.cpp:4315
 msgid "Duplicate"
 msgstr "Çoğalt"
 
-#: Menus.cpp:4304
+#: Menus.cpp:4315
 msgid "Duplicated"
 msgstr "Çoğaltıldı"
 
-#. i18n-hint: (verb) past tense.  Audacity has just cut the labeled regions.
-#: Menus.cpp:4329
-msgid "Cut labeled regions to the clipboard"
-msgstr "Etiketlenmiş bölgeleri panoya kes"
+#. i18n-hint: (verb) past tense.  Audacity has just cut the labeled audio regions.
+#: Menus.cpp:4340
+msgid "Cut labeled audio regions to clipboard"
+msgstr "Etiketlenmiş ses bölgelerini keserek panoya al"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4331
-msgid "Cut Labels"
-msgstr "Etiketleri Kes"
+#: Menus.cpp:4342
+msgid "Cut Labeled Audio"
+msgstr "Etiketlenmiş Sesi Kes"
 
-#. i18n-hint: (verb) Audacity has just splitcut the labeled regions
-#: Menus.cpp:4347
-msgid "SplitCut labeled regions to the clipboard"
-msgstr "Etiketli bölgeleri panoya ayır ve kes"
+#. i18n-hint: (verb) Audacity has just split cut the labeled audio regions
+#: Menus.cpp:4358
+msgid "Split Cut labeled audio regions to clipboard"
+msgstr "Etiketli ses bölgelerini panoya ayırıp kes"
 
 #. i18n-hint: (verb) Do a special kind of cut on the labels
-#: Menus.cpp:4349
-msgid "Split Cut Labels"
-msgstr "Etiketleri Ayır ve Kes"
+#: Menus.cpp:4360
+msgid "Split Cut Labeled Audio"
+msgstr "Etiketlenmiş Sesi Ayırıp Kes"
 
-#: Menus.cpp:4363
-msgid "Copied labeled regions to the clipboard"
-msgstr "Etiketli bölgeler panoya kopyalandı"
-
-#. i18n-hint: (verb)
-#: Menus.cpp:4365
-msgid "Copy Labels"
-msgstr "Etiketleri Kopyala"
-
-#. i18n-hint: (verb) Audacity has just deleted the labeled regions
-#: Menus.cpp:4381
-msgid "Deleted labeled regions"
-msgstr "Etiketli bölgeler silindi"
+#: Menus.cpp:4374
+msgid "Copied labeled audio regions to clipboard"
+msgstr "Etiketli ses bölgeleri panoya kopyalandı"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4383
-msgid "Delete Labels"
-msgstr "Etiketleri Sil"
+#: Menus.cpp:4376
+msgid "Copy Labeled Audio"
+msgstr "Etiketlenmiş Sesi Kopyala"
 
-#. i18n-hint: (verb) Audacity has just done a special kind of delete on the labeled regions
-#: Menus.cpp:4397
-msgid "Split Deleted labeled regions"
-msgstr "Etiketlenmiş ayrılıp silinmiş bölgeler"
-
-#. i18n-hint: (verb) Do a special kind of delete on labels
-#: Menus.cpp:4399
-msgid "Split Delete Labels"
-msgstr "Etiketleri Ayır ve Sil"
+#. i18n-hint: (verb) Audacity has just deleted the labeled audio regions
+#: Menus.cpp:4392
+msgid "Deleted labeled audio regions"
+msgstr "Etiketlenmiş ses bölgeleri silindi"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4413
-msgid "Silenced labeled regions"
-msgstr "Etiketli bölgeler susturuldu"
+#: Menus.cpp:4394
+msgid "Delete Labeled Audio"
+msgstr "Etiketlenmiş Sesi Sil"
+
+#. i18n-hint: (verb) Audacity has just done a special kind of delete on the labeled audio regions
+#: Menus.cpp:4408
+msgid "Split Deleted labeled audio regions"
+msgstr "Etiketlenmiş ses bölgelerini ayırıp sil"
+
+#. i18n-hint: (verb) Do a special kind of delete on labeled audio regions
+#: Menus.cpp:4410
+msgid "Split Delete Labeled Audio"
+msgstr "Etiketlenmiş Sesi Ayırıp Sil"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4415
-msgid "Silence Labels"
-msgstr "Etiketleri Sustur"
+#: Menus.cpp:4424
+msgid "Silenced labeled audio regions"
+msgstr "Etiketli ses bölgeleri susturuldu"
 
-#. i18n-hint: (verb) past tense.  Audacity has just split the labeled regions
+#. i18n-hint: (verb)
 #: Menus.cpp:4426
-msgid "Split labeled regions"
-msgstr "Etiketli bölgeleri ayır"
+msgid "Silence Labeled Audio"
+msgstr "Etiketli Ses Bölgelerini Sustur"
+
+#. i18n-hint: (verb) past tense.  Audacity has just split the labeled audio (a point or a region)
+#: Menus.cpp:4437
+msgid "Split labeled audio (points or regions)"
+msgstr "Etiketlenmiş sesleri ayır (nokta ya da bölgeler)"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4428
-msgid "Split Labels"
-msgstr "Etiketleri Ayır"
+#: Menus.cpp:4439
+msgid "Split Labeled Audio"
+msgstr "Etiketlenmiş Sesi Ayır"
 
-#. i18n-hint: (verb) Audacity has just joined the labeled regions
-#: Menus.cpp:4442
-msgid "Joined labeled regions"
-msgstr "Etiketlenmiş bölgeler birleştirildi"
+#. i18n-hint: (verb) Audacity has just joined the labeled audio (points or regions)
+#: Menus.cpp:4453
+msgid "Joined labeled audio (points or regions)"
+msgstr "Etiketlenmiş sesler birleştirildi (nokta ya da bölgeler)"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4444
-msgid "Join Labels"
-msgstr "Etiketleri Birleştir"
+#: Menus.cpp:4455
+msgid "Join Labeled Audio"
+msgstr "Etiketlenmiş Sesleri Birleştir"
 
-#. i18n-hint: (verb) Audacity has just detached the labeled regions.
+#. i18n-hint: (verb) Audacity has just detached the labeled audio regions.
 #. This message appears in history and tells you about something
 #. Audacity has done.
-#: Menus.cpp:4460
-msgid "Detached labeled regions"
-msgstr "Etiketlenmiş bölgeler ayrıldı"
+#: Menus.cpp:4471
+msgid "Detached labeled audio regions"
+msgstr "Etiketlenmiş ses bölgeleri ayrıldı"
 
 #. i18n-hint: (verb)
-#: Menus.cpp:4462
-msgid "Detach Labels"
-msgstr "Etiketleri Çıkart"
+#: Menus.cpp:4473
+msgid "Detach Labeled Audio"
+msgstr "Etiketlenmiş Sesleri Ayır"
 
-#: Menus.cpp:4484
-#: TrackPanel.cpp:7065
+#: Menus.cpp:4495
+#: TrackPanel.cpp:7116
 msgid "Split"
 msgstr "Ayır"
 
-#: Menus.cpp:4573
+#: Menus.cpp:4584
 msgid "Split New"
 msgstr "Ayır Yeni"
 
-#: Menus.cpp:4573
+#: Menus.cpp:4584
 msgid "Split to new track"
 msgstr "Yeni ize ayır"
 
-#: Menus.cpp:5001
+#: Menus.cpp:5012
 msgid "Frequency Analysis"
 msgstr "Frekans Çözümlemesi"
 
-#: Menus.cpp:5158
+#: Menus.cpp:5169
 #, c-format
 msgid "Imported labels from '%s'"
 msgstr "Etiketler '%s' kaynağından alındı"
 
-#: Menus.cpp:5159
+#: Menus.cpp:5170
 msgid "Import Labels"
 msgstr "Etiketleri Al"
 
-#: Menus.cpp:5170
+#: Menus.cpp:5181
 msgid "Select a MIDI file..."
 msgstr "Bir MIDI dosyası seçin..."
 
-#: Menus.cpp:5174
+#: Menus.cpp:5185
 msgid "MIDI and Allegro files (*.mid;*.midi;*.gro)|*.mid;*.midi;*.gro|MIDI files (*.mid;*.midi)|*.mid;*.midi|Allegro files (*.gro)|*.gro|All files (*.*)|*.*"
 msgstr "MIDI ve Allegro dosyaları (*.mid;*.midi;*.gro)|*.mid;*.midi;*.gro|MIDI dosyaları (*.mid;*.midi)|*.mid;*.midi|Allegro dosyaları (*.gro)|*.gro|Tüm dosyalar (*.*)|*.*"
 
-#: Menus.cpp:5191
+#: Menus.cpp:5202
 #, c-format
 msgid "Imported MIDI from '%s'"
 msgstr "MIDI '%s' kaynağından alındı"
 
-#: Menus.cpp:5192
+#: Menus.cpp:5203
 msgid "Import MIDI"
 msgstr "MIDI Al"
 
-#: Menus.cpp:5206
+#: Menus.cpp:5217
 msgid "Select any uncompressed audio file..."
 msgstr "Sıkıştırılmamış bir ses dosyası seçin..."
 
-#: Menus.cpp:5210
+#: Menus.cpp:5221
 msgid "All files (*)|*"
 msgstr "Tüm dosyalar (*)|*"
 
-#: Menus.cpp:5235
+#: Menus.cpp:5246
 msgid "Edit the metadata tags"
 msgstr "Metaveri etiketlerini düzenle"
 
-#: Menus.cpp:5236
-#: export/Export.cpp:378
+#: Menus.cpp:5247
+#: export/Export.cpp:377
 msgid "Edit Metadata"
 msgstr "Metaveriyi Düzenle"
 
-#: Menus.cpp:5236
+#: Menus.cpp:5247
 msgid "Edit Metadata tags"
 msgstr "Metaveri etiketlerini düzenle"
 
-#: Menus.cpp:5293
+#: Menus.cpp:5304
 #, c-format
 msgid "Rendered all audio in track '%s'"
 msgstr "'%s' izindeki tüm ses çevrildi"
 
 #. i18n-hint: Convert the audio into a more usable form, so apply
 #. * panning and amplification and write to some external file.
-#: Menus.cpp:5296
+#: Menus.cpp:5307
 msgid "Render"
 msgstr "Çevir"
 
-#: Menus.cpp:5301
+#: Menus.cpp:5312
 #, c-format
 msgid "Mixed and rendered %d tracks into one new stereo track"
 msgstr "%d iz yeni bir çift kanallı ize karıştırılıp çevrildi"
 
-#: Menus.cpp:5304
+#: Menus.cpp:5315
 #, c-format
 msgid "Mixed and rendered %d tracks into one new mono track"
 msgstr "%d iz yeni bir tek kanallı ize karıştırılıp çevrildi"
 
-#: Menus.cpp:5306
-#: Mix.cpp:168
+#: Menus.cpp:5317
+#: Mix.cpp:169
 msgid "Mix and Render"
 msgstr "Karıştır ve Çevir"
 
-#: Menus.cpp:5438
+#: Menus.cpp:5452
 msgid "Aligned with zero"
 msgstr "Sıfıra hizalanmış"
 
-#: Menus.cpp:5442
+#: Menus.cpp:5456
 msgid "Aligned cursor"
 msgstr "İmlece hizalanmış"
 
-#: Menus.cpp:5446
+#: Menus.cpp:5460
 msgid "Aligned with selection start"
 msgstr "Seçim başlangıcına hizalanmış"
 
-#: Menus.cpp:5450
+#: Menus.cpp:5464
 msgid "Aligned with selection end"
 msgstr "Seçim sonuna hizalanmış"
 
-#: Menus.cpp:5454
+#: Menus.cpp:5468
 msgid "Aligned end with cursor"
 msgstr "Sonu imlece hizalanmış"
 
-#: Menus.cpp:5458
+#: Menus.cpp:5472
 msgid "Aligned end with selection start"
 msgstr "Sonu seçim başlangıcına hizalanmış"
 
-#: Menus.cpp:5462
+#: Menus.cpp:5476
 msgid "Aligned end with selection end"
 msgstr "Sonu seçim sonuna hizalanmış"
 
-#: Menus.cpp:5466
+#: Menus.cpp:5480
 msgid "Aligned"
 msgstr "Hizalanmış"
 
-#: Menus.cpp:5501
+#: Menus.cpp:5515
 msgid "Align"
 msgstr "Hizala"
 
-#: Menus.cpp:5604
+#: Menus.cpp:5618
 msgid "Synchronizing MIDI and Audio Tracks"
 msgstr "MIDI ve Ses İzleri Eşleştiriliyor"
 
-#: Menus.cpp:5770
+#: Menus.cpp:5784
 #, c-format
 msgid "Alignment completed: MIDI from %.2f to %.2f secs, Audio from %.2f to %.2f secs."
 msgstr "Hizalama tamamlandı: MIDI %.2f yerine %.2f saniyeye, Ses %.2f yerine %.2f saniyeye."
 
-#: Menus.cpp:5773
+#: Menus.cpp:5787
 msgid "Sync MIDI with Audio"
 msgstr "MIDI ile Sesi Eşleştir"
 
-#: Menus.cpp:5777
+#: Menus.cpp:5791
 #, c-format
 msgid "Alignment error: input too short: MIDI from %.2f to %.2f secs, Audio from %.2f to %.2f secs."
 msgstr "Hizalama hatası: giriş çok kısa: MIDI %.2f yerine %.2f saniyeye, Ses %.2f yerine %.2f saniyeye."
 
-#: Menus.cpp:5788
+#: Menus.cpp:5802
 msgid "Internal error reported by alignment process."
 msgstr "Hizalama işlemi tarafından iç hata oluştuğu bildirildi."
 
-#: Menus.cpp:5802
+#: Menus.cpp:5816
 msgid "Created new audio track"
 msgstr "Yeni ses izi oluşturuldu"
 
-#: Menus.cpp:5802
-#: Menus.cpp:5824
-#: Menus.cpp:5839
-#: Menus.cpp:5859
+#: Menus.cpp:5816
+#: Menus.cpp:5838
+#: Menus.cpp:5853
+#: Menus.cpp:5873
 msgid "New Track"
 msgstr "Yeni İz"
 
-#: Menus.cpp:5824
+#: Menus.cpp:5838
 msgid "Created new stereo audio track"
 msgstr "Yeni çift kanallı ses izi oluşturuldu"
 
-#: Menus.cpp:5839
+#: Menus.cpp:5853
 msgid "Created new label track"
 msgstr "Yeni etiket izi oluşturuldu"
 
-#: Menus.cpp:5848
+#: Menus.cpp:5862
 msgid "This version of Audacity only allows one time track for each project window."
 msgstr "Bu Audacity sürümünde her proje penceresinde yalnız bir zaman izi kullanılabilir."
 
-#: Menus.cpp:5859
+#: Menus.cpp:5873
 msgid "Created new time track"
 msgstr "Yeni zaman izi oluşturuldu"
 
-#: Menus.cpp:5985
+#: Menus.cpp:5999
 msgid "Edited labels"
 msgstr "Etiketler düzenlendi"
 
-#: Menus.cpp:6014
+#: Menus.cpp:6028
 msgid "Save CleanSpeech Preset File As:"
 msgstr "Temiz Konuşma Ayar Dosyasını Farklı Kaydet:"
 
-#: Menus.cpp:6018
+#: Menus.cpp:6032
 msgid "CleanSpeech Presets (*.csp)|*.csp"
 msgstr "Temiz Konuşma Ayarları (*.csp)|*.csp"
 
-#: Menus.cpp:6025
-#: export/Export.cpp:635
+#: Menus.cpp:6039
+#: export/Export.cpp:629
 msgid "Sorry, pathnames longer than 256 characters not supported."
 msgstr "Malesef 256 karakterden uzun yol isimleri desteklenmiyor."
 
-#: Menus.cpp:6074
+#: Menus.cpp:6088
 msgid "Problem encountered exporting presets."
 msgstr "Ayarlar verilirken bir sorun oldu"
 
-#: Menus.cpp:6075
-#: export/Export.cpp:503
-msgid "Unable to export"
+#: Menus.cpp:6089
+msgid "Unable to Export"
 msgstr "Verilemedi"
 
-#: Menus.cpp:6265
+#: Menus.cpp:6279
 msgid "Remove Track"
 msgstr "İzi Kaldır"
 
-#: Menus.cpp:6265
+#: Menus.cpp:6279
 msgid "Removed audio track(s)"
 msgstr "Ses izleri kaldırıldı"
 
-#: Menus.cpp:6340
+#: Menus.cpp:6356
 msgid "Audio Device Info"
 msgstr "Ses Aygıtı Bilgisi"
 
-#: Menus.cpp:6436
-#: Menus.cpp:6492
+#: Menus.cpp:6452
+#: Menus.cpp:6513
 #: export/ExportFFmpeg.cpp:825
 #: export/ExportMP3.cpp:1899
 msgid "Resample"
 msgstr "Yeniden Örnekle"
 
-#: Menus.cpp:6457
-#: TrackPanel.cpp:7296
+#: Menus.cpp:6478
+#: TrackPanel.cpp:7353
 msgid "New sample rate (Hz):"
 msgstr "Yeni örnekleme hızı (Hz):"
 
-#: Menus.cpp:6481
-#: TrackPanel.cpp:7320
+#: Menus.cpp:6502
+#: TrackPanel.cpp:7377
 msgid "The entered value is invalid"
 msgstr "Yazdığınız değer geçersiz"
 
-#: Menus.cpp:6490
+#: Menus.cpp:6511
 #, c-format
 msgid "Resampling track %d"
 msgstr "%d izi yeniden örnekleniyor"
 
-#: Menus.cpp:6499
+#: Menus.cpp:6520
 msgid "Resample Track"
 msgstr "İzi Yeniden Örnekle"
 
-#: Menus.cpp:6499
+#: Menus.cpp:6520
 msgid "Resampled audio track(s)"
 msgstr "Ses izleri yeniden örneklendi"
 
-#: Mix.cpp:130
-#: Mix.cpp:145
+#: Mix.cpp:131
+#: Mix.cpp:146
 msgid "Mix"
 msgstr "Karıştır"
 
-#: Mix.cpp:169
+#: Mix.cpp:170
 msgid "Mixing and rendering tracks"
 msgstr "İzler karıştırılıp çevriliyor"
 
 #. i18n-hint: title of the MIDI Velocity slider
 #: MixerBoard.cpp:213
-#: TrackPanel.cpp:4114
+#: TrackPanel.cpp:4158
 #: widgets/ASlider.cpp:373
 msgid "Velocity"
 msgstr "Hız"
@@ -3456,9 +3457,9 @@ msgstr "Hız"
 #: MixerBoard.cpp:222
 #: MixerBoard.cpp:225
 #: MixerBoard.cpp:397
-#: TrackPanel.cpp:4110
-#: TrackPanel.cpp:6703
-#: TrackPanel.cpp:8160
+#: TrackPanel.cpp:4154
+#: TrackPanel.cpp:6747
+#: TrackPanel.cpp:8250
 #: widgets/ASlider.cpp:355
 msgid "Gain"
 msgstr "Kazanç"
@@ -3472,9 +3473,9 @@ msgstr "Muzik Enstrumanı"
 #: MixerBoard.cpp:262
 #: MixerBoard.cpp:264
 #: MixerBoard.cpp:416
-#: TrackPanel.cpp:4110
-#: TrackPanel.cpp:6648
-#: TrackPanel.cpp:8168
+#: TrackPanel.cpp:4154
+#: TrackPanel.cpp:6692
+#: TrackPanel.cpp:8258
 #: widgets/ASlider.cpp:345
 msgid "Pan"
 msgstr "Terazi"
@@ -3483,7 +3484,7 @@ msgstr "Terazi"
 #: MixerBoard.cpp:277
 #: MixerBoard.cpp:325
 #: MixerBoard.cpp:1436
-#: TrackPanel.cpp:8108
+#: TrackPanel.cpp:8198
 msgid "Mute"
 msgstr "Sustur"
 
@@ -3491,7 +3492,7 @@ msgstr "Sustur"
 #: MixerBoard.cpp:290
 #: MixerBoard.cpp:326
 #: MixerBoard.cpp:1486
-#: TrackPanel.cpp:8106
+#: TrackPanel.cpp:8196
 msgid "Solo"
 msgstr "Solo"
 
@@ -3501,12 +3502,12 @@ msgid "Signal Level Meter"
 msgstr "İşaret Düzeyi Ölçer"
 
 #: MixerBoard.cpp:397
-#: TrackPanel.cpp:4109
+#: TrackPanel.cpp:4153
 msgid "Moved gain slider"
 msgstr "Kazanç düğmesi oynatıldı"
 
 #: MixerBoard.cpp:416
-#: TrackPanel.cpp:4109
+#: TrackPanel.cpp:4153
 msgid "Moved pan slider"
 msgstr "Pan düğmesi oynatıldı"
 
@@ -3567,22 +3568,22 @@ msgstr "Audacity %s sürümüne hoş geldiniz"
 msgid "(Recovered)"
 msgstr "(Kurtarılan)"
 
-#: Project.cpp:1874
-#: TrackPanel.cpp:947
+#: Project.cpp:1875
+#: TrackPanel.cpp:969
 #: toolbars/ControlToolBar.cpp:196
 msgid "Record"
 msgstr "Kayıt"
 
-#: Project.cpp:1874
-#: TrackPanel.cpp:947
+#: Project.cpp:1875
+#: TrackPanel.cpp:969
 msgid "Recorded Audio"
 msgstr "Kaydedilmiş Ses"
 
-#: Project.cpp:1900
+#: Project.cpp:1901
 msgid "Save changes before closing?"
 msgstr "Kapatmadan önce değişiklikler kaydedilsin mi?"
 
-#: Project.cpp:1903
+#: Project.cpp:1904
 msgid ""
 "\n"
 "If saved, the project will have no tracks.\n"
@@ -3598,23 +3599,23 @@ msgstr ""
 "İptal, Düzenle > Geri Al ile tüm izleri\n"
 "açın ve Dosya > Projeyi Kaydet seçin."
 
-#: Project.cpp:1906
+#: Project.cpp:1907
 msgid "Save changes?"
 msgstr "Değişiklikler kaydedilsin mi?"
 
-#: Project.cpp:2177
+#: Project.cpp:2183
 msgid "Select one or more audio files..."
 msgstr "Bir ya da daha fazla ses dosyası seçin..."
 
-#: Project.cpp:2213
+#: Project.cpp:2219
 #, c-format
 msgid "%s is already open in another window."
 msgstr "%s başka bir pencerede zaten açık."
 
-#: Project.cpp:2216
-#: Project.cpp:2383
-#: Project.cpp:2603
-#: Project.cpp:2782
+#: Project.cpp:2222
+#: Project.cpp:2389
+#: Project.cpp:2609
+#: Project.cpp:2788
 msgid "Error Opening Project"
 msgstr "Proje Açılırken Hata"
 
@@ -3622,13 +3623,13 @@ msgstr "Proje Açılırken Hata"
 #. * and save dialogues, for the option that only shows project files created
 #. * with Audacity. Do not include pipe symbols or .aup (this extension will
 #. * now be added automatically for the Save Projects dialogues).
-#: Project.cpp:2230
-#: Project.cpp:3566
-#: Project.cpp:3594
+#: Project.cpp:2236
+#: Project.cpp:3572
+#: Project.cpp:3600
 msgid "Audacity projects"
 msgstr "Audacity projeleri"
 
-#: Project.cpp:2283
+#: Project.cpp:2289
 #, c-format
 msgid ""
 "This file was saved by Audacity version %s. The format has changed. \n"
@@ -3647,16 +3648,16 @@ msgstr ""
 "\n"
 "Dosyayı şimdi açmak istiyor musunuz?"
 
-#: Project.cpp:2293
+#: Project.cpp:2299
 msgid "1.0 or earlier"
 msgstr "1.0 ya da öncesi"
 
-#: Project.cpp:2298
-#: Project.cpp:2865
+#: Project.cpp:2304
+#: Project.cpp:2871
 msgid "Warning - Opening Old Project File"
 msgstr "Dikkat - Eski Proje Dosyası Açılıyor"
 
-#: Project.cpp:2332
+#: Project.cpp:2338
 msgid ""
 "You are trying to open an automatically created backup file.\n"
 "Doing this may result in severe data loss.\n"
@@ -3668,20 +3669,20 @@ msgstr ""
 "\n"
 "Bunun yerine güncel Audacity proje dosyasını açmayı deneyin."
 
-#: Project.cpp:2333
+#: Project.cpp:2339
 msgid "Warning - Backup File Detected"
 msgstr "Dikkat - Yedek Dosyası Algılandı"
 
-#: Project.cpp:2347
+#: Project.cpp:2353
 #: xml/XMLWriter.cpp:329
 msgid "Error Opening File"
 msgstr "Dosya Açılırken Hata"
 
-#: Project.cpp:2355
+#: Project.cpp:2361
 msgid "Error opening file"
 msgstr "Dosya açılırken hata"
 
-#: Project.cpp:2361
+#: Project.cpp:2367
 #, c-format
 msgid ""
 "File may be invalid or corrupted: \n"
@@ -3690,38 +3691,38 @@ msgstr ""
 "Dosya geçersiz ya da bozuk: \n"
 "%s"
 
-#: Project.cpp:2362
+#: Project.cpp:2368
 msgid "Error Opening File or Project"
 msgstr "Dosya ya da Proje Açılırken Hata"
 
-#: Project.cpp:2382
+#: Project.cpp:2388
 msgid "Audacity was unable to convert an Audacity 1.0 project to the new project format."
 msgstr "Audacity, bir Audacity 1.0 projesini yeni proje biçimine dönüştüremedi."
 
-#: Project.cpp:2539
+#: Project.cpp:2545
 msgid "Project was recovered"
 msgstr "Proje kurtarıldı"
 
-#: Project.cpp:2539
+#: Project.cpp:2545
 msgid "Recover"
 msgstr "Kurtar"
 
-#: Project.cpp:2542
+#: Project.cpp:2548
 msgid "Could not remove old auto save file"
 msgstr "Eski kendiliğinden kaydetme dosyası silinemedi"
 
-#: Project.cpp:2686
-#: Project.cpp:2687
+#: Project.cpp:2692
+#: Project.cpp:2693
 msgid "<unrecognized version -- possibly corrupt project file>"
 msgstr "<tanınmayan sürüm -- olası bozuk proje dosyası>"
 
-#: Project.cpp:2780
+#: Project.cpp:2786
 #, c-format
 msgid "Couldn't find the project data folder: \"%s\""
 msgstr "\"%s\" proje veri klasörü bulunamadı"
 
 #. i18n-hint: %s will be replaced by the version number.
-#: Project.cpp:2829
+#: Project.cpp:2835
 #, c-format
 msgid ""
 "This file was saved using Audacity %s.\n"
@@ -3730,11 +3731,11 @@ msgstr ""
 "Bu dosya Audacity %s sürümü kullanarak kaydedilmiş.\n"
 "Audacity %s sürümünü kullanıyorsunuz. Bu dosyayı açmak için daha yeni bir sürüme yükseltmelisiniz."
 
-#: Project.cpp:2833
+#: Project.cpp:2839
 msgid "Can't open project file"
 msgstr "Proje dosyası açılamadı"
 
-#: Project.cpp:3077
+#: Project.cpp:3083
 msgid ""
 "Your project is now empty.\n"
 "If saved, the project will have no tracks.\n"
@@ -3754,11 +3755,11 @@ msgstr ""
 "\n"
 "Gene de kaydedilsin mi?"
 
-#: Project.cpp:3078
+#: Project.cpp:3084
 msgid "Warning - Empty Project"
 msgstr "Dikkat - Boş Proje"
 
-#: Project.cpp:3151
+#: Project.cpp:3157
 #, c-format
 msgid ""
 "Could not save project. Path not found.  Try creating \n"
@@ -3767,14 +3768,14 @@ msgstr ""
 "Proje kaydedilemedi. Yol bulunamadı. Projeyi bu adla \n"
 "kaydetmeden önce \"%s\" klasörünü oluşturmayı deneyin."
 
-#: Project.cpp:3153
-#: Project.cpp:3190
-#: Project.cpp:3213
-#: Project.cpp:3618
+#: Project.cpp:3159
+#: Project.cpp:3196
+#: Project.cpp:3219
+#: Project.cpp:3624
 msgid "Error Saving Project"
 msgstr "Proje Kaydedilirken Hata"
 
-#: Project.cpp:3188
+#: Project.cpp:3194
 #, c-format
 msgid ""
 "Could not save project. Perhaps %s \n"
@@ -3783,48 +3784,48 @@ msgstr ""
 "Proje kaydedilemedi. %s yazılamaz \n"
 "ya da disk dolmuş olabilir."
 
-#: Project.cpp:3211
-#: Project.cpp:4468
+#: Project.cpp:3217
+#: Project.cpp:4478
 #: Tags.cpp:1171
-#: effects/Equalization.cpp:1092
+#: effects/Equalization.cpp:1098
 #, c-format
 msgid "Couldn't write to file \"%s\": %s"
 msgstr "\"%s\" dosyasına yazılamadı: %s"
 
-#: Project.cpp:3291
+#: Project.cpp:3297
 #, c-format
 msgid "Saved %s"
 msgstr "%s kaydedildi"
 
-#: Project.cpp:3447
+#: Project.cpp:3453
 #, c-format
 msgid "Imported '%s'"
 msgstr "'%s' alındı"
 
-#: Project.cpp:3448
+#: Project.cpp:3454
 msgid "Import"
 msgstr "Al"
 
-#: Project.cpp:3483
+#: Project.cpp:3489
 msgid "Error Importing"
 msgstr "Alınırken Hata"
 
-#: Project.cpp:3538
+#: Project.cpp:3544
 msgid "Save Speech As:"
 msgstr "Konuşmayı Farklı Kaydet:"
 
 #. i18n-hint: Do not translate PCM.
-#: Project.cpp:3541
+#: Project.cpp:3547
 msgid "Windows PCM Audio file (*.wav)|*.wav"
 msgstr "Windows PCM Ses dosyası (*.wav)|*.wav"
 
-#: Project.cpp:3548
-#: Project.cpp:3576
+#: Project.cpp:3554
+#: Project.cpp:3582
 msgid "<untitled>"
 msgstr "<adsız>"
 
-#: Project.cpp:3553
-#: Project.cpp:3581
+#: Project.cpp:3559
+#: Project.cpp:3587
 msgid ""
 "Audacity compressed project files (.aup) save your work in a smaller, compressed (.ogg) format. \n"
 "Compressed project files are a good way to transmit your project online, because they are much smaller. \n"
@@ -3842,14 +3843,14 @@ msgstr ""
 "Dosyanın başka programlar tarafından açılmasını istediğiniz zaman, Verme komutlarından\n"
 "birini seçin."
 
-#: Project.cpp:3554
-#: Project.cpp:3582
+#: Project.cpp:3560
+#: Project.cpp:3588
 #, c-format
 msgid "Save Compressed Project \"%s\" As..."
 msgstr "Sıkıştırılmış \"%s\" Projesini Farklı Kaydet..."
 
-#: Project.cpp:3559
-#: Project.cpp:3587
+#: Project.cpp:3565
+#: Project.cpp:3593
 msgid ""
 "You are saving an Audacity project file (.aup).\n"
 "\n"
@@ -3863,13 +3864,13 @@ msgstr ""
 "\n"
 "Başka programların açabileceği bir ses dosyası kaydetmek için \"Dosya > Ver\" komutlarından birini kullanın.\n"
 
-#: Project.cpp:3560
-#: Project.cpp:3588
+#: Project.cpp:3566
+#: Project.cpp:3594
 #, c-format
 msgid "Save Project \"%s\" As..."
 msgstr "\"%s\" Projesini Farklı Kaydet..."
 
-#: Project.cpp:3617
+#: Project.cpp:3623
 msgid ""
 "The project was not saved because the file name provided would overwrite another project.\n"
 "Please try again and select an original name."
@@ -3877,101 +3878,92 @@ msgstr ""
 "Verdiğiniz ad başka bir proje ile aynı olduğundan proje kaydedilemedi.\n"
 "Lütfen özgün bir ad kullanarak yeniden deneyin."
 
-#: Project.cpp:3660
+#: Project.cpp:3666
 msgid "Created new project"
 msgstr "Yeni proje oluşturuldu"
 
-#: Project.cpp:3876
+#: Project.cpp:3882
 #, c-format
 msgid "Deleted %.2f seconds at t=%.2f"
 msgstr "t=%.2f saniye %.2f zamanında silindi"
 
-#: Project.cpp:3879
+#: Project.cpp:3885
 msgid "Delete"
 msgstr "Sil"
 
-#: Project.cpp:4063
+#: Project.cpp:4069
 #, c-format
 msgid "Disk space remains for recording %d hours and %d minutes."
 msgstr "Kalan disk alanıyla yapılabilecek kayıt: %d saat %d dakika."
 
-#: Project.cpp:4066
+#: Project.cpp:4072
 #, c-format
 msgid "Disk space remains for recording 1 hour and %d minutes."
 msgstr "Kalan disk alanıyla yapılabilecek kayıt: 1 saat %d dakika."
 
-#: Project.cpp:4069
+#: Project.cpp:4075
 #, c-format
 msgid "Disk space remains for recording %d minutes."
 msgstr "Kalan disk alanıyla yapılabilecek kayıt: %d dakika."
 
-#: Project.cpp:4072
+#: Project.cpp:4078
 #, c-format
 msgid "Disk space remains for recording %d seconds."
 msgstr "Kalan disk alanıyla yapılabilecek kayıt: %d saniye."
 
-#: Project.cpp:4075
+#: Project.cpp:4081
 msgid "Out of disk space"
 msgstr "Disk alanından fazla"
 
-#: Project.cpp:4097
+#: Project.cpp:4103
 msgid "On-demand import and waveform calculation complete."
 msgstr "İsteğe göre alma ve dalga şekli hesaplaması tamamlandı."
 
-#: Project.cpp:4102
+#: Project.cpp:4108
 #, c-format
 msgid "Import(s) complete. Running %d on-demand waveform calculations. Overall %2.0f%% complete."
 msgstr "Alma işlemi tamamlandı. İsteğe göre %d dalga şekli hesaplaması yapılıyor.Genel olarak %2.0f%% tamamlandı."
 
-#: Project.cpp:4105
+#: Project.cpp:4111
 #, c-format
 msgid "Import complete. Running an on-demand waveform calculation. %2.0f%% complete."
 msgstr "Alma işlemi tamamlandı. İsteğe göre dalga şekli hesaplaması yürütülüyor. %2.0f%% tamamlandı."
 
-#: Project.cpp:4440
+#: Project.cpp:4450
 msgid "New Project"
 msgstr "Yeni Proje"
 
-#: Project.cpp:4470
+#: Project.cpp:4480
 msgid "Error Writing Autosave File"
 msgstr "Kendiliğinden Kaydetme Dosyasına Yazılırken Hata"
 
-#: Project.cpp:4485
+#: Project.cpp:4495
 msgid "Could not create autosave file: "
 msgstr "Kendiliğinden kaydetme dosyası oluşturulamadı:"
 
-#: Project.cpp:4504
+#: Project.cpp:4514
 msgid "Could not remove old autosave file: "
 msgstr "Eski kendiliğinden kaydet dosyası kaldırılamadı:"
 
-#: Project.cpp:4533
+#: Project.cpp:4543
 #, c-format
 msgid "Actual Rate: %d"
 msgstr "Geçerli Hız: %d"
 
-#: Resample.cpp:64
-msgid "Libresample by Dominic Mazzoni and Julius Smith"
-msgstr "Dominik Mazzoni ve Julius Smith tarafından geliştirilen Libresample"
-
-#: Resample.cpp:75
+#: Resample.cpp:160
 msgid "High-quality Sinc Interpolation"
 msgstr "Yüksek Kaliteli Sinc Aradeğerlemesi"
 
-#: Resample.cpp:77
+#: Resample.cpp:162
 msgid "Fast Sinc Interpolation"
 msgstr "Hızlı Sinc Aradeğerlemesi"
 
-#: Resample.cpp:143
-msgid "Libsamplerate by Erik de Castro Lopo"
-msgstr "Erik de Castro Lopo tarafından geliştirilen Libsamplerate "
-
-#: Resample.cpp:232
+#: Resample.cpp:296
 #, c-format
 msgid "Libsamplerate error: %d\n"
 msgstr "Libsamplerate hatası: %d\n"
 
-#: Resample.cpp:254
-#: Resample.cpp:264
+#: Resample.h:54
 msgid "Resampling disabled."
 msgstr "Yeniden örnekleme devre dışı bırakıldı"
 
@@ -4003,7 +3995,7 @@ msgid "Save images to:"
 msgstr "Resimleri şuraya kaydet:"
 
 #: Screenshot.cpp:320
-#: export/ExportMultiple.cpp:258
+#: export/ExportMultiple.cpp:268
 msgid "Choose..."
 msgstr "Seçin..."
 
@@ -4106,13 +4098,13 @@ msgstr "Aygıt"
 
 #: Screenshot.cpp:388
 #: toolbars/TranscriptionToolBar.cpp:84
-#: toolbars/TranscriptionToolBar.cpp:256
+#: toolbars/TranscriptionToolBar.cpp:257
 msgid "Transcription"
 msgstr "Uyarlama"
 
 #: Screenshot.cpp:394
-#: TrackPanel.cpp:455
-#: TrackPanel.cpp:456
+#: TrackPanel.cpp:468
+#: TrackPanel.cpp:469
 msgid "Track Panel"
 msgstr "İz Paneli"
 
@@ -4121,8 +4113,8 @@ msgid "Ruler"
 msgstr "Cetvel"
 
 #: Screenshot.cpp:396
-#: export/ExportMultiple.cpp:301
-#: export/ExportMultiple.cpp:303
+#: export/ExportMultiple.cpp:311
+#: export/ExportMultiple.cpp:313
 #: prefs/TracksPrefs.cpp:31
 msgid "Tracks"
 msgstr "İzler"
@@ -4192,13 +4184,13 @@ msgstr "Dikkat - Yazma Sıralamasında Uzunluk"
 msgid "Memory allocation failed -- NewSamples"
 msgstr "Bellek ayrılamadı -- Yeni Örnekler"
 
-#: ShuttleGui.cpp:2175
+#: ShuttleGui.cpp:2181
 #: effects/Effect.cpp:408
 #: effects/audiounits/AudioUnitEffect.cpp:877
 msgid "Pre&view"
 msgstr "Ön İ&zleme"
 
-#: ShuttleGui.cpp:2182
+#: ShuttleGui.cpp:2188
 msgid "&Debug"
 msgstr "&Hata Ayıklama"
 
@@ -4433,7 +4425,7 @@ msgstr ""
 "  %s\n"
 "zaten var."
 
-#: TimeDialog.h:29
+#: TimeDialog.h:32
 #: TimerRecordDialog.cpp:246
 #: TimerRecordDialog.cpp:373
 #: TimerRecordDialog.cpp:385
@@ -4447,7 +4439,7 @@ msgstr ""
 msgid "Duration"
 msgstr "Süre"
 
-#: TimeTrack.cpp:44
+#: TimeTrack.cpp:52
 msgid "Time Track"
 msgstr "Zaman İzi"
 
@@ -4524,185 +4516,196 @@ msgstr "%s zamanında kayıda başlamayı bekliyor.\n"
 msgid "Audacity Timer Record - Waiting for Start"
 msgstr "Audacity Zamanlanmış Kayıt - Başlamak için bekliyor"
 
-#: TrackPanel.cpp:623
+#: TrackPanel.cpp:641
 msgid "&Other..."
 msgstr "&Diğer..."
 
-#: TrackPanel.cpp:631
-#: TrackPanel.cpp:655
-#: TrackPanel.cpp:664
-#: TrackPanel.cpp:672
+#: TrackPanel.cpp:649
+#: TrackPanel.cpp:673
+#: TrackPanel.cpp:682
+#: TrackPanel.cpp:690
 msgid "N&ame..."
 msgstr "&Ad..."
 
-#: TrackPanel.cpp:633
-#: TrackPanel.cpp:657
-#: TrackPanel.cpp:668
-#: TrackPanel.cpp:674
+#: TrackPanel.cpp:651
+#: TrackPanel.cpp:675
+#: TrackPanel.cpp:686
+#: TrackPanel.cpp:692
 msgid "Move Track U&p"
 msgstr "İzi &Yukarı Taşı"
 
-#: TrackPanel.cpp:634
-#: TrackPanel.cpp:658
-#: TrackPanel.cpp:669
-#: TrackPanel.cpp:675
+#: TrackPanel.cpp:652
+#: TrackPanel.cpp:676
+#: TrackPanel.cpp:687
+#: TrackPanel.cpp:693
 msgid "Move Track &Down"
 msgstr "İ&zi Aşağı Taşı"
 
-#: TrackPanel.cpp:636
+#: TrackPanel.cpp:654
 msgid "Wa&veform"
 msgstr "&Dalga şekli"
 
-#: TrackPanel.cpp:637
+#: TrackPanel.cpp:655
 msgid "Waveform (d&B)"
 msgstr "Dalga şekli (d&B)"
 
-#: TrackPanel.cpp:638
+#: TrackPanel.cpp:656
 msgid "&Spectrogram"
 msgstr "&Spektrogram"
 
 #. i18n-hint: short form of 'logarithm'
-#: TrackPanel.cpp:640
+#: TrackPanel.cpp:658
 msgid "Spectrogram l&og(f)"
 msgstr "Spektrogram l&og(f)"
 
-#: TrackPanel.cpp:641
+#: TrackPanel.cpp:659
 msgid "Pitc&h (EAC)"
 msgstr "Sı&klık (EAC)"
 
-#: TrackPanel.cpp:643
+#: TrackPanel.cpp:661
 msgid "&Mono"
 msgstr "&Tek Kanallı"
 
-#: TrackPanel.cpp:644
+#: TrackPanel.cpp:662
 msgid "&Left Channel"
 msgstr "So&l Kanal"
 
-#: TrackPanel.cpp:645
+#: TrackPanel.cpp:663
 msgid "&Right Channel"
 msgstr "&Sağ Kanal"
 
-#: TrackPanel.cpp:646
+#: TrackPanel.cpp:664
 msgid "Ma&ke Stereo Track"
 msgstr "İzi Çift &Kanallı Yap"
 
-#: TrackPanel.cpp:647
+#: TrackPanel.cpp:665
 msgid "Spli&t Stereo Track"
 msgstr "Çift Kanallı İzi A&yır"
 
-#: TrackPanel.cpp:648
+#: TrackPanel.cpp:666
 msgid "Split Stereo to Mo&no"
 msgstr "Çift Ka&nallıyı Tek Kanallıya Ayır"
 
-#: TrackPanel.cpp:650
+#: TrackPanel.cpp:668
 msgid "Set Sample &Format"
 msgstr "Örnek &Biçimini Ayarla"
 
-#: TrackPanel.cpp:652
+#: TrackPanel.cpp:670
 msgid "Set Rat&e"
 msgstr "&Oranı Ayarla"
 
-#: TrackPanel.cpp:660
+#: TrackPanel.cpp:678
 msgid "Up &Octave"
 msgstr "Ü&st Oktav"
 
-#: TrackPanel.cpp:661
+#: TrackPanel.cpp:679
 msgid "Down Octa&ve"
 msgstr "Alt Okta&v"
 
-#: TrackPanel.cpp:666
+#: TrackPanel.cpp:684
 msgid "&Font..."
 msgstr "&Yazı Tipi..."
 
-#: TrackPanel.cpp:677
+#: TrackPanel.cpp:695
+msgid "&Linear"
+msgstr "&Doğrusal"
+
+#: TrackPanel.cpp:696
+msgid "L&ogarithmic"
+msgstr "L&ogaritmik"
+
+#: TrackPanel.cpp:698
 msgid "Set Ra&nge..."
 msgstr "A&ralık Ayarla..."
 
-#: TrackPanel.cpp:681
-#: toolbars/EditToolBar.cpp:133
+#: TrackPanel.cpp:699
+msgid "Logarithmic &Interpolation"
+msgstr "Logaritmik A&radeğerleme"
+
+#: TrackPanel.cpp:703
 #: toolbars/EditToolBar.cpp:196
 msgid "Copy"
 msgstr "Kopyala"
 
-#: TrackPanel.cpp:1459
+#: TrackPanel.cpp:1472
 msgid "Click to vertically zoom in. Shift-click to zoom out. Drag to specify a zoom region."
 msgstr "Dikey olarak yaklaştırmak için tıklayın, uzaklaştırmak için Shift ile Tıklayın, Yaklaşma bölgesini seçmek için sürükleyin."
 
-#: TrackPanel.cpp:1464
+#: TrackPanel.cpp:1477
 msgid "Click to verticaly zoom in, Shift-click to zoom out, Drag to create a particular zoom region."
 msgstr "Dikey olarak yaklaştırmak için tıklayın, uzaklaştırmak için Shift ile Tıklayın, Belli bir yaklaşma bölgesi oluşturmak için sürükleyin."
 
-#: TrackPanel.cpp:1470
+#: TrackPanel.cpp:1483
 msgid "Drag the track vertically to change the order of the tracks."
 msgstr "İzlerin sırasını değiştirmek için etiketi dikey olarak sürükleyin."
 
-#: TrackPanel.cpp:1490
+#: TrackPanel.cpp:1503
 msgid "Click and drag to adjust relative size of stereo tracks."
 msgstr "Çift kanallı izlerin bağıl boyutunu ayarlamak için tıklayıp sürükleyin."
 
-#: TrackPanel.cpp:1493
+#: TrackPanel.cpp:1506
 msgid "Click and drag to resize the track."
 msgstr "İzi yeniden boyutlandırmak için tıklayıp sürükleyin."
 
-#: TrackPanel.cpp:1524
+#: TrackPanel.cpp:1537
 msgid "Drag one or more label boundaries"
 msgstr "Bir ya da daha fazla etiket sınırını sürükleyin"
 
-#: TrackPanel.cpp:1525
+#: TrackPanel.cpp:1538
 msgid "Drag label boundary"
 msgstr "Etiket sınırını sürükleyin"
 
 #. i18n-hint: This string is for the Mac OS, which uses Command-, as the shortcut for Preferences
-#: TrackPanel.cpp:1541
+#: TrackPanel.cpp:1554
 msgid "Multi-Tool Mode: Cmd-, for Mouse and Keyboard Preferences"
 msgstr "Çoklu Araç Kipi: Fare ve Tuş Takımı Ayarları için, Cmd-"
 
 #. i18n-hint: This string is for Windows and Linux, which uses Control-P as the shortcut for Preferences
-#: TrackPanel.cpp:1544
+#: TrackPanel.cpp:1557
 msgid "Multi-Tool Mode: Ctrl-P for Mouse and Keyboard Preferences"
 msgstr "Çoklu Araç Kipi: Fare ve Tuş Takımı Ayarları için Ctrl-P"
 
-#: TrackPanel.cpp:1592
-#: TrackPanel.cpp:1604
-#: TrackPanel.cpp:2025
-#: TrackPanel.cpp:2032
+#: TrackPanel.cpp:1605
+#: TrackPanel.cpp:1617
+#: TrackPanel.cpp:2038
+#: TrackPanel.cpp:2045
 msgid "Click and drag to stretch selected region."
 msgstr "Seçili bölgeyi esnetmek için tıklayıp sürükleyin"
 
-#: TrackPanel.cpp:1597
+#: TrackPanel.cpp:1610
 msgid "Click and drag to move left selection boundary."
 msgstr "Sol seçim sınırını değiştirmek için tıklayıp sürükleyin."
 
-#: TrackPanel.cpp:1609
+#: TrackPanel.cpp:1622
 msgid "Click and drag to move right selection boundary."
 msgstr "Sağ seçim sınırını değiştirmek için tıklayıp sürükleyin."
 
-#: TrackPanel.cpp:1614
+#: TrackPanel.cpp:1627
 msgid "Click and drag to stretch within selected region."
 msgstr "Seçili bölgenin içinde esnetmek için tıklayıp sürükleyin"
 
-#: TrackPanel.cpp:1990
-#: TrackPanel.cpp:4753
-#: TrackPanel.cpp:4791
-#: TrackPanel.cpp:5065
-#: TrackPanel.cpp:7451
-#: TrackPanel.cpp:7471
+#: TrackPanel.cpp:2003
+#: TrackPanel.cpp:4797
+#: TrackPanel.cpp:4835
+#: TrackPanel.cpp:5109
+#: TrackPanel.cpp:7541
+#: TrackPanel.cpp:7561
 msgid "Modified Label"
 msgstr "Düzenlenmiş etiket"
 
-#: TrackPanel.cpp:1991
-#: TrackPanel.cpp:4754
-#: TrackPanel.cpp:4792
-#: TrackPanel.cpp:5066
-#: TrackPanel.cpp:7452
-#: TrackPanel.cpp:7472
+#: TrackPanel.cpp:2004
+#: TrackPanel.cpp:4798
+#: TrackPanel.cpp:4836
+#: TrackPanel.cpp:5110
+#: TrackPanel.cpp:7542
+#: TrackPanel.cpp:7562
 msgid "Label Edit"
 msgstr "Etiket Düzenle"
 
 #. i18n-hint: (noun) The track that is used for MIDI notes which can be
 #. dragged to change their duration.
-#: TrackPanel.cpp:2067
-#: TrackPanel.cpp:2297
+#: TrackPanel.cpp:2080
+#: TrackPanel.cpp:2310
 msgid "Stretch Note Track"
 msgstr "Not İzini Esnet"
 
@@ -4710,288 +4713,314 @@ msgstr "Not İzini Esnet"
 #. been dragged to change its duration (stretch it). Using either past
 #. or present tense is fine here.  If unsure, go for whichever is
 #. shorter.
-#: TrackPanel.cpp:2072
-#: TrackPanel.cpp:2297
+#: TrackPanel.cpp:2085
+#: TrackPanel.cpp:2310
 msgid "Stretch"
 msgstr "Esnetme"
 
 #. i18n-hint: (verb) Audacity has just adjusted the envelope .
-#: TrackPanel.cpp:2432
+#: TrackPanel.cpp:2445
 msgid "Adjusted envelope."
 msgstr "Ayarlanmış zarf."
 
 #. i18n-hint: The envelope is a curve that controls the audio loudness.
-#: TrackPanel.cpp:2434
+#: TrackPanel.cpp:2447
 #: prefs/MousePrefs.cpp:121
 msgid "Envelope"
 msgstr "Zarf"
 
-#: TrackPanel.cpp:2594
+#: TrackPanel.cpp:2621
 msgid "Moved clip to another track"
 msgstr "Parça başka bir ize taşındı"
 
 #. i18n-hint: a direction as in left or right.
-#: TrackPanel.cpp:2600
+#: TrackPanel.cpp:2627
 msgid "right"
 msgstr "sağ"
 
 #. i18n-hint: a direction as in left or right.
-#: TrackPanel.cpp:2602
+#: TrackPanel.cpp:2629
 msgid "left"
 msgstr "sol"
 
 #. i18n-hint: %s is a direction like left or right
-#: TrackPanel.cpp:2604
+#: TrackPanel.cpp:2631
 #, c-format
 msgid "Time shifted tracks/clips %s %.02f seconds"
 msgstr "İzler/parçalar zamanda %s %.02f saniye kaydırıldı"
 
-#: TrackPanel.cpp:2608
+#: TrackPanel.cpp:2635
 #: prefs/MousePrefs.cpp:115
 #: prefs/MousePrefs.cpp:116
 #: prefs/MousePrefs.cpp:117
 msgid "Time-Shift"
 msgstr "Zaman Kaydırması"
 
-#: TrackPanel.cpp:3541
+#: TrackPanel.cpp:3579
 msgid "To use Draw, choose 'Waveform' in the Track Drop-down Menu."
 msgstr "Çizimi kullanmak için, iz açılır menüsünden 'Dalga Şekli' seçeneğine tıklayın."
 
-#: TrackPanel.cpp:3558
+#: TrackPanel.cpp:3596
 msgid "To use Draw, zoom in further until you can see the individual samples."
 msgstr "Çizimi kullanmak için, tek tek örnekleri görene kadar yakınlaştırın."
 
-#: TrackPanel.cpp:3835
+#: TrackPanel.cpp:3873
 msgid "Moved Sample"
 msgstr "Taşınan Örnek"
 
-#: TrackPanel.cpp:3836
+#: TrackPanel.cpp:3874
 msgid "Sample Edit"
 msgstr "Örnek Düzenleme"
 
-#: TrackPanel.cpp:3937
+#: TrackPanel.cpp:3981
 #, c-format
 msgid "Removed track '%s.'"
 msgstr "'%s' izi kaldırıldı."
 
-#: TrackPanel.cpp:3939
+#: TrackPanel.cpp:3983
 msgid "Track Remove"
 msgstr "İz Kaldırma"
 
-#: TrackPanel.cpp:4114
+#: TrackPanel.cpp:4158
 msgid "Moved velocity slider"
 msgstr "Hız düğmesi oynatıldı"
 
 #. i18n-hint: a direction as in up or down.
-#: TrackPanel.cpp:4306
-#: TrackPanel.cpp:7389
+#: TrackPanel.cpp:4350
+#: TrackPanel.cpp:7479
 msgid "up"
 msgstr "yukarı"
 
 #. i18n-hint: a direction as in up or down.
-#: TrackPanel.cpp:4319
-#: TrackPanel.cpp:7391
+#: TrackPanel.cpp:4363
+#: TrackPanel.cpp:7481
 msgid "down"
 msgstr "aşağı"
 
 #. i18n-hint: the first %s is the name of a track, the second a direction as in up or down.
 #. * If the word order is different in your language ask on the translators list about what
 #. * to do.
-#: TrackPanel.cpp:4334
-#: TrackPanel.cpp:7383
+#: TrackPanel.cpp:4378
+#: TrackPanel.cpp:7473
 #, c-format
 msgid "Moved '%s' %s"
 msgstr "'%s' %s olarak taşındı"
 
-#: TrackPanel.cpp:4337
-#: TrackPanel.cpp:7392
+#: TrackPanel.cpp:4381
+#: TrackPanel.cpp:7482
 msgid "Move Track"
 msgstr "İzi Taşı"
 
-#: TrackPanel.cpp:4962
+#: TrackPanel.cpp:5006
 msgid "Expand"
 msgstr "Genişlet"
 
-#: TrackPanel.cpp:4962
+#: TrackPanel.cpp:5006
 msgid "Expanded Cut Line"
 msgstr "Kesim Hattını Genişlet"
 
-#: TrackPanel.cpp:4975
+#: TrackPanel.cpp:5019
 msgid "Merge"
 msgstr "Birleştir"
 
-#: TrackPanel.cpp:4975
+#: TrackPanel.cpp:5019
 msgid "Merged Clips"
 msgstr "Parçalar Birleştirildi"
 
-#: TrackPanel.cpp:4986
+#: TrackPanel.cpp:5030
 msgid "Remove"
 msgstr "Kaldır"
 
-#: TrackPanel.cpp:4986
+#: TrackPanel.cpp:5030
 msgid "Removed Cut Line"
 msgstr "Kesme Çizgisi Kaldırıldı"
 
-#: TrackPanel.cpp:6648
+#: TrackPanel.cpp:6692
 msgid "Adjusted Pan"
 msgstr "Ayarlanmış kaydırma"
 
-#: TrackPanel.cpp:6703
+#: TrackPanel.cpp:6747
 msgid "Adjusted gain"
 msgstr "Ayarlanmış kazanç"
 
-#: TrackPanel.cpp:6838
+#: TrackPanel.cpp:6889
 msgid "Can't delete track with active audio"
 msgstr "Etkin sesin bulunduğu izi silemezsiniz"
 
-#: TrackPanel.cpp:6988
+#: TrackPanel.cpp:7039
 msgid "Stereo, "
 msgstr "Çift Kanallı, "
 
-#: TrackPanel.cpp:6991
+#: TrackPanel.cpp:7042
 msgid "Mono, "
 msgstr "Tek Kanallı,"
 
-#: TrackPanel.cpp:6993
+#: TrackPanel.cpp:7044
 msgid "Left, "
 msgstr "Sol,"
 
-#: TrackPanel.cpp:6995
+#: TrackPanel.cpp:7046
 msgid "Right, "
 msgstr "Sağ,"
 
-#: TrackPanel.cpp:7007
+#: TrackPanel.cpp:7058
 msgid "Left Channel"
 msgstr "Sol Kanal"
 
-#: TrackPanel.cpp:7007
+#: TrackPanel.cpp:7058
 msgid "Right Channel"
 msgstr "Sağ Kanal"
 
-#: TrackPanel.cpp:7008
+#: TrackPanel.cpp:7059
 msgid "Mono"
 msgstr "Tek Kanallı"
 
-#: TrackPanel.cpp:7017
-#: TrackPanel.cpp:7186
+#: TrackPanel.cpp:7068
+#: TrackPanel.cpp:7237
 #, c-format
 msgid "Changed '%s' to %s"
 msgstr "'%s' %s olarak değiştirildi"
 
-#: TrackPanel.cpp:7020
+#: TrackPanel.cpp:7071
 msgid "Channel"
 msgstr "Kanal"
 
-#: TrackPanel.cpp:7061
+#: TrackPanel.cpp:7112
 #, c-format
 msgid "Split stereo track '%s'"
 msgstr "'%s' çift kanallı izini ayır"
 
-#: TrackPanel.cpp:7063
+#: TrackPanel.cpp:7114
 #, c-format
 msgid "Split Stereo to Mono '%s'"
 msgstr "'%s' Çift Kanallıdan Tek Kanallıya Ayır"
 
-#: TrackPanel.cpp:7095
+#: TrackPanel.cpp:7146
 #, c-format
 msgid "Made '%s' a stereo track"
 msgstr "'%s' izi çift kanallı yapıldı"
 
-#: TrackPanel.cpp:7098
+#: TrackPanel.cpp:7149
 msgid "Make Stereo"
 msgstr "Çift Kanallı Yap"
 
-#: TrackPanel.cpp:7143
+#: TrackPanel.cpp:7194
 #, c-format
 msgid "Changed '%s' to %d Hz"
 msgstr "'%s' %d Hz olarak değiştirildi"
 
-#: TrackPanel.cpp:7145
+#: TrackPanel.cpp:7196
 msgid "Rate Change"
 msgstr "Hız Değişimi"
 
-#: TrackPanel.cpp:7190
+#: TrackPanel.cpp:7241
 msgid "Format Change"
 msgstr "Biçim Değişimi"
 
-#: TrackPanel.cpp:7276
+#: TrackPanel.cpp:7328
 msgid "Set Rate"
 msgstr "Oranı Ayarla"
 
-#: TrackPanel.cpp:7340
+#: TrackPanel.cpp:7399
 msgid "Change lower speed limit (%) to:"
 msgstr "Alt hız sınırını (%) şuna değiştir:"
 
-#: TrackPanel.cpp:7341
-#: TrackPanel.cpp:7342
+#: TrackPanel.cpp:7400
+#: TrackPanel.cpp:7401
 msgid "Lower speed limit"
 msgstr "Daha düşük hız sınırı"
 
-#: TrackPanel.cpp:7347
+#: TrackPanel.cpp:7406
 msgid "Change upper speed limit (%) to:"
 msgstr "Üst hız sınırını (%) şuna değiştir:"
 
-#: TrackPanel.cpp:7348
-#: TrackPanel.cpp:7349
+#: TrackPanel.cpp:7407
+#: TrackPanel.cpp:7408
 msgid "Upper speed limit"
 msgstr "Daha yüksek hız sınırı"
 
-#: TrackPanel.cpp:7357
+#: TrackPanel.cpp:7416
 #, c-format
 msgid "Set range to '%d' - '%d'"
 msgstr "Aralığı '%d' - '%d' olarak ayarla"
 
 #. i18n-hint: (verb)
-#: TrackPanel.cpp:7362
+#: TrackPanel.cpp:7421
 msgid "Set Range"
 msgstr "Aralık Ayarı"
 
-#: TrackPanel.cpp:7422
+#: TrackPanel.cpp:7433
+#: TrackPanel.cpp:7442
+msgid "Set Display"
+msgstr "Görünüm Ayarı"
+
+#: TrackPanel.cpp:7433
+msgid "Set time track display to linear"
+msgstr "Zaman izi görüntüsü doğrusal olsun"
+
+#: TrackPanel.cpp:7442
+msgid "Set time track display to logarithmic"
+msgstr "Zaman izi görüntüsü logaritmik olsun"
+
+#: TrackPanel.cpp:7451
+#: TrackPanel.cpp:7454
+msgid "Set Interpolation"
+msgstr "Ara Değer Ayarı"
+
+#: TrackPanel.cpp:7451
+msgid "Set time track interpolation to linear"
+msgstr "Zaman izi ara değerlemesi doğrusal olsun"
+
+#: TrackPanel.cpp:7454
+msgid "Set time track interpolation to logarithmic"
+msgstr "Zaman izi ara değerlemesi logaritmik olsun"
+
+#: TrackPanel.cpp:7512
 msgid "Change track name to:"
 msgstr "İz adını şuna değiştir:"
 
-#: TrackPanel.cpp:7423
+#: TrackPanel.cpp:7513
 msgid "Track Name"
 msgstr "İz Adı"
 
-#: TrackPanel.cpp:7436
+#: TrackPanel.cpp:7526
 #, c-format
 msgid "Renamed '%s' to '%s'"
 msgstr "'%s', '%s' olarak yeniden adlandırıldı"
 
-#: TrackPanel.cpp:7439
+#: TrackPanel.cpp:7529
 msgid "Name Change"
 msgstr "Ad Değiştir"
 
 #. i18n-hint: (noun) This is the font for the label track.
-#: TrackPanel.cpp:7507
+#: TrackPanel.cpp:7597
 msgid "Label Track Font"
 msgstr "Etiket İzi Yazıtipi"
 
 #. i18n-hint: (noun) The name of the typeface
-#: TrackPanel.cpp:7520
-#: TrackPanel.cpp:7527
+#: TrackPanel.cpp:7610
+#: TrackPanel.cpp:7617
 msgid "Face name"
 msgstr "Yazı tipi"
 
 #. i18n-hint: (noun) The size of the typeface
-#: TrackPanel.cpp:7532
-#: TrackPanel.cpp:7539
+#: TrackPanel.cpp:7622
+#: TrackPanel.cpp:7629
 msgid "Face size"
 msgstr "Yazı tipi boyutu"
 
-#: TrackPanel.cpp:7829
+#: TrackPanel.cpp:7919
 msgid "Stereo, 999999Hz"
 msgstr "Çift Kanallı, 999999Hz"
 
 #: TrackPanelAx.cpp:286
-#: TrackPanelAx.cpp:414
+#: TrackPanelAx.cpp:422
 msgid "TrackView"
 msgstr "İz Görünümü"
 
 #. i18n-hint: The %d is replaced by th enumber of the track.
 #: TrackPanelAx.cpp:302
-#: TrackPanelAx.cpp:429
+#: TrackPanelAx.cpp:437
 #, c-format
 msgid "Track %d"
 msgstr "İz %d"
@@ -4999,23 +5028,31 @@ msgstr "İz %d"
 #. i18n-hint: This is for screen reader software and indicates that
 #. on this track mute is on.
 #: TrackPanelAx.cpp:310
-#: TrackPanelAx.cpp:435
+#: TrackPanelAx.cpp:443
 msgid " Mute On"
 msgstr "Sustur"
 
 #. i18n-hint: This is for screen reader software and indicates that
 #. on this track solo is on.
 #: TrackPanelAx.cpp:317
-#: TrackPanelAx.cpp:440
+#: TrackPanelAx.cpp:448
 msgid " Solo On"
 msgstr "Solo Aç"
 
 #. i18n-hint: This is for screen reader software and indicates that
 #. this track is selected.
 #: TrackPanelAx.cpp:323
-#: TrackPanelAx.cpp:444
+#: TrackPanelAx.cpp:452
 msgid " Select On"
 msgstr "Seçimi Aç"
+
+#. i18n-hint: This is for screen reader software and indicates that
+#. this track is shown with a sync-locked icon.
+#. The absence of a dash between Sync and Locked is deliberate -
+#. if present, Jaws reads it as "dash".
+#: TrackPanelAx.cpp:331
+msgid " Sync Lock Selected"
+msgstr "Eşleştirme Kilidi Seçili"
 
 #. i18n-hint: Voice key is an experimental/incomplete feature that
 #. is used to navigate in vocal recordings, to move forwards and
@@ -5266,51 +5303,55 @@ msgstr "Kendiliğinden kısılıyor..."
 #: effects/audiounits/AudioUnitEffect.cpp:882
 #: effects/nyquist/Nyquist.cpp:1488
 #: widgets/ErrorDialog.cpp:142
-#: widgets/MultiDialog.cpp:110
+#: widgets/MultiDialog.cpp:111
 msgid "OK"
 msgstr "Tamam"
 
-#: effects/BassBoost.cpp:52
+#: effects/BassTreble.cpp:50
 #, c-format
-msgid "Applied effect: %s frequency = %.0f Hz, boost = %.0f dB"
-msgstr "Uygulanmış etki: %s frekansı = %.0f Hz, güçlendirme = %.0f dB"
+msgid "Applied effect: %s bass = %.0f dB, treble = %.0f dB, gain = %.0f dB"
+msgstr "Uygulanmış etki: %s bas = %.0f dB, tiz = %.0f dB, kazanç = %.0f dB"
 
-#: effects/BassBoost.cpp:169
-msgid "Bass Boost"
-msgstr "Bas Güçlendir"
+#: effects/BassTreble.cpp:190
+msgid "Bass and Treble"
+msgstr "Bas ve Tiz"
 
-#. i18n-hint: Nasca Octavian Paul is a person's name.
-#: effects/BassBoost.cpp:183
-#: effects/Paulstretch.cpp:420
-#: effects/Phaser.cpp:221
-#: effects/Wahwah.cpp:216
-msgid "by Nasca Octavian Paul"
-msgstr "Nasca Octavian Paul tarafından geliştirilmiştir"
+#. i18n-hint: Steve Daulton is a person's name.
+#: effects/BassTreble.cpp:203
+msgid "by Steve Daulton"
+msgstr "Steve Daulton tarafından"
 
-#: effects/BassBoost.cpp:197
-#: effects/ChangePitch.cpp:334
-msgid "Frequency (Hz):"
-msgstr "Frekans (Hz):"
+#: effects/BassTreble.cpp:217
+msgid "Bass (dB):"
+msgstr "Bas (dB):"
 
-#: effects/BassBoost.cpp:206
-msgid "Frequency Hertz"
-msgstr "Frekans Hertz"
+#: effects/BassTreble.cpp:222
+msgid "Bass (dB)"
+msgstr "Bas (dB)"
 
-#: effects/BassBoost.cpp:210
-msgid "Boost (dB):"
-msgstr "Güçlendirme (dB)"
+#: effects/BassTreble.cpp:226
+msgid "Treble (dB):"
+msgstr "Tiz (dB):"
 
-#: effects/BassBoost.cpp:219
-msgid "Boost dB"
-msgstr "Güçlendirme dB"
+#: effects/BassTreble.cpp:231
+msgid "Treble (dB)"
+msgstr "Tiz (dB)"
 
-#: effects/BassBoost.h:35
-msgid "BassBoost..."
-msgstr "Bas Güçlendir..."
+#: effects/BassTreble.cpp:235
+msgid "Gain (dB):"
+msgstr "Kazanç (dB):"
 
-#: effects/BassBoost.h:49
-msgid "Boosting Bass Frequencies"
-msgstr "Bas Frekansları Güçlendiriliyor"
+#: effects/BassTreble.cpp:240
+msgid "Gain (dB)"
+msgstr "Kazanç (dB)"
+
+#: effects/BassTreble.h:32
+msgid "Bass and Treble..."
+msgstr "Bas ve Tiz..."
+
+#: effects/BassTreble.h:46
+msgid "Adjusting Bass and Treble"
+msgstr "Bas ve Tiz Ayarlanıyor"
 
 #: effects/ChangeLength.h:26
 msgid "Change Length..."
@@ -5380,6 +5421,10 @@ msgstr "Yarımtonlar (yarım adımlar):"
 #: effects/ChangePitch.cpp:328
 msgid "Semitones in half-steps"
 msgstr "Yarım tonlar yarım adımlarla"
+
+#: effects/ChangePitch.cpp:334
+msgid "Frequency (Hz):"
+msgstr "Frekans (Hz):"
 
 #: effects/ChangePitch.cpp:338
 #: effects/ChangeSpeed.cpp:384
@@ -5599,52 +5644,52 @@ msgstr "Eşik: %d dB "
 
 #. i18n-hint: usually leave this as is as dB doesn't get translated
 #: effects/Compressor.cpp:725
-#: effects/Compressor.cpp:728
+#: effects/Compressor.cpp:729
 #, c-format
 msgid "%3d dB"
 msgstr "%3d dB"
 
-#: effects/Compressor.cpp:727
+#: effects/Compressor.cpp:728
 #, c-format
 msgid "Noise Floor %d dB"
 msgstr "Gürültü Tabanı %d dB"
 
-#: effects/Compressor.cpp:731
+#: effects/Compressor.cpp:733
 #, c-format
 msgid "Ratio %.0f to 1"
 msgstr "Oran %.0f -> 1"
 
 #. i18n-hint: Unless your language has a different convention for ratios,
 #. * like 8:1, leave as is.
-#: effects/Compressor.cpp:734
+#: effects/Compressor.cpp:736
 #, c-format
 msgid "%.0f:1"
 msgstr "%.0f:1"
 
-#: effects/Compressor.cpp:737
+#: effects/Compressor.cpp:739
 #, c-format
 msgid "Ratio %.1f to 1"
 msgstr "Oran %.1f -> 1"
 
 #. i18n-hint: Unless your language has a different convention for ratios,
 #. * like 8:1, leave as is.
-#: effects/Compressor.cpp:740
+#: effects/Compressor.cpp:742
 #, c-format
 msgid "%.1f:1"
 msgstr "%.1f:1"
 
-#: effects/Compressor.cpp:743
+#: effects/Compressor.cpp:746
 #, c-format
 msgid "Attack Time %.1f secs"
 msgstr "Kalkma Zamanı %.1f saniye"
 
-#: effects/Compressor.cpp:744
 #: effects/Compressor.cpp:747
+#: effects/Compressor.cpp:751
 #, c-format
 msgid "%.1f secs"
 msgstr "%.1f saniye"
 
-#: effects/Compressor.cpp:746
+#: effects/Compressor.cpp:750
 #, c-format
 msgid "Decay Time %.1f secs"
 msgstr "Düşme Süresi %.1f saniye"
@@ -5938,7 +5983,7 @@ msgstr "Süre:"
 #. * minutes, seconds and milliseconds (1/1000 second)
 #: effects/DtmfGen.cpp:473
 #: effects/Noise.cpp:218
-#: effects/Silence.cpp:44
+#: effects/Silence.cpp:42
 #: effects/ToneGen.cpp:313
 #: effects/ToneGen.cpp:361
 #: widgets/TimeTextCtrl.cpp:308
@@ -5949,7 +5994,7 @@ msgstr "sa:dd:ss + milisaniye"
 #. * minutes, seconds and samples (at the current project sample rate)
 #: effects/DtmfGen.cpp:473
 #: effects/Noise.cpp:218
-#: effects/Silence.cpp:40
+#: effects/Silence.cpp:38
 #: effects/ToneGen.cpp:313
 #: effects/ToneGen.cpp:361
 #: widgets/TimeTextCtrl.cpp:317
@@ -5970,8 +6015,8 @@ msgstr "Ton süresi:"
 
 #: effects/DtmfGen.cpp:491
 #: effects/DtmfGen.cpp:493
-#: effects/DtmfGen.cpp:569
 #: effects/DtmfGen.cpp:570
+#: effects/DtmfGen.cpp:572
 msgid "ms"
 msgstr "ms"
 
@@ -6060,7 +6105,7 @@ msgstr "Kübik"
 msgid "Equalization"
 msgstr "Dengele"
 
-#: effects/Equalization.cpp:1000
+#: effects/Equalization.cpp:1002
 #, c-format
 msgid ""
 "EQCurves.xml and EQDefaultCurves.xml were not found on your system.\n"
@@ -6073,104 +6118,118 @@ msgstr ""
 "\n"
 "%s eğrilerini kaydedin."
 
-#: effects/Equalization.cpp:1001
+#: effects/Equalization.cpp:1003
 msgid "EQCurves.xml and EQDefaultCurves.xml missing"
 msgstr "EQCurves.xml ve EQDefaultCurves.xml dosyaları kayıp"
 
-#: effects/Equalization.cpp:1007
-#: effects/Equalization.cpp:1033
-#: effects/Equalization.cpp:1034
+#: effects/Equalization.cpp:1009
+#: effects/Equalization.cpp:1036
+#: effects/Equalization.cpp:1039
+#: effects/Equalization.cpp:1040
 msgid "unnamed"
 msgstr "adsız"
 
 #. i18n-hint: EQ stands for 'Equalization'.
-#: effects/Equalization.cpp:1029
-msgid "Error Loading EQ Curve"
-msgstr "EQ Eğrisi Yüklenirken Hata"
+#: effects/Equalization.cpp:1030
+#, c-format
+msgid ""
+"Error Loading EQ Curves from file:\n"
+"%s\n"
+"Error message says:\n"
+"%s"
+msgstr ""
+"Dengeleyici eğrileri dosyadan yüklenirken hata:\n"
+"%s\n"
+"Hata iletisi:\n"
+"%s"
 
-#: effects/Equalization.cpp:1094
+#: effects/Equalization.cpp:1033
+msgid "Error Loading EQ Curves"
+msgstr "Dengeleyici Eğrileri Yüklenirken Hata"
+
+#: effects/Equalization.cpp:1100
 msgid "Error Saving Equalization Curves"
 msgstr "Dengeleme Eğrileri Kaydedilirken Hata"
 
 #. i18n-hint: && in here is an escape character to get a single &
 #. * on screen, so keep it as is
-#: effects/Equalization.cpp:1117
+#: effects/Equalization.cpp:1123
 msgid "Equalization, by Martyn Shaw && Mitch Golden"
 msgstr "Dengeleme Martyn Shaw ve Mitch Golden tarafından geliştirilmiştir"
 
-#: effects/Equalization.cpp:1138
+#: effects/Equalization.cpp:1144
 msgid "Max dB"
 msgstr "En Fazla dB"
 
-#: effects/Equalization.cpp:1140
+#: effects/Equalization.cpp:1146
 msgid "Min dB"
 msgstr "En Az dB"
 
-#: effects/Equalization.cpp:1219
+#: effects/Equalization.cpp:1225
 msgid "kHz"
 msgstr "kHz"
 
-#: effects/Equalization.cpp:1236
+#: effects/Equalization.cpp:1242
 msgid "&Draw Curves"
 msgstr "&Eğrileri Çiz"
 
-#: effects/Equalization.cpp:1238
+#: effects/Equalization.cpp:1244
 msgid "Draw Curves"
 msgstr "Eğrileri Çiz"
 
-#: effects/Equalization.cpp:1242
+#: effects/Equalization.cpp:1248
 msgid "&Graphic EQ"
 msgstr "&Grafik EQ"
 
-#: effects/Equalization.cpp:1244
+#: effects/Equalization.cpp:1250
 msgid "Graphic EQ"
 msgstr "Grafik EQ"
 
-#: effects/Equalization.cpp:1257
+#: effects/Equalization.cpp:1263
 msgid "Li&near Frequency Scale"
 msgstr "Doğrusal Frekans Ölçeği"
 
-#: effects/Equalization.cpp:1258
+#: effects/Equalization.cpp:1264
 msgid "Linear Frequency Scale"
 msgstr "Doğrusal Frekans Ölçeği"
 
-#: effects/Equalization.cpp:1267
+#: effects/Equalization.cpp:1273
 msgid "Length of &Filter:"
 msgstr "Sü&zgeç Uzunluğu:"
 
-#: effects/Equalization.cpp:1273
+#: effects/Equalization.cpp:1279
 msgid "Length of Filter"
 msgstr "Süzgeç Uzunluğu:"
 
-#: effects/Equalization.cpp:1289
+#: effects/Equalization.cpp:1296
 msgid "&Select Curve:"
 msgstr "Eğriyi &Seçin:"
 
-#: effects/Equalization.cpp:1299
+#: effects/Equalization.cpp:1306
 msgid "S&ave/Manage Curves..."
 msgstr "Eğrileri K&aydet/Yönet..."
 
-#: effects/Equalization.cpp:1300
+#: effects/Equalization.cpp:1307
 msgid "Save and Manage Curves"
 msgstr "Eğrileri Kaydet ve Yönet"
 
-#: effects/Equalization.cpp:1303
+#: effects/Equalization.cpp:1310
 msgid "Fla&tten"
 msgstr "Düzel&t"
 
-#: effects/Equalization.cpp:1305
+#: effects/Equalization.cpp:1312
 msgid "&Invert"
 msgstr "Ev&ir"
 
-#: effects/Equalization.cpp:1307
+#: effects/Equalization.cpp:1314
 msgid "G&rids"
 msgstr "Izga&ralar"
 
-#: effects/Equalization.cpp:1372
+#: effects/Equalization.cpp:1379
 msgid "Select Curve"
 msgstr "Eğiriyi Seçin:"
 
-#: effects/Equalization.cpp:1388
+#: effects/Equalization.cpp:1395
 msgid ""
 "To use this EQ curve in a batch chain, please choose a new name for it.\n"
 "Choose the 'Save/Manage Curves...' button and rename the 'unnamed' curve, then use that one."
@@ -6178,61 +6237,61 @@ msgstr ""
 "Bu EQ eğrisini bir yığın zincirinde kullanmak için yeni bir ad verin.\n"
 "'Eğrileri Kaydet/Yönet...' düğmesine tıklayarak 'adsız' eğriye ad verin ve bunu kullanın."
 
-#: effects/Equalization.cpp:1389
+#: effects/Equalization.cpp:1396
 msgid "EQ Curve needs a different name"
 msgstr "EQ eğrisi farklı bir ada gerek duyuyor"
 
-#: effects/Equalization.cpp:1711
+#: effects/Equalization.cpp:1719
 msgid "Curve not found"
 msgstr "Eğri bulunamadı"
 
-#: effects/Equalization.cpp:1711
+#: effects/Equalization.cpp:1719
 msgid "Requested curve not found, using 'unnamed'"
 msgstr "İstenen eğri bulunamadı, 'adsız' kullanılıyor"
 
-#: effects/Equalization.cpp:2823
-#: effects/Equalization.cpp:2828
+#: effects/Equalization.cpp:2831
+#: effects/Equalization.cpp:2836
 msgid "Manage Curves List"
 msgstr "Eğri Listesini Yönet"
 
-#: effects/Equalization.cpp:2827
+#: effects/Equalization.cpp:2835
 msgid "Manage Curves"
 msgstr "Eğrileri Yönet"
 
-#: effects/Equalization.cpp:2860
+#: effects/Equalization.cpp:2868
 msgid "&Curves"
 msgstr "&Eğriler"
 
-#: effects/Equalization.cpp:2864
+#: effects/Equalization.cpp:2872
 msgid "Curve Name"
 msgstr "Eğri Adı"
 
-#: effects/Equalization.cpp:2871
+#: effects/Equalization.cpp:2879
 msgid "&Rename..."
 msgstr "Yeniden Adlandı&r..."
 
-#: effects/Equalization.cpp:2872
+#: effects/Equalization.cpp:2880
 msgid "D&elete..."
 msgstr "Si&l..."
 
-#: effects/Equalization.cpp:2873
+#: effects/Equalization.cpp:2881
 msgid "I&mport..."
 msgstr "&Al..."
 
-#: effects/Equalization.cpp:2874
+#: effects/Equalization.cpp:2882
 msgid "E&xport..."
 msgstr "V&er..."
 
-#: effects/Equalization.cpp:2875
+#: effects/Equalization.cpp:2883
 msgid "&Get More..."
 msgstr "&Daha Fazla..."
 
-#: effects/Equalization.cpp:2882
+#: effects/Equalization.cpp:2890
 #: widgets/ErrorDialog.cpp:139
 msgid "Help"
 msgstr "Yardım"
 
-#: effects/Equalization.cpp:2883
+#: effects/Equalization.cpp:2891
 msgid ""
 "Rename 'unnamed' to save a new entry.\n"
 "'OK' saves all changes, 'Cancel' doesn't."
@@ -6240,111 +6299,114 @@ msgstr ""
 "Yeni bir kayıt oluşturmak için 'adsız' yerine yeni ad verin.\n"
 "Tüm değişiklikleri kaydetmek için 'Tamam', vazgeçmek için 'İptal' seçin."
 
-#: effects/Equalization.cpp:2918
+#: effects/Equalization.cpp:2926
 msgid "'unnamed' always stays at the bottom of the list"
 msgstr "'adsız' her zaman listenin en altında yer alır"
 
-#: effects/Equalization.cpp:2918
-#: effects/Equalization.cpp:3219
+#: effects/Equalization.cpp:2926
 msgid "'unnamed' is special"
 msgstr "'adsız' özeldir"
 
-#: effects/Equalization.cpp:3012
+#: effects/Equalization.cpp:3020
 msgid "' to..."
 msgstr "' şuna..."
 
-#: effects/Equalization.cpp:3012
-#: effects/Equalization.cpp:3015
+#: effects/Equalization.cpp:3020
+#: effects/Equalization.cpp:3023
 msgid "Rename '"
 msgstr "Yeniden Adlandır '"
 
-#: effects/Equalization.cpp:3013
+#: effects/Equalization.cpp:3021
 msgid "Rename..."
 msgstr "Yeniden Adlandır..."
 
-#: effects/Equalization.cpp:3036
+#: effects/Equalization.cpp:3044
 msgid "Name is the same as the original one"
 msgstr "Ad özgün olan ile aynı"
 
-#: effects/Equalization.cpp:3036
+#: effects/Equalization.cpp:3044
 msgid "Same name"
 msgstr "Aynı ad"
 
-#: effects/Equalization.cpp:3039
+#: effects/Equalization.cpp:3047
 msgid "'?"
 msgstr "'?"
 
-#: effects/Equalization.cpp:3039
+#: effects/Equalization.cpp:3047
 msgid "Overwrite existing curve '"
 msgstr "Varolan eğrinin üzerine yaz '"
 
-#: effects/Equalization.cpp:3040
+#: effects/Equalization.cpp:3048
 msgid "Curve exists"
 msgstr "Eğri zaten var"
 
-#: effects/Equalization.cpp:3111
+#: effects/Equalization.cpp:3119
 msgid "You cannot delete the 'unnamed' curve."
 msgstr "'Adsız' bir eğriyi silemezsiniz."
 
-#: effects/Equalization.cpp:3112
-#: effects/Equalization.cpp:3161
+#: effects/Equalization.cpp:3120
+#: effects/Equalization.cpp:3169
 msgid "Can't delete 'unnamed'"
 msgstr "'adsız' silinemez"
 
-#: effects/Equalization.cpp:3118
-#: effects/Equalization.cpp:3147
+#: effects/Equalization.cpp:3126
+#: effects/Equalization.cpp:3155
 msgid "' ?"
 msgstr "' ?"
 
-#: effects/Equalization.cpp:3118
-#: effects/Equalization.cpp:3147
+#: effects/Equalization.cpp:3126
+#: effects/Equalization.cpp:3155
 msgid "Delete '"
 msgstr "Sil '"
 
-#: effects/Equalization.cpp:3121
-#: effects/Equalization.cpp:3151
+#: effects/Equalization.cpp:3129
+#: effects/Equalization.cpp:3159
 #: export/ExportFFmpegDialogs.cpp:1664
 msgid "Confirm Deletion"
 msgstr "Silmeyi Onayla"
 
-#: effects/Equalization.cpp:3144
+#: effects/Equalization.cpp:3152
 msgid "Delete "
 msgstr "Sil"
 
-#: effects/Equalization.cpp:3144
+#: effects/Equalization.cpp:3152
 msgid "items?"
 msgstr "öge?"
 
-#: effects/Equalization.cpp:3160
+#: effects/Equalization.cpp:3168
 msgid "You cannot delete the 'unnamed' curve, it is special."
 msgstr "'adsız' eğrisini silemezsiniz, özeldir."
 
-#: effects/Equalization.cpp:3177
+#: effects/Equalization.cpp:3185
 msgid "Choose an EQ curve file"
 msgstr "Bir EQ eğrisi dosyası seçin"
 
-#: effects/Equalization.cpp:3177
+#: effects/Equalization.cpp:3185
 msgid "xml files (*.xml;*.XML)|*.xml;*.XML"
 msgstr "xml dosyaları (*.xml;*.XML)|*.xml;*.XML"
 
-#: effects/Equalization.cpp:3197
+#: effects/Equalization.cpp:3205
 msgid "Export EQ curves as..."
 msgstr "EQ eğrilerini ver..."
 
-#: effects/Equalization.cpp:3219
-msgid "You cannot export 'unnamed' curve"
-msgstr "'adsız' eğriyi veremezsiniz"
+#: effects/Equalization.cpp:3227
+msgid "Cannot Export 'unnamed'"
+msgstr "'adsız' eğrisini veremezsiniz"
 
-#: effects/Equalization.cpp:3229
+#: effects/Equalization.cpp:3227
+msgid "You cannot export 'unnamed' curve, it is special."
+msgstr "'adsız' eğrisini veremezsiniz, özeldir."
+
+#: effects/Equalization.cpp:3237
 #, c-format
 msgid "%d curves exported to %s"
 msgstr "%d eğri %s dosyasına verildi"
 
-#: effects/Equalization.cpp:3230
+#: effects/Equalization.cpp:3238
 msgid "Curves exported"
 msgstr "Eğriler verildi"
 
-#: effects/Equalization.cpp:3233
+#: effects/Equalization.cpp:3241
 msgid "No curves exported"
 msgstr "Hiç bir eğri verilmedi"
 
@@ -6873,6 +6935,12 @@ msgstr ""
 "Seçim çok kısa.\n"
 " Seçim, Zaman Çözünürlüğünden daha uzun olmalıdır."
 
+#: effects/Paulstretch.cpp:420
+#: effects/Phaser.cpp:221
+#: effects/Wahwah.cpp:216
+msgid "by Nasca Octavian Paul"
+msgstr "Nasca Octavian Paul tarafından geliştirilmiştir"
+
 #. i18n-hint: This is how many times longer the sound will be, e.g. applying
 #. * the effect to a 1-second sample, with the default Stretch Factor of 10.0
 #. * will give an (approximately) 10 second sound
@@ -7128,7 +7196,7 @@ msgstr "%.2f saniye"
 msgid "%.3f"
 msgstr "%.3f"
 
-#: effects/Silence.cpp:33
+#: effects/Silence.cpp:45
 msgid "Silence Generator"
 msgstr "Sessizlik Üreteci"
 
@@ -7296,42 +7364,42 @@ msgid "All tracks must have the same sample rate"
 msgstr "Tüm izler aynı örnekleme hızında olmalıdır"
 
 #: effects/TruncSilence.cpp:143
-#: effects/TruncSilence.cpp:859
+#: effects/TruncSilence.cpp:861
 msgid "Truncate Silence"
 msgstr "Sessizliği Buda"
 
-#: effects/TruncSilence.cpp:869
+#: effects/TruncSilence.cpp:871
 msgid "by Lynn Allan && Philip Van Baren"
 msgstr "Lynn Allan ve Philip Van Baren tarafından geliştirilmiştir"
 
-#: effects/TruncSilence.cpp:883
+#: effects/TruncSilence.cpp:885
 msgid "Min silence duration:"
 msgstr "En az sessizlik süresi:"
 
-#: effects/TruncSilence.cpp:886
-#: effects/TruncSilence.cpp:890
-#: widgets/TimeTextCtrl.cpp:1633
+#: effects/TruncSilence.cpp:888
+#: effects/TruncSilence.cpp:892
+#: widgets/TimeTextCtrl.cpp:1636
 msgid "milliseconds"
 msgstr "milisaniye"
 
-#: effects/TruncSilence.cpp:887
+#: effects/TruncSilence.cpp:889
 msgid "Max silence duration:"
 msgstr "En çok sessizlik süres:"
 
-#: effects/TruncSilence.cpp:891
+#: effects/TruncSilence.cpp:893
 msgid "Silence compression:"
 msgstr "Sessizlik sıkıştırma:"
 
 #. i18n-hint: Leave as is unless your language has a different way to show ratios like 5:1
-#: effects/TruncSilence.cpp:895
+#: effects/TruncSilence.cpp:897
 msgid ":1"
 msgstr ":1"
 
-#: effects/TruncSilence.cpp:896
+#: effects/TruncSilence.cpp:898
 msgid "Threshold for silence:"
 msgstr "Sessizlik eşiği:"
 
-#: effects/TruncSilence.cpp:922
+#: effects/TruncSilence.cpp:924
 msgid ""
 "   Duration must be at least 1 millisecond\n"
 "   Compress ratio must be at least 1:1"
@@ -7347,13 +7415,13 @@ msgstr "Sessizliği Buda..."
 msgid "Truncating Silence..."
 msgstr "Sessizlik Budanıyor..."
 
-#: effects/VST/VSTEffect.cpp:389
+#: effects/VST/VSTEffect.cpp:388
 #: effects/ladspa/LadspaEffect.cpp:590
 #: effects/lv2/LV2Effect.cpp:798
 msgid "Effect Settings"
 msgstr "Etki Ayarları"
 
-#: effects/VST/VSTEffect.cpp:469
+#: effects/VST/VSTEffect.cpp:468
 #: effects/ladspa/LadspaEffect.cpp:555
 #: effects/ladspa/LadspaEffect.cpp:563
 #: prefs/QualityPrefs.cpp:74
@@ -7361,56 +7429,56 @@ msgstr "Etki Ayarları"
 msgid "None"
 msgstr "Yok"
 
-#: effects/VST/VSTEffect.cpp:480
+#: effects/VST/VSTEffect.cpp:479
 msgid "Presets:"
 msgstr "Önayarlar:"
 
-#: effects/VST/VSTEffect.cpp:490
+#: effects/VST/VSTEffect.cpp:489
 msgid "Presets"
 msgstr "Önayarlar"
 
-#: effects/VST/VSTEffect.cpp:493
+#: effects/VST/VSTEffect.cpp:492
 msgid "Load"
 msgstr "Yükle"
 
-#: effects/VST/VSTEffect.cpp:496
+#: effects/VST/VSTEffect.cpp:495
 msgid "Save"
 msgstr "Kaydet"
 
-#: effects/VST/VSTEffect.cpp:596
+#: effects/VST/VSTEffect.cpp:595
 msgid "Load VST Program:"
 msgstr "VST Programını Yükle:"
 
-#: effects/VST/VSTEffect.cpp:614
+#: effects/VST/VSTEffect.cpp:613
 msgid "Error Loading VST Program"
 msgstr "VST Programı Yüklenirken Hata"
 
-#: effects/VST/VSTEffect.cpp:630
+#: effects/VST/VSTEffect.cpp:629
 msgid "Save VST Program As:"
 msgstr "VST Programını Faklı Kaydet:"
 
-#: effects/VST/VSTEffect.cpp:769
+#: effects/VST/VSTEffect.cpp:768
 #, c-format
 msgid "This parameter file was saved from %s.  Continue?"
 msgstr "Bu parametre dosyasyı %s ile kaydedilmiş. Devam edilsin mi?"
 
-#: effects/VST/VSTEffect.cpp:1223
+#: effects/VST/VSTEffect.cpp:1222
 msgid "Performing Effect: "
 msgstr "Etki Uygulanıyor:"
 
-#: effects/VST/VSTEffect.cpp:1254
+#: effects/VST/VSTEffect.cpp:1253
 msgid "Both channels of a stereo track must be the same sample rate."
 msgstr "Çift kanallı bir izin kanalları aynı örnek hızında olmalıdır."
 
-#: effects/VST/VSTEffect.cpp:1259
+#: effects/VST/VSTEffect.cpp:1258
 msgid "Both channels of a stereo track must be the same length."
 msgstr "Çift kanallı bir izin kanalları aynı uzunlukta olmalıdır."
 
-#: effects/VST/VSTEffect.cpp:1790
+#: effects/VST/VSTEffect.cpp:1789
 msgid "Scanning VST Plugins"
 msgstr "VST eklentileri taranıyor"
 
-#: effects/VST/VSTEffect.cpp:1806
+#: effects/VST/VSTEffect.cpp:1805
 #, c-format
 msgid "Checking %s"
 msgstr "%s denetleniyor"
@@ -7598,50 +7666,55 @@ msgstr "Eklenti Ayarları"
 msgid "Program"
 msgstr "Program"
 
-#: export/Export.cpp:499
-msgid "All the selected audio is muted."
+#: export/Export.cpp:493
+msgid "All selected audio is muted."
 msgstr "Seçilmiş tüm sesler susturuldu."
 
-#: export/Export.cpp:501
-msgid "All the audio is muted."
+#: export/Export.cpp:495
+#: export/ExportMultiple.cpp:177
+msgid "All audio is muted."
 msgstr "Tüm sesler susturuldu."
 
-#: export/Export.cpp:551
+#: export/Export.cpp:497
+msgid "Unable to export"
+msgstr "Verilemedi"
+
+#: export/Export.cpp:545
 msgid "Export File"
 msgstr "Dosyayı Ver"
 
-#: export/Export.cpp:560
+#: export/Export.cpp:554
 msgid "&Options..."
 msgstr "&Ayarlar..."
 
-#: export/Export.cpp:601
-msgid "Are you sure you want to save the file as \""
+#: export/Export.cpp:595
+msgid "Are you sure you want to export the file as \""
 msgstr "Dosyayı \" olarak kaydetmek istediğinize emin misiniz"
 
-#: export/Export.cpp:606
-#: export/Export.cpp:627
-#: export/Export.cpp:671
+#: export/Export.cpp:600
+#: export/Export.cpp:621
+#: export/Export.cpp:665
 #: import/ImportPCM.cpp:238
-#: widgets/Warning.cpp:53
+#: widgets/Warning.cpp:54
 msgid "Warning"
 msgstr "Dikkat"
 
-#: export/Export.cpp:621
+#: export/Export.cpp:615
 #, c-format
 msgid ""
-"You are about to save a %s file with the name \"%s\".\n"
+"You are about to export a %s file with the name \"%s\".\n"
 "\n"
 "Normally these files end in \".%s\", and some programs will not open files with nonstandard extensions.\n"
 "\n"
-"Are you sure you want to save the file under this name?"
+"Are you sure you want to export the file under this name?"
 msgstr ""
-"Bir \"%s\" dosyasını %s adıyla kaydetmek üzeresiniz.\n"
+"Bir %s dosyasını \"%s\" adıyla kaydetmek üzeresiniz.\n"
 "\n"
 "Normalde bu dosyaların uzantısı \".%s\" olur. Bazı programlar standart olmayan uzantıları açamaz.\n"
 "\n"
 "Dosyayı bu adla kaydetmek istediğinize emin misiniz?"
 
-#: export/Export.cpp:653
+#: export/Export.cpp:647
 msgid ""
 "You are attempting to overwrite an aliased file that is missing.\n"
 "The file cannot be written because the path is needed to restore the original audio to the project.\n"
@@ -7652,42 +7725,42 @@ msgstr ""
 "Bu yol projenin özgün ses dosyalarını geri yüklemek için gerektiğinden dosya yazılamadı. \n"
 "Dosyayı hala vermek istiyosanız, farklı bir dosya adı ve klasör seçin."
 
-#: export/Export.cpp:667
+#: export/Export.cpp:661
 #, c-format
 msgid "A file named \"%s\" already exists.  Replace?"
 msgstr "\"%s\" adlı dosya zaten var. Üstüne yazmak ister misiniz?"
 
-#: export/Export.cpp:781
+#: export/Export.cpp:775
 msgid "Your tracks will be mixed down to two stereo channels in the exported file."
 msgstr "İzleriniz, verilecek dosya içinde iki çift kanallı sese indirgenecek."
 
-#: export/Export.cpp:786
+#: export/Export.cpp:782
 msgid "Your tracks will be mixed down to a single mono channel in the exported file."
 msgstr "İzleriniz, verilecek dosya içinde bir tek kanallı sese indirgenecek."
 
-#: export/Export.cpp:797
+#: export/Export.cpp:795
 msgid "Advanced Mixing Options"
 msgstr "Gelişmiş Karıştırıcı Ayarları"
 
-#: export/Export.cpp:1005
+#: export/Export.cpp:1003
 #, c-format
 msgid "Channel: %2d"
 msgstr "Kanal: %2d"
 
-#: export/Export.cpp:1120
+#: export/Export.cpp:1118
 msgid " - Left"
 msgstr " - Sol"
 
-#: export/Export.cpp:1122
+#: export/Export.cpp:1120
 msgid " - Right"
 msgstr " - Sağ"
 
-#: export/Export.cpp:1144
+#: export/Export.cpp:1142
 msgid "Mixer Panel"
 msgstr "Karıştırıcı Paneli"
 
-#: export/Export.cpp:1150
-#: export/Export.cpp:1197
+#: export/Export.cpp:1148
+#: export/Export.cpp:1195
 #, c-format
 msgid "Output Channels: %2d"
 msgstr "Çıkış Kanalları: %2d"
@@ -8651,139 +8724,130 @@ msgid "MP3 export library not found"
 msgstr "MP3 verme kütüphanesi bulunamadı"
 
 #: export/ExportMultiple.cpp:105
-#: export/ExportMultiple.cpp:431
-#: export/ExportMultiple.cpp:549
+#: export/ExportMultiple.cpp:441
+#: export/ExportMultiple.cpp:559
 msgid "Export Multiple"
 msgstr "Çoklu Ver"
 
-#: export/ExportMultiple.cpp:175
+#: export/ExportMultiple.cpp:178
+#: export/ExportMultiple.cpp:190
+msgid "Cannot Export Multiple"
+msgstr "Çoklu Verilemedi"
+
+#: export/ExportMultiple.cpp:186
 msgid ""
-"If you have more than one Audio Track, you can\n"
-"export each track as a separate audio file.\n"
+"You have only one unmuted Audio Track and no applicable \n"
+"labels, so you cannot export to separate audio files. \n"
 "\n"
-"If you have a Label Track, you can export a separate\n"
-"audio file for each label in that track. You can have\n"
-"more than one Label Track, but files will only be\n"
-"exported for the uppermost Label Track.\n"
-"\n"
-"This Project does not meet the above criteria for\n"
-"exporting multiple files."
+"If you have more than one Label Track, Export Multiple is \n"
+"based only on labels in the uppermost Label Track."
 msgstr ""
-"Eğer birden fazla ses iziniz varsa, her izi ayrı bir \n"
-"dosya olarak verebilirsiniz.\n"
+"Yalnız bir Ses İzi duyulur durumda ve kullanılabilecek bir \n"
+"etiket yok. Bu nedenle ayrı ses dosyaları veremezsiniz. \n"
 "\n"
-"Eğer bir etiket iziniz varsa, her etiket için yeni bir\n"
-"ses dosyası verebilirsiniz. Birden fazla etiket iziniz\n"
-"olabilir. Ancak dosyalar yalnız en üstteki Etiket İzine\n"
-"göre verilecek.\n"
-"\n"
-"Bu proje yukarıdaki ölçütleri karşılamadığından\n"
-"çoklu dosyalar verilemiyor."
+"Birden fazla Etiket İzi olduğunda, Çoklu Ver işlemi \n"
+"yalnız en üstteki Etiket İzi temel alınarak yapılır."
 
-#: export/ExportMultiple.cpp:180
-msgid "Can't export multiple files"
-msgstr "Birden çok dosya verilemez"
-
-#: export/ExportMultiple.cpp:245
+#: export/ExportMultiple.cpp:255
 msgid "Export format:"
 msgstr "Verme biçimi:"
 
-#: export/ExportMultiple.cpp:250
+#: export/ExportMultiple.cpp:260
 msgid "Options..."
 msgstr "Ayarlar..."
 
-#: export/ExportMultiple.cpp:254
+#: export/ExportMultiple.cpp:264
 msgid "Export location:"
 msgstr "Verme konumu:"
 
-#: export/ExportMultiple.cpp:259
+#: export/ExportMultiple.cpp:269
 msgid "Create"
 msgstr "Oluştur"
 
-#: export/ExportMultiple.cpp:266
+#: export/ExportMultiple.cpp:276
 msgid "Split files based on:"
 msgstr "Dosyaları şuna göre ayır:"
 
-#: export/ExportMultiple.cpp:275
-#: export/ExportMultiple.cpp:277
+#: export/ExportMultiple.cpp:285
+#: export/ExportMultiple.cpp:287
 msgid "Labels"
 msgstr "Etiketler"
 
-#: export/ExportMultiple.cpp:282
+#: export/ExportMultiple.cpp:292
 msgid "Include audio before first label"
 msgstr "İlk etiketten önce sesi kat"
 
-#: export/ExportMultiple.cpp:288
+#: export/ExportMultiple.cpp:298
 msgid "First file name:"
 msgstr "İlk dosya adı:"
 
-#: export/ExportMultiple.cpp:293
+#: export/ExportMultiple.cpp:303
 msgid "First file name"
 msgstr "İlk dosya adı"
 
-#: export/ExportMultiple.cpp:310
+#: export/ExportMultiple.cpp:320
 msgid "Name files:"
 msgstr "Dosya adlandırma:"
 
-#: export/ExportMultiple.cpp:316
+#: export/ExportMultiple.cpp:326
 msgid "Using Label/Track Name"
 msgstr "Etiket/İz adını kullanarak"
 
-#: export/ExportMultiple.cpp:319
+#: export/ExportMultiple.cpp:329
 msgid "Numbering before Label/Track Name"
 msgstr "Etiket/İz adından önce numaralayarak"
 
-#: export/ExportMultiple.cpp:322
+#: export/ExportMultiple.cpp:332
 msgid "Numbering after File name prefix"
 msgstr "Dosya adı ön ekinden sonra numaralandır"
 
-#: export/ExportMultiple.cpp:328
+#: export/ExportMultiple.cpp:338
 msgid "File name prefix:"
 msgstr "Dosya adı öneki:"
 
-#: export/ExportMultiple.cpp:333
+#: export/ExportMultiple.cpp:343
 msgid "File name prefix"
 msgstr "Dosya adı öneki"
 
-#: export/ExportMultiple.cpp:345
+#: export/ExportMultiple.cpp:355
 msgid "Overwrite existing files"
 msgstr "Varolan dosyaların üzerine yaz"
 
-#: export/ExportMultiple.cpp:429
+#: export/ExportMultiple.cpp:439
 #, c-format
 msgid "\"%s\" successfully created."
 msgstr "\"%s\" sorunsuz oluşturuldu."
 
-#: export/ExportMultiple.cpp:438
+#: export/ExportMultiple.cpp:448
 msgid "Choose a location to save the exported files"
 msgstr "Verilen dosyaların kaydedileceği konumu seçin"
 
-#: export/ExportMultiple.cpp:533
+#: export/ExportMultiple.cpp:543
 #, c-format
 msgid "Successfully exported the following %ld file(s)."
 msgstr "%ld dosya sorunsuz verildi."
 
-#: export/ExportMultiple.cpp:534
+#: export/ExportMultiple.cpp:544
 #, c-format
 msgid "Something went wrong after exporting the following %ld file(s)."
 msgstr "Şu %ld dosyaları verildikten sonra bir şeyler ters gitti."
 
-#: export/ExportMultiple.cpp:535
+#: export/ExportMultiple.cpp:545
 #, c-format
 msgid "Export canceled after exporting the following %ld file(s)."
 msgstr "Şu %ld dosyaları verildikten sonra verme iptal edildi."
 
-#: export/ExportMultiple.cpp:536
+#: export/ExportMultiple.cpp:546
 #, c-format
 msgid "Export stopped after exporting the following %ld file(s)."
 msgstr "Şu %ld dosyaları verildikten sonra verme durduruldu."
 
-#: export/ExportMultiple.cpp:537
+#: export/ExportMultiple.cpp:547
 #, c-format
 msgid "Something went really wrong after exporting the following %ld file(s)."
 msgstr "Şu %ld dosyalarının verilmesinden sonra bir şeyler çok ters gitti."
 
-#: export/ExportMultiple.cpp:572
+#: export/ExportMultiple.cpp:582
 #, c-format
 msgid ""
 "\"%s\" doesn't exist.\n"
@@ -8794,17 +8858,17 @@ msgstr ""
 "\n"
 "Oluşturmak istiyor musunuz?"
 
-#: export/ExportMultiple.cpp:645
-#: export/ExportMultiple.cpp:780
+#: export/ExportMultiple.cpp:655
+#: export/ExportMultiple.cpp:789
 msgid "untitled"
 msgstr "adsız"
 
-#: export/ExportMultiple.cpp:674
-#: export/ExportMultiple.cpp:812
+#: export/ExportMultiple.cpp:684
+#: export/ExportMultiple.cpp:821
 msgid "Edit metadata"
 msgstr "Metaveriyi düzenle"
 
-#: export/ExportMultiple.cpp:927
+#: export/ExportMultiple.cpp:936
 #, c-format
 msgid ""
 "Label or track \"%s\" is not a legal file name. You cannot use any of: %s\n"
@@ -8813,7 +8877,7 @@ msgstr ""
 "%s etiketi ya da izi uygun bir dosya adı değil. Herhangi bir %s kullanamazsınız.\n"
 "Şunu kullanın..."
 
-#: export/ExportMultiple.cpp:928
+#: export/ExportMultiple.cpp:937
 msgid "Save As..."
 msgstr "Farklı Kaydet..."
 
@@ -9244,23 +9308,23 @@ msgstr "İçine kopyala"
 msgid "read directly"
 msgstr "doğrudan oku"
 
-#: import/ImportPCM.cpp:258
+#: import/ImportPCM.cpp:259
 msgid "Choose an import method"
 msgstr "Şu şekillerde destek alabilirsiniz:"
 
-#: import/ImportPCM.cpp:261
+#: import/ImportPCM.cpp:263
 msgid "Make a &copy of the files before editing (safer)"
 msgstr "Dosyaları düzenlemeden önce bir &kopyasını al (daha güvenli)"
 
-#: import/ImportPCM.cpp:264
+#: import/ImportPCM.cpp:267
 msgid "Read the files &directly from the original (faster)"
 msgstr "Dosyaları &doğrudan özgün olandan oku (daha hızlı)"
 
-#: import/ImportPCM.cpp:267
+#: import/ImportPCM.cpp:271
 msgid "Don't &warn again and always use my choice above"
 msgstr "Bir daha &uyarma ve bundan sonra yukarıdaki seçimimi kullan"
 
-#: import/ImportPlugin.h:141
+#: import/ImportPlugin.h:142
 #: import/ImportRaw.cpp:210
 #, c-format
 msgid "Importing %s"
@@ -9499,25 +9563,25 @@ msgstr "Geçici klasörün bulunacağı konumu seçin"
 msgid "unavailable - above location doesn't exist"
 msgstr "geçersiz - yukarıdaki konum bulunamadı"
 
-#: prefs/DirectoriesPrefs.cpp:195
+#: prefs/DirectoriesPrefs.cpp:196
 #, c-format
 msgid "Directory %s does not exist. Create it?"
 msgstr "%s klasörü bulunamadı. Oluşturulsun mu?"
 
-#: prefs/DirectoriesPrefs.cpp:197
+#: prefs/DirectoriesPrefs.cpp:198
 msgid "New Temporary Directory"
 msgstr "Yeni Geçici Klasör"
 
-#: prefs/DirectoriesPrefs.cpp:215
+#: prefs/DirectoriesPrefs.cpp:216
 #, c-format
 msgid "Directory %s is not writable"
 msgstr "%s klasörü yazılabilir değil"
 
-#: prefs/DirectoriesPrefs.cpp:229
+#: prefs/DirectoriesPrefs.cpp:230
 msgid "Changes to temporary directory will not take effect until Audacity is restarted"
 msgstr "Geçici klasör değişikliğinin geçerli olması için Audacity programını yeniden başlatmalısınız"
 
-#: prefs/DirectoriesPrefs.cpp:230
+#: prefs/DirectoriesPrefs.cpp:231
 msgid "Temp Directory Update"
 msgstr "Geçici Klasör Güncelleme"
 
@@ -9566,8 +9630,8 @@ msgid "Extended Import"
 msgstr "Genişletilmiş Alma"
 
 #: prefs/ExtImportPrefs.cpp:92
-msgid "Attempt to use filter in OpenFile dialog first"
-msgstr "DosyaAç diyaloğunda önce süzgeçi kullanmayı dene"
+msgid "A&ttempt to use filter in OpenFile dialog first"
+msgstr "Önce DosyaAç penceresinde süzgeci kullanmayı dene"
 
 #: prefs/ExtImportPrefs.cpp:95
 msgid "Rules to choose import filters"
@@ -9900,7 +9964,7 @@ msgstr "İ&ndir"
 msgid "Allow &background on-demand loading"
 msgstr "A&rka planda isteğe göre yüklemeye izin ver"
 
-#: prefs/LibraryPrefs.cpp:195
+#: prefs/LibraryPrefs.cpp:197
 msgid ""
 "Audacity has automatically detected valid FFmpeg libraries.\n"
 "Do you still want to locate them manually?"
@@ -9950,16 +10014,16 @@ msgstr ""
 "ne yaptığınızı biliyorsanız etkinleştirin."
 
 #: prefs/ModulePrefs.cpp:58
-msgid "mod-script-pipe"
-msgstr "mod-script-pipe"
+msgid "mod-&script-pipe"
+msgstr "mod-&script-pipe"
 
 #: prefs/ModulePrefs.cpp:61
-msgid "mod-nyq-bench"
-msgstr "mod-nyq-bench"
+msgid "mod-&nyq-bench"
+msgstr "mod-&nyq-bench"
 
 #: prefs/ModulePrefs.cpp:64
-msgid "mod-track-panel"
-msgstr "mod-track-panel"
+msgid "mod-&track-panel"
+msgstr "mod-&track-panel"
 
 #: prefs/MousePrefs.cpp:57
 msgid "Mouse"
@@ -10274,39 +10338,39 @@ msgstr "Şekilli"
 msgid "Other..."
 msgstr "Diğer..."
 
-#: prefs/QualityPrefs.cpp:125
+#: prefs/QualityPrefs.cpp:131
 msgid "Sampling"
 msgstr "Örnekleme"
 
-#: prefs/QualityPrefs.cpp:129
+#: prefs/QualityPrefs.cpp:135
 msgid "Default Sample &Rate:"
 msgstr "Varsayılan Örnekleme &Hızı:"
 
-#: prefs/QualityPrefs.cpp:154
+#: prefs/QualityPrefs.cpp:160
 msgid "Default Sample &Format:"
 msgstr "Varsayılan Örnekleme &Biçimi:"
 
-#: prefs/QualityPrefs.cpp:165
+#: prefs/QualityPrefs.cpp:171
 msgid "Real-time Conversion"
 msgstr "Gerçek Zamanlı Dönüştürme"
 
-#: prefs/QualityPrefs.cpp:171
+#: prefs/QualityPrefs.cpp:177
 msgid "Sample Rate Con&verter:"
 msgstr "Örnekleme &Hızı Dönüştürücü:"
 
-#: prefs/QualityPrefs.cpp:178
+#: prefs/QualityPrefs.cpp:184
 msgid "&Dither:"
 msgstr "&Titreme:"
 
-#: prefs/QualityPrefs.cpp:189
+#: prefs/QualityPrefs.cpp:195
 msgid "High-quality Conversion"
 msgstr "Yüksek Kaliteli Dönüştürme"
 
-#: prefs/QualityPrefs.cpp:193
+#: prefs/QualityPrefs.cpp:199
 msgid "Sample Rate Conver&ter:"
 msgstr "Örnek Hızı Dönüş&türücü:"
 
-#: prefs/QualityPrefs.cpp:200
+#: prefs/QualityPrefs.cpp:206
 msgid "Dit&her:"
 msgstr "Titr&eme:"
 
@@ -10714,7 +10778,7 @@ msgstr "&Oynat"
 
 #: toolbars/ControlToolBar.cpp:187
 #: toolbars/ControlToolBar.cpp:219
-#: widgets/ProgressDialog.cpp:1112
+#: widgets/ProgressDialog.cpp:1117
 msgid "Stop"
 msgstr "Durdur"
 
@@ -10793,13 +10857,21 @@ msgstr "Giriş Kanallarını Seçin"
 msgid "Device information is not available."
 msgstr "Aygıt bilgisi bulunamadı."
 
+#: toolbars/EditToolBar.cpp:131
+msgid "Cut selection"
+msgstr "Seçimi kes"
+
+#: toolbars/EditToolBar.cpp:133
+msgid "Copy selection"
+msgstr "Seçimi kopyala"
+
 #: toolbars/EditToolBar.cpp:137
-msgid "Trim outside selection"
-msgstr "Seçimin dışını kırp"
+msgid "Trim audio outside selection"
+msgstr "Seçim dışındaki sesi buda"
 
 #: toolbars/EditToolBar.cpp:139
-msgid "Silence selection"
-msgstr "Sessizlik seçimi"
+msgid "Silence audio selection"
+msgstr "Seçilmiş sesi sustur"
 
 #: toolbars/EditToolBar.cpp:152
 #: toolbars/EditToolBar.cpp:203
@@ -10823,6 +10895,10 @@ msgstr "Seçimi pencereye sığdır"
 #: toolbars/EditToolBar.cpp:165
 msgid "Fit project in window"
 msgstr "Projeyi pencereye sığdır"
+
+#: toolbars/EditToolBar.cpp:199
+msgid "Silence Audio"
+msgstr "Sesi Sustur"
 
 #: toolbars/EditToolBar.cpp:207
 msgid "Fit Selection"
@@ -10993,29 +11069,29 @@ msgstr "Çoklu Araç Kipi"
 msgid "Slide Tool"
 msgstr "Kaydırma Aracı"
 
-#: toolbars/TranscriptionToolBar.cpp:170
+#: toolbars/TranscriptionToolBar.cpp:171
 msgid "Play at selected speed"
 msgstr "Seçili hızda oynat"
 
-#: toolbars/TranscriptionToolBar.cpp:176
-#: toolbars/TranscriptionToolBar.cpp:181
-#: toolbars/TranscriptionToolBar.cpp:266
+#: toolbars/TranscriptionToolBar.cpp:177
+#: toolbars/TranscriptionToolBar.cpp:182
+#: toolbars/TranscriptionToolBar.cpp:267
 msgid "Playback Speed"
 msgstr "Oynatma Hızı"
 
-#: toolbars/TranscriptionToolBar.cpp:265
+#: toolbars/TranscriptionToolBar.cpp:266
 msgid "Play-at-speed"
 msgstr "Seçili hızda oynat"
 
-#: widgets/AButton.cpp:300
+#: widgets/AButton.cpp:304
 msgid " (disabled)"
 msgstr " (devre dışı)"
 
-#: widgets/AButton.cpp:458
+#: widgets/AButton.cpp:477
 msgid "Press"
 msgstr "Basın"
 
-#: widgets/AButton.cpp:537
+#: widgets/AButton.cpp:556
 msgid "Button"
 msgstr "Düğme"
 
@@ -11144,32 +11220,32 @@ msgstr "Ölçer yenileme oranı [saniyede 1-100]:"
 msgid "Meter Preferences"
 msgstr "Ölçer Ayarları"
 
-#: widgets/MultiDialog.cpp:93
+#: widgets/MultiDialog.cpp:94
 msgid " Please select an action "
 msgstr " Lütfen bir eylem seçin"
 
-#: widgets/MultiDialog.cpp:97
+#: widgets/MultiDialog.cpp:98
 msgid "Please select an action"
 msgstr "Lütfen bir eylem seçin"
 
-#: widgets/MultiDialog.cpp:104
+#: widgets/MultiDialog.cpp:105
 msgid "Show Log for Details"
 msgstr "Ayrıntılar için Günlüğü Göster"
 
-#: widgets/ProgressDialog.cpp:1071
+#: widgets/ProgressDialog.cpp:1072
 msgid "Elapsed Time:"
 msgstr "Geçen Süre:"
 
-#: widgets/ProgressDialog.cpp:1091
+#: widgets/ProgressDialog.cpp:1094
 msgid "Remaining Time:"
 msgstr "Kalan Süre:"
 
-#: widgets/ProgressDialog.cpp:1119
+#: widgets/ProgressDialog.cpp:1124
 msgid "Cancel"
 msgstr "İptal"
 
-#: widgets/Ruler.cpp:1586
-#: widgets/Ruler.cpp:1587
+#: widgets/Ruler.cpp:1590
+#: widgets/Ruler.cpp:1591
 msgid "Vertical Ruler"
 msgstr "Dikey Cetvel"
 
@@ -11374,11 +11450,11 @@ msgstr "01000,01000 kare|75"
 msgid "(Use context menu to change format.)"
 msgstr "(Biçimi değiştirmek için kısa yol menüsünü kullanın)"
 
-#: widgets/TimeTextCtrl.cpp:1630
+#: widgets/TimeTextCtrl.cpp:1633
 msgid "centiseconds"
 msgstr "santisaniye"
 
-#: widgets/Warning.cpp:63
+#: widgets/Warning.cpp:64
 msgid "Don't show this warning again"
 msgstr "Artık bu uyarıyı gösterme"
 
@@ -11411,3 +11487,73 @@ msgstr "Dosya Kapatılırken Hata"
 msgid "Error Writing to File"
 msgstr "Dosya Yazılırken Hata"
 
+#~ msgid "Tri&m"
+#~ msgstr "Kır&p"
+
+#~ msgid "Trim"
+#~ msgstr "Kırp"
+
+#~ msgid "Trim file to selection"
+#~ msgstr "Dosyayı seçime göre kırp"
+
+#~ msgid "Delete Labels"
+#~ msgstr "Etiketleri Sil"
+
+#~ msgid "Silence Labels"
+#~ msgstr "Etiketleri Sustur"
+
+#~ msgid "Split Labels"
+#~ msgstr "Etiketleri Ayır"
+
+#~ msgid "Join Labels"
+#~ msgstr "Etiketleri Birleştir"
+
+#~ msgid "Bass Boost"
+#~ msgstr "Bas Güçlendir"
+
+#~ msgid "Frequency Hertz"
+#~ msgstr "Frekans Hertz"
+
+#~ msgid "Boost dB"
+#~ msgstr "Güçlendirme dB"
+
+#~ msgid "BassBoost..."
+#~ msgstr "Bas Güçlendir..."
+
+#~ msgid "Boosting Bass Frequencies"
+#~ msgstr "Bas Frekansları Güçlendiriliyor"
+
+#~ msgid ""
+#~ "If you have more than one Audio Track, you can\n"
+#~ "export each track as a separate audio file.\n"
+#~ "\n"
+#~ "If you have a Label Track, you can export a separate\n"
+#~ "audio file for each label in that track. You can have\n"
+#~ "more than one Label Track, but files will only be\n"
+#~ "exported for the uppermost Label Track.\n"
+#~ "\n"
+#~ "This Project does not meet the above criteria for\n"
+#~ "exporting multiple files."
+#~ msgstr ""
+#~ "Eğer birden fazla ses iziniz varsa, her izi ayrı bir \n"
+#~ "dosya olarak verebilirsiniz.\n"
+#~ "\n"
+#~ "Eğer bir etiket iziniz varsa, her etiket için yeni bir\n"
+#~ "ses dosyası verebilirsiniz. Birden fazla etiket iziniz\n"
+#~ "olabilir. Ancak dosyalar yalnız en üstteki Etiket İzine\n"
+#~ "göre verilecek.\n"
+#~ "\n"
+#~ "Bu proje yukarıdaki ölçütleri karşılamadığından\n"
+#~ "çoklu dosyalar verilemiyor."
+
+#~ msgid "Can't export multiple files"
+#~ msgstr "Birden çok dosya verilemez"
+
+#~ msgid "S&ort tracks"
+#~ msgstr "İzleri &Sırala"
+
+#~ msgid "Libresample by Dominic Mazzoni and Julius Smith"
+#~ msgstr "Dominik Mazzoni ve Julius Smith tarafından geliştirilen Libresample"
+
+#~ msgid "Libsamplerate by Erik de Castro Lopo"
+#~ msgstr "Erik de Castro Lopo tarafından geliştirilen Libsamplerate "

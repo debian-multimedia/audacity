@@ -274,16 +274,10 @@ Mixer* ExportPlugin::CreateMixer(int numInputTracks, WaveTrack **inputTracks,
          double outRate, sampleFormat outFormat,
          bool highQuality, MixerSpec *mixerSpec)
 {
-   double warpedStopTime;
-   double warpFactor = 1.0;
-   if(timeTrack)
-      warpFactor = timeTrack->ComputeWarpFactor(startTime, stopTime);
-
-   warpedStopTime = warpFactor >= 1.0 ? stopTime : (startTime + ((stopTime - startTime) / warpFactor));
-   printf("warpfactor %f, stoptime %f, warpstoptime %f\n",warpFactor, stopTime, warpedStopTime);
+   // MB: the stop time should not be warped, this was a bug.
    return new Mixer(numInputTracks, inputTracks,
                   timeTrack,
-                  startTime, warpedStopTime,
+                  startTime, stopTime,
                   numOutChannels, outBufferSize, outInterleaved,
                   outRate, outFormat,
                   highQuality, mixerSpec);
@@ -373,16 +367,16 @@ bool Exporter::Process(AudacityProject *project, bool selectedOnly, double t0, d
       return false;
    }
 
+   // Check for down mixing
+   if (!CheckMix()) {
+      return false;
+   }
+
    // Let user edit MetaData 
    if (mPlugins[mFormat]->GetCanMetaData(mSubFormat)) {
       if (!(project->GetTags()->ShowEditDialog(project, _("Edit Metadata"), mProject->GetShowId3Dialog()))) {
          return false;
       }
-   }
-
-   // Check for down mixing
-   if (!CheckMix()) {
-      return false;
    }
 
    // Ensure filename doesn't interfere with project files.
@@ -496,9 +490,9 @@ bool Exporter::ExamineTracks()
    if (mNumSelected == 0) {
       wxString message;
       if(mSelectedOnly)
-         message = _("All the selected audio is muted.");
+         message = _("All selected audio is muted.");
       else
-         message = _("All the audio is muted.");
+         message = _("All audio is muted.");
       wxMessageBox(message,
                     _("Unable to export"),
                     wxOK | wxICON_INFORMATION);
@@ -598,7 +592,7 @@ bool Exporter::GetFilename()
          // as an extension with no name, like just plain ".wav".
          //
          if (mFilename.GetName().Left(1) == wxT(".")) {
-            wxString prompt = _("Are you sure you want to save the file as \"") +
+            wxString prompt = _("Are you sure you want to export the file as \"") +
                               mFilename.GetFullName() +
                               wxT("\"?\n");
             
@@ -618,7 +612,7 @@ bool Exporter::GetFilename()
       }
       else if (!ext.IsEmpty() && !mPlugins[mFormat]->IsExtension(ext,mSubFormat) && ext.CmpNoCase(defext)) {
          wxString prompt;
-         prompt.Printf(_("You are about to save a %s file with the name \"%s\".\n\nNormally these files end in \".%s\", and some programs will not open files with nonstandard extensions.\n\nAre you sure you want to save the file under this name?"),
+         prompt.Printf(_("You are about to export a %s file with the name \"%s\".\n\nNormally these files end in \".%s\", and some programs will not open files with nonstandard extensions.\n\nAre you sure you want to export the file under this name?"),
                        mPlugins[mFormat]->GetFormat(mSubFormat).c_str(),
                        mFilename.GetFullName().c_str(),
                        defext.c_str());
@@ -776,14 +770,18 @@ bool Exporter::CheckMix()
    
       if (numLeft > 1 || numRight > 1 || mNumLeft + mNumRight + mNumMono > mChannels) {
          if (mChannels == 2) {
-            ShowWarningDialog(mProject,
-                              wxT("MixStereo"),
-                              _("Your tracks will be mixed down to two stereo channels in the exported file."));
+            if (ShowWarningDialog(mProject,
+                                  wxT("MixStereo"),
+                                  _("Your tracks will be mixed down to two stereo channels in the exported file."),
+                                  true) == wxID_CANCEL)
+               return false;
          }
          else {
-            ShowWarningDialog(mProject,
-                              wxT("MixMono"),
-                              _("Your tracks will be mixed down to a single mono channel in the exported file."));
+            if (ShowWarningDialog(mProject,
+                                  wxT("MixMono"),
+                                  _("Your tracks will be mixed down to a single mono channel in the exported file."),
+                                  true) == wxID_CANCEL)
+               return false;
          }
       }
    }
@@ -1208,15 +1206,4 @@ void ExportMixerDialog::OnCancel(wxCommandEvent &event)
 {
    EndModal( wxID_CANCEL );
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: e6901653-9e2a-4a97-8ba8-377928b8e45a
 

@@ -12,6 +12,7 @@
 #define __AUDACITY_ENVELOPE__
 
 #include <stdlib.h>
+#include <algorithm>
 
 #include <wx/dynarray.h>
 #include <wx/brush.h>
@@ -26,12 +27,26 @@ class wxMouseEvent;
 class wxTextFile;
 
 class DirManager;
+class Envelope;
 
 #define ENV_DB_RANGE 60
 
-struct EnvPoint : public XMLTagHandler {
-   double t;
-   double val;
+class EnvPoint : public XMLTagHandler {
+
+public:
+   EnvPoint(Envelope *envelope, double t, double val)
+   {
+      mEnvelope = envelope;
+      mT = t;
+      mVal = ClampValue(val);
+   }
+   
+   double ClampValue(double val); // this calls mEnvelope->ClampValue(), implementation is below the Envelope class
+
+   double GetT() { return mT; }
+   void SetT(double t) { mT = t; }
+   double GetVal() { return mVal; }
+   void SetVal(double val) { mVal = ClampValue(val); }
 
    bool HandleXMLTag(const wxChar *tag, const wxChar **attrs)
    {
@@ -40,9 +55,9 @@ struct EnvPoint : public XMLTagHandler {
             const wxChar *attr = *attrs++;
             const wxChar *value = *attrs++;
             if (!wxStrcmp(attr, wxT("t")))
-               t = Internat::CompatibleToDouble(value);
+               SetT(Internat::CompatibleToDouble(value));
             else if (!wxStrcmp(attr, wxT("val")))
-               val = Internat::CompatibleToDouble(value);
+               SetVal(Internat::CompatibleToDouble(value));
          }
          return true;
       }
@@ -50,20 +65,16 @@ struct EnvPoint : public XMLTagHandler {
          return false;
    }
 
-   XMLTagHandler *HandleXMLChild(const wxChar *tag)
+   XMLTagHandler *HandleXMLChild(const wxChar * WXUNUSED(tag))
    {
       return NULL;
    }
 
-   void WriteXML(XMLWriter &xmlFile)
-   {
-      // FIX-ME: Is this ever called, vs the loop in Envelope::WriteXML()?
-      wxASSERT(false); 
-      //xmlFile.StartTag(wxT("controlpoint"));
-      //xmlFile.WriteAttr(wxT("t"), t, 8);
-      //xmlFile.WriteAttr(wxT("val"), val);
-      //xmlFile.EndTag(wxT("controlpoint"));
-   }
+private:
+   Envelope *mEnvelope;
+   double mT;
+   double mVal;
+   
 };
 
 // TODO: Become an array of EnvPoint rather than of pointers to.
@@ -80,12 +91,19 @@ class Envelope : public XMLTagHandler {
 
    virtual ~ Envelope();
 
-   void SetInterpolateDB(bool db);
+   bool GetInterpolateDB() { return mDB; }
+   void SetInterpolateDB(bool db) { mDB = db; }
    void Mirror(bool mirror);
+   void Rescale(double minValue, double maxValue);
 
    void Flatten(double value);
-   void SetDefaultValue(double value) {mDefaultValue=value;}
    int GetDragPoint(void)   {return mDragPoint;}
+   
+   double GetMinValue() { return mMinValue; }
+   double GetMaxValue() { return mMaxValue; }
+   void SetRange(double minValue, double maxValue);
+   
+   double ClampValue(double value) { return std::max(mMinValue, std::min(mMaxValue, value)); }
 
 #if LEGACY_PROJECT_FILE_SUPPORT
    // File I/O
@@ -105,10 +123,10 @@ class Envelope : public XMLTagHandler {
    // Each ofthese returns true if parents needs to be redrawn
    bool MouseEvent(wxMouseEvent & event, wxRect & r,
                    double h, double pps, bool dB,
-                   float zoomMin=-1.0, float zoomMax=1.0, float eMin=0., float eMax=2.);
+                   float zoomMin=-1.0, float zoomMax=1.0);
    bool HandleMouseButtonDown( wxMouseEvent & event, wxRect & r,
                                double h, double pps, bool dB,
-                               float zoomMin=-1.0, float zoomMax=1.0, float eMin=0., float eMax=2.);
+                               float zoomMin=-1.0, float zoomMax=1.0);
    bool HandleDragging( wxMouseEvent & event, wxRect & r,
                         double h, double pps, bool dB,
                         float zoomMin=-1.0, float zoomMax=1.0, float eMin=0., float eMax=2.);
@@ -129,7 +147,7 @@ class Envelope : public XMLTagHandler {
    // Control
    void SetOffset(double newOffset);
    void SetTrackLen(double trackLen);
-
+   
    // Accessors
    /** \brief Get envelope value at time t */
    double GetValue(double t) const;
@@ -146,8 +164,10 @@ class Envelope : public XMLTagHandler {
    double NextPointAfter(double t);
 
    double Average( double t0, double t1 );
+   double AverageOfInverse( double t0, double t1 );
    double Integral( double t0, double t1 );
-   double Integral( double t0, double t1, double minY, double maxY );
+   double IntegralOfInverse( double t0, double t1 );
+   double SolveIntegralOfInverse( double t0, double area);
 
    void print();
    void testMe();
@@ -179,12 +199,12 @@ private:
    EnvPoint *  AddPointAtEnd( double t, double val );
    void MarkDragPointForDeletion();
    float ValueOfPixel( int y, int height, bool upper, bool dB,
-                       float zoomMin, float zoomMax, float eMin=-10000. , float eMax=10000.);
+                       float zoomMin, float zoomMax);
    void BinarySearchForTime( int &Lo, int &Hi, double t ) const;
    double GetInterpolationStartValueAtPoint( int iPoint ) const;
    void MoveDraggedPoint( wxMouseEvent & event, wxRect & r,
                                double h, double pps, bool dB,
-                               float zoomMin, float zoomMax, float eMin, float eMax);
+                               float zoomMin, float zoomMax);
 
    // Possibly inline functions:
    // This function resets them integral memoizers (call whenever the Envelope changes)
@@ -221,6 +241,8 @@ private:
    int mButton;
    bool mDB;
    bool mDirty;
+   
+   double mMinValue, mMaxValue;
 
    // These are memoizing variables for Integral()
    double lastIntegral_t0;
@@ -229,17 +251,10 @@ private:
 
 };
 
+inline double EnvPoint::ClampValue(double val)
+{
+   return mEnvelope->ClampValue(val);
+}
+
 #endif
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: ab815f84-1f8c-4560-a165-271d3bae377e
 

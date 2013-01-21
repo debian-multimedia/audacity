@@ -109,11 +109,15 @@ void QualityPrefs::GetNamesAndLabels()
    //------------- Converter Names
    // We used to set and get best/fast method via Resample.cpp.
    // Need to ensure that preferences strings in Resample.cpp match.
-   // int converterHQ = Resample::GetBestMethod();
-   // int converter = Resample::GetFastMethod();
-   int numConverters = Resample::GetNumMethods();
+   // Note that these methods used to be public and static, but are now protected and pure virtual.
+   //
+   //vvv Note that we're now using libsoxr for constant-rate resampling 
+   // and either libresample, libsamplerate, or libsoxr for variable-rate, 
+   // and currently not allowing prefs method choice for variable-rate, 
+   // per discussion on -devel.
+   int numConverters = ConstRateResample::GetNumMethods();
    for (int i = 0; i < numConverters; i++) {
-      mConverterNames.Add(Resample::GetMethodName(i));
+      mConverterNames.Add(ConstRateResample::GetMethodName(i));
       mConverterLabels.Add(i);
    }
 }
@@ -169,8 +173,8 @@ void QualityPrefs::PopulateOrExchange(ShuttleGui & S)
          S.SetStretchyCol(2);
 
          S.TieChoice(_("Sample Rate Con&verter:"),
-                     Resample::GetFastMethodKey(),
-                     Resample::GetFastMethodDefault(),
+                     ConstRateResample::GetFastMethodKey(),
+                     ConstRateResample::GetFastMethodDefault(),
                      mConverterNames,
                      mConverterLabels),
          S.SetSizeHints(mConverterNames);
@@ -191,8 +195,8 @@ void QualityPrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.TieChoice(_("Sample Rate Conver&ter:"),
-                     Resample::GetBestMethodKey(),
-                     Resample::GetBestMethodDefault(),
+                     ConstRateResample::GetBestMethodKey(),
+                     ConstRateResample::GetBestMethodDefault(),
                      mConverterNames,
                      mConverterLabels),
          S.SetSizeHints(mConverterNames);

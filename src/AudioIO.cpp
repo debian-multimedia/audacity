@@ -342,7 +342,12 @@ const int AudioIO::StandardRates[] = {
    32000,
    44100,
    48000,
-   96000
+   88200,
+   96000,
+   176400,
+   192000,
+   352800,
+   384000
 };
 const int AudioIO::NumStandardRates = sizeof(AudioIO::StandardRates) /
                                       sizeof(AudioIO::StandardRates[0]);
@@ -360,7 +365,10 @@ const int AudioIO::RatesToTry[] = {
    48000,
    88200,
    96000,
-   192000
+   176400,
+   192000,
+   352800,
+   384000
 };
 const int AudioIO::NumRatesToTry = sizeof(AudioIO::RatesToTry) /
                                       sizeof(AudioIO::RatesToTry[0]);
@@ -533,7 +541,6 @@ AudioIO::AudioIO()
 
    mStreamToken = 0;
    mStopStreamCount = 0;
-   mTempFloats = new float[65536]; // TODO: out channels * PortAudio buffer size
 
    mLastPaError = paNoError;
 
@@ -627,7 +634,6 @@ AudioIO::~AudioIO()
    if(mSilentBuf) 
       DeleteSamples(mSilentBuf);
 
-   delete [] mTempFloats;
    delete mThread;
 }
 
@@ -1159,7 +1165,6 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
    mOutputMeter = NULL;
    mRate    = sampleRate;
    mT0      = t0;
-   mT       = t0;
    mT1      = t1;
    mTime    = t0;
    mSeek    = 0;
@@ -1177,11 +1182,13 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
    mCaptureBuffers = NULL;
    mResample = NULL;
 
-   double factor = 1.0;
-   if (mTimeTrack)
-      factor = mTimeTrack->ComputeWarpFactor(mT0, mT1);
-
-   mWarpedT1 = factor >= 1 ? mT1 : mT0 + ((mT1 - mT0) / factor);
+   // with ComputeWarpedLength, it is now possible the calculate the warped length with 100% accuracy
+   // (ignoring accumulated rounding errors during playback) which fixes the 'missing sound at the end' bug
+   mWarpedTime = 0.0;
+   if(mTimeTrack)
+      mWarpedLength = mTimeTrack->ComputeWarpedLength(mT0, mT1);
+   else
+      mWarpedLength = mT1 - mT0;
 
    //
    // The RingBuffer sizes, and the max amount of the buffer to
@@ -1290,8 +1297,9 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
             {
                mPlaybackBuffers[i] = new RingBuffer(floatSample, playbackBufferSize);
 
+               // MB: use normal time for the end time, not warped time!
                mPlaybackMixers[i]  = new Mixer(1, &mPlaybackTracks[i],
-                                               mTimeTrack, mT0, mWarpedT1, 1,
+                                               mTimeTrack, mT0, mT1, 1,
                                                playbackMixBufferSize, false,
                                                mRate, floatSample, false);
                mPlaybackMixers[i]->ApplyTrackGains(false);
@@ -1314,18 +1322,18 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
             }
 
             mCaptureBuffers = new RingBuffer* [mCaptureTracks.GetCount()];
-            mResample = new Resample* [mCaptureTracks.GetCount()];
+            mResample = new ConstRateResample* [mCaptureTracks.GetCount()];
             mFactor = sampleRate / mRate;
 
             // Set everything to zero in case we have to delete these due to a memory exception.
             memset(mCaptureBuffers, 0, sizeof(RingBuffer*)*mCaptureTracks.GetCount());
-            memset(mResample, 0, sizeof(Resample*)*mCaptureTracks.GetCount());
+            memset(mResample, 0, sizeof(ConstRateResample*)*mCaptureTracks.GetCount());
 
             for( unsigned int i = 0; i < mCaptureTracks.GetCount(); i++ )
             {
                mCaptureBuffers[i] = new RingBuffer( mCaptureTracks[i]->GetSampleFormat(),
                                                     captureBufferSize );
-               mResample[i] = new Resample( true, mFactor, mFactor );
+               mResample[i] = new ConstRateResample(true, mFactor);
             }
          }
       }
@@ -1924,6 +1932,11 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
       return supported;
    }
 
+   // LLL: Remove when a proper method of determining actual supported
+   //      DirectSound rate is devised.
+   const PaHostApiInfo* hostInfo = Pa_GetHostApiInfo(devInfo->hostApi);
+   bool isDirectSound = (hostInfo && hostInfo->type == paDirectSound);
+
    PaStreamParameters pars;
 
    pars.device = devIndex;
@@ -1934,12 +1947,18 @@ wxArrayLong AudioIO::GetSupportedPlaybackRates(int devIndex, double rate)
    
    for (i = 0; i < NumRatesToTry; i++)
    {
+      // LLL: Remove when a proper method of determining actual supported
+      //      DirectSound rate is devised.
+      if (!(isDirectSound && RatesToTry[i] > 200000))
       if (Pa_IsFormatSupported(NULL, &pars, RatesToTry[i]) == 0)
          supported.Add(RatesToTry[i]);
    }
 
    if (irate != 0 && supported.Index(irate) == wxNOT_FOUND)
    {
+      // LLL: Remove when a proper method of determining actual supported
+      //      DirectSound rate is devised.
+      if (!(isDirectSound && RatesToTry[i] > 200000))
       if (Pa_IsFormatSupported(NULL, &pars, irate) == 0)
          supported.Add(irate);
    }
@@ -1979,6 +1998,11 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
    gPrefs->Read(wxT("/AudioIO/LatencyDuration"), &latencyDuration);
    gPrefs->Read(wxT("/AudioIO/RecordChannels"), &recordChannels);
 
+   // LLL: Remove when a proper method of determining actual supported
+   //      DirectSound rate is devised.
+   const PaHostApiInfo* hostInfo = Pa_GetHostApiInfo(devInfo->hostApi);
+   bool isDirectSound = (hostInfo && hostInfo->type == paDirectSound);
+
    PaStreamParameters pars;
 
    pars.device = devIndex;
@@ -1989,12 +2013,18 @@ wxArrayLong AudioIO::GetSupportedCaptureRates(int devIndex, double rate)
    
    for (i = 0; i < NumRatesToTry; i++)
    {
+      // LLL: Remove when a proper method of determining actual supported
+      //      DirectSound rate is devised.
+      if (!(isDirectSound && RatesToTry[i] > 200000))
       if (Pa_IsFormatSupported(&pars, NULL, RatesToTry[i]) == 0)
          supported.Add(RatesToTry[i]);
    }
 
    if (irate != 0 && supported.Index(irate) == wxNOT_FOUND)
    {
+      // LLL: Remove when a proper method of determining actual supported
+      //      DirectSound rate is devised.
+      if (!(isDirectSound && RatesToTry[i] > 200000))
       if (Pa_IsFormatSupported(&pars, NULL, irate) == 0)
          supported.Add(irate);
    }
@@ -2388,10 +2418,9 @@ wxString AudioIO::GetDeviceInfo()
       }
 
       wxString name = DeviceName(info);
-      wxString hostName = gPrefs->Read(wxT("/AudioIO/Host"), wxT(""));
       s << wxT("Device ID: ") << j << e;
       s << wxT("Device name: ") << name << e;
-      s << wxT("Host name: ") << hostName << e;
+      s << wxT("Host name: ") << HostName(info) << e;
       s << wxT("Input channels: ") << info->maxInputChannels << e;
       s << wxT("Output channels: ") << info->maxOutputChannels << e;
       s << wxT("Low Input Latency: ") << info->defaultLowInputLatency << e;
@@ -2596,7 +2625,8 @@ void AudioIO::FillBuffers()
       // if we hit this code during the PortAudio callback.  To keep
       // things simple, we only write as much data as is vacant in
       // ALL buffers, and advance the global time by that much.
-      int commonlyAvail = GetCommonlyAvailPlayback();
+      // MB: subtract a few samples because the code below has rounding errors
+      int commonlyAvail = GetCommonlyAvailPlayback() - 10;
 
       //
       // Determine how much this will globally advance playback time
@@ -2613,13 +2643,13 @@ void AudioIO::FillBuffers()
       // region - then we should just fill the buffer.
       //
       if (secsAvail >= mMaxPlaybackSecsToCopy ||
-          (!mPlayLooped && (secsAvail > 0 && mT+secsAvail >= mWarpedT1)))
+          (!mPlayLooped && (secsAvail > 0 && mWarpedTime+secsAvail >= mWarpedLength)))
       {
          // Limit maximum buffer size (increases performance)
          if (secsAvail > mMaxPlaybackSecsToCopy)
             secsAvail = mMaxPlaybackSecsToCopy;
 
-         double deltat;
+         double deltat; // this is warped time
 
          // msmeyer: When playing a very short selection in looped
          // mode, the selection must be copied to the buffer multiple
@@ -2627,13 +2657,17 @@ void AudioIO::FillBuffers()
          // This is the purpose of this loop.
          do {
             deltat = secsAvail;
-            if( mT + deltat > mWarpedT1 )
+            if( mWarpedTime + deltat > mWarpedLength )
             {
-               deltat = mWarpedT1 - mT;
-               if( deltat < 0.0 )
+               deltat = mWarpedLength - mWarpedTime;
+               mWarpedTime = mWarpedLength;
+               if( deltat < 0.0 ) // this should never happen
                   deltat = 0.0;
             }
-            mT += deltat;
+            else
+            {
+               mWarpedTime += deltat;
+            }
             
             secsAvail -= deltat;
 
@@ -2647,7 +2681,7 @@ void AudioIO::FillBuffers()
                //don't do anything if we have no length.  In particular, Process() will fail an wxAssert
                //that causes a crash since this is not the GUI thread and wxASSERT is a GUI call.
                if(deltat > 0.0)
-               { 
+               {
                   processed = mPlaybackMixers[i]->Process(lrint(deltat * mRate));
                   warpedSamples = mPlaybackMixers[i]->GetBuffer();
                   mPlaybackBuffers[i]->Put(warpedSamples, floatSample, processed);
@@ -2667,17 +2701,17 @@ void AudioIO::FillBuffers()
                      mSilentBuf = NewSamples(mLastSilentBufSize, floatSample);
                      ClearSamples(mSilentBuf, floatSample, 0, mLastSilentBufSize);
                   }
-                  mPlaybackBuffers[i]->Put(mSilentBuf, floatSample, lrint(deltat * mRate) - processed);                  
+                  mPlaybackBuffers[i]->Put(mSilentBuf, floatSample, lrint(deltat * mRate) - processed);
                }
             }
 
             // msmeyer: If playing looped, check if we are at the end of the buffer
             // and if yes, restart from the beginning.
-            if (mPlayLooped && mT >= mWarpedT1)
+            if (mPlayLooped && mWarpedTime >= mWarpedLength)
             {
                for (i = 0; i < mPlaybackTracks.GetCount(); i++)
                   mPlaybackMixers[i]->Restart();
-               mT = mT0;
+               mWarpedTime = 0.0;
             }
 
          } while (mPlayLooped && secsAvail > 0 && deltat > 0);
@@ -3180,8 +3214,7 @@ void DoSoftwarePlaythrough(const void *inputBuffer,
                            sampleFormat inputFormat,
                            int inputChannels,
                            float *outputBuffer,
-                           int len,
-                           float gain)
+                           int len)
 {
    float *tempBuffer = (float *)alloca(len * sizeof(float));
    int i, j;
@@ -3206,8 +3239,8 @@ void DoSoftwarePlaythrough(const void *inputBuffer,
 
 int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
                           unsigned long framesPerBuffer,
-                          const PaStreamCallbackTimeInfo *timeInfo,
-                          const PaStreamCallbackFlags statusFlags, void *userData )
+                          const PaStreamCallbackTimeInfo * WXUNUSED(timeInfo),
+                          const PaStreamCallbackFlags WXUNUSED(statusFlags), void * WXUNUSED(userData) )
 {
    int numPlaybackChannels = gAudioIO->mNumPlaybackChannels;
    int numPlaybackTracks = gAudioIO->mPlaybackTracks.GetCount();
@@ -3298,7 +3331,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
+                                  (float *)outputBuffer, (int)framesPerBuffer);
          }
       }
 
@@ -3323,7 +3356,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
+                                  (float *)outputBuffer, (int)framesPerBuffer);
          }
 
          // Copy the results to outputMeterFloats if necessary
@@ -3351,10 +3384,13 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
             gAudioIO->mSeek = 0.0;
             
             // Reset mixer positions and flush buffers for all tracks
-            gAudioIO->mT = gAudioIO->mT0 + ((gAudioIO->mTime - gAudioIO->mT0));
+            if(gAudioIO->mTimeTrack)
+               gAudioIO->mWarpedTime = gAudioIO->mTimeTrack->ComputeWarpedLength(gAudioIO->mT0, gAudioIO->mTime);
+            else
+               gAudioIO->mWarpedTime = gAudioIO->mTime - gAudioIO->mT0;
             for (i = 0; i < (unsigned int)numPlaybackTracks; i++)
             {
-               gAudioIO->mPlaybackMixers[i]->Reposition(gAudioIO->mT);
+               gAudioIO->mPlaybackMixers[i]->Reposition(gAudioIO->mTime);
                gAudioIO->mPlaybackBuffers[i]->Discard(gAudioIO->mPlaybackBuffers[i]->AvailForGet());
             }
 
@@ -3579,15 +3615,12 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
          }
       }
 
-      // Calcuate the warp factor for this time position
-      double factor = 1.0;
+      // Update the current time position
       if (gAudioIO->mTimeTrack) {
-         factor = gAudioIO->mTimeTrack->GetEnvelope()->GetValue(gAudioIO->mTime);
-         factor = (gAudioIO->mTimeTrack->GetRangeLower() *
-                  (1 - factor) +
-                  factor *
-                  gAudioIO->mTimeTrack->GetRangeUpper()) / 
-                  100.0;
+         // MB: this is why SolveWarpedLength is needed :)
+         gAudioIO->mTime = gAudioIO->mTimeTrack->SolveWarpedLength(gAudioIO->mTime, framesPerBuffer / gAudioIO->mRate);
+      } else {
+         gAudioIO->mTime += framesPerBuffer / gAudioIO->mRate;
       }
 
       // Wrap to start if looping
@@ -3595,11 +3628,9 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
       {
          // LL:  This is not exactly right, but I'm at my wits end trying to
          //      figure it out.  Feel free to fix it.  :-)
-         gAudioIO->mTime = gAudioIO->mT0 - ((gAudioIO->mTime - gAudioIO->mT1) * factor);
+         // MB: it's much easier than you think, mTime isn't warped at all!
+         gAudioIO->mTime -= gAudioIO->mT1 - gAudioIO->mT0;
       }
-
-      // Update the current time position
-      gAudioIO->mTime += ((framesPerBuffer / gAudioIO->mRate) * factor);
 
       // Record the reported latency from PortAudio.
       // TODO: Don't recalculate this with every callback?
@@ -3641,7 +3672,7 @@ int audacityAudioCallback(const void *inputBuffer, void *outputBuffer,
          if (inputBuffer && gAudioIO->mSoftwarePlaythrough) {
             DoSoftwarePlaythrough(inputBuffer, gAudioIO->mCaptureFormat,
                                   numCaptureChannels,
-                                  (float *)outputBuffer, (int)framesPerBuffer, 1.0f);
+                                  (float *)outputBuffer, (int)framesPerBuffer);
          }
 
          // Copy the results to outputMeterFloats if necessary
@@ -3697,13 +3728,3 @@ int compareTime( const void* a, const void* b )
 }
 #endif
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 7ee3c9aa-b58b-4069-8a07-8866f2303963

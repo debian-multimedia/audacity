@@ -10,6 +10,7 @@ MANDIR= @mandir@
 AUDACITY_NAME = @AUDACITY_NAME@
 EXTRAINSTALLTARGETS= @EXTRAINSTALLTARGETS@
 EXTRAUNINSTALLTARGETS= @EXTRAUNINSTALLTARGETS@
+DOCDIR= @docdir@
 
 .PHONY: all
 all: audacity help/audacity.1.gz
@@ -31,9 +32,9 @@ install: audacity $(EXTRAINSTALLTARGETS)
 	$(INSTALL) -m 755 audacity $(DESTDIR)$(BINDIR)/$(AUDACITY_NAME)
 
 	# install docs
-	$(INSTALL) -d $(DESTDIR)$(DATADIR)/doc/$(AUDACITY_NAME)
-	$(INSTALL) -m 644 README.txt $(DESTDIR)$(DATADIR)/doc/$(AUDACITY_NAME)/README.txt
-	$(INSTALL) -m 644 LICENSE.txt $(DESTDIR)$(DATADIR)/doc/$(AUDACITY_NAME)/LICENSE.txt
+	$(INSTALL) -d $(DESTDIR)$(DOCDIR)/
+	$(INSTALL) -m 644 README.txt $(DESTDIR)$(DOCDIR)/README.txt
+	$(INSTALL) -m 644 LICENSE.txt $(DESTDIR)$(DOCDIR)/LICENSE.txt
 
 	# install manpage
 	$(INSTALL) -d $(DESTDIR)$(MANDIR)/man1
@@ -152,7 +153,7 @@ clean:
 	rm -f audacity
 	rm -f help/audacity.1.gz
 	rm -rf Audacity.app
-	rm -r src/audacity.desktop
+	rm -f src/audacity.desktop
 
 veryclean: clean
 	rm -f Makefile src/Makefile lib-src/Makefile

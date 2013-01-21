@@ -133,7 +133,7 @@ void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
          S.Id(ID_FFMPEG_DOWN_BUTTON);
          wxButton *bdwn = S.AddButton(_("Dow&nload"),
                                       wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL);
-#if !defined(USE_FFMPEG)
+#if !defined(USE_FFMPEG) || defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
          bdwn->Enable(FALSE);
          bfnd->Enable(FALSE);
 #endif
@@ -153,6 +153,7 @@ void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
 void LibraryPrefs::SetMP3VersionText(bool prompt)
 {
    mMP3Version->SetLabel(GetMP3Version(this, prompt));
+   mMP3Version->SetName(mMP3Version->GetLabel()); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 }
 
 /// Opens a file-finder dialog so that the user can
@@ -173,6 +174,7 @@ void LibraryPrefs::OnMP3DownButton(wxCommandEvent & e)
 void LibraryPrefs::SetFFmpegVersionText()
 {
    mFFmpegVersion->SetLabel(GetFFmpegVersion(this));
+   mFFmpegVersion->SetName(mFFmpegVersion->GetLabel()); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 }
 
 void LibraryPrefs::OnFFmpegFindButton(wxCommandEvent & e)

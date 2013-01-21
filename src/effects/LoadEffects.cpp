@@ -18,7 +18,7 @@
 #include "Amplify.h"
 // #include "AvcCompressor.h"
 #include "AutoDuck.h"
-#include "BassBoost.h"
+#include "BassTreble.h"
 #include "ChangeSpeed.h"
 #include "ClickRemoval.h"
 #include "Compressor.h"
@@ -240,7 +240,7 @@ void LoadEffects()
    // that it should be included in even the most basic of menus.
    
    em.RegisterEffect(new EffectAutoDuck());
-   em.RegisterEffect(new EffectBassBoost());
+   em.RegisterEffect(new EffectBassTreble());
    em.RegisterEffect(new EffectChangeSpeed());
 	#ifdef USE_SOUNDTOUCH
 		em.RegisterEffect(new EffectChangePitch());
@@ -325,15 +325,4 @@ void UnloadEffects()
    UnloadVampPlugins();
 #endif
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 3a6c5930-9015-4fd0-96f2-2eb31da1c785
 

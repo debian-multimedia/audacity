@@ -1181,6 +1181,7 @@ void AudacityProject::SetProjectTitle()
    }
 
    SetTitle( name );
+   SetName(name);       // to make the nvda screen reader read the correct title
 }
 
 void AudacityProject::AS_SetSnapTo(bool state)
@@ -1983,8 +1984,13 @@ void AudacityProject::OnCloseWindow(wxCloseEvent & event)
 
    // Destroy the TrackPanel early so it's not around once we start
    // deleting things like tracks and such out from underneath it.
-   mTrackPanel->Destroy();
-   mTrackPanel = NULL;              // Make sure this gets set...see HandleResize()
+   // Check validity of mTrackPanel per bug 584 Comment 1. 
+   // Deeper fix is in the Import code, but this failsafes against crash.
+   if (mTrackPanel)
+   {
+      mTrackPanel->Destroy();
+      mTrackPanel = NULL;              // Make sure this gets set...see HandleResize()
+   }
 
    // Delete the tool manager before the children since it needs
    // to save the state of the toolbars.
@@ -4148,7 +4154,7 @@ void AudacityProject::GetRegionsByLabel( Regions &regions )
    {
       Region *cur = regions.Item( selected );
       Region *last = regions.Item( selected - 1 );
-      if( cur->start <= last->end )
+      if( cur->start < last->end )
       {
          if( cur->end > last->end )
             last->end = cur->end;
@@ -4272,6 +4278,10 @@ void AudacityProject::EditClipboardByLabel( WaveTrack::EditDestFunction action )
                   delete dest;
                }
             }
+            else  // nothing copied but there is a 'region', so the 'region' must be a 'point label' so offset
+               if (i < (int)regions.GetCount() - 1)
+                  if( merged )
+                     merged->Offset(regions.Item(i+1)->start - regions.Item(i)->end);
          }
          if( merged )
             msClipboard->Add( merged );
