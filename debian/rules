@@ -13,8 +13,9 @@ configure_flags := \
 	--with-libid3tag=system \
 	--with-libmad=system \
 	--without-libresample \
-	--with-libsamplerate=system \
+	--without-libsamplerate \
 	--with-libsndfile=system \
+	--with-libsoxr=system \
 	--with-libtwolame=system \
 	--with-libvamp=system \
 	--with-libvorbis=system \
