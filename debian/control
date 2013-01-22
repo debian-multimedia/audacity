@@ -35,8 +35,8 @@ Build-Depends: autoconf,
                zip
 Build-Conflicts: libwxbase2.6-dev, wx2.6-headers
 Homepage: http://audacity.sourceforge.net/
-Vcs-Git: git://git.debian.org/git/pkg-multimedia/audacity.git
-Vcs-Browser: http://git.debian.org/?p=pkg-multimedia/audacity.git;a=summary
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/audacity.git
+Vcs-Git: git://anonscm.debian.org/pkg-multimedia/audacity.git
 
 Package: audacity
 Architecture: any
