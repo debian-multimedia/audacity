@@ -1,6 +1,6 @@
 audacity (2.0.3-1) UNRELEASED; urgency=low
 
-  * New upstream release.
+  * New upstream release (LP: #1107520).
     - Add keyboard shortcut for export (LP: #651499)
   * Drop disable-dynamic-ffmpeg.patch (accepted upstream).
   * Replace libsamplerate by libsoxr, which is faster and produces better
