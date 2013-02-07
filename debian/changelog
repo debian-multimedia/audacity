@@ -5,6 +5,9 @@ audacity (2.0.3-1) UNRELEASED; urgency=low
   * Drop disable-dynamic-ffmpeg.patch (accepted upstream).
   * Replace libsamplerate by libsoxr, which is faster and produces better
     resampling results.
+  * Bump Standard-Version to 3.9.4 (no changes needed).
+  * Use canonical URI for VCS-* fields.
+  * Fix docdir path.
 
  -- Benjamin Drung <bdrung@debian.org>  Tue, 22 Jan 2013 01:08:29 +0100
 
