@@ -1,4 +1,4 @@
-audacity (2.0.3-1) UNRELEASED; urgency=low
+audacity (2.0.3-1) unstable; urgency=low
 
   * New upstream release (LP: #1107520).
     - Add keyboard shortcut for export (LP: #651499)
@@ -9,7 +9,7 @@ audacity (2.0.3-1) UNRELEASED; urgency=low
   * Use canonical URI for VCS-* fields.
   * Fix docdir path.
 
- -- Benjamin Drung <bdrung@debian.org>  Tue, 22 Jan 2013 01:08:29 +0100
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 06 Apr 2013 14:28:29 +0200
 
 audacity (2.0.2-1) unstable; urgency=low
 
