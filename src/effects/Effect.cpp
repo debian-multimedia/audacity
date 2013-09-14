@@ -403,13 +403,21 @@ long TrapLong(long x, long min, long max)
       return x;
 }
 
+double Effect::CalcPreviewInputLength(double previewLength)
+{
+   return previewLength;
+}
+
 wxString Effect::GetPreviewName()
 {
    return _("Pre&view");
 }
 
-void Effect::Preview()
+void Effect::Preview(bool dryOnly)
 {
+   if (mNumTracks==0) // nothing to preview
+      return;
+
    wxWindow* FocusDialog = wxWindow::FindFocus();
    if (gAudioIO->IsBusy())
       return;
@@ -417,12 +425,12 @@ void Effect::Preview()
    // Mix a few seconds of audio from all of the tracks
    double previewLen = 6.0;
    gPrefs->Read(wxT("/AudioIO/EffectsPreviewLen"), &previewLen);
-   
+
    WaveTrack *mixLeft = NULL;
    WaveTrack *mixRight = NULL;
    double rate = mProjectRate;
    double t0 = mT0;
-   double t1 = t0 + previewLen;
+   double t1 = t0 + CalcPreviewInputLength(previewLen);
 
    if (t1 > mT1)
       t1 = mT1;
@@ -463,16 +471,19 @@ void Effect::Preview()
 
    // Apply effect
 
-   // Effect is already inited; we call Process, End, and then Init
-   // again, so the state is exactly the way it was before Preview
-   // was called.
-   mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
-                                  _("Preparing preview"), 
-                                  pdlgHideCancelButton); // Have only "Stop" button.
-   bool bSuccess = Process();
-   delete mProgress;
-   End();
-   Init();
+   bool bSuccess(true);
+   if (!dryOnly) {
+      // Effect is already inited; we call Process, End, and then Init
+      // again, so the state is exactly the way it was before Preview
+      // was called.
+      mProgress = new ProgressDialog(StripAmpersand(GetEffectName()),
+            _("Preparing preview"), 
+            pdlgHideCancelButton); // Have only "Stop" button.
+      bSuccess = Process();
+      delete mProgress;
+      End();
+      Init();
+   }
    if (bSuccess)
    {
       mT0 = t0save;
@@ -487,6 +498,8 @@ void Effect::Preview()
       playbackTracks.Add(mixLeft);
       if (mixRight)
          playbackTracks.Add(mixRight);
+
+      t1 = wxMin(mixLeft->GetEndTime(), t0 + previewLen);
 
 #ifdef EXPERIMENTAL_MIDI_OUT
       NoteTrackArray empty;
@@ -539,10 +552,12 @@ void Effect::Preview()
 EffectDialog::EffectDialog(wxWindow * parent,
                            const wxString & title,
                            int type,
-                           int flags)
+                           int flags,
+                           int additionalButtons)
 : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, flags)
 {
    mType = type;
+   mAdditionalButtons = additionalButtons;
 }
 
 void EffectDialog::Init()
@@ -564,7 +579,7 @@ void EffectDialog::Init()
             buttons |= ePreviewButton;
          }
       }
-      S.AddStandardButtons(buttons);
+      S.AddStandardButtons(buttons|mAdditionalButtons);
    }
    S.EndVerticalLay();
 
@@ -577,7 +592,7 @@ void EffectDialog::Init()
 /// This is a virtual function which will be overridden to
 /// provide the actual parameters that we want for each
 /// kind of dialog.
-void EffectDialog::PopulateOrExchange(ShuttleGui & S)
+void EffectDialog::PopulateOrExchange(ShuttleGui & WXUNUSED(S))
 {
    return;
 }
@@ -603,7 +618,7 @@ bool EffectDialog::Validate()
    return true;
 }
 
-void EffectDialog::OnPreview(wxCommandEvent & event)
+void EffectDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    return;
 }

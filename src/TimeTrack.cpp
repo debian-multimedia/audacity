@@ -186,7 +186,7 @@ bool TimeTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
    return false;
 }
 
-void TimeTrack::HandleXMLEndTag(const wxChar *tag)
+void TimeTrack::HandleXMLEndTag(const wxChar * WXUNUSED(tag))
 {
    if(mRescaleXMLValues)
    {
@@ -306,8 +306,8 @@ void TimeTrack::testMe()
    if( t0 > t1 )
      {
        printf( "TimeTrack:  Warping reverses an interval! [%.2f,%.2f] -> [%.2f,%.2f]\n",
-	       reqt0, reqt1,
-	       t0, t1 );
+          reqt0, reqt1,
+          t0, t1 );
      }*/
 }
 

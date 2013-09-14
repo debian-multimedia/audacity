@@ -169,7 +169,7 @@ BEGIN_EVENT_TABLE(TimeScaleDialog, EffectDialog)
 END_EVENT_TABLE()
 
 TimeScaleDialog::TimeScaleDialog(EffectTimeScale *effect, wxWindow *parent)
-   :  EffectDialog(parent, _("Time Scale"), INSERT_EFFECT),
+   :  EffectDialog(parent, _("Sliding Time Scale/Pitch Shift"), INSERT_EFFECT),
       mEffect(effect)
 {
    m_bLoopDetect = false;
@@ -206,16 +206,9 @@ void TimeScaleDialog::PopulateOrExchange(ShuttleGui & S)
    wxTextValidator nullvld(wxFILTER_INCLUDE_CHAR_LIST);
    wxTextValidator numvld(wxFILTER_NUMERIC);
 
-   S.SetBorder(10);
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("Sliding Time Scale/Pitch Shift") +
-                 wxString(wxT("\n")) + 
-                 _("using SBSMS, by Clayton Otey"));
-   }
-   S.EndHorizontalLay();
    S.SetBorder(5);
-   
+   S.AddSpace(0, 5);
+
    S.StartMultiColumn(2, 0);
    // Rate Start
    S.StartStatic(_("Initial Tempo Change (%)"));
@@ -290,8 +283,8 @@ void TimeScaleDialog::PopulateOrExchange(ShuttleGui & S)
    }
    S.EndStatic();
    S.EndMultiColumn();
-	
-	return;
+
+   return;
 }
 
 bool TimeScaleDialog::TransferDataToWindow()
@@ -390,7 +383,7 @@ bool TimeScaleDialog::CheckParameters()
 
 // handler implementations for TimeScaleDialog
 
-void TimeScaleDialog::OnText_RatePercentChangeStart(wxCommandEvent & event)
+void TimeScaleDialog::OnText_RatePercentChangeStart(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -409,7 +402,7 @@ void TimeScaleDialog::OnText_RatePercentChangeStart(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnText_RatePercentChangeEnd(wxCommandEvent & event)
+void TimeScaleDialog::OnText_RatePercentChangeEnd(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -428,7 +421,7 @@ void TimeScaleDialog::OnText_RatePercentChangeEnd(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnSlider_RatePercentChangeStart(wxCommandEvent & event)
+void TimeScaleDialog::OnSlider_RatePercentChangeStart(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -442,7 +435,7 @@ void TimeScaleDialog::OnSlider_RatePercentChangeStart(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnSlider_RatePercentChangeEnd(wxCommandEvent & event)
+void TimeScaleDialog::OnSlider_RatePercentChangeEnd(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -456,7 +449,7 @@ void TimeScaleDialog::OnSlider_RatePercentChangeEnd(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnText_PitchHalfStepsStart(wxCommandEvent & event)
+void TimeScaleDialog::OnText_PitchHalfStepsStart(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -476,7 +469,7 @@ void TimeScaleDialog::OnText_PitchHalfStepsStart(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnText_PitchHalfStepsEnd(wxCommandEvent & event)
+void TimeScaleDialog::OnText_PitchHalfStepsEnd(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -496,7 +489,7 @@ void TimeScaleDialog::OnText_PitchHalfStepsEnd(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnText_PitchPercentChangeStart(wxCommandEvent & event)
+void TimeScaleDialog::OnText_PitchPercentChangeStart(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -516,7 +509,7 @@ void TimeScaleDialog::OnText_PitchPercentChangeStart(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnText_PitchPercentChangeEnd(wxCommandEvent & event)
+void TimeScaleDialog::OnText_PitchPercentChangeEnd(wxCommandEvent & WXUNUSED(event))
 {
    if (m_bLoopDetect)
       return;
@@ -536,7 +529,7 @@ void TimeScaleDialog::OnText_PitchPercentChangeEnd(wxCommandEvent & event)
    }
 }
 
-void TimeScaleDialog::OnCheckBox_PreAnalyze(wxCommandEvent & event)
+void TimeScaleDialog::OnCheckBox_PreAnalyze(wxCommandEvent & WXUNUSED(event))
 {
    if (m_pCheckBox_PreAnalyze) {
       m_PreAnalyze = m_pCheckBox_PreAnalyze->GetValue();

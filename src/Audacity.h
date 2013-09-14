@@ -23,11 +23,7 @@
 #ifndef __AUDACITY_H__
 #define __AUDACITY_H__
 
-// Set to 0 for a release version and 1 for a beta version
-#define IS_BETA 0
-
-// As of November 2009, we can have alphas of a beta release or 
-// alphas of a stable release, typically the nightly builds. 
+// We only do alpha builds and release versions. 
 // Most of the time we're in development, so IS_ALPHA should be defined
 // to 1.
 #define IS_ALPHA 0   // #define IS_ALPHA 1
@@ -35,13 +31,11 @@
 // Increment as appropriate every time we release a new version.
 #define AUDACITY_VERSION   2
 #define AUDACITY_RELEASE   0
-#define AUDACITY_REVISION  3
+#define AUDACITY_REVISION  4
 #define AUDACITY_MODLEVEL  0
 
 #if IS_ALPHA
    #define AUDACITY_SUFFIX wxT("-alpha-") __TDATE__ 
-#elif (IS_BETA)
-   #define AUDACITY_SUFFIX    wxT("-beta") 
 #else
    #define AUDACITY_SUFFIX    wxT("") // for a stable release
 #endif

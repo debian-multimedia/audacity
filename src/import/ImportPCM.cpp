@@ -99,7 +99,7 @@ public:
 
    wxArrayString *GetStreamInfo(){ return NULL; }
 
-   void SetStreamUsage(wxInt32 StreamID, bool Use){}
+   void SetStreamUsage(wxInt32 WXUNUSED(StreamID), bool WXUNUSED(Use)){}
 
 private:
    SNDFILE              *mFile;
@@ -107,8 +107,8 @@ private:
    sampleFormat          mFormat;
 };
 
-void GetPCMImportPlugin(ImportPluginList *importPluginList,
-                        UnusableImportPluginList *unusableImportPluginList)
+void GetPCMImportPlugin(ImportPluginList * importPluginList,
+                        UnusableImportPluginList * WXUNUSED(unusableImportPluginList))
 {
    importPluginList->Append(new PCMImportPlugin);
 }
@@ -371,7 +371,7 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
       int updateCounter = 0;
 
       for (sampleCount i = 0; i < fileTotalFrames; i += maxBlockSize) {
-	  
+
          sampleCount blockLen = maxBlockSize;
          if (i + blockLen > fileTotalFrames)
             blockLen = fileTotalFrames - i;
@@ -480,6 +480,11 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
       tags->SetTag(TAG_TITLE, UTF8CTOWX(str));
    }
 
+   str = sf_get_string(mFile, SF_STR_ALBUM);
+   if (str) {
+      tags->SetTag(TAG_ALBUM, UTF8CTOWX(str));
+   }
+
    str = sf_get_string(mFile, SF_STR_ARTIST);
    if (str) {
       tags->SetTag(TAG_ARTIST, UTF8CTOWX(str));
@@ -497,16 +502,27 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
 
    str = sf_get_string(mFile, SF_STR_COPYRIGHT);
    if (str) {
-      tags->SetTag(wxT("Copyright"), UTF8CTOWX(str));
+      tags->SetTag(TAG_COPYRIGHT, UTF8CTOWX(str));
    }
 
    str = sf_get_string(mFile, SF_STR_SOFTWARE);
    if (str) {
-      tags->SetTag(wxT("Software"), UTF8CTOWX(str));
+      tags->SetTag(TAG_SOFTWARE, UTF8CTOWX(str));
+   }
+
+   str = sf_get_string(mFile, SF_STR_TRACKNUMBER);
+   if (str) {
+      tags->SetTag(TAG_TRACK, UTF8CTOWX(str));
+   }
+
+   str = sf_get_string(mFile, SF_STR_GENRE);
+   if (str) {
+      tags->SetTag(TAG_GENRE, UTF8CTOWX(str));
    }
 
 #if defined(USE_LIBID3TAG)
-   if ((mInfo.format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF) {
+   if (((mInfo.format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF) || 
+       ((mInfo.format & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV)) {
       wxFFile f(mFilename, wxT("rb"));
       if (f.IsOpened()) {
          char id[5];
@@ -522,9 +538,10 @@ int PCMImportFileHandle::Import(TrackFactory *trackFactory,
                break;
             }
             f.Read(&len, 4);
-            len = wxUINT32_SWAP_ON_LE(len);
+            if((mInfo.format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF)
+               len = wxUINT32_SWAP_ON_LE(len);
 
-            if (strcmp(id, "ID3 ") != 0) {
+            if (Stricmp(id, "ID3 ") != 0) {  // must be case insensitive
                f.Seek(len + (len & 0x01), wxFromCurrent);
                continue;
             }
@@ -653,5 +670,3 @@ PCMImportFileHandle::~PCMImportFileHandle()
 {
    sf_close(mFile);
 }
-
-

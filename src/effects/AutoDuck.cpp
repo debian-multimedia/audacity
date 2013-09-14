@@ -46,7 +46,7 @@
  * Common constants
  */
 
-#define BUF_SIZE 4096 // number of samples to process at once
+#define BUF_SIZE 131072 // number of samples to process at once
 #define RMS_WINDOW_SIZE 100 // samples in circular RMS window buffer
 
 /*
@@ -214,7 +214,7 @@ bool EffectAutoDuck::PromptUser()
 
 bool EffectAutoDuck::Process()
 {
-   int i;
+   sampleCount i;
    
    if (GetNumWaveTracks() == 0 || !mControlTrack)
       return false;
@@ -383,11 +383,11 @@ bool EffectAutoDuck::ApplyDuckFade(int trackNumber, WaveTrack* t,
 {
    bool cancel = false;
    
-   int start = t->TimeToLongSamples(t0);
-   int end = t->TimeToLongSamples(t1);
+   sampleCount start = t->TimeToLongSamples(t0);
+   sampleCount end = t->TimeToLongSamples(t1);
    
    float *buf = new float[BUF_SIZE];
-   int pos = start;
+   sampleCount pos = start;
    
    int fadeDownSamples = t->TimeToLongSamples(
       mOuterFadeDownLen + mInnerFadeDownLen);
@@ -408,9 +408,9 @@ bool EffectAutoDuck::ApplyDuckFade(int trackNumber, WaveTrack* t,
       if (len > BUF_SIZE)
          len = BUF_SIZE;
 
-      t->Get((samplePtr)buf, floatSample, pos, (sampleCount)len);
+      t->Get((samplePtr)buf, floatSample, pos, len);
       
-      for (int i = pos; i < pos + len; i++)
+      for (sampleCount i = pos; i < pos + len; i++)
       {
          float gainDown = fadeDownStep * (i - start);
          float gainUp = fadeUpStep * (end - i);;
@@ -426,7 +426,7 @@ bool EffectAutoDuck::ApplyDuckFade(int trackNumber, WaveTrack* t,
          buf[i - pos] *= pow(10.0, gain / 20.0);
       }
       
-      t->Set((samplePtr)buf, floatSample, pos, (sampleCount)len);
+      t->Set((samplePtr)buf, floatSample, pos, len);
 
       pos += len;
       
@@ -481,26 +481,12 @@ EffectAutoDuckDialog::EffectAutoDuckDialog(EffectAutoDuck* effect,
    S.SetBorder(5);
    S.StartVerticalLay(true);
    {
-      S.StartHorizontalLay(wxCENTER, false);
-      {
-         S.AddTitle(_("Auto Duck by Markus Meyer"));
-      }
-      S.EndHorizontalLay();
+      S.AddSpace(0, 5);
 
-      S.StartHorizontalLay(wxCENTER, false);
-      {
-         // Add a little space
-      }
-      S.EndHorizontalLay();
-      
       mPanel = (EffectAutoDuckPanel*)
          S.AddWindow(new EffectAutoDuckPanel(this, ID_PANEL));
 
-      S.StartHorizontalLay(wxCENTER, false);
-      {
-         // Add a little space
-      }
-      S.EndHorizontalLay();
+      S.AddSpace(0, 5);
 
       S.StartMultiColumn(6, wxCENTER);
       {
@@ -563,7 +549,7 @@ EffectAutoDuckDialog::EffectAutoDuckDialog(EffectAutoDuck* effect,
    Center();
 }
 
-void EffectAutoDuckDialog::OnOk(wxCommandEvent& evt)
+void EffectAutoDuckDialog::OnOk(wxCommandEvent& WXUNUSED(event))
 {
    double duckAmountDb = 0, thresholdDb = 0;
    double innerFadeDownLen = 0, innerFadeUpLen = 0;
@@ -611,12 +597,12 @@ void EffectAutoDuckDialog::OnOk(wxCommandEvent& evt)
    EndModal(wxID_OK);
 }
 
-void EffectAutoDuckDialog::OnCancel(wxCommandEvent& evt)
+void EffectAutoDuckDialog::OnCancel(wxCommandEvent& WXUNUSED(event))
 {
    EndModal(wxID_CANCEL);
 }
 
-void EffectAutoDuckDialog::OnValueChanged(wxCommandEvent& evt)
+void EffectAutoDuckDialog::OnValueChanged(wxCommandEvent& WXUNUSED(event))
 {
    mPanel->Refresh(false);
 }
@@ -687,7 +673,7 @@ void EffectAutoDuckPanel::ResetControlPoints()
    mControlPoints[duckAmount] = wxPoint(-100,-100);
 }
 
-void EffectAutoDuckPanel::OnPaint(wxPaintEvent& evt)
+void EffectAutoDuckPanel::OnPaint(wxPaintEvent& WXUNUSED(event))
 {
    int clientWidth, clientHeight;
    GetSize(&clientWidth, &clientHeight);
@@ -853,14 +839,14 @@ void EffectAutoDuckPanel::OnPaint(wxPaintEvent& evt)
 }
 
 void EffectAutoDuckPanel::OnMouseCaptureChanged(
-   wxMouseCaptureChangedEvent &evt)
+   wxMouseCaptureChangedEvent& WXUNUSED(event))
 {
    SetCursor(wxNullCursor);
    mCurrentControlPoint = none;
 }
 
 void EffectAutoDuckPanel::OnMouseCaptureLost(
-   wxMouseCaptureLostEvent &evt)
+   wxMouseCaptureLostEvent& WXUNUSED(event))
 {
    mCurrentControlPoint = none;
 
@@ -909,7 +895,7 @@ void EffectAutoDuckPanel::OnLeftDown(wxMouseEvent &evt)
    }
 }
 
-void EffectAutoDuckPanel::OnLeftUp(wxMouseEvent &evt)
+void EffectAutoDuckPanel::OnLeftUp(wxMouseEvent& WXUNUSED(event))
 {
    if (mCurrentControlPoint != none)
    {

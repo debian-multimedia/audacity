@@ -89,6 +89,7 @@
 #include "FileDialog.h"
 
 #include "Export.h"
+#include "ExportMP3.h"
 
 #if defined(DISABLE_DYNAMIC_LOADING_LAME)
 #include <lame/lame.h>
@@ -221,7 +222,7 @@ static CHOICES sampRates[] =
 #define ID_CBR 7003
 #define ID_QUALITY 7004
 
-void InitMP3_Statics()
+static void InitMP3_Statics()
 {
    for (size_t i=0; i < WXSIZEOF(fixRates); i++)
    {
@@ -435,7 +436,7 @@ void ExportMP3Options::PopulateOrExchange(ShuttleGui & S)
 
 /// 
 /// 
-void ExportMP3Options::OnOK(wxCommandEvent& event)
+void ExportMP3Options::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
@@ -453,7 +454,7 @@ void ExportMP3Options::OnOK(wxCommandEvent& event)
 
 /// 
 /// 
-void ExportMP3Options::OnSET(wxCommandEvent& evt)
+void ExportMP3Options::OnSET(wxCommandEvent& WXUNUSED(event))
 {
    LoadNames(setRates, WXSIZEOF(setRates));
 
@@ -464,7 +465,7 @@ void ExportMP3Options::OnSET(wxCommandEvent& evt)
 
 /// 
 /// 
-void ExportMP3Options::OnVBR(wxCommandEvent& evt)
+void ExportMP3Options::OnVBR(wxCommandEvent& WXUNUSED(event))
 {
    LoadNames(varRates, WXSIZEOF(varRates));
 
@@ -475,7 +476,7 @@ void ExportMP3Options::OnVBR(wxCommandEvent& evt)
 
 /// 
 /// 
-void ExportMP3Options::OnABR(wxCommandEvent& evt)
+void ExportMP3Options::OnABR(wxCommandEvent& WXUNUSED(event))
 {
    LoadNames(fixRates, WXSIZEOF(fixRates));
 
@@ -486,7 +487,7 @@ void ExportMP3Options::OnABR(wxCommandEvent& evt)
 
 /// 
 /// 
-void ExportMP3Options::OnCBR(wxCommandEvent& evt)
+void ExportMP3Options::OnCBR(wxCommandEvent& WXUNUSED(event))
 {
    LoadNames(fixRates, WXSIZEOF(fixRates));
 
@@ -495,7 +496,7 @@ void ExportMP3Options::OnCBR(wxCommandEvent& evt)
    mMode->Enable(false);
 }
 
-void ExportMP3Options::OnQuality(wxCommandEvent& evt)
+void ExportMP3Options::OnQuality(wxCommandEvent& WXUNUSED(event))
 {
    int sel = mRate->GetSelection();
 
@@ -634,7 +635,7 @@ public:
       return;
    }
 
-   void OnBrowse(wxCommandEvent & event)
+   void OnBrowse(wxCommandEvent & WXUNUSED(event))
    {
       wxString question;
       /* i18n-hint: It's asking for the location of a file, for
@@ -655,9 +656,9 @@ public:
       }
    }
 
-   void OnDownload(wxCommandEvent & event)
+   void OnDownload(wxCommandEvent & WXUNUSED(event))
    {
-      wxString page = wxT("http://www.audacityteam.org/manual/index.php?title=FAQ:Installation_and_Plug-Ins%23How_do_I_download_and_install_the_LAME_MP3_encoder.3F");
+      wxString page = wxT("http://manual.audacityteam.org/o/man/faq_installation_and_plug_ins.html#lame");
       ::OpenInDefaultBrowser(page);
    }
 
@@ -751,31 +752,31 @@ typedef unsigned long beWriteInfoTag_t(lame_global_flags *, char *);
 // so we can be more specific about why their library isn't acceptable.
 typedef struct	{
 
-	// BladeEnc DLL Version number
+   // BladeEnc DLL Version number
 
-	BYTE	byDLLMajorVersion;
-	BYTE	byDLLMinorVersion;
+   BYTE	byDLLMajorVersion;
+   BYTE	byDLLMinorVersion;
 
-	// BladeEnc Engine Version Number
+   // BladeEnc Engine Version Number
 
-	BYTE	byMajorVersion;
-	BYTE	byMinorVersion;
+   BYTE	byMajorVersion;
+   BYTE	byMinorVersion;
 
-	// DLL Release date
+   // DLL Release date
 
-	BYTE	byDay;
-	BYTE	byMonth;
-	WORD	wYear;
+   BYTE	byDay;
+   BYTE	byMonth;
+   WORD	wYear;
 
-	// BladeEnc	Homepage URL
+   // BladeEnc	Homepage URL
 
-	CHAR	zHomepage[129];	
+   CHAR	zHomepage[129];
 
-	BYTE	byAlphaLevel;
-	BYTE	byBetaLevel;
-	BYTE	byMMXEnabled;
+   BYTE	byAlphaLevel;
+   BYTE	byBetaLevel;
+   BYTE	byMMXEnabled;
 
-	BYTE	btReserved[125];
+   BYTE	btReserved[125];
 } be_version;
 typedef void beVersion_t(be_version *);
 #endif
@@ -1467,89 +1468,89 @@ wxString MP3Exporter::GetLibraryTypeString()
 // Debug routine from BladeMP3EncDLL.c in the libmp3lame distro
 static void dump_config( 	lame_global_flags*	gfp )
 {
-	wxPrintf(wxT("\n\nLame_enc configuration options:\n"));
-	wxPrintf(wxT("==========================================================\n"));
+   wxPrintf(wxT("\n\nLame_enc configuration options:\n"));
+   wxPrintf(wxT("==========================================================\n"));
 
-	wxPrintf(wxT("version                =%d\n"),lame_get_version( gfp ) );
-	wxPrintf(wxT("Layer                  =3\n"));
-	wxPrintf(wxT("mode                   ="));
-	switch ( lame_get_mode( gfp ) )
-	{
-		case STEREO:       wxPrintf(wxT( "Stereo\n" )); break;
-		case JOINT_STEREO: wxPrintf(wxT( "Joint-Stereo\n" )); break;
-		case DUAL_CHANNEL: wxPrintf(wxT( "Forced Stereo\n" )); break;
-		case MONO:         wxPrintf(wxT( "Mono\n" )); break;
-		case NOT_SET:      /* FALLTROUGH */
-		default:           wxPrintf(wxT( "Error (unknown)\n" )); break;
-	}
+   wxPrintf(wxT("version                =%d\n"),lame_get_version( gfp ) );
+   wxPrintf(wxT("Layer                  =3\n"));
+   wxPrintf(wxT("mode                   ="));
+   switch ( lame_get_mode( gfp ) )
+   {
+      case STEREO:       wxPrintf(wxT( "Stereo\n" )); break;
+      case JOINT_STEREO: wxPrintf(wxT( "Joint-Stereo\n" )); break;
+      case DUAL_CHANNEL: wxPrintf(wxT( "Forced Stereo\n" )); break;
+      case MONO:         wxPrintf(wxT( "Mono\n" )); break;
+      case NOT_SET:      /* FALLTROUGH */
+      default:           wxPrintf(wxT( "Error (unknown)\n" )); break;
+   }
 
-	wxPrintf(wxT("Input sample rate      =%.1f kHz\n"), lame_get_in_samplerate( gfp ) /1000.0 );
-	wxPrintf(wxT("Output sample rate     =%.1f kHz\n"), lame_get_out_samplerate( gfp ) /1000.0 );
+   wxPrintf(wxT("Input sample rate      =%.1f kHz\n"), lame_get_in_samplerate( gfp ) /1000.0 );
+   wxPrintf(wxT("Output sample rate     =%.1f kHz\n"), lame_get_out_samplerate( gfp ) /1000.0 );
 
-	wxPrintf(wxT("bitrate                =%d kbps\n"), lame_get_brate( gfp ) );
-	wxPrintf(wxT("Quality Setting        =%d\n"), lame_get_quality( gfp ) );
+   wxPrintf(wxT("bitrate                =%d kbps\n"), lame_get_brate( gfp ) );
+   wxPrintf(wxT("Quality Setting        =%d\n"), lame_get_quality( gfp ) );
 
-	wxPrintf(wxT("Low pass frequency     =%d\n"), lame_get_lowpassfreq( gfp ) );
-	wxPrintf(wxT("Low pass width         =%d\n"), lame_get_lowpasswidth( gfp ) );
+   wxPrintf(wxT("Low pass frequency     =%d\n"), lame_get_lowpassfreq( gfp ) );
+   wxPrintf(wxT("Low pass width         =%d\n"), lame_get_lowpasswidth( gfp ) );
 
-	wxPrintf(wxT("High pass frequency    =%d\n"), lame_get_highpassfreq( gfp ) );
-	wxPrintf(wxT("High pass width        =%d\n"), lame_get_highpasswidth( gfp ) );
+   wxPrintf(wxT("High pass frequency    =%d\n"), lame_get_highpassfreq( gfp ) );
+   wxPrintf(wxT("High pass width        =%d\n"), lame_get_highpasswidth( gfp ) );
 
-	wxPrintf(wxT("No short blocks        =%d\n"), lame_get_no_short_blocks( gfp ) );
-	wxPrintf(wxT("Force short blocks     =%d\n"), lame_get_force_short_blocks( gfp ) );
+   wxPrintf(wxT("No short blocks        =%d\n"), lame_get_no_short_blocks( gfp ) );
+   wxPrintf(wxT("Force short blocks     =%d\n"), lame_get_force_short_blocks( gfp ) );
 
-	wxPrintf(wxT("de-emphasis            =%d\n"), lame_get_emphasis( gfp ) );
-	wxPrintf(wxT("private flag           =%d\n"), lame_get_extension( gfp ) );
+   wxPrintf(wxT("de-emphasis            =%d\n"), lame_get_emphasis( gfp ) );
+   wxPrintf(wxT("private flag           =%d\n"), lame_get_extension( gfp ) );
 
-	wxPrintf(wxT("copyright flag         =%d\n"), lame_get_copyright( gfp ) );
-	wxPrintf(wxT("original flag          =%d\n"),	lame_get_original( gfp ) );
-	wxPrintf(wxT("CRC                    =%s\n"), lame_get_error_protection( gfp ) ? wxT("on") : wxT("off") );
-	wxPrintf(wxT("Fast mode              =%s\n"), ( lame_get_quality( gfp ) )? wxT("enabled") : wxT("disabled") );
-	wxPrintf(wxT("Force mid/side stereo  =%s\n"), ( lame_get_force_ms( gfp ) )?wxT("enabled"):wxT("disabled") );
-	wxPrintf(wxT("Padding Type           =%d\n"), lame_get_padding_type( gfp ) );
-	wxPrintf(wxT("Disable Reservoir      =%d\n"), lame_get_disable_reservoir( gfp ) );
-	wxPrintf(wxT("Allow diff-short       =%d\n"), lame_get_allow_diff_short( gfp ) );
-	wxPrintf(wxT("Interchannel masking   =%f\n"), lame_get_interChRatio( gfp ) );
-	wxPrintf(wxT("Strict ISO Encoding    =%s\n"), ( lame_get_strict_ISO( gfp ) ) ?wxT("Yes"):wxT("No"));
-	wxPrintf(wxT("Scale                  =%5.2f\n"), lame_get_scale( gfp ) );
+   wxPrintf(wxT("copyright flag         =%d\n"), lame_get_copyright( gfp ) );
+   wxPrintf(wxT("original flag          =%d\n"),	lame_get_original( gfp ) );
+   wxPrintf(wxT("CRC                    =%s\n"), lame_get_error_protection( gfp ) ? wxT("on") : wxT("off") );
+   wxPrintf(wxT("Fast mode              =%s\n"), ( lame_get_quality( gfp ) )? wxT("enabled") : wxT("disabled") );
+   wxPrintf(wxT("Force mid/side stereo  =%s\n"), ( lame_get_force_ms( gfp ) )?wxT("enabled"):wxT("disabled") );
+   wxPrintf(wxT("Padding Type           =%d\n"), lame_get_padding_type( gfp ) );
+   wxPrintf(wxT("Disable Reservoir      =%d\n"), lame_get_disable_reservoir( gfp ) );
+   wxPrintf(wxT("Allow diff-short       =%d\n"), lame_get_allow_diff_short( gfp ) );
+   wxPrintf(wxT("Interchannel masking   =%f\n"), lame_get_interChRatio( gfp ) );
+   wxPrintf(wxT("Strict ISO Encoding    =%s\n"), ( lame_get_strict_ISO( gfp ) ) ?wxT("Yes"):wxT("No"));
+   wxPrintf(wxT("Scale                  =%5.2f\n"), lame_get_scale( gfp ) );
 
-	wxPrintf(wxT("VBR                    =%s, VBR_q =%d, VBR method ="),
-					( lame_get_VBR( gfp ) !=vbr_off ) ? wxT("enabled"): wxT("disabled"),
-		            lame_get_VBR_q( gfp ) );
+   wxPrintf(wxT("VBR                    =%s, VBR_q =%d, VBR method ="),
+            ( lame_get_VBR( gfp ) !=vbr_off ) ? wxT("enabled"): wxT("disabled"),
+            lame_get_VBR_q( gfp ) );
 
-	switch ( lame_get_VBR( gfp ) )
-	{
-		case vbr_off:	wxPrintf(wxT( "vbr_off\n" ));	break;
-		case vbr_mt :	wxPrintf(wxT( "vbr_mt \n" ));	break;
-		case vbr_rh :	wxPrintf(wxT( "vbr_rh \n" ));	break;
-		case vbr_mtrh:	wxPrintf(wxT( "vbr_mtrh \n" ));	break;
-		case vbr_abr: 
-			wxPrintf(wxT( "vbr_abr (average bitrate %d kbps)\n"), lame_get_VBR_mean_bitrate_kbps( gfp ) );
-		break;
-		default:
-			wxPrintf(wxT("error, unknown VBR setting\n"));
-		break;
-	}
+   switch ( lame_get_VBR( gfp ) )
+   {
+      case vbr_off:	wxPrintf(wxT( "vbr_off\n" ));	break;
+      case vbr_mt :	wxPrintf(wxT( "vbr_mt \n" ));	break;
+      case vbr_rh :	wxPrintf(wxT( "vbr_rh \n" ));	break;
+      case vbr_mtrh:	wxPrintf(wxT( "vbr_mtrh \n" ));	break;
+      case vbr_abr:
+         wxPrintf(wxT( "vbr_abr (average bitrate %d kbps)\n"), lame_get_VBR_mean_bitrate_kbps( gfp ) );
+         break;
+      default:
+         wxPrintf(wxT("error, unknown VBR setting\n"));
+         break;
+   }
 
-	wxPrintf(wxT("Vbr Min bitrate        =%d kbps\n"), lame_get_VBR_min_bitrate_kbps( gfp ) );
-	wxPrintf(wxT("Vbr Max bitrate        =%d kbps\n"), lame_get_VBR_max_bitrate_kbps( gfp ) );
+   wxPrintf(wxT("Vbr Min bitrate        =%d kbps\n"), lame_get_VBR_min_bitrate_kbps( gfp ) );
+   wxPrintf(wxT("Vbr Max bitrate        =%d kbps\n"), lame_get_VBR_max_bitrate_kbps( gfp ) );
 
-	wxPrintf(wxT("Write VBR Header       =%s\n"), ( lame_get_bWriteVbrTag( gfp ) ) ?wxT("Yes"):wxT("No"));
-	wxPrintf(wxT("VBR Hard min           =%d\n"), lame_get_VBR_hard_min( gfp ) );
+   wxPrintf(wxT("Write VBR Header       =%s\n"), ( lame_get_bWriteVbrTag( gfp ) ) ?wxT("Yes"):wxT("No"));
+   wxPrintf(wxT("VBR Hard min           =%d\n"), lame_get_VBR_hard_min( gfp ) );
 
-	wxPrintf(wxT("ATH Only               =%d\n"), lame_get_ATHonly( gfp ) );
-	wxPrintf(wxT("ATH short              =%d\n"), lame_get_ATHshort( gfp ) );
-	wxPrintf(wxT("ATH no                 =%d\n"), lame_get_noATH( gfp ) );
-	wxPrintf(wxT("ATH type               =%d\n"), lame_get_ATHtype( gfp ) );
-	wxPrintf(wxT("ATH lower              =%f\n"), lame_get_ATHlower( gfp ) );
-	wxPrintf(wxT("ATH aa                 =%d\n"), lame_get_athaa_type( gfp ) );
-	wxPrintf(wxT("ATH aa  loudapprox     =%d\n"), lame_get_athaa_loudapprox( gfp ) );
-	wxPrintf(wxT("ATH aa  sensitivity    =%f\n"), lame_get_athaa_sensitivity( gfp ) );
+   wxPrintf(wxT("ATH Only               =%d\n"), lame_get_ATHonly( gfp ) );
+   wxPrintf(wxT("ATH short              =%d\n"), lame_get_ATHshort( gfp ) );
+   wxPrintf(wxT("ATH no                 =%d\n"), lame_get_noATH( gfp ) );
+   wxPrintf(wxT("ATH type               =%d\n"), lame_get_ATHtype( gfp ) );
+   wxPrintf(wxT("ATH lower              =%f\n"), lame_get_ATHlower( gfp ) );
+   wxPrintf(wxT("ATH aa                 =%d\n"), lame_get_athaa_type( gfp ) );
+   wxPrintf(wxT("ATH aa  loudapprox     =%d\n"), lame_get_athaa_loudapprox( gfp ) );
+   wxPrintf(wxT("ATH aa  sensitivity    =%f\n"), lame_get_athaa_sensitivity( gfp ) );
 
-	wxPrintf(wxT("Experimental nspsytune =%d\n"), lame_get_exp_nspsytune( gfp ) );
-	wxPrintf(wxT("Experimental X         =%d\n"), lame_get_experimentalX( gfp ) );
-	wxPrintf(wxT("Experimental Y         =%d\n"), lame_get_experimentalY( gfp ) );
-	wxPrintf(wxT("Experimental Z         =%d\n"), lame_get_experimentalZ( gfp ) );
+   wxPrintf(wxT("Experimental nspsytune =%d\n"), lame_get_exp_nspsytune( gfp ) );
+   wxPrintf(wxT("Experimental X         =%d\n"), lame_get_experimentalX( gfp ) );
+   wxPrintf(wxT("Experimental Y         =%d\n"), lame_get_experimentalY( gfp ) );
+   wxPrintf(wxT("Experimental Z         =%d\n"), lame_get_experimentalZ( gfp ) );
 }
 #endif
 
@@ -1613,7 +1614,7 @@ int ExportMP3::Export(AudacityProject *project,
                        double t1,
                        MixerSpec *mixerSpec,
                        Tags *metadata,
-                       int subformat)
+                       int WXUNUSED(subformat))
 {
    int rate = lrint(project->GetRate());
 #ifndef DISABLE_DYNAMIC_LOADING_LAME
@@ -1855,7 +1856,7 @@ int ExportMP3::Export(AudacityProject *project,
    return updateResult;
 }
 
-bool ExportMP3::DisplayOptions(wxWindow *parent, int format)
+bool ExportMP3::DisplayOptions(wxWindow *parent, int WXUNUSED(format))
 {
    ExportMP3Options od(parent);
 
@@ -1955,7 +1956,7 @@ int ExportMP3::AskResample(int bitrate, int rate, int lowrate, int highrate)
 }
 
 // returns buffer len; caller frees
-int ExportMP3::AddTags(AudacityProject *project, char **buffer, bool *endOfFile, Tags *tags)
+int ExportMP3::AddTags(AudacityProject *WXUNUSED(project), char **buffer, bool *endOfFile, Tags *tags)
 {
 #ifdef USE_LIBID3TAG 
    struct id3_tag *tp = id3_tag_new();
@@ -2038,8 +2039,12 @@ void ExportMP3::AddFrame(struct id3_tag *tp, const wxString & n, const wxString 
       // iTunes just ignores the tag.  So, either set it to a valid language
       // (which one???) or just clear it.  Unfortunately, there's no supported
       // way of clearing the field, so do it directly.
-      id3_field *f = id3_frame_field(frame, 1);
-      memset(f->immediate.value, 0, sizeof(f->immediate.value));
+      struct id3_frame *frame2 = id3_frame_new(name);
+      id3_field_setfullstring(id3_frame_field(frame2, 3), ucs4);
+      id3_field *f2 = id3_frame_field(frame2, 1);
+      memset(f2->immediate.value, 0, sizeof(f2->immediate.value));
+      id3_tag_attachframe(tp, frame2);
+      // Now install a second frame with the standard default language = "XXX"
       id3_field_setfullstring(id3_frame_field(frame, 3), ucs4);
    }
    else if (strcmp(name, "TXXX") == 0) {
@@ -2060,9 +2065,6 @@ void ExportMP3::AddFrame(struct id3_tag *tp, const wxString & n, const wxString 
 }
 #endif
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportMP3()
 {
    return new ExportMP3();
@@ -2092,13 +2094,3 @@ wxString GetMP3Version(wxWindow *parent, bool prompt)
    return versionString;
 }
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: c6af56b1-37fa-4d95-b982-0a24b3a49c00

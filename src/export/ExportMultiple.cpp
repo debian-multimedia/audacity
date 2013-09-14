@@ -273,19 +273,17 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
       S.SetBorder(5);
       S.StartStatic(_("Split files based on:"), true);
       {
+         // Row 1
+         S.SetBorder(1);            
+         mLabel = S.Id(LabelID).AddRadioButton(wxString(_("Labels")));
+         mLabel->SetName(_("Labels"));
+         S.SetBorder(3);
+
          S.StartMultiColumn(2, false);
          S.SetStretchyCol(1);
          {
-            // Row 1
-            S.SetBorder(1);
-            mLabel = S.Id(LabelID)
-               .AddRadioButton(wxT(""));
-            mLabel->SetName(_("Labels"));
-            S.SetBorder(3);
-            mLabelLabel = S.AddVariableText(_("Labels"), false);
-
-            // Row 2
-            S.AddVariableText(wxT(""), false);
+            // Row 2 (indented)
+            S.AddVariableText(wxT("   "), false);
             mFirst = S.Id(FirstID)
                .AddCheckBox(_("Include audio before first label"), wxT("false"));
 
@@ -301,16 +299,15 @@ void ExportMultiple::PopulateOrExchange(ShuttleGui& S)
                mFirstFileName->SetName(_("First file name"));
             }
             S.EndHorizontalLay();
-
-            // Row 4
-            S.SetBorder(1);
-            mTrack = S.Id(TrackID)
-               .AddRadioButtonToGroup(wxT(""));
-            mTrack->SetName(_("Tracks"));
-            S.SetBorder(3);
-            mTrackLabel = S.AddVariableText(_("Tracks"), false);
          }
          S.EndMultiColumn();
+
+         // Row 4
+         S.SetBorder(1);
+         mTrack = S.Id(TrackID)
+            .AddRadioButtonToGroup(wxString(_("Tracks")));
+         mTrack->SetName(_("Tracks"));
+         S.SetBorder(3);
       }
       S.EndStatic();
 
@@ -394,12 +391,12 @@ void ExportMultiple::EnableControls()
    mExport->Enable(ok);
 }
 
-void ExportMultiple::OnFormat(wxCommandEvent& event)
+void ExportMultiple::OnFormat(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnOptions(wxCommandEvent& event)
+void ExportMultiple::OnOptions(wxCommandEvent& WXUNUSED(event))
 {
    const int sel = mFormat->GetSelection();
    if (sel != wxNOT_FOUND)
@@ -421,7 +418,7 @@ void ExportMultiple::OnOptions(wxCommandEvent& event)
    mPlugins[mPluginIndex]->DisplayOptions(this,mSubFormatIndex);
 }
 
-void ExportMultiple::OnCreate(wxCommandEvent& event)
+void ExportMultiple::OnCreate(wxCommandEvent& WXUNUSED(event))
 {
    wxFileName fn;
 
@@ -440,7 +437,7 @@ void ExportMultiple::OnCreate(wxCommandEvent& event)
                   wxOK | wxCENTRE, this);
 }
 
-void ExportMultiple::OnChoose(wxCommandEvent& event)
+void ExportMultiple::OnChoose(wxCommandEvent& WXUNUSED(event))
 {
    wxDirDialog dlog(this,
                     _("Choose a location to save the exported files"),
@@ -450,47 +447,47 @@ void ExportMultiple::OnChoose(wxCommandEvent& event)
       mDir->SetValue(dlog.GetPath());
 }
 
-void ExportMultiple::OnLabel(wxCommandEvent& event)
+void ExportMultiple::OnLabel(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnFirst(wxCommandEvent& event)
+void ExportMultiple::OnFirst(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnFirstFileName(wxCommandEvent& event)
+void ExportMultiple::OnFirstFileName(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnTrack(wxCommandEvent& event)
+void ExportMultiple::OnTrack(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnByName(wxCommandEvent& event)
+void ExportMultiple::OnByName(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnByNumber(wxCommandEvent& event)
+void ExportMultiple::OnByNumber(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnPrefix(wxCommandEvent& event)
+void ExportMultiple::OnPrefix(wxCommandEvent& WXUNUSED(event))
 {
    EnableControls();
 }
 
-void ExportMultiple::OnCancel(wxCommandEvent& event)
+void ExportMultiple::OnCancel(wxCommandEvent& WXUNUSED(event))
 {
    EndModal(0);
 }
 
-void ExportMultiple::OnExport(wxCommandEvent& event)
+void ExportMultiple::OnExport(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
@@ -679,7 +676,7 @@ int ExportMultiple::ExportMultipleByLabel(bool byName,
       setting.filetags.SetTag(TAG_TITLE, title);
       setting.filetags.SetTag(TAG_TRACK, l+1);
       // let the user have a crack at editing it, exit if cancelled
-      if (!setting.filetags.ShowEditDialog(mProject,_("Edit metadata"), tagsPrompt))
+      if (!setting.filetags.ShowEditDialog(mProject,_("Edit Metadata"), tagsPrompt))
          return false;
 
       /* add the settings to the array of settings to be used for export */
@@ -816,7 +813,7 @@ int ExportMultiple::ExportMultipleByTrack(bool byName,
       setting.filetags.SetTag(TAG_TITLE, title);
       setting.filetags.SetTag(TAG_TRACK, l+1);
       // let the user have a crack at editing it, exit if cancelled
-      if (!setting.filetags.ShowEditDialog(mProject,_("Edit metadata"), tagsPrompt))
+      if (!setting.filetags.ShowEditDialog(mProject,_("Edit Metadata"), tagsPrompt))
          return false;
 
       /* add the settings to the array of settings to be used for export */
@@ -957,7 +954,7 @@ void SuccessDialog::OnKeyDown(wxListEvent& event)
       event.Skip(); // allow standard behaviour
 }
 
-void SuccessDialog::OnItemActivated(wxListEvent& event)
+void SuccessDialog::OnItemActivated(wxListEvent& WXUNUSED(event))
 {
    EndModal(1);
 }

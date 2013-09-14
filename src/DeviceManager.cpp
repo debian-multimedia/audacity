@@ -7,6 +7,10 @@
 ******************************************************************/
 
 #include "portaudio.h"
+#ifdef __WXMSW__
+#include "pa_win_wasapi.h"
+#endif
+
 #ifdef USE_PORTMIXER
 #include "portmixer.h"
 #endif
@@ -37,7 +41,7 @@ DeviceManager DeviceManager::dm;
 /// Gets the singleton instance 
 DeviceManager* DeviceManager::Instance()
 {
-	return &dm;
+   return &dm;
 }
    
 /// Releases memory assosiated with the singleton
@@ -104,11 +108,11 @@ DeviceSourceMap* DeviceManager::GetDefaultInputDevice(int hostIndex)
 //Port Audio requires we open the stream with a callback or a lot of devices will fail
 //as this means open in blocking mode, so we use a dummy one.
 static int DummyPaStreamCallback(
-    const void *input, void *output,
-    unsigned long frameCount,
-    const PaStreamCallbackTimeInfo* timeInfo,
-    PaStreamCallbackFlags statusFlags,
-    void *userData )
+    const void *WXUNUSED(input), void * WXUNUSED(output),
+    unsigned long WXUNUSED(frameCount),
+    const PaStreamCallbackTimeInfo* WXUNUSED(timeInfo),
+    PaStreamCallbackFlags WXUNUSED(statusFlags),
+    void *WXUNUSED(userData) )
 {
    return 0;
 }
@@ -281,6 +285,10 @@ void DeviceManager::Rescan()
       }
 
       if (info->maxInputChannels > 0) {
+#ifdef __WXMSW__
+         if (Pa_GetHostApiInfo(info->hostApi)->type != paWASAPI ||
+             PaWasapi_IsLoopback(i) > 0)
+#endif
          AddSources(i, info->defaultSampleRate, &mInputDeviceSourceMaps, 1);
       }
    }
@@ -294,13 +302,13 @@ void DeviceManager::Rescan()
          dt->RefillCombos();
       }
    }
-	m_inited = true;
+   m_inited = true;
 }
 
 //private constructor - Singleton.
 DeviceManager::DeviceManager()
 {
-	m_inited = false;
+   m_inited = false;
 }
 
 DeviceManager::~DeviceManager()

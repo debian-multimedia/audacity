@@ -14,6 +14,8 @@
 #ifndef __AUDACITY_CONTROL_TOOLBAR__
 #define __AUDACITY_CONTROL_TOOLBAR__
 
+#include <wx/timer.h>
+
 #include "ToolBar.h"
 #include "../Theme.h"
 
@@ -21,6 +23,8 @@ class wxBoxSizer;
 class wxCommandEvent;
 class wxDC;
 class wxKeyEvent;
+class wxTimer;
+class wxTimerEvent;
 class wxWindow;
 
 class AButton;
@@ -40,6 +44,10 @@ class ControlToolBar:public ToolBar {
 
    void UpdatePrefs();
    virtual void OnKeyEvent(wxKeyEvent & event);
+   void OnKeyDown(wxKeyEvent & event);
+   void OnKeyUp(wxKeyEvent & event);
+
+   void OnTimer(wxTimerEvent & event);
 
    // msmeyer: These are public, but it's far better to
    // call the "real" interface functions like PlayCurrentRegion() and
@@ -47,7 +55,6 @@ class ControlToolBar:public ToolBar {
    void OnRewind(wxCommandEvent & evt);
    void OnPlay(wxCommandEvent & evt);
    void OnStop(wxCommandEvent & evt);
-   void OnBatch(wxCommandEvent & evt);
    void OnRecord(wxCommandEvent & evt);
    void OnFF(wxCommandEvent & evt);
    void OnPause(wxCommandEvent & evt);
@@ -75,12 +82,11 @@ class ControlToolBar:public ToolBar {
    void Populate();
    virtual void Repaint(wxDC *dc);
    virtual void EnableDisableButtons();
-   void OnKeyDown(wxKeyEvent & event);
-   void OnKeyUp(wxKeyEvent & event);
 
    void SetVUMeters(AudacityProject *p);
 
    virtual void ReCreateButtons();
+   void RegenerateToolsTooltips();
 
  private:
 
@@ -90,45 +96,40 @@ class ControlToolBar:public ToolBar {
       const wxChar *label);
    void MakeLoopImage();
    void ArrangeButtons();
-   void RegenerateToolsTooltips();
    void SetupCutPreviewTracks(double playStart, double cutStart,
                              double cutEnd, double playEnd);
    void ClearCutPreviewTracks();
 
    enum
    {
-      ID_PLAY_BUTTON,
+      ID_PLAY_BUTTON = 11000,
       ID_RECORD_BUTTON,
       ID_PAUSE_BUTTON,
       ID_STOP_BUTTON,
       ID_FF_BUTTON,
       ID_REW_BUTTON,
-      ID_BATCH_BUTTON,
-
-      BUTTON_COUNT
+      BUTTON_COUNT, 
    };
 
    AButton *mRewind;
    AButton *mPlay;
-   //AButton *mBatch;
    AButton *mRecord;
    AButton *mPause;
    AButton *mStop;
    AButton *mFF;
 
+   wxTimer mShiftKeyTimer;
+
    static AudacityProject *mBusyProject;
+
    // Maybe button state values shouldn't be duplicated in this toolbar?
    bool mPaused;         //Play or record is paused or not paused?
 
    // Activate ergonomic order for transport buttons
    bool mErgonomicTransportButtons;
 
-#ifdef CLEANSPEECH
-   // Show/hide cleanspeech button
-   bool mCleanSpeechMode;
-#endif   // CLEANSPEECH
+   wxString mStrLocale; // standard locale abbreviation
 
-   //wxBoxSizer *mBatchGroup;
    wxBoxSizer *mSizer;
 
    TrackList* mCutPreviewTracks;
@@ -140,15 +141,4 @@ class ControlToolBar:public ToolBar {
 };
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: bb2858b8-2c70-48df-9d72-bcdef94be4e3
 

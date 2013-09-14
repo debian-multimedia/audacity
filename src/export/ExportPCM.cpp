@@ -36,6 +36,7 @@
 #include "../ondemand/ODManager.h"
 
 #include "Export.h"
+#include "ExportPCM.h"
 
 #ifdef USE_LIBID3TAG 
    #include <id3tag.h>
@@ -85,7 +86,6 @@ public:
    ExportPCMOptions(wxWindow *parent, int format);
    void PopulateOrExchange(ShuttleGui & S);
    void OnHeaderChoice(wxCommandEvent & evt);
-   void OnChoice(wxCommandEvent & event);
    void OnOK(wxCommandEvent& event);
 
 private:
@@ -109,13 +109,10 @@ private:
 
 BEGIN_EVENT_TABLE(ExportPCMOptions, wxDialog)
    EVT_CHOICE(ID_HEADER_CHOICE,   ExportPCMOptions::OnHeaderChoice)
-   EVT_CHOICE(ID_ENCODING_CHOICE, ExportPCMOptions::OnChoice)
    EVT_BUTTON(wxID_OK,            ExportPCMOptions::OnOK)
 END_EVENT_TABLE()
 
-/// 
-/// 
-ExportPCMOptions::ExportPCMOptions(wxWindow *parent, int selformat)
+ExportPCMOptions::ExportPCMOptions(wxWindow * WXUNUSED(parent), int selformat)
 :  wxDialog(NULL, wxID_ANY,
             wxString(_("Specify Uncompressed Options")))
 {
@@ -148,9 +145,8 @@ ExportPCMOptions::ExportPCMOptions(wxWindow *parent, int selformat)
    sel = 0;
    for (i = 0; i < num; i++) {
       mHeaderNames.Add(sf_header_index_name(i));
-      if ((format & SF_FORMAT_TYPEMASK) == sf_header_index_to_type(i)) {
+      if ((format & SF_FORMAT_TYPEMASK) == (int)sf_header_index_to_type(i))
          sel = i;
-      }
    }
    mHeaderFromChoice = sel;
 
@@ -166,10 +162,10 @@ ExportPCMOptions::ExportPCMOptions(wxWindow *parent, int selformat)
 
          mEncodingNames.Add(sf_encoding_index_name(i));
          mEncodingFormats.Add(enc);
-         if ((format & SF_FORMAT_SUBMASK) == sf_encoding_index_to_subtype(i)) {
+         if ((format & SF_FORMAT_SUBMASK) == (int)sf_encoding_index_to_subtype(i))
             mEncodingFromChoice = sel;
-         }
-         else sel++;
+         else 
+            sel++;
       }
    }
 
@@ -181,8 +177,7 @@ ExportPCMOptions::ExportPCMOptions(wxWindow *parent, int selformat)
    Fit();
    Center();
 }
-/// 
-/// 
+ 
 void ExportPCMOptions::PopulateOrExchange(ShuttleGui & S)
 {
    S.StartHorizontalLay(wxEXPAND, true);
@@ -214,9 +209,7 @@ void ExportPCMOptions::PopulateOrExchange(ShuttleGui & S)
    return;
 }
 
-///
-///
-void ExportPCMOptions::OnHeaderChoice(wxCommandEvent & evt)
+void ExportPCMOptions::OnHeaderChoice(wxCommandEvent & WXUNUSED(evt))
 {
    int format = sf_header_index_to_type(mHeaderChoice->GetSelection());
    mEncodingNames.Clear();
@@ -263,15 +256,7 @@ void ExportPCMOptions::OnHeaderChoice(wxCommandEvent & evt)
    ValidatePair(GetFormat());
 }
 
-///
-///
-void ExportPCMOptions::OnChoice(wxCommandEvent & event)
-{
-}
-
-/// 
-/// 
-void ExportPCMOptions::OnOK(wxCommandEvent& event)
+void ExportPCMOptions::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    WriteExportFormatPref(GetFormat());
 
@@ -334,10 +319,12 @@ public:
                int subformat = 0); 
    // optional
    wxString GetExtension(int index = 0);
+
 private:
 
-   bool AddStrings(AudacityProject *project, SNDFILE *sf, Tags *tags);
-   void AddID3Chunk(wxString fName, Tags *tags);
+   char *AdjustString(wxString wxStr, int sf_format);
+   bool AddStrings(AudacityProject *project, SNDFILE *sf, Tags *tags, int sf_format);
+   void AddID3Chunk(wxString fName, Tags *tags, int sf_format);
 
 };
 
@@ -500,9 +487,14 @@ int ExportPCM::Export(AudacityProject *project,
    if (metadata == NULL)
       metadata = project->GetTags();
 
-   if (!AddStrings(project, sf, metadata)) { // meta data presence check
-      sf_close(sf);
-      return false;
+    // Install the metata at the beginning of the file (except for
+    // WAV and WAVEX formats)
+    if ((sf_format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAV &&
+        (sf_format & SF_FORMAT_TYPEMASK) != SF_FORMAT_WAVEX) {
+       if (!AddStrings(project, sf, metadata, sf_format)) { 
+          sf_close(sf);                          
+          return false;
+       }
    }
 
    sampleFormat format;
@@ -569,6 +561,15 @@ int ExportPCM::Export(AudacityProject *project,
 
    delete[] waveTracks;                            
 
+   // Install the WAV metata in a "LIST" chunk at the end of the file
+   if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV ||
+       (sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAVEX) {
+      if (!AddStrings(project, sf, metadata, sf_format)) { 
+         sf_close(sf);                          
+         return false;
+      }
+   }
+
    ODManager::LockLibSndFileMutex();
    err = sf_close(sf);
    ODManager::UnlockLibSndFileMutex();
@@ -582,9 +583,9 @@ int ExportPCM::Export(AudacityProject *project,
                     buffer));
    }
 
-   if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF) {
-      AddID3Chunk(fName, metadata);
-   }
+   if (((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF) ||
+       ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV))
+      AddID3Chunk(fName, metadata, sf_format);
 
 #ifdef __WXMAC__
    wxFileName fn(fName);
@@ -595,39 +596,183 @@ int ExportPCM::Export(AudacityProject *project,
    return updateResult;
 }
 
-bool ExportPCM::AddStrings(AudacityProject *project, SNDFILE *sf, Tags *tags)
+char *ExportPCM::AdjustString(const wxString wxStr, int sf_format)
+{
+   bool b_aiff = false;
+   if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF)
+         b_aiff = true;    // Apple AIFF file
+
+   // We must convert the string to 7 bit ASCII
+   size_t  sz = wxStr.length();
+   if(sz == 0)
+      return NULL;
+   // Size for secure malloc in case of local wide char usage
+   size_t  sr = (sz+4) * 2;   
+ 
+   char *pDest = (char *)malloc(sr);
+   if (!pDest)
+      return NULL;
+   char *pSrc = (char *)malloc(sr);
+   if (!pSrc)
+   {
+      free(pDest);
+      return NULL;
+   }
+   memset(pDest, 0, sr);
+   memset(pSrc, 0, sr);
+ 
+   if(wxStr.mb_str(wxConvISO8859_1))
+      strncpy(pSrc, wxStr.mb_str(wxConvISO8859_1), sz);
+   else if(wxStr.mb_str())
+      strncpy(pSrc, wxStr.mb_str(), sz);
+   else {
+      free(pDest);
+      free(pSrc);
+      return NULL;
+   }
+
+   char *pD = pDest;
+   char *pS = pSrc;
+   unsigned char c;
+
+   // ISO Latin to 7 bit ascii conversion table (best approximation)
+   static char aASCII7Table[256] = {
+      0x00, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f,
+      0x5f, 0x09, 0x0a, 0x5f, 0x0d, 0x5f, 0x5f, 0x5f,
+      0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f,
+      0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f, 0x5f,
+      0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
+      0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f,
+      0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+      0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f,
+      0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47,
+      0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+      0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57,
+      0x58, 0x59, 0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f,
+      0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67,
+      0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x6f,
+      0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,
+      0x78, 0x79, 0x7a, 0x7b, 0x7c, 0x7d, 0x7e, 0x7f,
+      0x45, 0x20, 0x2c, 0x53, 0x22, 0x2e, 0x2b, 0x2b,
+      0x5e, 0x25, 0x53, 0x28, 0x4f, 0x20, 0x5a, 0x20,
+      0x20, 0x27, 0x27, 0x22, 0x22, 0x2e, 0x2d, 0x5f,
+      0x22, 0x54, 0x73, 0x29, 0x6f, 0x20, 0x7a, 0x59,
+      0x20, 0x21, 0x63, 0x4c, 0x6f, 0x59, 0x7c, 0x53,
+      0x22, 0x43, 0x61, 0x22, 0x5f, 0x2d, 0x43, 0x2d,
+      0x6f, 0x7e, 0x32, 0x33, 0x27, 0x75, 0x50, 0x27,
+      0x2c, 0x31, 0x6f, 0x22, 0x5f, 0x5f, 0x5f, 0x3f,
+      0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x43,
+      0x45, 0x45, 0x45, 0x45, 0x49, 0x49, 0x49, 0x49,
+      0x44, 0x4e, 0x4f, 0x4f, 0x4f, 0x4f, 0x4f, 0x78,
+      0x4f, 0x55, 0x55, 0x55, 0x55, 0x59, 0x70, 0x53,
+      0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x63,
+      0x65, 0x65, 0x65, 0x65, 0x69, 0x69, 0x69, 0x69,
+      0x64, 0x6e, 0x6f, 0x6f, 0x6f, 0x6f, 0x6f, 0x2f,
+      0x6f, 0x75, 0x75, 0x75, 0x75, 0x79, 0x70, 0x79 
+   };
+
+   size_t i;
+   for(i = 0; i < sr; i++) {
+      c = (unsigned char) *pS++;
+      *pD++ = aASCII7Table[c];
+      if(c == 0)
+         break;
+   } 
+   *pD = '\0';
+
+   free(pSrc);
+
+   if(b_aiff) {
+      int len = (int)strlen(pDest);
+      if((len % 2) != 0) {
+         // In case of an odd length string, add a space char
+         strcat(pDest, " ");
+      }
+   }
+
+   return pDest;
+}
+
+bool ExportPCM::AddStrings(AudacityProject * WXUNUSED(project), SNDFILE *sf, Tags *tags, int sf_format)
 {
    if (tags->HasTag(TAG_TITLE)) {
-      sf_set_string(sf, SF_STR_TITLE, tags->GetTag(TAG_TITLE).mb_str(wxConvUTF8));
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_TITLE), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_TITLE, ascii7Str);
+         free(ascii7Str);
+      }
+   }
+
+   if (tags->HasTag(TAG_ALBUM)) {
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_ALBUM), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_ALBUM, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
    if (tags->HasTag(TAG_ARTIST)) {
-      sf_set_string(sf, SF_STR_ARTIST, tags->GetTag(TAG_ARTIST).mb_str(wxConvUTF8));
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_ARTIST), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_ARTIST, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
    if (tags->HasTag(TAG_COMMENTS)) {
-      sf_set_string(sf, SF_STR_COMMENT, tags->GetTag(TAG_COMMENTS).mb_str(wxConvUTF8));
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_COMMENTS), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_COMMENT, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
    if (tags->HasTag(TAG_YEAR)) {
-      sf_set_string(sf, SF_STR_DATE, tags->GetTag(TAG_YEAR).mb_str(wxConvUTF8));
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_YEAR), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_DATE, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
-   if (tags->HasTag(wxT("Copyright"))) {
-      sf_set_string(sf, SF_STR_COPYRIGHT, tags->GetTag(wxT("Copyright")).mb_str(wxConvUTF8));
+   if (tags->HasTag(TAG_GENRE)) {
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_GENRE), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_GENRE, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
-   if (tags->HasTag(wxT("Software"))) {
-      sf_set_string(sf, SF_STR_SOFTWARE, tags->GetTag(wxT("Software")).mb_str(wxConvUTF8));
+   if (tags->HasTag(TAG_COPYRIGHT)) {
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_COPYRIGHT), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_COPYRIGHT, ascii7Str);
+         free(ascii7Str);
+      }
+   }
+
+   if (tags->HasTag(TAG_SOFTWARE)) {
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_SOFTWARE), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_SOFTWARE, ascii7Str);
+         free(ascii7Str);
+      }
+   }
+
+   if (tags->HasTag(TAG_TRACK)) {
+      char * ascii7Str = AdjustString(tags->GetTag(TAG_TRACK), sf_format);
+      if (ascii7Str) {
+         sf_set_string(sf, SF_STR_TRACKNUMBER, ascii7Str);
+         free(ascii7Str);
+      }
    }
 
    return true;
 }
 
-void ExportPCM::AddID3Chunk(wxString fName, Tags *tags)
+void ExportPCM::AddID3Chunk(wxString fName, Tags *tags, int sf_format)
 {
 #ifdef USE_LIBID3TAG 
-
    struct id3_tag *tp = id3_tag_new();
 
    wxString n, v;
@@ -654,6 +799,9 @@ void ExportPCM::AddID3Chunk(wxString fName, Tags *tags)
       }
       else if (n.CmpNoCase(TAG_TRACK) == 0) {
          name = ID3_FRAME_TRACK;
+      }
+      else if (n.CmpNoCase(wxT("composer")) == 0) {
+         name = "TCOM";
       }
 
       struct id3_frame *frame = id3_frame_new(name);
@@ -711,29 +859,40 @@ void ExportPCM::AddID3Chunk(wxString fName, Tags *tags)
       id3_tag_delete(tp);
       return;
    }
-
+   if ((len % 2) != 0) len++;   // Length must be even.
    id3_byte_t *buffer = (id3_byte_t *)malloc(len);
    if (buffer == NULL) {
       id3_tag_delete(tp);
       return;
    }
+   // Zero all locations, for ending odd UTF16 content 
+   // correctly, i.e., two '\0's at the end.
+   memset(buffer, 0, len);	
 
-   len = id3_tag_render(tp, buffer);
+   id3_tag_render(tp, buffer);
 
    id3_tag_delete(tp);
 
    wxFFile f(fName, wxT("r+b"));
    if (f.IsOpened()) {
       wxUint32 sz;
-      
-      sz = wxUINT32_SWAP_ON_LE((wxUint32) len);
+
+      sz = (wxUint32) len;  
       f.SeekEnd(0);
-      f.Write("ID3 ", 4);
+      if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_WAV) 
+         f.Write("id3 ", 4);	// Must be lower case for foobar2000.
+      else {
+         f.Write("ID3 ", 4);	
+         sz = wxUINT32_SWAP_ON_LE(sz);
+      }
       f.Write(&sz, 4);
 
-      f.Write(buffer, len + (len & 0x01));
+      f.Write(buffer, len);
 
-      sz = wxUINT32_SWAP_ON_LE((wxUint32) f.Tell() - 8);
+      sz = (wxUint32) f.Tell() - 8;
+      if ((sf_format & SF_FORMAT_TYPEMASK) == SF_FORMAT_AIFF)
+         sz = wxUINT32_SWAP_ON_LE(sz);
+
       f.Seek(4);
       f.Write(&sz, 4);
 
@@ -757,7 +916,7 @@ bool ExportPCM::DisplayOptions(wxWindow *parent, int format)
    wxString usepcm(_("If you need more control over the export format please use the 'Other uncompressed files' format."));
 
    /* actual code - decide what options if any are useful to show */
-   if(format == 1)
+   if (format == 1)
    {   // 16-bit AIFF
       wxMessageBox(nopt + _("Your file will be exported as a 16-bit AIFF (Apple/SGI) file.\n") + usepcm);
       return true;
@@ -792,21 +951,7 @@ wxString ExportPCM::GetExtension(int index)
    }
 }
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportPCM()
 {
    return new ExportPCM();
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: c1f32472-520f-4864-8086-3dba0d593e84

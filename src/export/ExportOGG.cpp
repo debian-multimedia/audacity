@@ -20,6 +20,7 @@
 #ifdef USE_LIBVORBIS
 
 #include "Export.h"
+#include "ExportOGG.h"
 
 #include <wx/log.h>
 #include <wx/msgdlg.h>
@@ -59,7 +60,7 @@ END_EVENT_TABLE()
 
 /// 
 /// 
-ExportOGGOptions::ExportOGGOptions(wxWindow *parent, int format)
+ExportOGGOptions::ExportOGGOptions(wxWindow *parent, int WXUNUSED(format))
 :  wxDialog(parent, wxID_ANY,
             wxString(_("Specify Ogg Vorbis Options")))
 {
@@ -101,7 +102,7 @@ void ExportOGGOptions::PopulateOrExchange(ShuttleGui & S)
 
 /// 
 /// 
-void ExportOGGOptions::OnOK(wxCommandEvent& event)
+void ExportOGGOptions::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
@@ -169,7 +170,7 @@ int ExportOGG::Export(AudacityProject *project,
                        double t1,
                        MixerSpec *mixerSpec,
                        Tags *metadata,
-                       int subformat)
+                       int WXUNUSED(subformat))
 {
    double    rate    = project->GetRate();
    TrackList *tracks = project->GetTracks();
@@ -298,8 +299,8 @@ int ExportOGG::Export(AudacityProject *project,
             //   so do so (for however many pages are available).
 
             while (!eos) {
-					int result = ogg_stream_pageout(&stream, &page);
-					if (!result) {
+               int result = ogg_stream_pageout(&stream, &page);
+               if (!result) {
                   break;
                }
 
@@ -309,7 +310,7 @@ int ExportOGG::Export(AudacityProject *project,
                if (ogg_page_eos(&page)) {
                   eos = 1;
                }
-				}
+            }
          }
       }
 
@@ -320,11 +321,11 @@ int ExportOGG::Export(AudacityProject *project,
 
    delete mixer;
 
-	ogg_stream_clear(&stream);
+   ogg_stream_clear(&stream);
 
-	vorbis_block_clear(&block);
-	vorbis_dsp_clear(&dsp);
-	vorbis_info_clear(&info);
+   vorbis_block_clear(&block);
+   vorbis_dsp_clear(&dsp);
+   vorbis_info_clear(&info);
    vorbis_comment_clear(&comment);
 
    outFile.Close();
@@ -362,25 +363,10 @@ bool ExportOGG::FillComment(AudacityProject *project, vorbis_comment *comment, T
    return true;
 }
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportOGG()
 {
    return new ExportOGG();
 }
 
 #endif // USE_LIBVORBIS
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 33184ece-e482-44d9-9ff3-b4a11b41112b
 

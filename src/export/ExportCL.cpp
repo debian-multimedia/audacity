@@ -12,23 +12,22 @@
 **********************************************************************/
 
 #include "../Audacity.h"
+#include "../Project.h"
 
 #include <wx/button.h>
 #include <wx/combobox.h>
 #include <wx/log.h>
 #include <wx/process.h>
 #include <wx/textctrl.h>
-
+#include <FileDialog.h>
 #include "Export.h"
+#include "ExportCL.h"
 
-#include "../Project.h"
 #include "../Mix.h"
 #include "../Prefs.h"
 #include "../Internat.h"
 #include "../float_cast.h"
 #include "../widgets/FileHistory.h"
-
-#include <FileDialog.h>
 
 
 //----------------------------------------------------------------------------
@@ -130,7 +129,7 @@ void ExportCLOptions::PopulateOrExchange(ShuttleGui & S)
 
 /// 
 /// 
-void ExportCLOptions::OnOK(wxCommandEvent& event)
+void ExportCLOptions::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    wxString cmd = mCmd->GetValue();
@@ -150,7 +149,7 @@ void ExportCLOptions::OnOK(wxCommandEvent& event)
 
 /// 
 /// 
-void ExportCLOptions::OnBrowse(wxCommandEvent& event)
+void ExportCLOptions::OnBrowse(wxCommandEvent& WXUNUSED(event))
 {
    wxString path;
    wxString ext;
@@ -304,8 +303,8 @@ int ExportCL::Export(AudacityProject *project,
                       double t0,
                       double t1, 
                       MixerSpec *mixerSpec,
-                      Tags *metadata,
-                      int subformat)
+                      Tags *WXUNUSED(metadata),
+                      int WXUNUSED(subformat))
 {
    ExportCLProcess *p;
    wxString output;
@@ -514,13 +513,13 @@ int ExportCL::Export(AudacityProject *project,
 
    // Clean up
    delete mixer;
-   delete[] waveTracks;                            
+   delete[] waveTracks;
    delete p;
 
    return updateResult;
 }
 
-bool ExportCL::DisplayOptions(wxWindow *parent, int format)
+bool ExportCL::DisplayOptions(wxWindow *parent, int WXUNUSED(format))
 {
    ExportCLOptions od(parent);
 
@@ -529,22 +528,8 @@ bool ExportCL::DisplayOptions(wxWindow *parent, int format)
    return true;
 }
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportCL()
 {
    return new ExportCL();
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: c1578868-82c5-4f4a-b61b-8d82536a3141
 

@@ -180,7 +180,8 @@ void TranscriptionToolBar::Populate()
                                   SPEED_SLIDER);
    mPlaySpeedSlider->Set(1.0);
    mPlaySpeedSlider->SetLabel(_("Playback Speed"));
-   mPlaySpeedSlider->SetScroll(0.1f, 0.5f);
+   //  6 steps using page up/down, and 60 using arrow keys
+   mPlaySpeedSlider->SetScroll(0.16667f, 1.6667f);
    Add( mPlaySpeedSlider, 0, wxALIGN_CENTER );
    mPlaySpeedSlider->Connect(wxEVT_SET_FOCUS,
                  wxFocusEventHandler(TranscriptionToolBar::OnFocus),
@@ -384,7 +385,7 @@ void TranscriptionToolBar::GetSamples(WaveTrack *t, sampleCount *s0, sampleCount
    *slen = ss1 - ss0;
 }
 
-void TranscriptionToolBar::OnPlaySpeed(wxCommandEvent & event)
+void TranscriptionToolBar::OnPlaySpeed(wxCommandEvent & WXUNUSED(event))
 {
    // Can't do anything without an active project
    AudacityProject * p = GetActiveProject();
@@ -431,7 +432,7 @@ void TranscriptionToolBar::OnPlaySpeed(wxCommandEvent & event)
    }
 }
 
-void TranscriptionToolBar::OnSpeedSlider(wxCommandEvent& event)
+void TranscriptionToolBar::OnSpeedSlider(wxCommandEvent& WXUNUSED(event))
 {
    mPlaySpeed = (mPlaySpeedSlider->Get()) * 100;
 
@@ -443,17 +444,17 @@ void TranscriptionToolBar::OnSpeedSlider(wxCommandEvent& event)
    //}
 }
 
-void TranscriptionToolBar::OnStartOn(wxCommandEvent &event)
+void TranscriptionToolBar::OnStartOn(wxCommandEvent & WXUNUSED(event))
 {
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy()){
       SetButton(false,mButtons[TTB_StartOn]);
       return;
    }
-	
+
    mVk->AdjustThreshold(GetSensitivity());
    AudacityProject *p = GetActiveProject();
-	
+
    TrackList *tl = p->GetTracks();
    TrackListOfKindIterator iter(Track::Wave, tl);
 
@@ -476,7 +477,7 @@ void TranscriptionToolBar::OnStartOn(wxCommandEvent &event)
    }
 }
 
-void TranscriptionToolBar::OnStartOff(wxCommandEvent &event)
+void TranscriptionToolBar::OnStartOff(wxCommandEvent & WXUNUSED(event))
 {
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy()){
@@ -509,9 +510,9 @@ void TranscriptionToolBar::OnStartOff(wxCommandEvent &event)
    }
 }
 
-void TranscriptionToolBar::OnEndOn(wxCommandEvent &event)
+void TranscriptionToolBar::OnEndOn(wxCommandEvent & WXUNUSED(event))
 {
-	
+
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy()){
       SetButton(false,mButtons[TTB_EndOn]);
@@ -546,9 +547,9 @@ void TranscriptionToolBar::OnEndOn(wxCommandEvent &event)
 
 
 
-void TranscriptionToolBar::OnEndOff(wxCommandEvent &event)
+void TranscriptionToolBar::OnEndOff(wxCommandEvent & WXUNUSED(event))
 {
-	
+
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy()){
       SetButton(false,mButtons[TTB_EndOff]);
@@ -581,7 +582,7 @@ void TranscriptionToolBar::OnEndOff(wxCommandEvent &event)
 
 
 
-void TranscriptionToolBar::OnSelectSound(wxCommandEvent &event)
+void TranscriptionToolBar::OnSelectSound(wxCommandEvent & WXUNUSED(event))
 {
 
    //If IO is busy, abort immediately
@@ -589,7 +590,7 @@ void TranscriptionToolBar::OnSelectSound(wxCommandEvent &event)
       SetButton(false,mButtons[TTB_SelectSound]);
       return;
    }
-	
+
 
    mVk->AdjustThreshold(GetSensitivity());
    AudacityProject *p = GetActiveProject();
@@ -622,7 +623,7 @@ void TranscriptionToolBar::OnSelectSound(wxCommandEvent &event)
    SetButton(false,mButtons[TTB_SelectSound]);
 }
 
-void TranscriptionToolBar::OnSelectSilence(wxCommandEvent &event)
+void TranscriptionToolBar::OnSelectSilence(wxCommandEvent & WXUNUSED(event))
 {
 
    //If IO is busy, abort immediately
@@ -664,7 +665,7 @@ void TranscriptionToolBar::OnSelectSilence(wxCommandEvent &event)
 
 
 
-void TranscriptionToolBar::OnCalibrate(wxCommandEvent &event)
+void TranscriptionToolBar::OnCalibrate(wxCommandEvent & WXUNUSED(event))
 {
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy()){
@@ -686,7 +687,7 @@ void TranscriptionToolBar::OnCalibrate(wxCommandEvent &event)
         
          mVk->CalibrateNoise(*((WaveTrack*)t),start,len);
          mVk->AdjustThreshold(3);
-		
+
          mButtons[TTB_StartOn]->Enable();
          mButtons[TTB_StartOff]->Enable();
          mButtons[TTB_EndOn]->Enable();
@@ -713,16 +714,16 @@ void TranscriptionToolBar::OnCalibrate(wxCommandEvent &event)
 //This automates selection through a selected region,
 //selecting its best guess for words and creating labels at those points.
 
-void TranscriptionToolBar::OnAutomateSelection(wxCommandEvent &event)
+void TranscriptionToolBar::OnAutomateSelection(wxCommandEvent & WXUNUSED(event))
 {
 
-	
+
    //If IO is busy, abort immediately
    if (gAudioIO->IsBusy())
-      {
-         SetButton(false,mButtons[TTB_EndOff]);
-         return;
-      }
+   {
+      SetButton(false,mButtons[TTB_EndOff]);
+      return;
+   }
 
    wxBusyCursor busy;
 
@@ -801,7 +802,7 @@ void TranscriptionToolBar::OnAutomateSelection(wxCommandEvent &event)
       }
 }
 
-void TranscriptionToolBar::OnMakeLabel(wxCommandEvent &event)
+void TranscriptionToolBar::OnMakeLabel(wxCommandEvent & WXUNUSED(event))
 {
    AudacityProject *p = GetActiveProject();
    SetButton(false, mButtons[TTB_MakeLabel]);  
@@ -814,7 +815,7 @@ double TranscriptionToolBar::GetSensitivity()
    return (double)mSensitivity;
 }
 
-void TranscriptionToolBar::OnSensitivitySlider(wxCommandEvent & event)
+void TranscriptionToolBar::OnSensitivitySlider(wxCommandEvent & WXUNUSED(event))
 {
    mSensitivity = (mSensitivitySlider->Get());
 }
@@ -839,7 +840,7 @@ void TranscriptionToolBar::EnableDisableButtons()
 #endif
 }
 
-void TranscriptionToolBar::SetKeyType(wxCommandEvent & event)
+void TranscriptionToolBar::SetKeyType(wxCommandEvent & WXUNUSED(event))
 {
    int value = mKeyTypeChoice->GetSelection();
 

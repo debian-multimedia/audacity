@@ -35,6 +35,7 @@
 #include "Phaser.h"
 #include "Repair.h"
 #include "Repeat.h"
+#include "Reverb.h"
 #include "Reverse.h"
 #include "Silence.h"
 #include "StereoToMono.h"
@@ -242,10 +243,10 @@ void LoadEffects()
    em.RegisterEffect(new EffectAutoDuck());
    em.RegisterEffect(new EffectBassTreble());
    em.RegisterEffect(new EffectChangeSpeed());
-	#ifdef USE_SOUNDTOUCH
-		em.RegisterEffect(new EffectChangePitch());
-		em.RegisterEffect(new EffectChangeTempo());
-	#endif
+   #ifdef USE_SOUNDTOUCH
+      em.RegisterEffect(new EffectChangePitch());
+      em.RegisterEffect(new EffectChangeTempo());
+   #endif
    em.RegisterEffect(new EffectClickRemoval());
    em.RegisterEffect(new EffectCompressor());
    em.RegisterEffect(new EffectEcho());
@@ -260,6 +261,7 @@ void LoadEffects()
    em.RegisterEffect(new EffectPhaser());
    em.RegisterEffect(new EffectRepair());
    em.RegisterEffect(new EffectRepeat());
+   em.RegisterEffect(new EffectReverb());
    em.RegisterEffect(new EffectReverse());
    em.RegisterEffect(new EffectStereoToMono(), HIDDEN_EFFECT);// NOT in normal effects list.
    em.RegisterEffect(new EffectTruncSilence(), SIMPLE_EFFECT);

@@ -162,21 +162,23 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 
    mAlgChoice->SetSelection(mAlg);
 
-   wxString sizeChoiceStrings[8] = { wxT("128"),
-      wxT("256"),
-      wxT("512"),
-      wxT("1024"),
-      wxT("2048"),
-      wxT("4096"),
-      wxT("8192"),
-      wxT("16384")
-   };
+   wxArrayString sizeChoiceStrings;
+   sizeChoiceStrings.Add(wxT("128"));
+   sizeChoiceStrings.Add(wxT("256"));
+   sizeChoiceStrings.Add(wxT("512"));
+   sizeChoiceStrings.Add(wxT("1024"));
+   sizeChoiceStrings.Add(wxT("2048"));
+   sizeChoiceStrings.Add(wxT("4096"));
+   sizeChoiceStrings.Add(wxT("8192"));
+   sizeChoiceStrings.Add(wxT("16384"));
+   sizeChoiceStrings.Add(wxT("32768"));
+   sizeChoiceStrings.Add(wxT("65536"));
 
    wxStaticText *sizeLabel = new wxStaticText(this, wxID_ANY,
                                               wxString(_("Size")) + wxT(":"));
    mSizeChoice = new wxChoice(this, FreqSizeChoiceID,
                               wxDefaultPosition, wxDefaultSize,
-                              8, sizeChoiceStrings);
+                              sizeChoiceStrings);
    mSizeChoice->SetName(_("Size"));
 
    mSizeChoice->SetSelection(mSize);
@@ -212,6 +214,11 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    mAxisChoice->SetName(_("Axis"));
 
    mAxisChoice->SetSelection(mAxis);
+   // Log-frequency axis works for spectrum plots only.
+   if (mAlg != 0) {
+      mAxis = 0;
+      mAxisChoice->Disable();
+   }
 
    mLogAxis = mAxis?true:false;
 
@@ -435,7 +442,7 @@ void FreqWindow::GetAudio()
    //wxLogDebug(wxT("Leaving FreqWindow::GetAudio()"));
 }
 
-void FreqWindow::OnSize(wxSizeEvent & event)
+void FreqWindow::OnSize(wxSizeEvent & WXUNUSED(event))
 {
    Layout();
 
@@ -611,7 +618,7 @@ void FreqWindow::PlotMouseEvent(wxMouseEvent & event)
    }
 }
 
-void FreqWindow::OnAlgChoice(wxCommandEvent & event)
+void FreqWindow::OnAlgChoice(wxCommandEvent & WXUNUSED(event))
 {
    // Log-frequency axis works for spectrum plots only.
    if (mAlgChoice->GetSelection() == 0) {
@@ -625,17 +632,17 @@ void FreqWindow::OnAlgChoice(wxCommandEvent & event)
    Recalc();
 }
 
-void FreqWindow::OnSizeChoice(wxCommandEvent & event)
+void FreqWindow::OnSizeChoice(wxCommandEvent & WXUNUSED(event))
 {
    Recalc();
 }
 
-void FreqWindow::OnFuncChoice(wxCommandEvent & event)
+void FreqWindow::OnFuncChoice(wxCommandEvent & WXUNUSED(event))
 {
    Recalc();
 }
 
-void FreqWindow::OnAxisChoice(wxCommandEvent & event)
+void FreqWindow::OnAxisChoice(wxCommandEvent & WXUNUSED(event))
 {
    mLogAxis = (mAxisChoice->GetSelection())?true:false;
 
@@ -863,8 +870,8 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
       const wxChar *pp;
 
       if (alg == 0) {
-         xpitch = PitchName_Absolute(FreqToMIDInoteNumber(xPos));
-         peakpitch = PitchName_Absolute(FreqToMIDInoteNumber(bestpeak));
+         xpitch = PitchName_Absolute(FreqToMIDInote(xPos));
+         peakpitch = PitchName_Absolute(FreqToMIDInote(bestpeak));
          xp = xpitch.c_str();
          pp = peakpitch.c_str();
          /* i18n-hint: The %d's are replaced by numbers, the %s by musical notes, e.g. A#*/
@@ -873,8 +880,8 @@ void FreqWindow::PlotPaint(wxPaintEvent & evt)
                int (value + 0.5), int (bestpeak + 0.5),
                pp, bestValue);
       } else if (xPos > 0.0 && bestpeak > 0.0) {
-         xpitch = PitchName_Absolute(FreqToMIDInoteNumber(1.0 / xPos));
-         peakpitch = PitchName_Absolute(FreqToMIDInoteNumber(1.0 / bestpeak));
+         xpitch = PitchName_Absolute(FreqToMIDInote(1.0 / xPos));
+         peakpitch = PitchName_Absolute(FreqToMIDInote(1.0 / bestpeak));
          xp = xpitch.c_str();
          pp = peakpitch.c_str();
          /* i18n-hint: The %d's are replaced by numbers, the %s by musical notes, e.g. A#
@@ -1282,7 +1289,7 @@ FreqPlot::FreqPlot(wxWindow * parent, wxWindowID id,
    freqWindow = (FreqWindow *) parent;
 }
 
-void FreqPlot::OnErase(wxEraseEvent &evt)
+void FreqPlot::OnErase(wxEraseEvent & WXUNUSED(event))
 {
    // Ignore it to prevent flashing
 }

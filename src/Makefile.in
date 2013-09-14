@@ -144,7 +144,6 @@ OBJS = \
 	effects/EffectCategory.o \
 	effects/EffectManager.o \
 	effects/SimpleMono.o \
-	effects/SimplePairedTwoTrack.o \
 	effects/SBSMSEffect.o \
 	effects/TimeScale.o \
 	effects/SoundTouchEffect.o \
@@ -172,6 +171,7 @@ OBJS = \
 	effects/Phaser.o \
 	effects/Repair.o \
 	effects/Repeat.o \
+	effects/Reverb.o \
 	effects/Reverse.o \
 	effects/Silence.o \
 	effects/StereoToMono.o \

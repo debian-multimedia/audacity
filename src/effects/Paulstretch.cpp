@@ -4,7 +4,7 @@ Audacity: A Digital Audio Editor
 
 Paulstretch.cpp
 
-Nasca Octavian Paul
+Nasca Octavian Paul (Paul Nasca)
 Some GUI code was taken from the Echo effect
 
  *******************************************************************/
@@ -129,7 +129,7 @@ class PaulStretch{
 
 
    protected:
-      virtual void process_spectrum(float *freq){};
+      virtual void process_spectrum(float *WXUNUSED(freq)){};
       float samplerate;
    private:
       float *in_pool;//de marimea in_bufsize
@@ -414,16 +414,8 @@ END_EVENT_TABLE()
    };
 
 
-void PaulstretchDialog::PopulateOrExchange(ShuttleGui & S){
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("by Nasca Octavian Paul"));
-   }
-
-   S.EndHorizontalLay();
-
-   S.StartHorizontalLay(wxCENTER, false);
-   S.EndHorizontalLay();
+void PaulstretchDialog::PopulateOrExchange(ShuttleGui & S) 
+{
    S.StartMultiColumn(2, wxALIGN_CENTER);
    {
       /* i18n-hint: This is how many times longer the sound will be, e.g. applying 
@@ -472,7 +464,7 @@ bool PaulstretchDialog::TransferDataFromWindow(){
    return true;
 }
 
-void PaulstretchDialog::OnPreview(wxCommandEvent &event){
+void PaulstretchDialog::OnPreview(wxCommandEvent & WXUNUSED(event)){
    TransferDataFromWindow();
 
    // Save & restore parameters around Preview, because we didn't do OK.

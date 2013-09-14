@@ -583,7 +583,7 @@ AudioIO::AudioIO()
          errStr += _("Error: ") + pmErrStr;
       // XXX: we are in libaudacity, popping up dialogs not allowed!  A
       // long-term solution will probably involve exceptions
-	  wxMessageBox(errStr, _("Error Initializing Midi"), wxICON_ERROR|wxOK);
+      wxMessageBox(errStr, _("Error Initializing Midi"), wxICON_ERROR|wxOK);
 
       // Same logic for PortMidi as described above for PortAudio
    }
@@ -928,7 +928,7 @@ void AudioIO::HandleDeviceChange()
 #endif   // USE_PORTMIXER
 }
 
-PaSampleFormat AudacityToPortAudioSampleFormat(sampleFormat format)
+static PaSampleFormat AudacityToPortAudioSampleFormat(sampleFormat format)
 {
    switch(format) {
    case int16Sample:
@@ -1322,18 +1322,18 @@ int AudioIO::StartStream(WaveTrackArray playbackTracks,
             }
 
             mCaptureBuffers = new RingBuffer* [mCaptureTracks.GetCount()];
-            mResample = new ConstRateResample* [mCaptureTracks.GetCount()];
+            mResample = new Resample* [mCaptureTracks.GetCount()];
             mFactor = sampleRate / mRate;
 
             // Set everything to zero in case we have to delete these due to a memory exception.
             memset(mCaptureBuffers, 0, sizeof(RingBuffer*)*mCaptureTracks.GetCount());
-            memset(mResample, 0, sizeof(ConstRateResample*)*mCaptureTracks.GetCount());
+            memset(mResample, 0, sizeof(Resample*)*mCaptureTracks.GetCount());
 
             for( unsigned int i = 0; i < mCaptureTracks.GetCount(); i++ )
             {
                mCaptureBuffers[i] = new RingBuffer( mCaptureTracks[i]->GetSampleFormat(),
                                                     captureBufferSize );
-               mResample[i] = new ConstRateResample(true, mFactor);
+               mResample[i] = new Resample(true, mFactor, mFactor); // constant rate resampling
             }
          }
       }
@@ -1429,8 +1429,8 @@ void AudioIO::StartStreamCleanup(bool bOnlyBuffers)
 
    if(mCaptureBuffers)
    {
-
-         delete mCaptureBuffers;
+      for( unsigned int i = 0; i < mCaptureTracks.GetCount(); i++ )
+         delete mCaptureBuffers[i];
       delete [] mCaptureBuffers;
       mCaptureBuffers = NULL;
    }
@@ -1438,7 +1438,7 @@ void AudioIO::StartStreamCleanup(bool bOnlyBuffers)
    if(mResample)
    {
       for( unsigned int i = 0; i < mCaptureTracks.GetCount(); i++ )
-         delete mResample;
+         delete mResample[i];
       delete [] mResample;
       mResample = NULL;
    }
@@ -3210,11 +3210,11 @@ void AudioIO::AILAProcess(double maxPeak) {
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-void DoSoftwarePlaythrough(const void *inputBuffer,
-                           sampleFormat inputFormat,
-                           int inputChannels,
-                           float *outputBuffer,
-                           int len)
+static void DoSoftwarePlaythrough(const void *inputBuffer,
+                                  sampleFormat inputFormat,
+                                  int inputChannels,
+                                  float *outputBuffer,
+                                  int len)
 {
    float *tempBuffer = (float *)alloca(len * sizeof(float));
    int i, j;

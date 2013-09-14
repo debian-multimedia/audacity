@@ -5,7 +5,7 @@
   Phaser
 
   Effect programming:
-  Nasca Octavian Paul
+  Nasca Octavian Paul (Paul Nasca)
 
   UI programming:
   Dominic Mazzoni (with the help of wxDesigner)
@@ -185,7 +185,7 @@ class PhaserDialog:public EffectDialog {
    void OnPreview(wxCommandEvent &event);
 
  private:
-	EffectPhaser * mEffect;
+   EffectPhaser * mEffect;
 
  public:
    float freq;

@@ -23,6 +23,7 @@ and libvorbis examples, Monty <monty@xiph.org>
 #ifdef USE_LIBFLAC
 
 #include "Export.h"
+#include "ExportFLAC.h"
 
 #include <wx/progdlg.h>
 #include <wx/ffile.h>
@@ -119,7 +120,7 @@ void ExportFLACOptions::PopulateOrExchange(ShuttleGui & S)
 
 /// 
 /// 
-void ExportFLACOptions::OnOK(wxCommandEvent& event)
+void ExportFLACOptions::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
@@ -220,7 +221,7 @@ int ExportFLAC::Export(AudacityProject *project,
                         double t1,
                         MixerSpec *mixerSpec,
                         Tags *metadata,
-                        int subformat)
+                        int WXUNUSED(subformat))
 {
    double    rate    = project->GetRate();
    TrackList *tracks = project->GetTracks();
@@ -253,11 +254,11 @@ int ExportFLAC::Export(AudacityProject *project,
    
    sampleFormat format;
    if (bitDepthPref == wxT("24")) {
-   	format = int24Sample;
-   	encoder.set_bits_per_sample(24);
+      format = int24Sample;
+      encoder.set_bits_per_sample(24);
    } else { //convert float to 16 bits
-    	format = int16Sample;
-   	encoder.set_bits_per_sample(16);
+      format = int16Sample;
+      encoder.set_bits_per_sample(16);
    }
 
    // Duplicate the flac command line compression levels
@@ -316,7 +317,7 @@ int ExportFLAC::Export(AudacityProject *project,
    int i, j;
    FLAC__int32 **tmpsmplbuf = new FLAC__int32*[numChannels];
    for (i = 0; i < numChannels; i++) {
-   	tmpsmplbuf[i] = (FLAC__int32 *) calloc(SAMPLES_PER_RUN, sizeof(FLAC__int32));
+      tmpsmplbuf[i] = (FLAC__int32 *) calloc(SAMPLES_PER_RUN, sizeof(FLAC__int32));
    }
 
    ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
@@ -353,7 +354,7 @@ int ExportFLAC::Export(AudacityProject *project,
    delete progress;
 
    for (i = 0; i < numChannels; i++) {
-   	free(tmpsmplbuf[i]);
+      free(tmpsmplbuf[i]);
    }
    delete mixer;
    
@@ -362,7 +363,7 @@ int ExportFLAC::Export(AudacityProject *project,
    return updateResult;
 }
 
-bool ExportFLAC::DisplayOptions(wxWindow *parent, int format)
+bool ExportFLAC::DisplayOptions(wxWindow *parent, int WXUNUSED(format))
 {
    ExportFLACOptions od(parent);
 
@@ -400,24 +401,10 @@ bool ExportFLAC::GetMetadata(AudacityProject *project, Tags *tags)
    return true;
 }
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportFLAC()
 {
    return new ExportFLAC();
 }
 
 #endif // USE_LIBFLAC
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-
 

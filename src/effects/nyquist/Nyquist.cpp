@@ -837,8 +837,8 @@ bool EffectNyquist::ProcessOne()
    }
 
    int i;
-	for (i = 0; i < mCurNumChannels; i++) {
-		mCurBuffer[i] = NULL;
+   for (i = 0; i < mCurNumChannels; i++) {
+      mCurBuffer[i] = NULL;
    }
 
    rval = nyx_eval_expression(cmd.mb_str(wxConvUTF8));
@@ -920,6 +920,13 @@ bool EffectNyquist::ProcessOne()
       return false;
    }
 
+   if (outChannels == 0) {
+      wxMessageBox(_("Nyquist returned an empty array.\n"),
+                   wxT("Nyquist"),
+                   wxOK | wxCENTRE, mParent);
+      return false;
+   }
+
    double rate = mCurTrack[0]->GetRate();
    for (i = 0; i < outChannels; i++) {
       sampleFormat format = mCurTrack[i]->GetSampleFormat();
@@ -994,7 +1001,7 @@ int EffectNyquist::StaticGetCallback(float *buffer, int channel,
 }
 
 int EffectNyquist::GetCallback(float *buffer, int ch,
-                               long start, long len, long totlen)
+                               long start, long len, long WXUNUSED(totlen))
 {
    if (mCurBuffer[ch]) {
       if ((mCurStart[ch] + start) < mCurBufferStart[ch] ||

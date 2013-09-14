@@ -147,17 +147,7 @@ void AmplifyDialog::PopulateOrExchange(ShuttleGui & S)
 {
    wxTextValidator vld(wxFILTER_NUMERIC);
 
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("by Dominic Mazzoni"));
-   }
-   S.EndHorizontalLay();
-
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      // Add a little space
-   }
-   S.EndHorizontalLay();
+   S.AddSpace(0, 5);
 
    // Amplitude
    S.StartMultiColumn(2, wxCENTER);
@@ -260,7 +250,7 @@ void AmplifyDialog::CheckClip()
    }
 }
 
-void AmplifyDialog::OnAmpText(wxCommandEvent & event)
+void AmplifyDialog::OnAmpText(wxCommandEvent & WXUNUSED(event))
 {
    wxString val = mAmpT->GetValue();
    double r;
@@ -279,7 +269,7 @@ void AmplifyDialog::OnAmpText(wxCommandEvent & event)
    CheckClip();
 }
 
-void AmplifyDialog::OnPeakText(wxCommandEvent & event)
+void AmplifyDialog::OnPeakText(wxCommandEvent & WXUNUSED(event))
 {
    wxString val = mPeakT->GetValue();
    double r;
@@ -298,7 +288,7 @@ void AmplifyDialog::OnPeakText(wxCommandEvent & event)
    CheckClip();
 }
 
-void AmplifyDialog::OnAmpSlider(wxCommandEvent & event)
+void AmplifyDialog::OnAmpSlider(wxCommandEvent & WXUNUSED(event))
 {
    wxString str;
 
@@ -323,18 +313,18 @@ void AmplifyDialog::OnAmpSlider(wxCommandEvent & event)
    CheckClip();
 }
 
-void AmplifyDialog::OnClipCheckBox(wxCommandEvent & event)
+void AmplifyDialog::OnClipCheckBox(wxCommandEvent & WXUNUSED(event))
 {
    CheckClip();
 }
 
-void AmplifyDialog::OnPreview(wxCommandEvent &event)
+void AmplifyDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
 
-	// Save & restore parameters around Preview, because we didn't do OK.
-	float oldRatio = mEffect->ratio;
-	float oldPeak = mEffect->peak;
+   // Save & restore parameters around Preview, because we didn't do OK.
+   float oldRatio = mEffect->ratio;
+   float oldPeak = mEffect->peak;
 
    mEffect->ratio = ratio;
    if (noclip && ratio*peak > 1.0)

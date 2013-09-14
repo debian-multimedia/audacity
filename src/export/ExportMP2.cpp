@@ -47,6 +47,7 @@
 #include <wx/intl.h>
 
 #include "Export.h"
+#include "ExportMP2.h"
 #include "../FileIO.h"
 #include "../Internat.h"
 #include "../Mix.h"
@@ -149,7 +150,7 @@ void ExportMP2Options::PopulateOrExchange(ShuttleGui & S)
 
 /// 
 /// 
-void ExportMP2Options::OnOK(wxCommandEvent& event)
+void ExportMP2Options::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
@@ -211,7 +212,7 @@ void ExportMP2::Destroy()
 int ExportMP2::Export(AudacityProject *project,
                int channels, wxString fName,
                bool selectionOnly, double t0, double t1, MixerSpec *mixerSpec, Tags *metadata,
-               int subformat)
+               int WXUNUSED(subformat))
 {
    bool stereo = (channels == 2);
    long bitrate = gPrefs->Read(wxT("/FileFormats/MP2Bitrate"), 160);
@@ -232,6 +233,7 @@ int ExportMP2::Export(AudacityProject *project,
    {
       wxMessageBox(_("Cannot export MP2 with this sample rate and bit rate"),
          _("Error"), wxICON_STOP);
+      twolame_close(&encodeOptions);
       return false;
    }
 
@@ -242,6 +244,7 @@ int ExportMP2::Export(AudacityProject *project,
    FileIO outFile(fName, FileIO::Output);
    if (!outFile.IsOpened()) {
       wxMessageBox(_("Unable to open target file for writing"));
+      twolame_close(&encodeOptions);
       return false;
    }
 
@@ -301,7 +304,7 @@ int ExportMP2::Export(AudacityProject *project,
 
    delete mixer;
 
-	int mp2BufferNumBytes = twolame_encode_flush(
+   int mp2BufferNumBytes = twolame_encode_flush(
       encodeOptions,
       mp2Buffer,
       mp2BufferSize);
@@ -329,7 +332,7 @@ int ExportMP2::Export(AudacityProject *project,
    return updateResult;
 }
 
-bool ExportMP2::DisplayOptions(wxWindow *parent, int format)
+bool ExportMP2::DisplayOptions(wxWindow *parent, int WXUNUSED(format))
 {
    ExportMP2Options od(parent);
 
@@ -339,7 +342,7 @@ bool ExportMP2::DisplayOptions(wxWindow *parent, int format)
 }
 
 // returns buffer len; caller frees
-int ExportMP2::AddTags(AudacityProject *project, char **buffer, bool *endOfFile, Tags *tags)
+int ExportMP2::AddTags(AudacityProject * WXUNUSED(project), char **buffer, bool *endOfFile, Tags *tags)
 {
 #ifdef USE_LIBID3TAG 
    struct id3_tag *tp = id3_tag_new();
@@ -444,24 +447,10 @@ void ExportMP2::AddFrame(struct id3_tag *tp, const wxString & n, const wxString 
 }
 #endif
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportMP2()
 {
    return new ExportMP2();
 }
 
 #endif // #ifdef USE_LIBTWOLAME
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: c6af56b1-37fa-4d95-b982-0a24b3a49c00
 

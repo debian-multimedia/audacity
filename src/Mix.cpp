@@ -286,11 +286,12 @@ Mixer::Mixer(int numInputTracks, WaveTrack **inputTracks,
    for(i=0; i<mNumInputTracks; i++) {
       double factor = (mRate / mInputTrack[i]->GetRate());
       if (timeTrack) {
-         mResample[i] = new VarRateResample(highQuality,
-                                            factor / timeTrack->GetRangeUpper(),
-                                            factor / timeTrack->GetRangeLower());
+         // variable rate resampling
+         mResample[i] = new Resample(highQuality,
+                                      factor / timeTrack->GetRangeUpper(),
+                                      factor / timeTrack->GetRangeLower());
       } else {
-         mResample[i] = new ConstRateResample(highQuality, factor);
+         mResample[i] = new Resample(highQuality, factor, factor); // constant rate resampling
       }
       mSampleQueue[i] = new float[mQueueMaxLen];
       mQueueStart[i] = 0;
@@ -317,13 +318,13 @@ Mixer::~Mixer()
    delete[] mEnvValues;
    delete[] mFloatBuffer;
    delete[] mGains;
-	delete[] mSamplePos;
+   delete[] mSamplePos;
 
    for(i=0; i<mNumInputTracks; i++) {
       delete mResample[i];
       delete[] mSampleQueue[i];
    }
-	delete[] mResample;
+   delete[] mResample;
    delete[] mSampleQueue;
    delete[] mQueueStart;
    delete[] mQueueLen;

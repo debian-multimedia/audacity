@@ -81,18 +81,6 @@ EffectNoiseRemoval::EffectNoiseRemoval()
    mWindowSize = 2048;
    mSpectrumSize = 1 + mWindowSize / 2;
 
-#ifdef CLEANSPEECH
-   gPrefs->Read(wxT("/CsPresets/NoiseSensitivity"),
-                &mSensitivity, 0.0);
-   gPrefs->Read(wxT("/CsPresets/NoiseGain"),
-                &mNoiseGain, -24.0);
-   gPrefs->Read(wxT("/CsPresets/NoiseFreqSmoothing"),
-                &mFreqSmoothingHz, 150.0);
-   gPrefs->Read(wxT("/CsPresets/NoiseAttackDecayTime"),
-                &mAttackDecayTime, 0.15);
-   gPrefs->Read(wxT("/CsPresets/NoiseLeaveNoise"),
-                &mbLeaveNoise, false);
-#else   // CLEANSPEECH
    gPrefs->Read(wxT("/Effects/NoiseRemoval/NoiseSensitivity"),
                 &mSensitivity, 0.0);
    gPrefs->Read(wxT("/Effects/NoiseRemoval/NoiseGain"),
@@ -103,7 +91,6 @@ EffectNoiseRemoval::EffectNoiseRemoval()
                 &mAttackDecayTime, 0.15);
    gPrefs->Read(wxT("/Effects/NoiseRemoval/NoiseLeaveNoise"),
                 &mbLeaveNoise, false);
-#endif   // CLEANSPEECH
 //   mbLeaveNoise = false;
 
 
@@ -113,14 +100,6 @@ EffectNoiseRemoval::EffectNoiseRemoval()
 
    mNoiseThreshold = new float[mSpectrumSize];
 
-#ifdef CLEANSPEECH
-   // This sequence is safe, even if not in CleanSpeechMode
-   wxGetApp().SetCleanSpeechNoiseGate(mNoiseThreshold);
-   wxGetApp().SetCleanSpeechNoiseGateExpectedCount(
-      mSpectrumSize * sizeof(float));
-   CleanSpeechMayReadNoisegate();
-#endif   // CLEANSPEECH
-
    Init();
 }
 
@@ -129,115 +108,14 @@ EffectNoiseRemoval::~EffectNoiseRemoval()
    delete [] mNoiseThreshold;
 }
 
-#ifdef CLEANSPEECH
-void EffectNoiseRemoval::CleanSpeechMayReadNoisegate()
-{
-   int halfWindowSize = mWindowSize / 2;
-
-   //lda-131a always try to get noisegate.nrp if in CleanSpeechMode
-   // and it exists
-   AudacityProject * project = GetActiveProject();
-   if (project == NULL) {
-      //int mode = gPrefs->Read(wxT("/Batch/CleanSpeechMode"), 0L);
-      int mode = 0;
-      if (mode == 0) {
-         return;
-      }
-   }
-
-   // Try to open the file.
-   if( !wxDirExists( FileNames::NRPDir() ))
-      return;
-
-   // if file doesn't exist, return quietly.
-   wxString fileName = FileNames::NRPFile();
-   if( !wxFileExists( fileName ))
-      return;
-
-   wxFFile noiseGateFile(fileName, wxT("rb"));
-   bool flag = noiseGateFile.IsOpened();
-   if (flag != true)
-      return;
-
-   // Now get its data.
-   int expectedCount = halfWindowSize * sizeof(float);
-   int count = noiseGateFile.Read(mNoiseThreshold, expectedCount);
-   noiseGateFile.Close();
-   if (count == expectedCount) {
-      for (int i = halfWindowSize; i < mSpectrumSize; ++i) {
-         mNoiseThreshold[i] = float(0.0);  // only partly filled by Read?
-      }
-      mHasProfile = true;
-      mDoProfile = false;
-   }
-}
-
-void EffectNoiseRemoval::CleanSpeechMayWriteNoiseGate()
-{
-   AudacityProject * project = GetActiveProject();
-   if( !project || !project->GetCleanSpeechMode() )
-      return;
-
-   // code borrowed from ThemeBase::SaveComponents() - MJS
-   // IF directory doesn't exist THEN create it
-   if( !wxDirExists( FileNames::NRPDir() ))
-   {
-      /// \bug 1 in wxWidgets documentation; wxMkDir returns false if 
-      /// directory didn't exist, even if it successfully creates it.
-      /// so we create and then test if it exists instead.
-      /// \bug 2 in wxWidgets documentation; wxMkDir has only one argument
-      /// under MSW
-#ifdef __WXMSW__
-      wxMkDir( FileNames::NRPDir().fn_str() );
-#else
-      wxMkDir( FileNames::NRPDir().fn_str(), 0700 );
-#endif
-      if( !wxDirExists( FileNames::NRPDir() ))
-      {
-         wxMessageBox(
-            wxString::Format( 
-            _("Could not create directory:\n  %s"),
-               FileNames::NRPDir().c_str() ));
-         return;
-      }
-   }
-
-   wxString fileName = FileNames::NRPFile();
-   fileName = PlatformCompatibility::GetLongFileName(fileName);
-   wxFFile noiseGateFile(fileName, wxT("wb"));
-   bool flag = noiseGateFile.IsOpened();
-   if (flag == true) {
-      int expectedCount = (mWindowSize / 2) * sizeof(float);
-      // FIX-ME: Should we check return value on Write?
-      noiseGateFile.Write(mNoiseThreshold, expectedCount);
-      noiseGateFile.Close();
-   }
-   else {
-      wxMessageBox(
-         wxString::Format( 
-         _("Could not open file:\n  %s"), fileName.c_str() ));
-      return;
-   }
-}
-
-#endif   // CLEANSPEECH
-
 #define MAX_NOISE_LEVEL  30
 bool EffectNoiseRemoval::Init()
 {
-#ifdef CLEANSPEECH
-   mLevel = gPrefs->Read(wxT("/CsPresets/Noise_Level"), 3L);
-   if ((mLevel < 0) || (mLevel > MAX_NOISE_LEVEL)) {  // corrupted Prefs?
-      mLevel = 0;  //Off-skip
-      gPrefs->Write(wxT("/CsPresets/Noise_Level"), mLevel);
-   }
-#else   // CLEANSPEECH
    mLevel = gPrefs->Read(wxT("/Effects/NoiseRemoval/Noise_Level"), 3L);
    if ((mLevel < 0) || (mLevel > MAX_NOISE_LEVEL)) {  // corrupted Prefs?
       mLevel = 0;  //Off-skip
       gPrefs->Write(wxT("/Effects/NoiseRemoval/Noise_Level"), mLevel);
    }
-#endif   // CLEANSPEECH
    return gPrefs->Flush();
 }
 
@@ -257,15 +135,6 @@ bool EffectNoiseRemoval::PromptUser()
    dlog.mbLeaveNoise = mbLeaveNoise;
    dlog.mKeepSignal->SetValue(!mbLeaveNoise);
    dlog.mKeepNoise->SetValue(mbLeaveNoise);
-
-#ifdef CLEANSPEECH
-   if( !mHasProfile )
-   {
-      AudacityProject * p = GetActiveProject();
-      if (p->GetCleanSpeechMode())
-         CleanSpeechMayReadNoisegate();
-   }
-#endif   // CLEANSPEECH
 
    // We may want to twiddle the levels if we are setting
    // from an automation dialog, the only case in which we can
@@ -294,25 +163,18 @@ bool EffectNoiseRemoval::PromptUser()
    mFreqSmoothingHz = dlog.mFreq;
    mAttackDecayTime = dlog.mTime;
    mbLeaveNoise = dlog.mbLeaveNoise;
-#ifdef CLEANSPEECH
-   gPrefs->Write(wxT("/CsPresets/NoiseSensitivity"), mSensitivity);
-   gPrefs->Write(wxT("/CsPresets/NoiseGain"), mNoiseGain);
-   gPrefs->Write(wxT("/CsPresets/NoiseFreqSmoothing"), mFreqSmoothingHz);
-   gPrefs->Write(wxT("/CsPresets/NoiseAttackDecayTime"), mAttackDecayTime);
-   gPrefs->Write(wxT("/CsPresets/NoiseLeaveNoise"), mbLeaveNoise);
-#else   // CLEANSPEECH
+
    gPrefs->Write(wxT("/Effects/NoiseRemoval/NoiseSensitivity"), mSensitivity);
    gPrefs->Write(wxT("/Effects/NoiseRemoval/NoiseGain"), mNoiseGain);
    gPrefs->Write(wxT("/Effects/NoiseRemoval/NoiseFreqSmoothing"), mFreqSmoothingHz);
    gPrefs->Write(wxT("/Effects/NoiseRemoval/NoiseAttackDecayTime"), mAttackDecayTime);
    gPrefs->Write(wxT("/Effects/NoiseRemoval/NoiseLeaveNoise"), mbLeaveNoise);
-#endif   // CLEANSPEECH
 
    mDoProfile = (dlog.GetReturnCode() == 1);
    return gPrefs->Flush();
 }
    
-bool EffectNoiseRemoval::TransferParameters( Shuttle & shuttle )
+bool EffectNoiseRemoval::TransferParameters( Shuttle & WXUNUSED(shuttle) )
 {  
    //shuttle.TransferDouble(wxT("Gain"), mNoiseGain, 0.0);
    //shuttle.TransferDouble(wxT("Freq"), mFreqSmoothingHz, 0.0);
@@ -322,19 +184,6 @@ bool EffectNoiseRemoval::TransferParameters( Shuttle & shuttle )
 
 bool EffectNoiseRemoval::Process()
 {
-#ifdef CLEANSPEECH
-   if (!mDoProfile && !mHasProfile)
-      CleanSpeechMayReadNoisegate();
-   
-   // If we still don't have a profile we have a problem.
-   // This should only happen in CleanSpeech.
-   if(!mDoProfile && !mHasProfile) {
-      wxMessageBox(
-        _("Attempt to run Noise Removal without a noise profile.\n"));
-      return false;
-   }
-#endif   // CLEANSPEECH
-
    Initialize();
 
    // This same code will both remove noise and profile it,
@@ -367,9 +216,6 @@ bool EffectNoiseRemoval::Process()
    }
 
    if (bGoodResult && mDoProfile) {
-#ifdef CLEANSPEECH
-      CleanSpeechMayWriteNoiseGate();
-#endif   // CLEANSPEECH
       mHasProfile = true;
       mDoProfile = false;
    }
@@ -833,17 +679,17 @@ NoiseRemovalDialog::NoiseRemovalDialog(EffectNoiseRemoval * effect,
       (wxButton *)wxWindow::FindWindowById(wxID_OK, this);
 }
 
-void NoiseRemovalDialog::OnGetProfile( wxCommandEvent &event )
+void NoiseRemovalDialog::OnGetProfile( wxCommandEvent & WXUNUSED(event))
 {
    EndModal(1);
 }
 
-void NoiseRemovalDialog::OnKeepNoise( wxCommandEvent &event )
+void NoiseRemovalDialog::OnKeepNoise( wxCommandEvent & WXUNUSED(event))
 {
    mbLeaveNoise = mKeepNoise->GetValue();
 }
 
-void NoiseRemovalDialog::OnPreview(wxCommandEvent &event)
+void NoiseRemovalDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    // Save & restore parameters around Preview, because we didn't do OK.
    bool oldDoProfile = m_pEffect->mDoProfile;
@@ -872,89 +718,35 @@ void NoiseRemovalDialog::OnPreview(wxCommandEvent &event)
    m_pEffect->mDoProfile = oldDoProfile;
 }
 
-void NoiseRemovalDialog::OnRemoveNoise( wxCommandEvent &event )
+void NoiseRemovalDialog::OnRemoveNoise( wxCommandEvent & WXUNUSED(event))
 {
    mbLeaveNoise = mKeepNoise->GetValue();
    EndModal(2);
 }
 
-void NoiseRemovalDialog::OnCancel(wxCommandEvent &event)
+void NoiseRemovalDialog::OnCancel(wxCommandEvent & WXUNUSED(event))
 {
    EndModal(0);
 }
 
 void NoiseRemovalDialog::PopulateOrExchange(ShuttleGui & S)
 {
-   wxString step1Label;
-   wxString step1Prompt;
-   wxString step2Label;
-   wxString step2Prompt;
-
-#ifdef CLEANSPEECH
-   bool bCleanSpeechMode = false;
-
-   AudacityProject * project = GetActiveProject();
-   if( project && project->GetCleanSpeechMode() ) {
-      bCleanSpeechMode = true;
-   }
-
-   if (bCleanSpeechMode) {
-      // We're not marking these as translatable because most people
-      // don't use CleanSpeech so it'd be a waste of time for most
-      // translators
-      step1Label = wxT("Preparation Step");
-      step1Prompt = wxT("Listen carefully to section with some speech "
-                        wxT("and some silence to check before/after.\n")
-                        wxT("Select a few seconds of just noise ('thinner' ")
-                        wxT("part of wave pattern usually between\nspoken ")
-                        wxT("phrases or during pauses) so Audacity knows ")
-                        wxT("what to filter out, then click"));
-      step2Label = wxT("Actually Remove Noise");
-      step2Prompt = wxT("Select what part of the audio you want filtered "
-                        wxT("(Ctrl-A = All), chose how much noise\nyou want ")
-                        wxT("filtered out with sliders below, and then click ")
-                        wxT("'OK' to remove noise.\nFind best setting with ")
-                        wxT("Ctrl-Z to Undo, Select All, and change ")
-                        wxT("the slider positions."));
-   }
-   else {
-      step1Label = _("Step 1");
-      step1Prompt = _("Select a few seconds of just noise so Audacity knows what to filter out,\nthen click Get Noise Profile:");
-      step2Label = _("Step 2");
-      step2Prompt = _("Select all of the audio you want filtered, choose how much noise you want\nfiltered out, and then click 'OK' to remove noise.\n");
-   }
-#else
-   step1Label = _("Step 1");
-   step1Prompt = _("Select a few seconds of just noise so Audacity knows what to filter out,\nthen click Get Noise Profile:");
-   step2Label = _("Step 2");
-   step2Prompt = _("Select all of the audio you want filtered, choose how much noise you want\nfiltered out, and then click 'OK' to remove noise.\n");
-#endif   // CLEANSPEECH
-
-   S.StartHorizontalLay(wxCENTER, false);
+   S.StartStatic(_("Step 1"));
    {
-      S.AddTitle(_("Noise Removal by Dominic Mazzoni"));
-   }
-   S.EndHorizontalLay();
-   
-   S.StartStatic(step1Label);
-   {
-      S.AddVariableText(step1Prompt);
-      m_pButton_GetProfile = S.Id(ID_BUTTON_GETPROFILE).
-         AddButton(_("&Get Noise Profile"));
+      S.AddVariableText(_("Select a few seconds of just noise so Audacity knows what to filter out,\nthen click Get Noise Profile:"));
+      m_pButton_GetProfile = S.Id(ID_BUTTON_GETPROFILE).AddButton(_("&Get Noise Profile"));
    }
    S.EndStatic();
 
-   S.StartStatic(step2Label);
+   S.StartStatic(_("Step 2"));
    {
-      S.AddVariableText(step2Prompt);
+      S.AddVariableText(_("Select all of the audio you want filtered, choose how much noise you want\nfiltered out, and then click 'OK' to remove noise.\n"));
 
       S.StartMultiColumn(3, wxEXPAND);
       S.SetStretchyCol(2);
       {
          wxTextValidator vld(wxFILTER_NUMERIC);
-         mGainT = S.Id(ID_GAIN_TEXT).AddTextBox(_("Noise re&duction (dB):"),
-                                                wxT(""),
-                                                0);
+         mGainT = S.Id(ID_GAIN_TEXT).AddTextBox(_("Noise re&duction (dB):"), wxT(""), 0);
          S.SetStyle(wxSL_HORIZONTAL);
          mGainT->SetValidator(vld);
          mGainS = S.Id(ID_GAIN_SLIDER).AddSlider(wxT(""), 0, GAIN_MAX);
@@ -1026,49 +818,49 @@ bool NoiseRemovalDialog::TransferDataFromWindow()
    return true;
 }
 
-void NoiseRemovalDialog::OnSensitivityText(wxCommandEvent & event)
+void NoiseRemovalDialog::OnSensitivityText(wxCommandEvent & WXUNUSED(event))
 {
    mSensitivityT->GetValue().ToDouble(&mSensitivity);
    mSensitivityS->SetValue(TrapLong(mSensitivity*100.0 + (SENSITIVITY_MAX-SENSITIVITY_MIN+1)/2.0, SENSITIVITY_MIN, SENSITIVITY_MAX));
 }
 
-void NoiseRemovalDialog::OnGainText(wxCommandEvent & event)
+void NoiseRemovalDialog::OnGainText(wxCommandEvent & WXUNUSED(event))
 {
    mGainT->GetValue().ToDouble(&mGain);
    mGainS->SetValue(TrapLong(mGain, GAIN_MIN, GAIN_MAX));
 }
 
-void NoiseRemovalDialog::OnFreqText(wxCommandEvent & event)
+void NoiseRemovalDialog::OnFreqText(wxCommandEvent & WXUNUSED(event))
 {
    mFreqT->GetValue().ToDouble(&mFreq);
    mFreqS->SetValue(TrapLong(mFreq / 10, FREQ_MIN, FREQ_MAX));
 }
 
-void NoiseRemovalDialog::OnTimeText(wxCommandEvent & event)
+void NoiseRemovalDialog::OnTimeText(wxCommandEvent & WXUNUSED(event))
 {
    mTimeT->GetValue().ToDouble(&mTime);
    mTimeS->SetValue(TrapLong(mTime * TIME_MAX + 0.5, TIME_MIN, TIME_MAX));
 }
 
-void NoiseRemovalDialog::OnSensitivitySlider(wxCommandEvent & event)
+void NoiseRemovalDialog::OnSensitivitySlider(wxCommandEvent & WXUNUSED(event))
 {
    mSensitivity = mSensitivityS->GetValue()/100.0 - 20.0;
    mSensitivityT->SetValue(wxString::Format(wxT("%.2f"), mSensitivity));
 }
 
-void NoiseRemovalDialog::OnGainSlider(wxCommandEvent & event)
+void NoiseRemovalDialog::OnGainSlider(wxCommandEvent & WXUNUSED(event))
 {
    mGain = mGainS->GetValue();
    mGainT->SetValue(wxString::Format(wxT("%d"), (int)mGain));
 }
 
-void NoiseRemovalDialog::OnFreqSlider(wxCommandEvent & event)
+void NoiseRemovalDialog::OnFreqSlider(wxCommandEvent & WXUNUSED(event))
 {
    mFreq = mFreqS->GetValue() * 10;
    mFreqT->SetValue(wxString::Format(wxT("%d"), (int)mFreq));
 }
 
-void NoiseRemovalDialog::OnTimeSlider(wxCommandEvent & event)
+void NoiseRemovalDialog::OnTimeSlider(wxCommandEvent & WXUNUSED(event))
 {
    mTime = mTimeS->GetValue() / (TIME_MAX*1.0);
    mTimeT->SetValue(wxString::Format(wxT("%.2f"), mTime));

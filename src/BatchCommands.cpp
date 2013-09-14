@@ -54,19 +54,16 @@ enum eCommandType { CtEffect, CtMenu, CtSpecial };
 wxString SpecialCommands[] = {
    wxT("NoAction"),
    // wxT("Import"),   // non-functioning
-   wxT("SaveMP3_56k_before"),
-   wxT("SaveMP3_56k_after"),
+   wxT("ExportMP3_56k_before"),
+   wxT("ExportMP3_56k_after"),
    wxT("StereoToMono"),
-   wxT("ExportFlac"),
-   wxT("ExportMp3"),
+   wxT("ExportFLAC"),
+   wxT("ExportMP3"),
    wxT("ExportOgg"),
-   wxT("ExportWav")
+   wxT("ExportWAV")
 };
 // end CLEANSPEECH remnant
 
-#ifdef CLEANSPEECH
-static const wxString CleanSpeech = wxT("CleanSpeech");
-#endif   // CLEANSPEECH
 static const wxString MP3Conversion = wxT("MP3 Conversion");
 
 BatchCommands::BatchCommands()
@@ -74,13 +71,6 @@ BatchCommands::BatchCommands()
    ResetChain();
 
    wxArrayString names = GetNames();
-#ifdef CLEANSPEECH   // possibly the rest of this fn
-   if (names.Index(CleanSpeech) == wxNOT_FOUND) {
-      AddChain(CleanSpeech);
-      RestoreChain(CleanSpeech);
-      WriteChain(CleanSpeech);
-   }
-#endif   // CLEANSPEECH
 
    if (names.Index(MP3Conversion) == wxNOT_FOUND) {
       AddChain(MP3Conversion);
@@ -144,6 +134,18 @@ bool BatchCommands::ReadChain(const wxString & chain)
          // Parse and clean
          wxString cmd = tf[i].Left(splitAt).Strip(wxString::both);
          wxString parm = tf[i].Mid(splitAt + 1).Strip(wxString::trailing);
+         
+         // Backward compatibility for old Chain scripts
+         if (cmd == wxT("SaveMP3_56k_before"))
+            cmd = wxT("ExportMP3_56k_before");
+         else if (cmd == wxT("SaveMP3_56k_after"))
+            cmd = wxT("ExportMP3_56k_after");
+         else if (cmd == wxT("ExportFlac"))
+            cmd = wxT("ExportFLAC");
+         else if (cmd == wxT("ExportMp3"))
+            cmd = wxT("ExportMP3");
+         else if (cmd == wxT("ExportWav"))
+            cmd = wxT("ExportWAV");
 
          // Add to lists
          mCommandChain.Add(cmd);
@@ -185,6 +187,18 @@ bool BatchCommands::WriteChain(const wxString & chain)
    // Copy over the commands
    int lines = mCommandChain.GetCount();
    for (int i = 0; i < lines; i++) {
+      // restore deprecated commands in chain script
+      if (mCommandChain[i] == wxT("ExportMP3_56k_before"))
+         mCommandChain[i] = wxT("SaveMP3_56k_before");
+      else if (mCommandChain[i] == wxT("ExportMP3_56k_after"))
+         mCommandChain[i] = wxT("SaveMP3_56k_after");
+      else if (mCommandChain[i] == wxT("ExportFLAC"))
+         mCommandChain[i] = wxT("ExportFlac");
+      else if (mCommandChain[i] == wxT("ExportMP3"))
+         mCommandChain[i] = wxT("ExportMp3");
+      else if (mCommandChain[i] == wxT("ExportWAV"))
+         mCommandChain[i] = wxT("ExportWav");
+
       tf.AddLine(mCommandChain[i] + wxT(":") + mParamsChain[ i ]);
    }
 
@@ -228,32 +242,12 @@ bool BatchCommands::RenameChain(const wxString & oldchain, const wxString & newc
    return wxRenameFile(oname.GetFullPath(), nname.GetFullPath());
 }
 
-#ifdef CLEANSPEECH
-void BatchCommands::SetCleanSpeechChain()
-{
-   ResetChain();
-
-// TIDY-ME: Effects change their name with localisation.
-// Commands (at least currently) don't.  Messy.
-
-/* i18n-hint: Effect name translations must agree with those used elsewhere, or batch won't find them */
-   AddToChain( wxT("StereoToMono") );
-   AddToChain( wxT("Normalize") );
-   AddToChain( wxT("SaveMP3_56k_before") );
-   AddToChain( wxT("NoiseRemoval") );
-   AddToChain( wxT("TruncateSilence") );
-   AddToChain( wxT("Leveller") );
-   AddToChain( wxT("Normalize") );
-   AddToChain( wxT("ExportMp3") );
-}
-#endif   // CLEANSPEECH
-
 void BatchCommands::SetWavToMp3Chain() // a function per default chain?  This is flawed design!  MJS
 {
    ResetChain();
  
    AddToChain( wxT("Normalize") );
-   AddToChain( wxT("ExportMp3") );
+   AddToChain( wxT("ExportMP3") );
 }
 
 // Gets all commands that are valid for this mode.
@@ -278,10 +272,6 @@ wxArrayString BatchCommands::GetAllCommands()
    // end CLEANSPEECH remnant
    
    int additionalEffects=ADVANCED_EFFECT;
-#ifdef CLEANSPEECH
-   if( project->GetCleanSpeechMode() )
-       additionalEffects = 0;
-#endif   // CLEANSPEECH
 
    effects = EffectManager::Get().GetEffects(PROCESS_EFFECT | BUILTIN_EFFECT | PLUGIN_EFFECT | additionalEffects);
    for(i=0; i<effects->GetCount(); i++) {
@@ -427,40 +417,49 @@ bool BatchCommands::WriteMp3File( const wxString Name, int bitrate )
 // and think again.  
 // ======= IMPORTANT ========
 // CLEANSPEECH remnant
-bool BatchCommands::ApplySpecialCommand(int iCommand, const wxString command,const wxString params)
+bool BatchCommands::ApplySpecialCommand(int WXUNUSED(iCommand), const wxString command,const wxString params)
 {
    if (ReportAndSkip(command, params))
       return true;
 
    AudacityProject *project = GetActiveProject();
 
-   int numChannels = 1;		//used to switch between mono and stereo export
+   int numChannels = 1;    //used to switch between mono and stereo export
    if (IsMono()) {
-      numChannels = 1;	//export in mono
+      numChannels = 1;  //export in mono
    } else {
-      numChannels = 2;	//export in stereo
+      numChannels = 2;  //export in stereo
    }
 
    wxString filename;
+   wxString extension; // required for correct message
+   if (command == wxT("ExportWAV"))
+      extension = wxT(".wav");
+   else if (command == wxT("ExportOgg"))
+      extension = wxT(".ogg");
+   else if (command == wxT("ExportFLAC"))
+      extension = wxT(".flac");
+   else extension = wxT(".mp3");
+
    if (mFileName.IsEmpty()) {   
-      filename = project->BuildCleanFileName(project->GetFileName());
+      filename = project->BuildCleanFileName(project->GetFileName(), extension);
    }
    else {
-      filename = project->BuildCleanFileName(mFileName);
+      filename = project->BuildCleanFileName(mFileName, extension);
    }
 
    // We have a command index, but we don't use it!
    // TODO: Make this special-batch-command code use the menu item code....
-   // FIX-ME: No error reporting on write file failure in batch mode.
+   // FIXME: No error reporting on write file failure in batch mode.
    if (command == wxT("NoAction")) {
       return true;
    } else if (!mFileName.IsEmpty() && command == wxT("Import")) {
       // historically this was in use, now ignored if there
       return true;
-   } else if (command == wxT("SaveMP3_56k_before")) {
+   } else if (command == wxT("ExportMP3_56k_before")) {
       filename.Replace(wxT("cleaned/"), wxT("cleaned/MasterBefore_"), false);
       return WriteMp3File(filename, 56);
-   } else if (command == wxT("SaveMP3_56k_after")) {
+   } else if (command == wxT("ExportMP3_56k_after")) {
       filename.Replace(wxT("cleaned/"), wxT("cleaned/MasterAfter_"), false);
       return WriteMp3File(filename, 56);
    } else if (command == wxT("StereoToMono")) {
@@ -471,9 +470,9 @@ bool BatchCommands::ApplySpecialCommand(int iCommand, const wxString command,con
       }
       wxMessageBox(_("Stereo to Mono Effect not found"));
       return false;
-   } else if (command == wxT("ExportMp3")) {
+   } else if (command == wxT("ExportMP3")) {
       return WriteMp3File(filename, 0); // 0 bitrate means use default/current
-   } else if (command == wxT("ExportWav")) {
+   } else if (command == wxT("ExportWAV")) {
       filename.Replace(wxT(".mp3"), wxT(".wav"), false);
       double endTime = GetEndTime();
       if (endTime <= 0.0f) {
@@ -492,7 +491,7 @@ bool BatchCommands::ApplySpecialCommand(int iCommand, const wxString command,con
       wxMessageBox(_("Ogg Vorbis support is not included in this build of Audacity"));
       return false;
 #endif
-   } else if (command == wxT("ExportFlac")) {
+   } else if (command == wxT("ExportFLAC")) {
 #ifdef USE_LIBFLAC
       filename.Replace(wxT(".mp3"), wxT(".flac"), false);
       double endTime = GetEndTime();
@@ -537,7 +536,7 @@ bool BatchCommands::ApplyEffectCommand(   Effect * f, const wxString command, co
 
    AudacityProject *project = GetActiveProject();
 
-   //FIX-ME: for later versions may want to not select-all in batch mode.
+   //FIXME: for later versions may want to not select-all in batch mode.
    //IF nothing selected, THEN select everything 
    // (most effects require that you have something selected).
    project->SelectAllIfNone();
@@ -713,14 +712,8 @@ wxArrayString BatchCommands::GetNames()
 
 bool BatchCommands::IsFixed(const wxString & name)
 {
-#ifdef CLEANSPEECH   // probably the rest of this fn as well
-   if (name == CleanSpeech || name == MP3Conversion) {
-      return true;
-   }
-#else
    if (name == MP3Conversion)
       return true;
-#endif   // CLEANSPEECH
    return false;
 }
 
@@ -729,19 +722,8 @@ void BatchCommands::RestoreChain(const wxString & name)
 // TIDY-ME: Effects change their name with localisation.
 // Commands (at least currently) don't.  Messy.
 
-#ifdef CLEANSPEECH
-/* i18n-hint: Effect name translations must agree with those used elsewhere, or batch won't find them */
-
-   if (name == CleanSpeech) {
-      SetCleanSpeechChain();
-   }
-   else if (name == MP3Conversion) {
-      SetWavToMp3Chain();
-   }
-#else
    if (name == MP3Conversion)
       SetWavToMp3Chain();
-#endif   // CLEANSPEECH
 }
 
 void BatchCommands::Split(const wxString & str, wxString & command, wxString & param)

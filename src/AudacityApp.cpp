@@ -214,7 +214,7 @@ DEFINE_EVENT_TYPE(EVT_RELEASE_KEYBOARD);
 DEFINE_EVENT_TYPE(EVT_CAPTURE_KEY);
 
 #ifdef __WXGTK__
-void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg)
+static void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg)
 {
    if (msg)
       printf("ASSERTION FAILED: %s\n%s: %d\n", (const char *)wxString(msg).mb_str(), (const char *)wxString(fileName).mb_str(), lineNumber);
@@ -461,10 +461,10 @@ typedef void (*_gnome_interaction_key_return_fn)(gint, gboolean);
 static _gnome_client_request_interaction_fn gnome_client_request_interaction;
 static _gnome_interaction_key_return_fn gnome_interaction_key_return;
 
-void interact_cb(GnomeClient *client,
-                 gint key,
-                 GnomeDialogType type,
-                 gpointer data)
+static void interact_cb(GnomeClient *client,
+                        gint key,
+                        GnomeDialogType type,
+                        gpointer data)
 {
    wxCloseEvent e(wxEVT_QUERY_END_SESSION, wxID_ANY);
    e.SetEventObject(&wxGetApp());
@@ -475,13 +475,13 @@ void interact_cb(GnomeClient *client,
    gnome_interaction_key_return(key, e.GetVeto());
 }
 
-gboolean save_yourself_cb(GnomeClient *client,
-                          gint phase,
-                          GnomeSaveStyle style,
-                          gboolean shutdown,
-                          GnomeInteractStyle interact,
-                          gboolean fast,
-                          gpointer user_data)
+static gboolean save_yourself_cb(GnomeClient *client,
+                                 gint phase,
+                                 GnomeSaveStyle style,
+                                 gboolean shutdown,
+                                 GnomeInteractStyle interact,
+                                 gboolean fast,
+                                 gpointer user_data)
 {
    if (!shutdown || interact != GNOME_INTERACT_ANY) {
       return TRUE;
@@ -589,10 +589,10 @@ public:
    {
    };
 
-   bool OnExecute(const wxString & topic,
+   bool OnExecute(const wxString & WXUNUSED(topic),
                   wxChar *data,
-                  int size,
-                  wxIPCFormat format)
+                  int WXUNUSED(size),
+                  wxIPCFormat WXUNUSED(format))
    {
       if (!gInited) {
          return false;
@@ -641,11 +641,39 @@ public:
 
 #endif //__WXMSW__
 
+#ifndef __WXMAC__
 IMPLEMENT_APP(AudacityApp)
 /* make the application class known to wxWidgets for dynamic construction */
+#endif
 
 #ifdef __WXMAC__
+// This should be removed when Lame and FFmpeg support is converted
+// from loadable libraries to commands.mLogger
+//
+// The purpose of this is to give the user more control over where libraries
+// such as Lame and FFmpeg get loaded from.
+//
+// Since absolute pathnames are used when loading these libraries, the normal search
+// path would be DYLD_LIBRARY_PATH, absolute path, DYLD_FALLBACK_LIBRARY_PATH.  This
+// means that DYLD_LIBRARY_PATH can override what the user actually wants.
+//
+// So, we simply clear DYLD_LIBRARY_PATH to allow the users choice to be the first
+// one tried.
+IMPLEMENT_APP_NO_MAIN(AudacityApp)
+IMPLEMENT_WX_THEME_SUPPORT
+int main(int argc, char *argv[])
+{
+   if (getenv("DYLD_LIBRARY_PATH")) {
+      extern char **environ;
 
+      unsetenv("DYLD_LIBRARY_PATH");
+      execve(argv[0], argv, environ);
+   }
+   return wxEntry(argc, argv);
+}
+#endif
+
+#ifdef __WXMAC__
 #include <wx/recguard.h>
 
 // in response of an open-document apple event
@@ -709,7 +737,7 @@ void AudacityApp::OnMacOpenFile(wxCommandEvent & event)
    while (ofqueue.GetCount()) {
       wxString name(ofqueue[0]);
       ofqueue.RemoveAt(0);
-      MRUOpen(name); // FIX-ME: Check the return result?
+      wxASSERT(MRUOpen(name)); // FIXME: Check the return result? Meantime, assert it so failure shows in debug build. 
    }
 }
 #endif //__WXMAC__
@@ -766,7 +794,7 @@ bool AudacityApp::MRUOpen(wxString fullPathStr) {
          // Make sure it isn't already open.
          // Test here even though AudacityProject::OpenFile() also now checks, because 
          // that method does not return the bad result. 
-         // That itself may be a FIX-ME.
+         // That itself may be a FIXME.
          if (AudacityProject::IsAlreadyOpen(fullPathStr))
             return false;
          
@@ -798,7 +826,7 @@ bool AudacityApp::MRUOpen(wxString fullPathStr) {
    return(true);
 }
 
-void AudacityApp::OnMRUClear(wxCommandEvent& event)
+void AudacityApp::OnMRUClear(wxCommandEvent& WXUNUSED(event))
 {
    mRecentFiles->Clear();
 }
@@ -819,7 +847,7 @@ void AudacityApp::OnMRUFile(wxCommandEvent& event) {
       mRecentFiles->RemoveFileFromHistory(n);
 }
 
-void AudacityApp::OnTimer(wxTimerEvent& event)
+void AudacityApp::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
    // Check if a warning for missing aliased files should be displayed
    if (ShouldShowMissingAliasedFileWarning()) {
@@ -985,13 +1013,6 @@ bool AudacityApp::OnInit()
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
 #endif
 
-#ifdef CLEANSPEECH
-//MERGE:
-//Everything now uses Audacity name for preferences.
-//(Audacity and CleanSpeech the same program and use
-//the same preferences file).
-//
-#endif   // CLEANSPEECH
 // LL: Moved here from InitPreferences() to ensure VST effect
 //     discovery writes configuration to the correct directory
 //     on OSX with case-sensitive file systems.
@@ -1053,9 +1074,6 @@ bool AudacityApp::OnInit()
    //
 
    wxString home = wxGetHomeDir();
-#ifdef CLEANSPEECH
-   mAppHomeDir = home;
-#endif   // CLEANSPEECH
    theTheme.EnsureInitialised();
 
    // AColor depends on theTheme.
@@ -1138,14 +1156,11 @@ bool AudacityApp::OnInit()
    wxFrame *temporarywindow = new wxFrame(NULL, -1, wxT("temporarytopwindow"));
    SetTopWindow(temporarywindow);
 
-   // Initialize the ModuleManager
-   ModuleManager::Initialize();
-
    // Initialize the CommandHandler
    InitCommandHandler();
 
-   // load audacity plug-in modules
-   LoadModules(*mCmdHandler);
+   // Initialize the ModuleManager, including loading found modules
+   ModuleManager::Initialize(*mCmdHandler);
 
    // Locale
    // wxWidgets 2.3 has a much nicer wxLocale API.  We can make this code much
@@ -1156,18 +1171,6 @@ bool AudacityApp::OnInit()
    if (lang == wxT(""))
       lang = GetSystemLanguageCode();
 
-#ifdef CLEANSPEECH
-#ifdef NOT_RQD
-//TIDY-ME: (CleanSpeech) Language prompt??
-// The prompt for language only happens ONCE on a system.
-// I don't think we should disable it JKC
-   wxString lang = gPrefs->Read(wxT("/Locale/Language"), "en");  //lda
-
-// Pop up a dialog the first time the program is run
-//lda   if (lang == "")
-//lda      lang = ChooseLanguage(NULL);
-#endif
-#endif   // CLEANSPEECH
    mLocale = NULL;
    InitLang( lang );
 
@@ -1180,9 +1183,6 @@ bool AudacityApp::OnInit()
    }
 
    // More initialization
-#ifdef CLEANSPEECH
-   InitCleanSpeech();
-#endif   // CLEANSPEECH
 
    InitDitherers();
    InitAudioIO();
@@ -1446,56 +1446,6 @@ void AudacityApp::OnReceiveCommand(AppCommandEvent &event)
    wxASSERT(NULL != mCmdHandler);
    mCmdHandler->OnReceiveCommand(event);
 }
-
-#ifdef CLEANSPEECH   //is this actually useful?
-bool AudacityApp::InitCleanSpeech()
-{
-   wxString userdatadir = FileNames::DataDir();
-   wxString presetsFromPrefs = gPrefs->Read(wxT("/Directories/PresetsDir"), wxT(""));
-   wxString presets = wxT("");
-
-   #ifdef __WXGTK__
-   if (presetsFromPrefs.Length() > 0 && presetsFromPrefs[0] != wxT('/'))
-      presetsFromPrefs = wxT("");
-   #endif //__WXGTK__
-
-   wxString presetsDefaultLoc =
-      wxFileName(userdatadir, wxT("presets")).GetFullPath();
-
-   // Stop wxWidgets from printing its own error messages (not used ... does this really do anything?)
-   wxLogNull logNo;
-   
-   // Try temp dir that was stored in prefs first
-   if (presetsFromPrefs != wxT("")) {
-      if (wxDirExists(presetsFromPrefs))
-         presets = presetsFromPrefs;
-      else if (wxMkdir(presetsFromPrefs))
-         presets = presetsFromPrefs;
-   }
-
-   // If that didn't work, try the default location
-   if ((presets == wxT("")) && (presetsDefaultLoc != wxT(""))) {
-      if (wxDirExists(presetsDefaultLoc))
-         presets = presetsDefaultLoc;
-      else if (wxMkdir(presetsDefaultLoc))
-         presets = presetsDefaultLoc;
-   }
-
-   if (presets == wxT("")) {
-      // Failed
-      wxMessageBox(wxT("Audacity could not find a place to store\n.csp CleanSpeech preset files\nAudacity is now going to exit. \nInstallation may be corrupt."));
-      return false;
-   }
-
-   // The permissions don't always seem to be set on
-   // some platforms.  Hopefully this fixes it...
-   #ifdef __UNIX__
-   chmod(OSFILENAME(presets), 0755);
-   #endif
-
-   return (gPrefs->Write(wxT("/Directories/PresetsDir"), presets) && gPrefs->Flush());
-}
-#endif   // CLEANSPEECH
 
 bool AudacityApp::InitTempDir()
 {

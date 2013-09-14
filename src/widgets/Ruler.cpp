@@ -531,6 +531,8 @@ void Ruler::FindLinearTickSizes(double UPP)
          // More than 10 digit numbers?  Something is badly wrong.
          // Probably units is coming in with too high a value.
          wxASSERT( mDigits >= -10 );
+         if( mDigits < -10 )
+            break;
       }
       mMinor = d;
       mMajor = d * 2.0;
@@ -557,6 +559,8 @@ void Ruler::FindLinearTickSizes(double UPP)
          // More than 10 digit numbers?  Something is badly wrong.
          // Probably units is coming in with too high a value.
          wxASSERT( mDigits >= -10 );
+         if( mDigits < -10 )
+            break;
       }
       mDigits++;
       mMinor = d;
@@ -689,7 +693,7 @@ void Ruler::Tick(int pos, double d, bool major, bool minor)
    wxCoord strW, strH, strD, strL;
    int strPos, strLen, strLeft, strTop;
 
-   // FIX-ME: We don't draw a tick if of end of our label arrays
+   // FIXME: We don't draw a tick if of end of our label arrays
    // But we shouldn't have an array of labels.
    if( mNumMinorMinor >= mLength )
       return;
@@ -749,7 +753,7 @@ void Ruler::Tick(int pos, double d, bool major, bool minor)
    }
 
 
-   // FIX-ME: we shouldn't even get here if strPos < 0.
+   // FIXME: we shouldn't even get here if strPos < 0.
    // Ruler code currently does  not handle very small or
    // negative sized windows (i.e. don't draw) properly.
    if( strPos < 0 )
@@ -801,7 +805,7 @@ void Ruler::TickCustom(int labelIdx, bool major, bool minor)
    wxCoord strW, strH, strD, strL;
    int strPos, strLen, strLeft, strTop;
 
-   // FIX-ME: We don't draw a tick if of end of our label arrays
+   // FIXME: We don't draw a tick if of end of our label arrays
    // But we shouldn't have an array of labels.
    if( mNumMinor >= mLength )
       return;
@@ -863,7 +867,7 @@ void Ruler::TickCustom(int labelIdx, bool major, bool minor)
    }
 
 
-   // FIX-ME: we shouldn't even get here if strPos < 0.
+   // FIXME: we shouldn't even get here if strPos < 0.
    // Ruler code currently does  not handle very small or
    // negative sized windows (i.e. don't draw) properly.
    if( strPos < 0 )
@@ -978,7 +982,7 @@ void Ruler::Update(TimeTrack* timetrack)// Envelope *speedEnv, long minSpeed, lo
       mRect = wxRect(0,0, 0,mLength);
    }
 
-   // FIX-ME: Surely we do not need to allocate storage for the labels?
+   // FIXME: Surely we do not need to allocate storage for the labels?
    // We can just recompute them as we need them?  Yes, but only if 
    // mCustom is false!!!! 
 

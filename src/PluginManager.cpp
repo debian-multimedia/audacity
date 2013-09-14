@@ -53,7 +53,7 @@ PluginManager::~PluginManager()
    }
 }
 
-PluginManager & PluginManager::Get(bool refresh)
+PluginManager & PluginManager::Get(bool WXUNUSED(refresh))
 {
    return mInstance;
 }
@@ -185,6 +185,7 @@ void PluginManager::PurgeType(const wxString & type)
 
    path.Printf(wxT("/%s"), type.c_str());
 
+   SetDirty();
    mConfig->DeleteGroup(path);
 }
 
