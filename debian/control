@@ -32,8 +32,7 @@ Build-Depends: autoconf,
                libvorbis-dev (>= 1.0.0-3),
                libwxgtk2.8-dev,
                portaudio19-dev (>= 19+svn20101113-3~),
-               vamp-plugin-sdk (>= 2.0),
-               zip
+               vamp-plugin-sdk (>= 2.0)
 Build-Conflicts: libwxbase2.6-dev, wx2.6-headers
 Homepage: http://audacity.sourceforge.net/
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/audacity.git
