@@ -1,4 +1,4 @@
-audacity (2.0.4-1) UNRELEASED; urgency=low
+audacity (2.0.4-1) unstable; urgency=low
 
   * Team upload.
 
@@ -16,15 +16,17 @@ audacity (2.0.4-1) UNRELEASED; urgency=low
     - debian/rules: Build with --without-ffmpeg.
   * Use dh-autoreconf to clean up generated auto* files.
   * Bump debhelper compat to 9.
-    - Standards-Version 3.9.4 requires at least debhelper 8.1 (for
-      binary-{arch,indep} support.
-    - The Installed-Size of audacity-dbg decreases by a large amount.
-    - {C,CXX,LD,CPP}FLAGS are automatically exported now.
+    - Decreases the Installed-Size of audacity-dbg by a large amount since
+      dh_strip now uses compressed debugging symbol files.
+    - {C,CXX,LD,CPP}FLAGS are automatically exported.
+    - Bump debhelper build dependency to >= 9. We at least need 8.1 to
+      support Standards-Version 3.9.4 (binary-{arch,indep} targets).
   * debian/rules: Override dh_auto_clean since it gets confused by the output
-    of make clean and make distclean and does not detect that the targets are
-    available.
+    of 'make clean' and 'make distclean' and does not detect that the targets
+    are available.
+  * debian/control: Remove useless zip build-dependency.
 
- -- Sebastian Ramacher <sramacher@debian.org>  Sat, 14 Sep 2013 12:57:17 +0200
+ -- Sebastian Ramacher <sramacher@debian.org>  Sat, 14 Sep 2013 18:19:36 +0200
 
 audacity (2.0.3-1) unstable; urgency=low
 
