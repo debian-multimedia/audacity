@@ -7,7 +7,7 @@ configure_flags := \
 	LDFLAGS="$(shell dpkg-buildflags --get LDFLAGS) -Wl,-z,defs -Wl,--as-needed" \
 	--disable-dynamic-loading \
 	--with-expat=system \
-	--with-ffmpeg=system \
+	--without-ffmpeg \
 	--with-lame=system \
 	--with-libflac=system \
 	--with-libid3tag=system \
