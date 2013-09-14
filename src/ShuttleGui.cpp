@@ -393,7 +393,7 @@ wxStaticText * ShuttleGuiBase::AddVariableText(const wxString &Str, bool bCenter
    return pStatic;
 }
 
-wxComboBox * ShuttleGuiBase::AddCombo( const wxString &Prompt, const wxString &Selected,const wxArrayString * pChoices )
+wxComboBox * ShuttleGuiBase::AddCombo( const wxString &Prompt, const wxString &Selected,const wxArrayString * pChoices, long style )
 {
    UseUpId();
    if( mShuttleMode != eIsCreating )
@@ -413,7 +413,7 @@ wxComboBox * ShuttleGuiBase::AddCombo( const wxString &Prompt, const wxString &S
    AddPrompt( Prompt );
 
    mpWind = pCombo = new wxComboBox(mpParent, miId, Selected, wxDefaultPosition, wxDefaultSize, 
-      n, Choices, Style( 0 ));
+      n, Choices, Style( style ));
    mpWind->SetName(wxStripMenuCodes(Prompt));
 
    UpdateSizers();
@@ -920,12 +920,11 @@ BEGIN_EVENT_TABLE(InvisiblePanel, wxPanel)
      EVT_ERASE_BACKGROUND( InvisiblePanel::OnErase)
 END_EVENT_TABLE()
 
-void InvisiblePanel::OnPaint( wxPaintEvent &event )
+void InvisiblePanel::OnPaint( wxPaintEvent & WXUNUSED(event))
 {
-   // Don't repaint my background...
+   // Don't repaint my background.
    wxPaintDC dc(this);
-// event.Skip();
-   ;// swallow the paint event.
+   // event.Skip(); // swallow the paint event.
 }
 
 wxPanel * ShuttleGuiBase::StartInvisiblePanel()
@@ -962,7 +961,7 @@ void ShuttleGuiBase::EndInvisiblePanel()
 ///  - Use wxEXPAND and 0 to expand horizontally but not vertically.
 ///  - Use wxEXPAND and 1 to expand horizontally and vertically.
 ///  - Use wxCENTRE and 1 for no expansion.
-/// @param PositionFlag  Typically wxEXPAND or wxCENTRE.
+/// @param PositionFlag  Typically wxEXPAND or wxALIGN_CENTER.
 /// @param iProp         Proportionality for resizing.  
 void ShuttleGuiBase::StartHorizontalLay( int PositionFlags, int iProp)
 {
@@ -2041,7 +2040,7 @@ ShuttleGui & ShuttleGui::Id(int id )
    return *this;
 }
 
-GuiWaveTrack * ShuttleGui::AddGuiWaveTrack( const wxString & Name)
+GuiWaveTrack * ShuttleGui::AddGuiWaveTrack( const wxString & WXUNUSED(Name))
 {
 #ifdef EXPERIMENTAL_TRACK_PANEL
    UseUpId();
@@ -2117,11 +2116,11 @@ AttachableScrollBar * ShuttleGui::AddAttachableScrollBar( long style )
    AttachableScrollBar * pAttachableScrollBar;
    miProp=0;
    mpWind = pAttachableScrollBar = new AttachableScrollBar(
-      mpParent, 
+      mpParent,
       miId,
       wxDefaultPosition,
       wxDefaultSize,
-	  style
+      style
       );
    mpWind->SetMinSize(wxSize(10,20));
    UpdateSizers();
@@ -2176,16 +2175,25 @@ wxSizer *CreateStdButtonSizer(wxWindow *parent, long buttons, wxButton *extra)
       bs->AddButton( new wxButton( parent, wxID_HELP ) );
    }
 
-   if( buttons & ePreviewButton )
+   if (buttons & ePreviewButton)
    {
-      b = new wxButton( parent, ePreviewID, _("Pre&view") );
-      bs->Add( b, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, margin );
-      bs->Add( 40, 0 );
+      bs->Add( new wxButton( parent, ePreviewID, _("Pre&view") ), 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, margin );
+   }
+   if (buttons & ePreviewDryButton)
+   {
+      bs->Add(new wxButton( parent, ePreviewDryID, _("Dry Previe&w") ), 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, margin );
+      bs->Add( 20, 0 );
+   }
+
+   if( buttons & eDefaultsButton )
+   {
+      bs->Add(new wxButton( parent, eDefaultsID, _("&Defaults") ) );
+      bs->Add( 20, 0 );
    }
 
    if( buttons & eDebugButton )
    {
-      b = new wxButton( parent, eDebugID, _("&Debug") );
+      b = new wxButton( parent, eDebugID, _("Debu&g") );
       bs->Add( b, 0, wxALIGN_CENTER | wxLEFT | wxRIGHT, margin );
       bs->Add( 40, 0 );
    }

@@ -99,7 +99,7 @@ TimerRecordDialog::~TimerRecordDialog()
 {
 }
 
-void TimerRecordDialog::OnTimer(wxTimerEvent& event)
+void TimerRecordDialog::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
    wxDateTime dateTime_UNow = wxDateTime::UNow();
    if (m_DateTime_Start < dateTime_UNow) {
@@ -110,7 +110,7 @@ void TimerRecordDialog::OnTimer(wxTimerEvent& event)
    }
 }
 
-void TimerRecordDialog::OnDatePicker_Start(wxDateEvent& event)
+void TimerRecordDialog::OnDatePicker_Start(wxDateEvent& WXUNUSED(event))
 {
    m_DateTime_Start = m_pDatePickerCtrl_Start->GetValue();
    double dTime = m_pTimeTextCtrl_Start->GetTimeValue();
@@ -132,7 +132,7 @@ void TimerRecordDialog::OnDatePicker_Start(wxDateEvent& event)
    this->UpdateEnd(); 
 }
 
-void TimerRecordDialog::OnTimeText_Start(wxCommandEvent& event)
+void TimerRecordDialog::OnTimeText_Start(wxCommandEvent& WXUNUSED(event))
 {
    //v TimeTextCtrl doesn't implement upper ranges, i.e., if I tell it "024 h 060 m 060 s", then 
    // user increments the hours past 23, it rolls over to 0 (although if you increment below 0, it stays at 0).
@@ -150,7 +150,7 @@ void TimerRecordDialog::OnTimeText_Start(wxCommandEvent& event)
    this->OnDatePicker_Start(dummyDateEvent);
 }
  
-void TimerRecordDialog::OnDatePicker_End(wxDateEvent& event)
+void TimerRecordDialog::OnDatePicker_End(wxDateEvent& WXUNUSED(event))
 {
    m_DateTime_End = m_pDatePickerCtrl_End->GetValue();
    double dTime = m_pTimeTextCtrl_End->GetTimeValue();
@@ -172,7 +172,7 @@ void TimerRecordDialog::OnDatePicker_End(wxDateEvent& event)
    this->UpdateDuration(); // Keep Start constant and update Duration for changed End.
 }
 
-void TimerRecordDialog::OnTimeText_End(wxCommandEvent& event)
+void TimerRecordDialog::OnTimeText_End(wxCommandEvent& WXUNUSED(event))
 {
    //v TimeTextCtrl doesn't implement upper ranges, i.e., if I tell it "024 h 060 m 060 s", then 
    // user increments the hours past 23, it rolls over to 0 (although if you increment below 0, it stays at 0).
@@ -190,7 +190,7 @@ void TimerRecordDialog::OnTimeText_End(wxCommandEvent& event)
    this->OnDatePicker_End(dummyDateEvent);
 }
 
-void TimerRecordDialog::OnTimeText_Duration(wxCommandEvent& event)
+void TimerRecordDialog::OnTimeText_Duration(wxCommandEvent& WXUNUSED(event))
 {
    double dTime = m_pTimeTextCtrl_Duration->GetTimeValue();
    long hr = (long)(dTime / 3600.0);
@@ -201,7 +201,7 @@ void TimerRecordDialog::OnTimeText_Duration(wxCommandEvent& event)
    this->UpdateEnd(); // Keep Start constant and update End for changed Duration.
 }
 
-void TimerRecordDialog::OnOK(wxCommandEvent& event)
+void TimerRecordDialog::OnOK(wxCommandEvent& WXUNUSED(event))
 {
    this->TransferDataFromWindow();
    if (!m_TimeSpan_Duration.IsPositive())
@@ -235,11 +235,11 @@ bool TimerRecordDialog::RunWaitDialog()
    else 
    {
       // Record for specified time.
-   	AudacityProject* pProject = GetActiveProject();
+      AudacityProject* pProject = GetActiveProject();
       pProject->OnRecord();
       bool bIsRecording = true;
 
-      wxString strMsg = 
+      wxString strMsg =
          _("Recording start") + (wxString)wxT(":\t\t")
          + GetDisplayDate(m_DateTime_Start) + wxT("\n") + _("Recording end")
          + wxT(":\t\t") + GetDisplayDate(m_DateTime_End) + wxT("\n")
@@ -326,11 +326,11 @@ void TimerRecordDialog::PopulateOrExchange(ShuttleGui& S)
    S.StartVerticalLay(true);
    {
       /* i18n-hint: This string is used to configure the controls for times when the recording is
-	   * started and stopped. As such it is important that only the alphabetic parts of the string
-	   * are translated, with the numbers left exactly as they are.
-	   * The 'h' indicates the first number displayed is hours, the 'm' indicates the second number
-	   * displayed is minutes, and the 's' indicates that the third number displayed is seconds.
-	   */
+       * started and stopped. As such it is important that only the alphabetic parts of the string
+       * are translated, with the numbers left exactly as they are.
+       * The 'h' indicates the first number displayed is hours, the 'm' indicates the second number
+       * displayed is minutes, and the 's' indicates that the third number displayed is seconds.
+       */
       wxString strFormat = _("099 h 060 m 060 s");
       S.StartStatic(_("Start Date and Time"), true);
       {
@@ -372,14 +372,14 @@ void TimerRecordDialog::PopulateOrExchange(ShuttleGui& S)
 
       S.StartStatic(_("Duration"), true);
       {
-        /* i18n-hint: This string is used to configure the controls which shows the recording 
-		 * duration. As such it is important that only the alphabetic parts of the string
-         * are translated, with the numbers left exactly as they are.
-         * The string 'days' indicates that the first number in the control will be the number of days,
-		 * then the 'h' indicates the second number displayed is hours, the 'm' indicates the third
-		 * number displayed is minutes, and the 's' indicates that the fourth number displayed is
-		 * seconds.
-         */
+         /* i18n-hint: This string is used to configure the controls which shows the recording
+          * duration. As such it is important that only the alphabetic parts of the string
+          * are translated, with the numbers left exactly as they are.
+          * The string 'days' indicates that the first number in the control will be the number of days,
+          * then the 'h' indicates the second number displayed is hours, the 'm' indicates the third
+          * number displayed is minutes, and the 's' indicates that the fourth number displayed is
+          * seconds.
+          */
          wxString strFormat1 = _("099 days 024 h 060 m 060 s");
          m_pTimeTextCtrl_Duration = new TimeTextCtrl(this, ID_TIMETEXT_DURATION, strFormat1);
          m_pTimeTextCtrl_Duration->SetName(_("Duration"));
@@ -451,7 +451,7 @@ int TimerRecordDialog::WaitForStart()
 {
    wxString strMsg;
    /* i18n-hint: A time specification like "Sunday 28th October 2007 15:16:17 GMT"
-	* but hopefully translated by wxwidgets will be inserted into this */
+    * but hopefully translated by wxwidgets will be inserted into this */
    strMsg.Printf(_("Waiting to start recording at %s.\n"), 
                   GetDisplayDate(m_DateTime_Start).c_str()); 
    wxDateTime startWait_DateTime = wxDateTime::UNow();

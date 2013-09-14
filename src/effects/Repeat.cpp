@@ -173,10 +173,10 @@ bool EffectRepeat::Process()
    if (bGoodResult)
    {
       // Select the new bits + original bit
-	   mT1 = maxDestLen;
+      mT1 = maxDestLen;
    }
 
-   this->ReplaceProcessedTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult);
    return bGoodResult;
 }
 
@@ -209,18 +209,6 @@ void RepeatDialog::PopulateOrExchange(ShuttleGui & S)
 {
    wxTextValidator vld(wxFILTER_INCLUDE_CHAR_LIST);
    vld.SetIncludes(wxArrayString(10, numbers));
-
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("by Dominic Mazzoni && Vaughan Johnson"));
-   }
-   S.EndHorizontalLay();
-
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      // Add a little space
-   }
-   S.EndHorizontalLay();
 
    S.StartHorizontalLay(wxCENTER, false);
    {
@@ -281,18 +269,18 @@ void RepeatDialog::DisplayNewTime()
    mTotalTime->SetName(str); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 }
 
-void RepeatDialog::OnRepeatTextChange(wxCommandEvent & event)
+void RepeatDialog::OnRepeatTextChange(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
 
    DisplayNewTime();
 }
 
-void RepeatDialog::OnPreview(wxCommandEvent &event)
+void RepeatDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
 
-	int oldRepeatCount = mEffect->repeatCount;
+   int oldRepeatCount = mEffect->repeatCount;
 
    mEffect->repeatCount = repeatCount;
 

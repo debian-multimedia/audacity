@@ -88,6 +88,7 @@ void MixerToolBar::Populate()
 
    mOutputSlider = new ASlider(this, wxID_ANY, _("Output Volume"),
                                wxDefaultPosition, wxSize(130, 25));
+   mOutputSlider->SetScroll(0.1f, 2.0f);
    mOutputSlider->SetName(_("Slider Output"));
    Add(mOutputSlider, 0, wxALIGN_CENTER);
 
@@ -99,6 +100,7 @@ void MixerToolBar::Populate()
 
    mInputSlider = new ASlider(this, wxID_ANY, _("Input Volume"),
                               wxDefaultPosition, wxSize(130, 25));
+   mInputSlider->SetScroll(0.1f, 2.0f);
    mInputSlider->SetName(_("Slider Input"));
    Add(mInputSlider, 0, wxALIGN_CENTER);
 
@@ -121,7 +123,6 @@ void MixerToolBar::Populate()
                  this);
    // Show or hide the input slider based on whether it works
    mInputSlider->Enable(gAudioIO->InputMixerWorks());
-   SetToolTips();
 
    UpdateControls();
 
@@ -179,7 +180,6 @@ void MixerToolBar::UpdatePrefs()
 
    // Show or hide the input slider based on whether it works
    mInputSlider->Enable(gAudioIO->InputMixerWorks());
-   SetToolTips();
 
    // Layout the toolbar
    Layout();
@@ -216,15 +216,19 @@ void MixerToolBar::UpdateControls()
 
    if (mOutputSlider->Get() != playbackVolume) {
       mOutputSlider->Set(playbackVolume);
+      mOutputSliderVolume = playbackVolume;
+      SetToolTips();
    }
 
    if (mInputSlider->Get() != inputVolume) {
       mInputSlider->Set(inputVolume);
+      mInputSliderVolume = inputVolume;
+      SetToolTips();
    }
 #endif // USE_PORTMIXER
 }
 
-void MixerToolBar::SetMixer(wxCommandEvent &event)
+void MixerToolBar::SetMixer(wxCommandEvent & WXUNUSED(event))
 {
 #if USE_PORTMIXER
    float inputVolume = mInputSlider->Get();
@@ -234,6 +238,9 @@ void MixerToolBar::SetMixer(wxCommandEvent &event)
 
    gAudioIO->GetMixer(&inputSource, &oldIn, &oldOut);
    gAudioIO->SetMixer(inputSource, inputVolume, outputVolume);
+   mOutputSliderVolume = outputVolume;
+   mInputSliderVolume = inputVolume;
+   SetToolTips();
 #endif // USE_PORTMIXER
 }
 
@@ -283,7 +290,8 @@ void MixerToolBar::SetToolTips()
 {
 #if wxUSE_TOOLTIPS
    if (mInputSlider->IsEnabled()) {
-      mInputSlider->SetToolTip(_("Input Volume"));
+      mInputSlider->SetToolTip(wxString::Format(
+            _("Input Volume: %.2f"), mInputSliderVolume));
    }
    else {
       mInputSlider->SetToolTip(
@@ -291,7 +299,8 @@ void MixerToolBar::SetToolTips()
    }
 
    if (mOutputSlider->IsEnabled()) {
-      mOutputSlider->SetToolTip(_("Output Volume"));
+      mOutputSlider->SetToolTip(wxString::Format(
+            _("Output Volume: %.2f"), mOutputSliderVolume));
    }
    else {
       mOutputSlider->SetToolTip(

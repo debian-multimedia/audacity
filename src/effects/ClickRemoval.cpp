@@ -75,18 +75,6 @@ EffectClickRemoval::~EffectClickRemoval()
 
 bool EffectClickRemoval::Init()
 {
-#ifdef CLEANSPEECH
-   mThresholdLevel = gPrefs->Read(wxT("/CsPresets/ClickThresholdLevel"), 200);
-   if ((mThresholdLevel < MIN_THRESHOLD) || (mThresholdLevel > MAX_THRESHOLD)) {  // corrupted Prefs?
-      mThresholdLevel = 0;  //Off-skip
-      gPrefs->Write(wxT("/CsPresets/ClickThresholdLevel"), mThresholdLevel);
-   }
-   mClickWidth = gPrefs->Read(wxT("/CsPresets/ClickWidth"), 20);
-   if ((mClickWidth < MIN_CLICK_WIDTH) || (mClickWidth > MAX_CLICK_WIDTH)) {  // corrupted Prefs?
-      mClickWidth = 0;  //Off-skip
-      gPrefs->Write(wxT("/CsPresets/ClickWidth"), mClickWidth);
-   }
-#else   // CLEANSPEECH
    mThresholdLevel = gPrefs->Read(wxT("/Effects/ClickRemoval/ClickThresholdLevel"), 200);
    if ((mThresholdLevel < MIN_THRESHOLD) || (mThresholdLevel > MAX_THRESHOLD)) {  // corrupted Prefs?
       mThresholdLevel = 0;  //Off-skip
@@ -97,7 +85,6 @@ bool EffectClickRemoval::Init()
       mClickWidth = 0;  //Off-skip
       gPrefs->Write(wxT("/Effects/ClickRemoval/ClickWidth"), mClickWidth);
    }
-#endif   // CLEANSPEECH
    return gPrefs->Flush();
 }
 
@@ -123,13 +110,8 @@ bool EffectClickRemoval::PromptUser()
    mThresholdLevel = dlog.mThresh;
    mClickWidth = dlog.mWidth;
 
-#ifdef CLEANSPEECH
-   gPrefs->Write(wxT("/CsPresets/ClickThresholdLevel"), mThresholdLevel);
-   gPrefs->Write(wxT("/CsPresets/ClickWidth"), mClickWidth);
-#else   // CLEANSPEECH
    gPrefs->Write(wxT("/Effects/ClickRemoval/ClickThresholdLevel"), mThresholdLevel);
    gPrefs->Write(wxT("/Effects/ClickRemoval/ClickWidth"), mClickWidth);
-#endif   // CLEANSPEECH
 
    return gPrefs->Flush();
 }
@@ -340,23 +322,14 @@ void ClickRemovalDialog::PopulateOrExchange(ShuttleGui & S)
    wxTextValidator vld(wxFILTER_INCLUDE_CHAR_LIST);
    vld.SetIncludes(wxArrayString(10, numbers));
 
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("Click and Pop Removal by Craig DeForest"));
-   }
-   S.EndHorizontalLay();
-
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      // Add a little space
-   }
-   S.EndHorizontalLay();
+   S.AddSpace(0, 5);
+   S.SetBorder(10);
 
    S.StartMultiColumn(3, wxEXPAND);
    S.SetStretchyCol(2);
    {
       // Threshold
-      mThreshT = S.Id(ID_THRESH_TEXT).AddTextBox(_("Select threshold (lower is more sensitive):"),
+      mThreshT = S.Id(ID_THRESH_TEXT).AddTextBox(_("Threshold (lower is more sensitive):"),
                                                   wxT(""),
                                                   10);
       mThreshT->SetValidator(vld);
@@ -365,7 +338,7 @@ void ClickRemovalDialog::PopulateOrExchange(ShuttleGui & S)
       mThreshS = S.Id(ID_THRESH_SLIDER).AddSlider(wxT(""),
                                                   0,
                                                   MAX_THRESHOLD);
-      mThreshS->SetName(_("Select threshold"));
+      mThreshS->SetName(_("Threshold"));
       mThreshS->SetRange(MIN_THRESHOLD, MAX_THRESHOLD);
 #if defined(__WXGTK__)
       // Force a minimum size since wxGTK allows it to go to zero
@@ -373,7 +346,7 @@ void ClickRemovalDialog::PopulateOrExchange(ShuttleGui & S)
 #endif
 
       // Click width
-      mWidthT = S.Id(ID_WIDTH_TEXT).AddTextBox(_("Max spike width (higher is more sensitive):"),
+      mWidthT = S.Id(ID_WIDTH_TEXT).AddTextBox(_("Max Spike Width (higher is more sensitive):"),
                                                wxT(""),
                                                10);
       mWidthT->SetValidator(vld);
@@ -382,7 +355,7 @@ void ClickRemovalDialog::PopulateOrExchange(ShuttleGui & S)
       mWidthS = S.Id(ID_WIDTH_SLIDER).AddSlider(wxT(""),
                                                 0,
                                                 MAX_CLICK_WIDTH);
-      mWidthS->SetName(_("Max spike width"));
+      mWidthS->SetName(_("Max Spike Width"));
       mWidthS->SetRange(MIN_CLICK_WIDTH, MAX_CLICK_WIDTH);
 #if defined(__WXGTK__)
       // Force a minimum size since wxGTK allows it to go to zero
@@ -414,7 +387,7 @@ bool ClickRemovalDialog::TransferDataFromWindow()
 
 // WDR: handler implementations for ClickRemovalDialog
 
-void ClickRemovalDialog::OnWidthText(wxCommandEvent & event)
+void ClickRemovalDialog::OnWidthText(wxCommandEvent & WXUNUSED(event))
 {
    long val;
 
@@ -422,7 +395,7 @@ void ClickRemovalDialog::OnWidthText(wxCommandEvent & event)
    mWidthS->SetValue(TrapLong(val, MIN_CLICK_WIDTH, MAX_CLICK_WIDTH));
 }
 
-void ClickRemovalDialog::OnThreshText(wxCommandEvent & event)
+void ClickRemovalDialog::OnThreshText(wxCommandEvent & WXUNUSED(event))
 {
    long val;
 
@@ -430,17 +403,17 @@ void ClickRemovalDialog::OnThreshText(wxCommandEvent & event)
    mThreshS->SetValue(TrapLong(val, MIN_THRESHOLD, MAX_THRESHOLD));
 }
 
-void ClickRemovalDialog::OnWidthSlider(wxCommandEvent & event)
+void ClickRemovalDialog::OnWidthSlider(wxCommandEvent & WXUNUSED(event))
 {
    mWidthT->SetValue(wxString::Format(wxT("%d"), mWidthS->GetValue()));
 }
 
-void ClickRemovalDialog::OnThreshSlider(wxCommandEvent & event)
+void ClickRemovalDialog::OnThreshSlider(wxCommandEvent & WXUNUSED(event))
 {
    mThreshT->SetValue(wxString::Format(wxT("%d"), mThreshS->GetValue()));
 }
 
-void ClickRemovalDialog::OnPreview(wxCommandEvent & event)
+void ClickRemovalDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
    mEffect->mThresholdLevel = mThresh;

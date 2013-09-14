@@ -34,10 +34,10 @@ class TimeWarper;
 // ADVANCED_EFFECT was introduced for Lynn Allan's 'CleanSpeech'
 // it allows the list of effects to be filtered to exclude
 // the advanced effects.
-// Left in when CLEANSPEECH is removed, as it may be useful at some point.
+// Left in when CLEANSPEECH was removed, as it may be useful at some point.
 #define ADVANCED_EFFECT 0x0004
 // HIDDEN_EFFECT allows an item to be excluded from the effects
-// menu in both CleanSpeech and in normal builds.  // CLEANSPEECH ??
+// menu
 #define HIDDEN_EFFECT   0x0008
 
 #define INSERT_EFFECT   0x0010
@@ -126,7 +126,11 @@ class AUDACITY_DLL_API Effect {
 
    // The Effect class fully implements the Preview method for you.
    // Only override it if you need to do preprocessing or cleanup.
-   virtual void Preview();
+   virtual void Preview(bool dryOnly = false);
+
+   // Most effects just use the previewLength, but time-stretching/compressing 
+   // effects need to use a different input length, so override this method. 
+   virtual double CalcPreviewInputLength(double previewLength);
 
    // Get an unique ID assigned to each registered effect.
    // The first effect will have ID zero.
@@ -308,7 +312,8 @@ public:
    EffectDialog(wxWindow * parent,
                 const wxString & title,
                 int type = PROCESS_EFFECT,
-                int flags = wxDEFAULT_DIALOG_STYLE);
+                int flags = wxDEFAULT_DIALOG_STYLE,
+                int additionalButtons = 0);
 
    void Init();
 
@@ -320,6 +325,7 @@ public:
 
 private:
    int mType;
+   int mAdditionalButtons;
 };
 
 // Utility functions

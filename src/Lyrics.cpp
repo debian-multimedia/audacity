@@ -74,7 +74,7 @@ BEGIN_EVENT_TABLE(Lyrics, wxPanel)
    EVT_SIZE(Lyrics::OnSize)
 
    //v Doesn't seem to be a way to capture a selection event in a read-only wxTextCtrl.
-	//    EVT_COMMAND_LEFT_CLICK(kHighlightTextCtrlID, Lyrics::OnHighlightTextCtrl)
+   //    EVT_COMMAND_LEFT_CLICK(kHighlightTextCtrlID, Lyrics::OnHighlightTextCtrl)
 END_EVENT_TABLE()
 
 IMPLEMENT_CLASS(Lyrics, wxPanel) 
@@ -445,7 +445,7 @@ void Lyrics::OnKeyEvent(wxKeyEvent & event)
    GetActiveProject()->HandleKeyDown(event);
 }
 
-void Lyrics::OnPaint(wxPaintEvent &evt)
+void Lyrics::OnPaint(wxPaintEvent & WXUNUSED(event))
 {
    if (!this->GetParent()->IsShown())
       return;
@@ -476,7 +476,7 @@ void Lyrics::OnPaint(wxPaintEvent &evt)
    }
 }
 
-void Lyrics::OnSize(wxSizeEvent &evt)
+void Lyrics::OnSize(wxSizeEvent & WXUNUSED(event))
 {
    GetClientSize(&mWidth, &mHeight);
 

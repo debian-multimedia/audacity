@@ -131,23 +131,14 @@ void GUIPrefs::PopulateOrExchange(ShuttleGui & S)
       S.TieCheckBox(_("Re&tain labels if selection snaps to a label edge"),
                     wxT("/GUI/RetainLabels"),
                     false);
-   }
-   S.EndStatic();
 
-#ifdef CLEANSPEECH
-   S.StartStatic(_("Modes"));
-   {
-      S.TieCheckBox(_("Clea&nSpeech Mode (Customized GUI)"), 
-                    wxT("/Batch/CleanSpeechMode"),
-                    false);
-#ifdef __WXDEBUG__
-      S.TieCheckBox(_("Don't a&pply effects in batch mode"),  
-                    wxT("/Batch/Debug"),
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+      S.TieCheckBox(_("&Display a mono channel as virtual stereo"),
+                    wxT("/GUI/MonoAsVirtualStereo"),
                     false);
 #endif
    }
    S.EndStatic();
-#endif   // CLEANSPEECH
 }
 
 bool GUIPrefs::Apply()

@@ -184,7 +184,11 @@ bool Sequence::ConvertToSampleFormat(sampleFormat format, bool* pbChanged)
       
       bSuccess = (pOldBlockFile->ReadData(bufferOld, oldFormat, 0, len) > 0);
       if (!bSuccess)
+      {
+         DeleteSamples(bufferNew);
+         DeleteSamples(bufferOld);
          break;
+      }
       
       CopySamples(bufferOld, oldFormat, bufferNew, mSampleFormat, len);
       
@@ -486,8 +490,8 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
    if (addedLen == 0 || srcNumBlocks == 0)
       return true;
 
-   unsigned int b = FindBlock(s);
-   unsigned int numBlocks = mBlock->GetCount();
+   int b = FindBlock(s);
+   size_t numBlocks = mBlock->GetCount();
 
    if (numBlocks == 0 ||
        (s == mNumSamples && mBlock->Item(numBlocks-1)->f->GetLength() >= mMinSamples)) {
@@ -501,7 +505,6 @@ bool Sequence::Paste(sampleCount s, const Sequence *src)
       return ConsistencyCheck(wxT("Paste branch one"));
    }
 
-   // FIX-ME: "b" is unsigned, so it's pointless to check that it's >= 0.
    if (b >= 0 && b < numBlocks
        && ((mBlock->Item(b)->f->GetLength() + addedLen) < mMaxSamples)) {
       // Special case: we can fit all of the new samples inside of
@@ -895,8 +898,8 @@ bool Sequence::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          if (!wxStrcmp(attr, wxT("maxsamples")))
          {
             // Dominic, 12/10/2006:
-			   //    Let's check that maxsamples is >= 1024 and <= 64 * 1024 * 1024 
-			   //    - that's a pretty wide range of reasonable values.
+            //    Let's check that maxsamples is >= 1024 and <= 64 * 1024 * 1024
+            //    - that's a pretty wide range of reasonable values.
             if ((nValue < 1024) || (nValue > 64 * 1024 * 1024))
             {
                mErrorOpening = true;
@@ -952,8 +955,8 @@ void Sequence::HandleXMLEndTag(const wxChar *tag)
 
          if (len > mMaxSamples) 
          {
-         	// This could be why the blockfile failed, so limit 
-         	// the silent replacement to mMaxSamples.
+            // This could be why the blockfile failed, so limit
+            // the silent replacement to mMaxSamples.
             wxLogWarning(
                wxT("   Sequence has missing block file with length %s > mMaxSamples %s.\n      Setting length to mMaxSamples. This will likely cause some block files to be considered orphans."), 
                Internat::ToString(((wxLongLong)len).ToDouble(), 0).c_str(), 

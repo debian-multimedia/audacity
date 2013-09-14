@@ -53,7 +53,7 @@ class AudacityPrintout : public wxPrintout
    TrackList *mTracks;
 };
 
-bool AudacityPrintout::OnPrintPage(int page)
+bool AudacityPrintout::OnPrintPage(int WXUNUSED(page))
 {
    wxDC *dc = GetDC();
    if (!dc)
@@ -78,7 +78,7 @@ bool AudacityPrintout::OnPrintPage(int page)
 
    TrackArtist artist;
    artist.SetBackgroundBrushes(*wxWHITE_BRUSH, *wxWHITE_BRUSH,
-			       *wxWHITE_PEN, *wxWHITE_PEN);
+                               *wxWHITE_PEN, *wxWHITE_PEN);
    ViewInfo viewInfo;
    viewInfo.sel0 = viewInfo.sel1 = 0;
    viewInfo.vpos = 0;
@@ -102,6 +102,18 @@ bool AudacityPrintout::OnPrintPage(int page)
       dc->SetPen(*wxBLACK_PEN);
       AColor::Line(*dc, 0, r.y, width, r.y);
 
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+      if(MONO_WAVE_PAN(n)){
+         y += r.height;
+         r.x = 0;
+         r.y = y;
+         r.width = width;
+         r.height = (int)(n->GetHeight(true) * scale);
+         artist.DrawTrack(n, *dc, r, &viewInfo, false, false, false, false);
+         dc->SetPen(*wxBLACK_PEN);
+         AColor::Line(*dc, 0, r.y, width, r.y);
+      }
+#endif
       n = iter.Next();
       y += r.height;
    };

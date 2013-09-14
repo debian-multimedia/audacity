@@ -45,19 +45,19 @@
 WX_DEFINE_OBJARRAY( AliasedFileArray );
 
 WX_DECLARE_HASH_MAP(wxString, AliasedFile *,
-		               wxStringHash, wxStringEqual, AliasedFileHash);
+                    wxStringHash, wxStringEqual, AliasedFileHash);
 
 WX_DECLARE_HASH_MAP(BlockFile *, BlockFile *,
-		               wxPointerHash, wxPointerEqual, ReplacedBlockFileHash);
+                    wxPointerHash, wxPointerEqual, ReplacedBlockFileHash);
 
 WX_DECLARE_HASH_MAP(BlockFile *, bool,
-		               wxPointerHash, wxPointerEqual, BoolBlockFileHash);
+                    wxPointerHash, wxPointerEqual, BoolBlockFileHash);
 
 // Given a project, returns a single array of all SeqBlocks
 // in the current set of tracks.  Enumerating that array allows
 // you to process all block files in the current set.
-void GetAllSeqBlocks(AudacityProject *project,
-                     BlockArray *outBlocks)
+static void GetAllSeqBlocks(AudacityProject *project,
+                            BlockArray *outBlocks)
 {
    TrackList *tracks = project->GetTracks();
    TrackListIterator iter(tracks);
@@ -85,8 +85,8 @@ void GetAllSeqBlocks(AudacityProject *project,
 // tracks and replace each aliased block file with its replacement.
 // Note that this code respects reference-counting and thus the
 // process of making a project self-contained is actually undoable.
-void ReplaceBlockFiles(AudacityProject *project,
-		                 ReplacedBlockFileHash &hash)
+static void ReplaceBlockFiles(AudacityProject *project,
+                              ReplacedBlockFileHash &hash)
 {
    DirManager *dirManager = project->GetDirManager();
    BlockArray blocks;
@@ -157,8 +157,8 @@ void FindDependencies(AudacityProject *project,
 // Given a project and a list of aliased files that should no
 // longer be external dependencies (selected by the user), replace
 // all of those alias block files with disk block files.
-void RemoveDependencies(AudacityProject *project,
-			               AliasedFileArray *aliasedFiles)
+static void RemoveDependencies(AudacityProject *project,
+                                 AliasedFileArray *aliasedFiles)
 {
    DirManager *dirManager = project->GetDirManager();
 
@@ -469,19 +469,19 @@ void DependencyDialog::OnSize(wxSizeEvent &evt)
    wxDialog::OnSize(evt);
 }
 
-void DependencyDialog::OnNo(wxCommandEvent &evt)
+void DependencyDialog::OnNo(wxCommandEvent & WXUNUSED(event))
 {
    SaveFutureActionChoice();
    EndModal(wxID_NO);
 }
 
-void DependencyDialog::OnYes(wxCommandEvent &evt)
+void DependencyDialog::OnYes(wxCommandEvent & WXUNUSED(event))
 {
    SaveFutureActionChoice();
    EndModal(wxID_YES);
 }
 
-void DependencyDialog::OnCopySelectedFiles(wxCommandEvent &evt)
+void DependencyDialog::OnCopySelectedFiles(wxCommandEvent & WXUNUSED(event))
 {
    AliasedFileArray aliasedFilesToDelete;
 
@@ -504,7 +504,7 @@ void DependencyDialog::OnCopySelectedFiles(wxCommandEvent &evt)
    }
 }
 
-void DependencyDialog::OnCancel(wxCommandEvent& evt)
+void DependencyDialog::OnCancel(wxCommandEvent& WXUNUSED(event))
 {
    if (mIsSaving)
    {

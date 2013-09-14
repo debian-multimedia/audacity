@@ -44,6 +44,7 @@
 #include <wx/event.h>
 #include <wx/image.h>
 #include <wx/intl.h>
+#include <wx/timer.h>
 #endif
 #include <wx/tooltip.h>
 
@@ -71,10 +72,10 @@ AudacityProject *ControlToolBar::mBusyProject = NULL;
 
 BEGIN_EVENT_TABLE(ControlToolBar, ToolBar)
    EVT_CHAR(ControlToolBar::OnKeyEvent)
+   EVT_TIMER(wxID_ANY, ControlToolBar::OnTimer)
    EVT_BUTTON(ID_PLAY_BUTTON,   ControlToolBar::OnPlay)
    EVT_BUTTON(ID_STOP_BUTTON,   ControlToolBar::OnStop)
    EVT_BUTTON(ID_RECORD_BUTTON, ControlToolBar::OnRecord)
-   EVT_BUTTON(ID_BATCH_BUTTON,  ControlToolBar::OnBatch)
    EVT_BUTTON(ID_REW_BUTTON,    ControlToolBar::OnRewind)
    EVT_BUTTON(ID_FF_BUTTON,     ControlToolBar::OnFF)
    EVT_BUTTON(ID_PAUSE_BUTTON,  ControlToolBar::OnPause)
@@ -88,16 +89,15 @@ END_EVENT_TABLE()
 ControlToolBar::ControlToolBar()
 : ToolBar(TransportBarID, _("Transport"), wxT("Control"))
 {
-   mPaused = false;
-   mSizer = NULL;
+   mShiftKeyTimer.SetOwner(this);
 
-   mCutPreviewTracks = NULL;
+   mPaused = false;
 
    gPrefs->Read(wxT("/GUI/ErgonomicTransportButtons"), &mErgonomicTransportButtons, true);
-#ifdef CLEANSPEECH
-// gPrefs->Read(wxT("/Batch/CleanSpeechMode"), &mCleanSpeechMode, false);
-   mCleanSpeechMode = false;
-#endif   // CLEANSPEECH
+   mStrLocale = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
+
+   mSizer = NULL;
+   mCutPreviewTracks = NULL;
 }
 
 ControlToolBar::~ControlToolBar()
@@ -187,19 +187,13 @@ void ControlToolBar::Populate()
       ID_STOP_BUTTON, false, _("Stop"));
 
    mRewind = MakeButton(bmpRewind, bmpRewind, bmpRewindDisabled,
-      ID_REW_BUTTON, false, _("Start"));
+      ID_REW_BUTTON, false, _("Skip to Start"));
 
    mFF = MakeButton(bmpFFwd, bmpFFwd, bmpFFwdDisabled,
-      ID_FF_BUTTON, false, _("End"));
+      ID_FF_BUTTON, false, _("Skip to End"));
 
    mRecord = MakeButton(bmpRecord, bmpRecord, bmpRecordDisabled,
       ID_RECORD_BUTTON, true, _("Record"));
-
-#ifdef CLEANSPEECH
-   /* i18n-hint: (verb)*/
-//   mBatch = MakeButton(bmpCleanSpeech, bmpCleanSpeech, bmpCleanSpeechDisabled,
-//      ID_BATCH_BUTTON, false, _("Clean Speech"));
-#endif   // CLEANSPEECH
 
 #if wxUSE_TOOLTIPS
    RegenerateToolsTooltips();
@@ -214,12 +208,45 @@ void ControlToolBar::Populate()
 void ControlToolBar::RegenerateToolsTooltips()
 {
 #if wxUSE_TOOLTIPS
-   mPause->SetToolTip(_("Pause"));
-   mPlay->SetToolTip(_("Play (Shift for Loop Play)"));
-   mStop->SetToolTip(_("Stop"));
-   mRewind->SetToolTip(_("Skip to Start"));
-   mFF->SetToolTip(_("Skip to End"));
-   mRecord->SetToolTip(_("Record (Shift for Append Record)"));
+   for (long iWinID = ID_PLAY_BUTTON; iWinID < BUTTON_COUNT; iWinID++)
+   {
+      wxWindow* pCtrl = this->FindWindow(iWinID); 
+      wxString strToolTip = pCtrl->GetLabel();
+      AudacityProject* pProj = GetActiveProject();
+      CommandManager* pCmdMgr = (pProj) ? pProj->GetCommandManager() : NULL;
+      if (pCmdMgr)
+      {
+         wxString strKey(wxT(" ("));
+         switch (iWinID)
+         {
+            case ID_PLAY_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("Play"));
+               strKey += _(") / Loop Play (");
+               strKey += pCmdMgr->GetKeyFromName(wxT("PlayLooped"));
+               break;
+            case ID_RECORD_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("Record"));
+               strKey += _(") / Append Record (");
+               strKey += pCmdMgr->GetKeyFromName(wxT("RecordAppend"));
+               break;
+            case ID_PAUSE_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("Pause"));
+               break;
+            case ID_STOP_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("Stop"));
+               break;
+            case ID_FF_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("SkipEnd"));
+               break;
+            case ID_REW_BUTTON:
+               strKey += pCmdMgr->GetKeyFromName(wxT("SkipStart"));
+               break;
+         }
+         strKey += wxT(")");
+         strToolTip += strKey;
+      }
+      pCtrl->SetToolTip(strToolTip);
+   }
 #endif
 }
 
@@ -228,31 +255,30 @@ void ControlToolBar::UpdatePrefs()
    bool updated = false;
    bool active;
 
-   RegenerateToolsTooltips();
-
    gPrefs->Read( wxT("/GUI/ErgonomicTransportButtons"), &active, true );
    if( mErgonomicTransportButtons != active )
    {
       mErgonomicTransportButtons = active;
       updated = true;
    }
-
-#ifdef CLEANSPEECH
-   //gPrefs->Read( wxT("/Batch/CleanSpeechMode"), &active, false );
-
-   active = false;
-   if( mCleanSpeechMode != active )
+   wxString strLocale = gPrefs->Read(wxT("/Locale/Language"), wxT(""));
+   if (mStrLocale != strLocale)
    {
-      mCleanSpeechMode = active;
+      mStrLocale = strLocale;
       updated = true;
    }
-#endif   // CLEANSPEECH
 
    if( updated )
    {
-      ReCreateButtons();
+      ReCreateButtons(); // side effect: calls RegenerateToolsTooltips()
       Updated();
    }
+   else
+      // The other reason to regenerate tooltips is if keyboard shortcuts for 
+      // transport buttons changed, but that's too much work to check for, so just 
+      // always do it. (Much cheaper than calling ReCreateButtons() in all cases. 
+      RegenerateToolsTooltips();
+
 
    // Set label to pull in language change
    SetLabel(_("Transport"));
@@ -309,12 +335,6 @@ void ControlToolBar::ArrangeButtons()
       mSizer->Add( mFF,     0, flags, 5 );
    }
 
-#ifdef CLEANSPEECH
-   // Add and possible hide the CleanSpeech button
-//   mSizer->Add( mBatch,  0, flags | wxLEFT, 5 );
-//   mSizer->Show( mBatch, mCleanSpeechMode );
-#endif   // CLEANSPEECH
-
    // Layout the sizer
    mSizer->Layout();
 
@@ -357,7 +377,6 @@ void ControlToolBar::EnableDisableButtons()
 {
    //TIDY-ME: Button logic could be neater.
    AudacityProject *p = GetActiveProject();
-   size_t numProjects = gAudacityProjects.Count();
    bool tracks = false;
    bool playing = mPlay->IsDown();
    bool recording = mRecord->IsDown();
@@ -381,18 +400,8 @@ void ControlToolBar::EnableDisableButtons()
    mPlay->SetEnabled((!recording) || (tracks && !busy));
    mRecord->SetEnabled(!busy && !playing);
 
-#ifdef CLEANSPEECH
-   if (p && GetActiveProject()->GetCleanSpeechMode()) {
-       bool canRecord = !tracks;
-       canRecord &= !busy;
-       canRecord &= ((numProjects == 0) || ((numProjects == 1) && !tracks));
-       mRecord->SetEnabled(canRecord);
-       //mBatch->SetEnabled(!busy && !recording);
-   }
-#endif   // CLEANSPEECH
-
    mStop->SetEnabled(busy);
-   mRewind->SetEnabled(tracks && !busy);
+   mRewind->SetEnabled(!busy);
    mFF->SetEnabled(tracks && !busy);
    mPause->SetEnabled(true);
 }
@@ -668,15 +677,16 @@ void ControlToolBar::OnKeyEvent(wxKeyEvent & event)
    event.Skip();
 }
 
-
 void ControlToolBar::OnKeyDown(wxKeyEvent & event)
 {
    event.Skip();
 
-   if (event.GetKeyCode() == WXK_SHIFT ) {
+   if (event.GetKeyCode() == WXK_SHIFT) 
+   {
       // Turn the "Play" button into a "Loop" button
       if (!mPlay->IsDown())
          mPlay->SetAlternate(true);
+      mShiftKeyTimer.Start(100);
    }
 }
 
@@ -684,14 +694,32 @@ void ControlToolBar::OnKeyUp(wxKeyEvent & event)
 {
    event.Skip();
 
-   if (event.GetKeyCode() == WXK_SHIFT ) {
+   if (event.GetKeyCode() == WXK_SHIFT) 
+   {
       // Turn the "Loop" button into a "Play" button
       if (!mPlay->IsDown())
          mPlay->SetAlternate(false);
    }
 }
 
-void ControlToolBar::OnPlay(wxCommandEvent &evt)
+void ControlToolBar::OnTimer(wxTimerEvent & event)
+{
+   event.Skip();
+
+   // bug 307 fix: 
+   // Shift key-up events get swallowed if a command with a Shift in its keyboard 
+   // shortcut opens a dialog, and ControlToolBar::OnKeyUp() doesn't get called. 
+   if (!wxGetKeyState(WXK_SHIFT))
+   {
+      wxKeyEvent dummyEvent;
+      dummyEvent.m_keyCode = WXK_SHIFT;
+      this->OnKeyUp(dummyEvent);
+      mShiftKeyTimer.Stop();
+   }
+}
+
+
+void ControlToolBar::OnPlay(wxCommandEvent & WXUNUSED(evt))
 {
    StopPlaying();
 
@@ -701,7 +729,7 @@ void ControlToolBar::OnPlay(wxCommandEvent &evt)
    PlayDefault();
 }
 
-void ControlToolBar::OnStop(wxCommandEvent &evt)
+void ControlToolBar::OnStop(wxCommandEvent & WXUNUSED(evt))
 {
    StopPlaying();
 }
@@ -750,21 +778,6 @@ void ControlToolBar::StopPlaying(bool stopStream /* = true*/)
    }
 }
 
-void ControlToolBar::OnBatch(wxCommandEvent &evt)
-{
-   AudacityProject *proj = GetActiveProject();
-   if (proj)
-      proj->OnApplyChain();
-
-   mPlay->Enable();
-   mStop->Enable();
-   mRewind->Enable();
-   mFF->Enable();
-   mPause->Disable();
-   //mBatch->Enable();
-   //mBatch->PopUp();
-}
-
 void ControlToolBar::OnRecord(wxCommandEvent &evt)
 {
    if (gAudioIO->IsBusy()) {
@@ -772,20 +785,6 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       return;
    }
    AudacityProject *p = GetActiveProject();
-#ifdef CLEANSPEECH
-   if (p && p->GetCleanSpeechMode()) {
-      size_t numProjects = gAudacityProjects.Count();
-      if (!p->GetTracks()->IsEmpty() || (numProjects > 1)) {
-         wxMessageBox(_("Recording in CleanSpeech mode is not possible when a track, or more than one project, is already open."),
-            _("Recording not permitted"),
-            wxOK | wxICON_INFORMATION,
-            this);
-         mRecord->PopUp();
-         mRecord->Disable();
-         return;
-      }
-   }
-#endif   // CLEANSPEECH
 
    if( evt.GetInt() == 1 ) // used when called by keyboard shortcut. Default (0) ignored.
       mRecord->SetShift(true);
@@ -953,7 +952,7 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
 }
 
 
-void ControlToolBar::OnPause(wxCommandEvent &evt)
+void ControlToolBar::OnPause(wxCommandEvent & WXUNUSED(evt))
 { 
    if(mPaused)
    {
@@ -969,7 +968,7 @@ void ControlToolBar::OnPause(wxCommandEvent &evt)
    gAudioIO->SetPaused(mPaused);
 }
 
-void ControlToolBar::OnRewind(wxCommandEvent &evt)
+void ControlToolBar::OnRewind(wxCommandEvent & WXUNUSED(evt))
 {
    mRewind->PushDown();
    mRewind->PopUp();
@@ -980,7 +979,7 @@ void ControlToolBar::OnRewind(wxCommandEvent &evt)
    }
 }
 
-void ControlToolBar::OnFF(wxCommandEvent &evt)
+void ControlToolBar::OnFF(wxCommandEvent & WXUNUSED(evt))
 {
    mFF->PushDown();
    mFF->PopUp();
@@ -992,8 +991,8 @@ void ControlToolBar::OnFF(wxCommandEvent &evt)
    }
 }
 
-void ControlToolBar::SetupCutPreviewTracks(double playStart, double cutStart,
-                                           double cutEnd, double playEnd)
+void ControlToolBar::SetupCutPreviewTracks(double WXUNUSED(playStart), double cutStart,
+                                           double cutEnd, double  WXUNUSED(playEnd))
 {
    ClearCutPreviewTracks();
    AudacityProject *p = GetActiveProject();
@@ -1040,13 +1039,3 @@ void ControlToolBar::ClearCutPreviewTracks()
    }
 }
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: ebfdc42a-6a03-4826-afa2-937a48c0565b

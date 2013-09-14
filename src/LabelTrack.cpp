@@ -1236,7 +1236,7 @@ void LabelStruct::MoveLabel( int iEdge, double fNewTime)
 }
 
 LabelStruct::TimeRelations LabelStruct::RegionRelation(
-      double reg_t0, double reg_t1, LabelTrack *parent)
+      double reg_t0, double reg_t1, LabelTrack * WXUNUSED(parent))
 {
    bool retainLabels = false;
 
@@ -1861,7 +1861,7 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
 
 /// OnChar is called for incoming characters -- that's any keypress not handled
 /// by OnKeyDown.
-bool LabelTrack::OnChar(double & newSel0, double & newSel1, wxKeyEvent & event)
+bool LabelTrack::OnChar(double & WXUNUSED(newSel0), double & WXUNUSED(newSel1), wxKeyEvent & event)
 {
    // Only track true changes to the label
    bool updated = false;
@@ -2658,10 +2658,10 @@ void LabelTrack::CreateCustomGlyphs()
 /// Returns true for keys we capture to start a label.
 bool LabelTrack::IsGoodLabelFirstKey(int keyCode)
 {
-   // Allow everything before WXK_START except space and delete, the numpad keys
+   // Allow everything before WXK_START except space, return and delete, the numpad keys
    // when numlock is on, and everything after WXK_COMMAND
    return (keyCode < WXK_START
-                  && keyCode != WXK_SPACE && keyCode != WXK_DELETE) ||
+                  && keyCode != WXK_SPACE && keyCode != WXK_DELETE && keyCode != WXK_RETURN) ||
           (keyCode >= WXK_NUMPAD0 && keyCode <= WXK_DIVIDE) ||
           (keyCode >= WXK_NUMPAD_EQUAL && keyCode <= WXK_NUMPAD_DIVIDE) ||
           (keyCode > WXK_COMMAND);
@@ -2674,7 +2674,8 @@ bool LabelTrack::IsGoodLabelEditKey(int keyCode)
    // within that range that are usually printable, plus the ones we use for
    // keyboard navigation.
    return keyCode < WXK_START ||
-          (keyCode >= WXK_END && keyCode <= WXK_DOWN) ||
+          (keyCode >= WXK_END && keyCode < WXK_UP) ||
+          (keyCode == WXK_RIGHT) ||
           (keyCode >= WXK_NUMPAD0 && keyCode <= WXK_DIVIDE) ||
           (keyCode >= WXK_NUMPAD_SPACE && keyCode <= WXK_NUMPAD_ENTER) ||
           (keyCode >= WXK_NUMPAD_HOME && keyCode <= WXK_NUMPAD_END) ||

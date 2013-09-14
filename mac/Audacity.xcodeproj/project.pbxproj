@@ -339,7 +339,6 @@
 		1790B12E09883BFD008A330A /* Amplify.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790AFFE09883BFD008A330A /* Amplify.cpp */; };
 		1790B12F09883BFD008A330A /* AudioUnitEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00109883BFD008A330A /* AudioUnitEffect.cpp */; };
 		1790B13009883BFD008A330A /* LoadAudioUnits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00409883BFD008A330A /* LoadAudioUnits.cpp */; };
-		1790B13309883BFD008A330A /* ChangeLength.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00A09883BFD008A330A /* ChangeLength.cpp */; };
 		1790B13409883BFD008A330A /* ChangePitch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00C09883BFD008A330A /* ChangePitch.cpp */; };
 		1790B13509883BFD008A330A /* ChangeSpeed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00E09883BFD008A330A /* ChangeSpeed.cpp */; };
 		1790B13609883BFD008A330A /* ChangeTempo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B01009883BFD008A330A /* ChangeTempo.cpp */; };
@@ -364,7 +363,6 @@
 		1790B14B09883BFD008A330A /* Reverse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04009883BFD008A330A /* Reverse.cpp */; };
 		1790B14C09883BFD008A330A /* Silence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04209883BFD008A330A /* Silence.cpp */; };
 		1790B14D09883BFD008A330A /* SimpleMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04409883BFD008A330A /* SimpleMono.cpp */; };
-		1790B14E09883BFD008A330A /* SimplePairedTwoTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04609883BFD008A330A /* SimplePairedTwoTrack.cpp */; };
 		1790B14F09883BFD008A330A /* SoundTouchEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04809883BFD008A330A /* SoundTouchEffect.cpp */; };
 		1790B15109883BFD008A330A /* StereoToMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04C09883BFD008A330A /* StereoToMono.cpp */; };
 		1790B15209883BFD008A330A /* ToneGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04E09883BFD008A330A /* ToneGen.cpp */; };
@@ -960,7 +958,6 @@
 		28E67F810A3A1A810021D89F /* pa_mac_core_utilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 28E8223B0A39FDB800DCE280 /* pa_mac_core_utilities.h */; };
 		28E67F830A3A1A820021D89F /* pa_process.c in Sources */ = {isa = PBXBuildFile; fileRef = 28E822140A39FD7600DCE280 /* pa_process.c */; };
 		28E67F840A3A1A830021D89F /* pa_process.h in Headers */ = {isa = PBXBuildFile; fileRef = 28E822150A39FD7600DCE280 /* pa_process.h */; };
-		28E67F850A3A1A840021D89F /* pa_skeleton.c in Sources */ = {isa = PBXBuildFile; fileRef = 28E822180A39FD7600DCE280 /* pa_skeleton.c */; };
 		28E67F860A3A1A840021D89F /* pa_stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 28E8221B0A39FD7600DCE280 /* pa_stream.c */; };
 		28E67F870A3A1A850021D89F /* pa_stream.h in Headers */ = {isa = PBXBuildFile; fileRef = 28E8221C0A39FD7600DCE280 /* pa_stream.h */; };
 		28E67F880A3A1A860021D89F /* pa_trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 28E8221F0A39FD7600DCE280 /* pa_trace.c */; };
@@ -1187,6 +1184,9 @@
 		ED1521BC163C284600451B5F /* dbesi0.c in Sources */ = {isa = PBXBuildFile; fileRef = ED1521BB163C284600451B5F /* dbesi0.c */; };
 		ED1521CE163C29DA00451B5F /* samplerate.h in Headers */ = {isa = PBXBuildFile; fileRef = ED1521CD163C29DA00451B5F /* samplerate.h */; };
 		ED1521EB163C2B9000451B5F /* libsoxr.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED152130163C227C00451B5F /* libsoxr.a */; };
+		ED19449A1733F92800F4F5CA /* Reverb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1944981733F92800F4F5CA /* Reverb.cpp */; };
+		ED19449B1733F92800F4F5CA /* Reverb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1944981733F92800F4F5CA /* Reverb.cpp */; };
+		ED19449C1733F92800F4F5CA /* Reverb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED1944981733F92800F4F5CA /* Reverb.cpp */; };
 		ED2706FF0EF9C47E007D4FFD /* sbsms.h in Headers */ = {isa = PBXBuildFile; fileRef = ED2706FE0EF9C47E007D4FFD /* sbsms.h */; };
 		ED2707260EF9C51D007D4FFD /* buffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED2707040EF9C51D007D4FFD /* buffer.cpp */; };
 		ED2707270EF9C51D007D4FFD /* buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = ED2707050EF9C51D007D4FFD /* buffer.h */; };
@@ -1252,7 +1252,6 @@
 		ED663B9B16543647007F53A5 /* Amplify.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790AFFE09883BFD008A330A /* Amplify.cpp */; };
 		ED663B9C16543647007F53A5 /* AudioUnitEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00109883BFD008A330A /* AudioUnitEffect.cpp */; };
 		ED663B9D16543647007F53A5 /* LoadAudioUnits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00409883BFD008A330A /* LoadAudioUnits.cpp */; };
-		ED663B9F16543647007F53A5 /* ChangeLength.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00A09883BFD008A330A /* ChangeLength.cpp */; };
 		ED663BA016543647007F53A5 /* ChangePitch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00C09883BFD008A330A /* ChangePitch.cpp */; };
 		ED663BA116543647007F53A5 /* ChangeSpeed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00E09883BFD008A330A /* ChangeSpeed.cpp */; };
 		ED663BA216543647007F53A5 /* ChangeTempo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B01009883BFD008A330A /* ChangeTempo.cpp */; };
@@ -1277,7 +1276,6 @@
 		ED663BB516543647007F53A5 /* Reverse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04009883BFD008A330A /* Reverse.cpp */; };
 		ED663BB616543647007F53A5 /* Silence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04209883BFD008A330A /* Silence.cpp */; };
 		ED663BB716543647007F53A5 /* SimpleMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04409883BFD008A330A /* SimpleMono.cpp */; };
-		ED663BB816543647007F53A5 /* SimplePairedTwoTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04609883BFD008A330A /* SimplePairedTwoTrack.cpp */; };
 		ED663BB916543647007F53A5 /* SoundTouchEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04809883BFD008A330A /* SoundTouchEffect.cpp */; };
 		ED663BBA16543647007F53A5 /* StereoToMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04C09883BFD008A330A /* StereoToMono.cpp */; };
 		ED663BBB16543647007F53A5 /* ToneGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04E09883BFD008A330A /* ToneGen.cpp */; };
@@ -1584,7 +1582,6 @@
 		ED85B47416A47353006DA21D /* Amplify.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790AFFE09883BFD008A330A /* Amplify.cpp */; };
 		ED85B47516A47353006DA21D /* AudioUnitEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00109883BFD008A330A /* AudioUnitEffect.cpp */; };
 		ED85B47616A47353006DA21D /* LoadAudioUnits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00409883BFD008A330A /* LoadAudioUnits.cpp */; };
-		ED85B47716A47353006DA21D /* ChangeLength.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00A09883BFD008A330A /* ChangeLength.cpp */; };
 		ED85B47816A47353006DA21D /* ChangePitch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00C09883BFD008A330A /* ChangePitch.cpp */; };
 		ED85B47916A47353006DA21D /* ChangeSpeed.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B00E09883BFD008A330A /* ChangeSpeed.cpp */; };
 		ED85B47A16A47353006DA21D /* ChangeTempo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B01009883BFD008A330A /* ChangeTempo.cpp */; };
@@ -1609,7 +1606,6 @@
 		ED85B48D16A47353006DA21D /* Reverse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04009883BFD008A330A /* Reverse.cpp */; };
 		ED85B48E16A47353006DA21D /* Silence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04209883BFD008A330A /* Silence.cpp */; };
 		ED85B48F16A47353006DA21D /* SimpleMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04409883BFD008A330A /* SimpleMono.cpp */; };
-		ED85B49016A47353006DA21D /* SimplePairedTwoTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04609883BFD008A330A /* SimplePairedTwoTrack.cpp */; };
 		ED85B49116A47353006DA21D /* SoundTouchEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04809883BFD008A330A /* SoundTouchEffect.cpp */; };
 		ED85B49216A47353006DA21D /* StereoToMono.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04C09883BFD008A330A /* StereoToMono.cpp */; };
 		ED85B49316A47353006DA21D /* ToneGen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B04E09883BFD008A330A /* ToneGen.cpp */; };
@@ -1895,6 +1891,8 @@
 		EDAD326C1544452E009C6220 /* sr_RS.po in Sources */ = {isa = PBXBuildFile; fileRef = EDAD325615444371009C6220 /* sr_RS.po */; };
 		EDAD326D1544452E009C6220 /* sr_RS@latin.po in Sources */ = {isa = PBXBuildFile; fileRef = 2888493B131B6CF600B59735 /* sr_RS@latin.po */; };
 		EDAD326E1544452E009C6220 /* sv.po in Sources */ = {isa = PBXBuildFile; fileRef = EDAD325715444372009C6220 /* sv.po */; };
+		EDBFAD16177E541E004CC1C1 /* NyqBench.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDBFAD14177E541E004CC1C1 /* NyqBench.cpp */; };
+		EDBFAD17177E541E004CC1C1 /* NyqBench.h in Headers */ = {isa = PBXBuildFile; fileRef = EDBFAD15177E541E004CC1C1 /* NyqBench.h */; };
 		EDD2431416934A6100D9DEC2 /* BassTreble.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD2431216934A6100D9DEC2 /* BassTreble.cpp */; };
 		EDD2431516934A6100D9DEC2 /* BassTreble.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD2431216934A6100D9DEC2 /* BassTreble.cpp */; };
 		EDD94EDB103CB520000873F1 /* ImportExportCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */; };
@@ -2811,8 +2809,6 @@
 		1790B00209883BFD008A330A /* AudioUnitEffect.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = AudioUnitEffect.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B00409883BFD008A330A /* LoadAudioUnits.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = LoadAudioUnits.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B00509883BFD008A330A /* LoadAudioUnits.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = LoadAudioUnits.h; sourceTree = "<group>"; tabWidth = 3; };
-		1790B00A09883BFD008A330A /* ChangeLength.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ChangeLength.cpp; sourceTree = "<group>"; tabWidth = 3; };
-		1790B00B09883BFD008A330A /* ChangeLength.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ChangeLength.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B00C09883BFD008A330A /* ChangePitch.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ChangePitch.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B00D09883BFD008A330A /* ChangePitch.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ChangePitch.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B00E09883BFD008A330A /* ChangeSpeed.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ChangeSpeed.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -2862,8 +2858,6 @@
 		1790B04309883BFD008A330A /* Silence.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = Silence.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B04409883BFD008A330A /* SimpleMono.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = SimpleMono.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B04509883BFD008A330A /* SimpleMono.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = SimpleMono.h; sourceTree = "<group>"; tabWidth = 3; };
-		1790B04609883BFD008A330A /* SimplePairedTwoTrack.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = SimplePairedTwoTrack.cpp; sourceTree = "<group>"; tabWidth = 3; };
-		1790B04709883BFD008A330A /* SimplePairedTwoTrack.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = SimplePairedTwoTrack.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B04809883BFD008A330A /* SoundTouchEffect.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = SoundTouchEffect.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B04909883BFD008A330A /* SoundTouchEffect.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = SoundTouchEffect.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B04C09883BFD008A330A /* StereoToMono.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = StereoToMono.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -3659,7 +3653,6 @@
 		28E822130A39FD7600DCE280 /* pa_hostapi.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = pa_hostapi.h; sourceTree = "<group>"; tabWidth = 3; };
 		28E822140A39FD7600DCE280 /* pa_process.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = pa_process.c; sourceTree = "<group>"; tabWidth = 3; };
 		28E822150A39FD7600DCE280 /* pa_process.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = pa_process.h; sourceTree = "<group>"; tabWidth = 3; };
-		28E822180A39FD7600DCE280 /* pa_skeleton.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = pa_skeleton.c; sourceTree = "<group>"; tabWidth = 3; };
 		28E8221B0A39FD7600DCE280 /* pa_stream.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = pa_stream.c; sourceTree = "<group>"; tabWidth = 3; };
 		28E8221C0A39FD7600DCE280 /* pa_stream.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = pa_stream.h; sourceTree = "<group>"; tabWidth = 3; };
 		28E8221F0A39FD7600DCE280 /* pa_trace.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = pa_trace.c; sourceTree = "<group>"; tabWidth = 3; };
@@ -3939,6 +3932,8 @@
 		ED15219B163C26E400451B5F /* filter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = filter.h; sourceTree = "<group>"; };
 		ED1521BB163C284600451B5F /* dbesi0.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dbesi0.c; sourceTree = "<group>"; };
 		ED1521CD163C29DA00451B5F /* samplerate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = samplerate.h; sourceTree = "<group>"; };
+		ED1944981733F92800F4F5CA /* Reverb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Reverb.cpp; sourceTree = "<group>"; };
+		ED1944991733F92800F4F5CA /* Reverb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reverb.h; sourceTree = "<group>"; };
 		ED2706F40EF9C3C6007D4FFD /* libsbsms.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsbsms.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED2706FE0EF9C47E007D4FFD /* sbsms.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = sbsms.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED2707040EF9C51D007D4FFD /* buffer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; name = buffer.cpp; path = sbsms/src/buffer.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -3994,6 +3989,9 @@
 		EDAD325515444371009C6220 /* sl.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sl.po; path = ../locale/sl.po; sourceTree = SOURCE_ROOT; };
 		EDAD325615444371009C6220 /* sr_RS.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sr_RS.po; path = ../locale/sr_RS.po; sourceTree = SOURCE_ROOT; };
 		EDAD325715444372009C6220 /* sv.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sv.po; path = ../locale/sv.po; sourceTree = SOURCE_ROOT; };
+		EDBFAD13177E5399004CC1C1 /* mod-nyq-bench.so */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "mod-nyq-bench.so"; sourceTree = BUILT_PRODUCTS_DIR; };
+		EDBFAD14177E541E004CC1C1 /* NyqBench.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NyqBench.cpp; path = "mod-nyq-bench/NyqBench.cpp"; sourceTree = "<group>"; };
+		EDBFAD15177E541E004CC1C1 /* NyqBench.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NyqBench.h; path = "mod-nyq-bench/NyqBench.h"; sourceTree = "<group>"; };
 		EDD2431216934A6100D9DEC2 /* BassTreble.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BassTreble.cpp; sourceTree = "<group>"; };
 		EDD2431316934A6100D9DEC2 /* BassTreble.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BassTreble.h; sourceTree = "<group>"; };
 		EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ImportExportCommands.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -4102,6 +4100,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDBFAD0D177E5399004CC1C1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -4123,6 +4128,7 @@
 				ED151F3F163BFD0400451B5F /* libsoxr */,
 				28501EAC0CEED0740029ABAA /* libvamp */,
 				1707357C0988D6AD008541CC /* libvorbis */,
+				EDBFAD18177E5424004CC1C1 /* mod-nyq-bench */,
 				2844B48E0DEA66900087C656 /* mod-script-pipe */,
 				28E821F50A39FC1300DCE280 /* portaudio-v19 */,
 				2800FDF00FF321DA005CA9E5 /* portmidi */,
@@ -4823,6 +4829,7 @@
 				ED663B3C16543581007F53A5 /* libsamplerate.a */,
 				ED663CDE16543647007F53A5 /* Audacity.app */,
 				ED85B5B816A47353006DA21D /* Audacity.app */,
+				EDBFAD13177E5399004CC1C1 /* mod-nyq-bench.so */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -5045,8 +5052,6 @@
 				28D65C710B97E54B000E001A /* AutoDuck.h */,
 				EDD2431216934A6100D9DEC2 /* BassTreble.cpp */,
 				EDD2431316934A6100D9DEC2 /* BassTreble.h */,
-				1790B00A09883BFD008A330A /* ChangeLength.cpp */,
-				1790B00B09883BFD008A330A /* ChangeLength.h */,
 				1790B00C09883BFD008A330A /* ChangePitch.cpp */,
 				1790B00D09883BFD008A330A /* ChangePitch.h */,
 				1790B00E09883BFD008A330A /* ChangeSpeed.cpp */,
@@ -5095,6 +5100,8 @@
 				28EBA7FB0A78FADE00C8BB1F /* Repair.h */,
 				1790B03E09883BFD008A330A /* Repeat.cpp */,
 				1790B03F09883BFD008A330A /* Repeat.h */,
+				ED1944981733F92800F4F5CA /* Reverb.cpp */,
+				ED1944991733F92800F4F5CA /* Reverb.h */,
 				1790B04009883BFD008A330A /* Reverse.cpp */,
 				1790B04109883BFD008A330A /* Reverse.h */,
 				ED27074B0EF9C64F007D4FFD /* SBSMSEffect.cpp */,
@@ -5103,8 +5110,6 @@
 				1790B04309883BFD008A330A /* Silence.h */,
 				1790B04409883BFD008A330A /* SimpleMono.cpp */,
 				1790B04509883BFD008A330A /* SimpleMono.h */,
-				1790B04609883BFD008A330A /* SimplePairedTwoTrack.cpp */,
-				1790B04709883BFD008A330A /* SimplePairedTwoTrack.h */,
 				1790B04809883BFD008A330A /* SoundTouchEffect.cpp */,
 				1790B04909883BFD008A330A /* SoundTouchEffect.h */,
 				1790B04C09883BFD008A330A /* StereoToMono.cpp */,
@@ -6227,7 +6232,6 @@
 				28E822130A39FD7600DCE280 /* pa_hostapi.h */,
 				28E822140A39FD7600DCE280 /* pa_process.c */,
 				28E822150A39FD7600DCE280 /* pa_process.h */,
-				28E822180A39FD7600DCE280 /* pa_skeleton.c */,
 				28E8221B0A39FD7600DCE280 /* pa_stream.c */,
 				28E8221C0A39FD7600DCE280 /* pa_stream.h */,
 				28E8221F0A39FD7600DCE280 /* pa_trace.c */,
@@ -6489,6 +6493,15 @@
 				ED663B3116543501007F53A5 /* src_zoh.c */,
 			);
 			name = src;
+			sourceTree = "<group>";
+		};
+		EDBFAD18177E5424004CC1C1 /* mod-nyq-bench */ = {
+			isa = PBXGroup;
+			children = (
+				EDBFAD14177E541E004CC1C1 /* NyqBench.cpp */,
+				EDBFAD15177E541E004CC1C1 /* NyqBench.h */,
+			);
+			name = "mod-nyq-bench";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -7053,6 +7066,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EDBFAD08177E5399004CC1C1 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDBFAD17177E541E004CC1C1 /* NyqBench.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXLegacyTarget section */
@@ -7582,6 +7603,23 @@
 			productReference = ED85B5B816A47353006DA21D /* Audacity.app */;
 			productType = "com.apple.product-type.application";
 		};
+		EDBFAD07177E5399004CC1C1 /* mod-nyq-bench */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = EDBFAD0E177E5399004CC1C1 /* Build configuration list for PBXNativeTarget "mod-nyq-bench" */;
+			buildPhases = (
+				EDBFAD08177E5399004CC1C1 /* Headers */,
+				EDBFAD0A177E5399004CC1C1 /* Sources */,
+				EDBFAD0D177E5399004CC1C1 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "mod-nyq-bench";
+			productName = "mod-script-pipe";
+			productReference = EDBFAD13177E5399004CC1C1 /* mod-nyq-bench.so */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -7621,6 +7659,7 @@
 				1707401D0988EEAA008541CC /* libsndfile */,
 				ED15212F163C227C00451B5F /* libsoxr */,
 				28501EAF0CEED1F00029ABAA /* libvamp */,
+				EDBFAD07177E5399004CC1C1 /* mod-nyq-bench */,
 				2880527D0DEA694100671EA4 /* mod-script-pipe */,
 				28E67F510A3A160D0021D89F /* portaudio-v19 */,
 				2800FE060FF322D4005CA9E5 /* portmidi */,
@@ -7725,7 +7764,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsoxr's endianness detection is a bit unfriendly to universal binary\n# builds. We need to disable SIMD since we can't build UBs with it enabled.\n#\nFILE=lib-src/libsoxr/soxr-config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#if defined(__BIG_ENDIAN__)\n#undef WORDS_BIGENDIAN\n#define WORDS_BIGENDIAN 1\n#endif\n#undef HAVE_SIMD\n#define HAVE_SIMD 0\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\nif [ \"$ACTION\" = \"install\" ]\nthen\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity.sh'\nelse\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\nfi \n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsoxr's endianness detection is a bit unfriendly to universal binary\n# builds. We need to disable SIMD since we can't build UBs with it enabled.\n#\nFILE=lib-src/libsoxr/soxr-config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#if defined(__BIG_ENDIAN__)\n#undef WORDS_BIGENDIAN\n#define WORDS_BIGENDIAN 1\n#endif\n#undef HAVE_SIMD\n#define HAVE_SIMD 0\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		17073FEB0988E6C9008541CC /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7903,7 +7942,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libsamplerate \\\n             --with-libsoxr \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsamplerate's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsamplerate/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\nif [ \"$ACTION\" = \"install\" ]\nthen\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity.sh'\nelse\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\nfi \n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libsamplerate \\\n             --with-libsoxr \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsamplerate's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsamplerate/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		ED85B42816A47329006DA21D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7918,7 +7957,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libresample \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\nif [ \"$ACTION\" = \"install\" ]\nthen\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity.sh'\nelse\n\techo >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\nfi \n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libresample \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		ED85B5A616A47353006DA21D /* Copy nyquist */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -8479,7 +8518,6 @@
 				1790B12E09883BFD008A330A /* Amplify.cpp in Sources */,
 				1790B12F09883BFD008A330A /* AudioUnitEffect.cpp in Sources */,
 				1790B13009883BFD008A330A /* LoadAudioUnits.cpp in Sources */,
-				1790B13309883BFD008A330A /* ChangeLength.cpp in Sources */,
 				1790B13409883BFD008A330A /* ChangePitch.cpp in Sources */,
 				1790B13509883BFD008A330A /* ChangeSpeed.cpp in Sources */,
 				1790B13609883BFD008A330A /* ChangeTempo.cpp in Sources */,
@@ -8504,7 +8542,6 @@
 				1790B14B09883BFD008A330A /* Reverse.cpp in Sources */,
 				1790B14C09883BFD008A330A /* Silence.cpp in Sources */,
 				1790B14D09883BFD008A330A /* SimpleMono.cpp in Sources */,
-				1790B14E09883BFD008A330A /* SimplePairedTwoTrack.cpp in Sources */,
 				1790B14F09883BFD008A330A /* SoundTouchEffect.cpp in Sources */,
 				1790B15109883BFD008A330A /* StereoToMono.cpp in Sources */,
 				1790B15209883BFD008A330A /* ToneGen.cpp in Sources */,
@@ -8762,6 +8799,7 @@
 				EDF3B7B01588C0D50032D35F /* Paulstretch.cpp in Sources */,
 				ED920CAF15B19F61008CA12C /* ModulePrefs.cpp in Sources */,
 				EDD2431416934A6100D9DEC2 /* BassTreble.cpp in Sources */,
+				ED19449A1733F92800F4F5CA /* Reverb.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8862,7 +8900,6 @@
 				28E67F7D0A3A1A7E0021D89F /* pa_mac_core_blocking.c in Sources */,
 				28E67F800A3A1A810021D89F /* pa_mac_core_utilities.c in Sources */,
 				28E67F830A3A1A820021D89F /* pa_process.c in Sources */,
-				28E67F850A3A1A840021D89F /* pa_skeleton.c in Sources */,
 				28E67F860A3A1A840021D89F /* pa_stream.c in Sources */,
 				28E67F880A3A1A860021D89F /* pa_trace.c in Sources */,
 				2835062D0A3A88ED00EB1EBD /* pa_unix_util.c in Sources */,
@@ -8938,7 +8975,6 @@
 				ED663B9B16543647007F53A5 /* Amplify.cpp in Sources */,
 				ED663B9C16543647007F53A5 /* AudioUnitEffect.cpp in Sources */,
 				ED663B9D16543647007F53A5 /* LoadAudioUnits.cpp in Sources */,
-				ED663B9F16543647007F53A5 /* ChangeLength.cpp in Sources */,
 				ED663BA016543647007F53A5 /* ChangePitch.cpp in Sources */,
 				ED663BA116543647007F53A5 /* ChangeSpeed.cpp in Sources */,
 				ED663BA216543647007F53A5 /* ChangeTempo.cpp in Sources */,
@@ -8963,7 +8999,6 @@
 				ED663BB516543647007F53A5 /* Reverse.cpp in Sources */,
 				ED663BB616543647007F53A5 /* Silence.cpp in Sources */,
 				ED663BB716543647007F53A5 /* SimpleMono.cpp in Sources */,
-				ED663BB816543647007F53A5 /* SimplePairedTwoTrack.cpp in Sources */,
 				ED663BB916543647007F53A5 /* SoundTouchEffect.cpp in Sources */,
 				ED663BBA16543647007F53A5 /* StereoToMono.cpp in Sources */,
 				ED663BBB16543647007F53A5 /* ToneGen.cpp in Sources */,
@@ -9221,6 +9256,7 @@
 				ED663CB616543647007F53A5 /* Paulstretch.cpp in Sources */,
 				ED663CB716543647007F53A5 /* ModulePrefs.cpp in Sources */,
 				EDD2431516934A6100D9DEC2 /* BassTreble.cpp in Sources */,
+				ED19449B1733F92800F4F5CA /* Reverb.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9246,7 +9282,6 @@
 				ED85B47416A47353006DA21D /* Amplify.cpp in Sources */,
 				ED85B47516A47353006DA21D /* AudioUnitEffect.cpp in Sources */,
 				ED85B47616A47353006DA21D /* LoadAudioUnits.cpp in Sources */,
-				ED85B47716A47353006DA21D /* ChangeLength.cpp in Sources */,
 				ED85B47816A47353006DA21D /* ChangePitch.cpp in Sources */,
 				ED85B47916A47353006DA21D /* ChangeSpeed.cpp in Sources */,
 				ED85B47A16A47353006DA21D /* ChangeTempo.cpp in Sources */,
@@ -9271,7 +9306,6 @@
 				ED85B48D16A47353006DA21D /* Reverse.cpp in Sources */,
 				ED85B48E16A47353006DA21D /* Silence.cpp in Sources */,
 				ED85B48F16A47353006DA21D /* SimpleMono.cpp in Sources */,
-				ED85B49016A47353006DA21D /* SimplePairedTwoTrack.cpp in Sources */,
 				ED85B49116A47353006DA21D /* SoundTouchEffect.cpp in Sources */,
 				ED85B49216A47353006DA21D /* StereoToMono.cpp in Sources */,
 				ED85B49316A47353006DA21D /* ToneGen.cpp in Sources */,
@@ -9529,6 +9563,15 @@
 				ED85B58F16A47353006DA21D /* Paulstretch.cpp in Sources */,
 				ED85B59016A47353006DA21D /* ModulePrefs.cpp in Sources */,
 				ED85B59116A47353006DA21D /* BassTreble.cpp in Sources */,
+				ED19449C1733F92800F4F5CA /* Reverb.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EDBFAD0A177E5399004CC1C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EDBFAD16177E541E004CC1C1 /* NyqBench.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -12001,6 +12044,154 @@
 			};
 			name = "Release Shared";
 		};
+		EDBFAD0F177E5399004CC1C1 /* Debug Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
+			buildSettings = {
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/modules";
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = "";
+				EXECUTABLE_EXTENSION = so;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = CC_HASVISIBILITY;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /Audacity/modules;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_dylib;
+				OTHER_CFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CFLAGS)",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CXXFLAGS)",
+				);
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+					"$(WX_LDFLAGS)",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = "mod-nyq-bench";
+				SKIP_INSTALL = NO;
+				ZERO_LINK = YES;
+			};
+			name = "Debug Static";
+		};
+		EDBFAD10177E5399004CC1C1 /* Debug Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */;
+			buildSettings = {
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/modules";
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = "";
+				EXECUTABLE_EXTENSION = so;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = CC_HASVISIBILITY;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /Audacity/modules;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_dylib;
+				OTHER_CFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CFLAGS)",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CXXFLAGS)",
+				);
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+					"$(WX_LDFLAGS)",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = "mod-nyq-bench";
+				SKIP_INSTALL = NO;
+				ZERO_LINK = YES;
+			};
+			name = "Debug Shared";
+		};
+		EDBFAD11177E5399004CC1C1 /* Release Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BD0DF6400E00576305 /* Release_Static.xcconfig */;
+			buildSettings = {
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/modules";
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = "";
+				EXECUTABLE_EXTENSION = so;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = CC_HASVISIBILITY;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /Audacity/modules;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_dylib;
+				OTHER_CFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CFLAGS)",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CXXFLAGS)",
+				);
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+					"$(WX_LDFLAGS)",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = "mod-nyq-bench";
+				SKIP_INSTALL = NO;
+				ZERO_LINK = YES;
+			};
+			name = "Release Static";
+		};
+		EDBFAD12177E5399004CC1C1 /* Release Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */;
+			buildSettings = {
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/$(CONFIGURATION)/modules";
+				DYLIB_COMPATIBILITY_VERSION = "";
+				DYLIB_CURRENT_VERSION = "";
+				EXECUTABLE_EXTENSION = so;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = CC_HASVISIBILITY;
+				GENERATE_MASTER_OBJECT_FILE = YES;
+				INSTALL_PATH = /Audacity/modules;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_dylib;
+				OTHER_CFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CFLAGS)",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"-I",
+					../src,
+					"$(WX_CXXFLAGS)",
+				);
+				OTHER_LDFLAGS = (
+					"-flat_namespace",
+					"-undefined",
+					suppress,
+					"$(WX_LDFLAGS)",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = "mod-nyq-bench";
+				SKIP_INSTALL = NO;
+				ZERO_LINK = YES;
+			};
+			name = "Release Shared";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -12341,6 +12532,17 @@
 				ED85B5B516A47353006DA21D /* Debug Shared */,
 				ED85B5B616A47353006DA21D /* Release Static */,
 				ED85B5B716A47353006DA21D /* Release Shared */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Debug Static";
+		};
+		EDBFAD0E177E5399004CC1C1 /* Build configuration list for PBXNativeTarget "mod-nyq-bench" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EDBFAD0F177E5399004CC1C1 /* Debug Static */,
+				EDBFAD10177E5399004CC1C1 /* Debug Shared */,
+				EDBFAD11177E5399004CC1C1 /* Release Static */,
+				EDBFAD12177E5399004CC1C1 /* Release Shared */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Debug Static";

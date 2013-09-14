@@ -25,7 +25,7 @@ class EffectLeveller: public EffectSimpleMono
    EffectLeveller();
 
    virtual wxString GetEffectName() {
-      return wxString(_("Leveller..."));
+      return wxString(_("Leveler..."));
    }
 
    virtual std::set<wxString> GetEffectCategories() {
@@ -39,7 +39,7 @@ class EffectLeveller: public EffectSimpleMono
    }
 
    virtual wxString GetEffectAction() {
-      return wxString(_("Applying Leveller..."));
+      return wxString(_("Applying Leveler..."));
    }
    virtual bool Init();
    virtual void End();
@@ -75,7 +75,7 @@ class LevellerDialog: public EffectDialog
 //   bool TransferDataFromWindow();
 
  private:
-	// handlers
+   // handlers
    void OnPreview( wxCommandEvent &event );
 
  private:
@@ -87,7 +87,7 @@ class LevellerDialog: public EffectDialog
 
  public:
    int mLevellerDbChoiceIndex;
-   int mLevellerNumPassesChoicIndex;
+   int mLevellerNumPassesChoiceIndex;
 };
 
 #endif

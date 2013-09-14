@@ -101,10 +101,10 @@ bool EffectNormalize::CheckWhetherSkipEffect()
 
 void EffectNormalize::End()
 {
-	bool bValidate;
-	gPrefs->Read(wxT("/Validate/Enabled"), &bValidate, false ); // this never get written!  Why is this here? MJS
-	if( bValidate )
-	{
+   bool bValidate;
+   gPrefs->Read(wxT("/Validate/Enabled"), &bValidate, false ); // this never get written!  Why is this here? MJS
+   if( bValidate )
+   {
       int checkOffset = abs((int)(mOffset * 1000.0));
       gPrefs->Write(wxT("/Validate/Norm_Offset"), checkOffset);
       int checkMultiplier = abs((int)(mMult * 1000.0));
@@ -112,7 +112,7 @@ void EffectNormalize::End()
       int checkFrameSum = (int)gFrameSum;
       gPrefs->Write(wxT("/Validate/Norm_FrameSum"), checkFrameSum);
       gPrefs->Flush();
-	}
+   }
 }
 
 bool EffectNormalize::PromptUser()
@@ -337,7 +337,7 @@ bool EffectNormalize::AnalyseDC(WaveTrack * track, wxString msg)
       s += block;
       
       //Update the Progress meter
-		if (TrackProgress(mCurTrackNum, 
+      if (TrackProgress(mCurTrackNum,
                         ((double)(s - start) / len)/2.0, msg)) {
          rc = false; //lda .. break, not return, so that buffer is deleted
          break;
@@ -398,7 +398,7 @@ bool EffectNormalize::ProcessOne(WaveTrack * track, wxString msg)
       s += block;
       
       //Update the Progress meter
-		if (TrackProgress(mCurTrackNum, 
+      if (TrackProgress(mCurTrackNum,
                         0.5+((double)(s - start) / len)/2.0, msg)) {
          rc = false; //lda .. break, not return, so that buffer is deleted
          break;
@@ -463,30 +463,22 @@ void NormalizeDialog::PopulateOrExchange(ShuttleGui & S)
 {
    wxTextValidator vld(wxFILTER_NUMERIC);
 
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("by Dominic Mazzoni"));
-   }
-   S.EndHorizontalLay();
-
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      // Add a little space
-   }
-   S.EndHorizontalLay();
-
    S.StartTwoColumn();
    {
       S.StartVerticalLay(false);
       {
-         mDCCheckBox = S.Id(ID_DC_REMOVE).AddCheckBox(_("Remove any DC offset (center on 0.0 vertically)"),
-                                     mDC ? wxT("true") : wxT("false"));
-   
-         mGainCheckBox = S.Id(ID_NORMALIZE_AMPLITUDE).AddCheckBox(_("Normalize maximum amplitude to:"),
-                                       mGain ? wxT("true") : wxT("false"));
+         mDCCheckBox = 
+            S.Id(ID_DC_REMOVE).
+               AddCheckBox(_("Remove DC offset (center on 0.0 vertically)"),
+                           mDC ? wxT("true") : wxT("false"));
    
          S.StartHorizontalLay(wxALIGN_CENTER, false);
          {
+            mGainCheckBox = 
+               S.Id(ID_NORMALIZE_AMPLITUDE).
+                  AddCheckBox(_("Normalize maximum amplitude to"), 
+                              mGain ? wxT("true") : wxT("false"));
+   
             mLevelTextCtrl = S.Id(ID_LEVEL_TEXT).AddTextBox(wxT(""), wxT(""), 10);
             mLevelTextCtrl->SetValidator(vld);
             mLevelTextCtrl->SetName(_("Maximum amplitude dB"));
@@ -528,7 +520,7 @@ bool NormalizeDialog::TransferDataFromWindow()
    return true;
 }
 
-void NormalizeDialog::OnUpdateUI(wxCommandEvent& evt)
+void NormalizeDialog::OnUpdateUI(wxCommandEvent& WXUNUSED(event))
 {
    UpdateUI();
 }
@@ -570,11 +562,11 @@ void NormalizeDialog::UpdateUI()
       mWarning->SetLabel(wxT(""));
 }
 
-void NormalizeDialog::OnPreview(wxCommandEvent &event)
+void NormalizeDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
 
-	// Save & restore parameters around Preview, because we didn't do OK.
+   // Save & restore parameters around Preview, because we didn't do OK.
    bool oldGain = mEffect->mGain;
    bool oldDC = mEffect->mDC;
    double oldLevel = mEffect->mLevel;
@@ -587,7 +579,7 @@ void NormalizeDialog::OnPreview(wxCommandEvent &event)
 
    mEffect->Preview();
    
-	mEffect->mGain = oldGain;
+   mEffect->mGain = oldGain;
    mEffect->mDC = oldDC;
    mEffect->mLevel = oldLevel;
    mEffect->mStereoInd = oldStereoInd;

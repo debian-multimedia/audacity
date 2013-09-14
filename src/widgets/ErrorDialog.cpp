@@ -36,6 +36,8 @@ Gives an Error message with an option for help.
 #include "../Project.h"
 #include "../Prefs.h"
 
+#include "ErrorDialog.h"
+
 
 class ErrorDialog : public wxDialog
 {
@@ -50,14 +52,14 @@ class ErrorDialog : public wxDialog
    virtual ~ErrorDialog(){}
 
 private:
-	wxString dhelpURL;
+   wxString dhelpURL;
    bool dClose;
    bool dModal;
-	
+
    void OnOk( wxCommandEvent &event );
    void OnHelp( wxCommandEvent &event );
    DECLARE_EVENT_TABLE()
-	   
+
 };
 
 // special case for alias missing dialog because we keep track of if it exists.
@@ -135,14 +137,14 @@ ErrorDialog::ErrorDialog(
    
    wxStaticText *statText = new wxStaticText(this, -1, message);
    mainSizer->Add(statText, 0, wxALIGN_LEFT|wxALL, 5);
-	   
+
    wxButton *help = new wxButton(this, wxID_HELP, _("Help"));
    hSizer->Add(help, 0, wxALIGN_LEFT|wxALL, 5);
-		
+
    wxButton *ok = new wxButton(this, wxID_OK, _("OK"));
    ok->SetDefault();
    ok->SetFocus();
- hSizer->Add(ok, 0, wxALIGN_RIGHT|wxALL, 5);
+   hSizer->Add(ok, 0, wxALIGN_RIGHT|wxALL, 5);
    
    vSizer->Add(hSizer, 0, wxALIGN_CENTER|wxALL, 5);
    
@@ -155,7 +157,7 @@ ErrorDialog::ErrorDialog(
 #endif
 }
 
-void ErrorDialog::OnOk(wxCommandEvent &event)
+void ErrorDialog::OnOk(wxCommandEvent & WXUNUSED(event))
 {
    if (dModal)
       EndModal(true);
@@ -180,7 +182,10 @@ public:
    }
 };
 
-void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &HtmlText, bool bIsFile = false, bool bModal = false )
+void ShowHtmlText(wxWindow *pParent,
+                  const wxString &Title,
+                  const wxString &HtmlText,
+                  bool bIsFile = false, bool bModal = false)
 {
    LinkingHtmlWindow *html;
 
@@ -264,7 +269,7 @@ void ShowHtmlText( wxWindow * pParent, const wxString &Title, const wxString &Ht
    return;
 }
 
-void ErrorDialog::OnHelp(wxCommandEvent &event)
+void ErrorDialog::OnHelp(wxCommandEvent & WXUNUSED(event))
 {
    if( dhelpURL.StartsWith(wxT("innerlink:")) )
    {
@@ -278,12 +283,12 @@ void ErrorDialog::OnHelp(wxCommandEvent &event)
    }
    OpenInDefaultBrowser( dhelpURL );
    if(dClose)
-	   EndModal(true);
+      EndModal(true);
 }
 
 void ShowErrorDialog(wxWindow *parent,
                      const wxString &dlogTitle,
-                     const wxString &message, 
+                     const wxString &message,
                      const wxString &helpURL,
                      const bool Close)
 {
@@ -293,10 +298,10 @@ void ShowErrorDialog(wxWindow *parent,
 }
 
 void ShowModelessErrorDialog(wxWindow *parent,
-                     const wxString &dlogTitle,
-                     const wxString &message, 
-                     const wxString &helpURL,
-                     const bool Close)
+                             const wxString &dlogTitle,
+                             const wxString &message,
+                             const wxString &helpURL,
+                             const bool Close)
 {
    ErrorDialog *dlog = new ErrorDialog(parent, dlogTitle, message, helpURL, Close, false);
    dlog->CentreOnParent();
@@ -306,10 +311,10 @@ void ShowModelessErrorDialog(wxWindow *parent,
 }
 
 void ShowAliasMissingDialog(AudacityProject *parent,
-                     const wxString &dlogTitle,
-                     const wxString &message, 
-                     const wxString &helpURL,
-                     const bool Close)
+                            const wxString &dlogTitle,
+                            const wxString &message,
+                            const wxString &helpURL,
+                            const bool Close)
 {
    ErrorDialog *dlog = new AliasedFileMissingDialog(parent, dlogTitle, message, helpURL, Close, false);
    // Don't center because in many cases (effect, export, etc) there will be a progress bar in the center that blocks this.
@@ -335,7 +340,7 @@ void ShowAliasMissingDialog(AudacityProject *parent,
 void ShowInfoDialog( wxWindow *parent,
                      const wxString &dlogTitle,
                      const wxString &shortMsg,
-                     const wxString &message, 
+                     const wxString &message,
                      const int xSize, const int ySize)
 {
    wxDialog dlog(parent, wxID_ANY,
@@ -374,8 +379,8 @@ void ShowInfoDialog( wxWindow *parent,
 
 
 void ShowHelpDialog(wxWindow *parent,
-                     const wxString &localFileName,
-                     const wxString &remoteURL)
+                    const wxString &localFileName,
+                    const wxString &remoteURL)
 {
    AudacityProject * pProj = GetActiveProject();
    wxString HelpMode = wxT("Local");

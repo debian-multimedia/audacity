@@ -250,8 +250,8 @@ int QTImportFileHandle::Import(TrackFactory *trackFactory,
    }
 
    err = MovieAudioExtractionSetProperty(maer,
-													  kQTPropertyClass_MovieAudioExtraction_Audio,
-													  kQTMovieAudioExtractionAudioPropertyID_RenderQuality,
+                                         kQTPropertyClass_MovieAudioExtraction_Audio,
+                                         kQTMovieAudioExtractionAudioPropertyID_RenderQuality,
                                          sizeof(quality),
                                          &quality);
    if (err != noErr) {
@@ -412,7 +412,7 @@ names[] =
 {
    {  kQTMetaDataCommonKeyAuthor,         wxT("Author")           },
    {  kQTMetaDataCommonKeyComment,        TAG_COMMENTS            },
-   {  kQTMetaDataCommonKeyCopyright,      wxT("Copyright")        },
+   {  kQTMetaDataCommonKeyCopyright,      TAG_COPYRIGHT           },
    {  kQTMetaDataCommonKeyDirector,       wxT("Director")         },
    {  kQTMetaDataCommonKeyDisplayName,    wxT("Full Name")        },
    {  kQTMetaDataCommonKeyInformation,    wxT("Information")      },
@@ -427,7 +427,7 @@ names[] =
    {  kQTMetaDataCommonKeyOriginalFormat, wxT("Original Format")  },
    {  kQTMetaDataCommonKeyOriginalSource, wxT("Original Source")  },
    {  kQTMetaDataCommonKeyPerformers,     wxT("Performers")       },
-   {  kQTMetaDataCommonKeySoftware,       wxT("Software")         },
+   {  kQTMetaDataCommonKeySoftware,       TAG_SOFTWARE            },
    {  kQTMetaDataCommonKeyWriter,         wxT("Writer")           },
 };
 

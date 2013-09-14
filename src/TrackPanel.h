@@ -224,6 +224,7 @@ class AUDACITY_DLL_API TrackPanel:public wxPanel {
    //virtual void SetSelectionFormat(int iformat)
    //virtual void SetSnapTo(int snapto)
 
+   virtual void HandleAltKey(bool down);
    virtual void HandleShiftKey(bool down);
    virtual void HandleControlKey(bool down);
    virtual void HandlePageUpKey();
@@ -317,8 +318,8 @@ class AUDACITY_DLL_API TrackPanel:public wxPanel {
    // AS: Selection handling
    virtual void HandleSelect(wxMouseEvent & event);
    virtual void SelectionHandleDrag(wxMouseEvent &event, Track *pTrack);
-   virtual void SelectionHandleClick(wxMouseEvent &event, 
-			     Track* pTrack, wxRect r);
+   virtual void SelectionHandleClick(wxMouseEvent &event,
+                                     Track* pTrack, wxRect r);
    virtual void StartSelection (int mouseXCoordinate, int trackLeftEdge);
    virtual void ExtendSelection(int mouseXCoordinate, int trackLeftEdge,
                         Track *pTrack);
@@ -497,6 +498,9 @@ protected:
    virtual int IdOfRate( int rate );
    virtual int IdOfFormat( int format );
 
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+   void UpdateVirtualStereoOrder();
+#endif
    // Accessors...
    virtual bool HasSoloButton(){  return mSoloPref!=wxT("None");};
 

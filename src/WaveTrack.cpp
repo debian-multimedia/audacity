@@ -56,6 +56,10 @@ Track classes.
 
 using std::max;
 
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+bool WaveTrack::mMonoAsVirtualStereo;
+#endif
+
 WaveTrack* TrackFactory::DuplicateWaveTrack(WaveTrack &orig)
 {
    return (WaveTrack*)(orig.Duplicate());
@@ -130,7 +134,11 @@ void WaveTrack::Init(const WaveTrack &orig)
 void WaveTrack::Merge(const Track &orig)
 {
    if (orig.GetKind() == Wave)
+   {
       mDisplay = ((WaveTrack &)orig).mDisplay;
+      mGain    = ((WaveTrack &)orig).mGain;
+      mPan     = ((WaveTrack &)orig).mPan;
+   }
    Track::Merge(orig);
 }
 
@@ -211,6 +219,37 @@ float WaveTrack::GetPan() const
    return mPan;
 }
 
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+bool WaveTrack::SetPan(float newPan)
+{
+   float p=mPan;
+   bool panZero=false;
+   int temp;
+
+   if (newPan > 1.0)
+      mPan = 1.0;
+   else if (newPan < -1.0)
+      mPan = -1.0;
+   else
+      mPan = newPan;
+
+   if(mDisplay == WaveTrack::WaveformDisplay && mChannel == Track::MonoChannel && (p == 0.0f && newPan != 0.0f || p != 0.0f && newPan == 0.0f) && mMonoAsVirtualStereo)
+   {
+      panZero=true;
+      if(!mPan){
+         mHeight = mHeight + mHeightv;
+      }else{
+         temp = mHeight;
+         mHeight = temp*mPerY;
+         mHeightv = temp - mHeight;      
+      }
+      ReorderList();
+   }
+
+   return panZero;
+}
+
+#else // EXPERIMENTAL_OUTPUT_DISPLAY
 void WaveTrack::SetPan(float newPan)
 {
    if (newPan > 1.0)
@@ -220,11 +259,64 @@ void WaveTrack::SetPan(float newPan)
    else
       mPan = newPan;
 }
+#endif // EXPERIMENTAL_OUTPUT_DISPLAY
+
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+void WaveTrack::SetVirtualState(bool state, bool half)
+{
+   int temp;
+
+   if(half)
+      mPerY = 0.5;
+
+   if(state){
+      if(mPan){
+         temp = mHeight;
+         mHeight = temp*mPerY;
+         mHeightv = temp - mHeight;
+      }
+      ReorderList();
+   }else{
+      if(mPan){
+         mHeight = mHeight + mHeightv;
+      }
+   }
+}
+
+int WaveTrack::GetMinimizedHeight() const
+{
+   if (GetLink()) {
+      return 20;
+   }
+
+   if(GetChannel() == MonoChannel && GetPan() != 0 && mMonoAsVirtualStereo &&  mDisplay == WaveformDisplay)
+      return 20;
+   else
+      return 40;
+}
+
+void WaveTrack::VirtualStereoInit()
+{
+   int temp;
+
+   if(mChannel == Track::MonoChannel && mPan != 0.0f && mMonoAsVirtualStereo){
+      temp = mHeight;
+      mHeight = temp*mPerY;
+      mHeightv = temp - mHeight; 
+      ReorderList(false);
+   }
+}
+#endif
 
 float WaveTrack::GetChannelGain(int channel)
 {
    float left = 1.0;
    float right = 1.0;
+
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+   if(mVirtualStereo)
+      channel = 3;
+#endif
 
    if (mPan < 0)
       right = (mPan + 1.0);
@@ -1381,13 +1473,16 @@ bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
             SetLinked(nValue != 0);
          
       } // while
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+      VirtualStereoInit();
+#endif
       return true;
    }
 
    return false;
 }
 
-void WaveTrack::HandleXMLEndTag(const wxChar *tag)
+void WaveTrack::HandleXMLEndTag(const wxChar * WXUNUSED(tag))
 {
    // In case we opened a pre-multiclip project, we need to
    // simulate closing the waveclip tag.
@@ -1438,7 +1533,16 @@ void WaveTrack::WriteXML(XMLWriter &xmlFile)
    xmlFile.WriteAttr(wxT("linked"), mLinked);
    xmlFile.WriteAttr(wxT("mute"), mMute);
    xmlFile.WriteAttr(wxT("solo"), mSolo);
+#ifdef EXPERIMENTAL_OUTPUT_DISPLAY
+   int height;
+   if(MONO_PAN)
+      height = mHeight + mHeightv;
+   else
+      height = this->GetActualHeight();
+   xmlFile.WriteAttr(wxT("height"), height);
+#else
    xmlFile.WriteAttr(wxT("height"), this->GetActualHeight());
+#endif
    xmlFile.WriteAttr(wxT("minimized"), this->GetMinimized());
    xmlFile.WriteAttr(wxT("isSelected"), this->GetSelected());
    xmlFile.WriteAttr(wxT("rate"), mRate);
@@ -1739,8 +1843,8 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
       return;
 
    // This is useful in debugging, to easily find null envelope settings, but 
-   // should not be necessary in release build. 
-   // If we were going to set it to failsafe values, better to set each element to 1.0.
+   // should not be necessary in Release build. 
+   // If we were going to set it to failsafe values in Release build, better to set each element to 1.0.
    #ifdef __WXDEBUG__
       memset(buffer, 0, sizeof(double)*bufferLen);
    #endif
@@ -1771,7 +1875,12 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
 
          if (rt0 + rlen*tstep > dClipEndTime)
          {
+            //vvvvv debugging   int nStartSample = clip->GetStartSample();
+            //vvvvv debugging   int nEndSample = clip->GetEndSample();
             int nClipLen = clip->GetEndSample() - clip->GetStartSample();
+
+            if (nClipLen <= 0) // Testing for bug 641, this problem is consistently '== 0', but doesn't hurt to check <. 
+               return; 
 
             // This check prevents problem cited in http://bugzilla.audacityteam.org/show_bug.cgi?id=528#c11, 
             // Gale's cross_fade_out project, which was already corrupted by bug 528.
@@ -2182,7 +2291,7 @@ bool WaveTrack::Resample(int rate, ProgressDialog *progress)
       if (!it->GetData()->Resample(rate, progress))
       {
          wxLogDebug( wxT("Resampling problem!  We're partially resampled") );
-         // FIX-ME: The track is now in an inconsistent state since some
+         // FIXME: The track is now in an inconsistent state since some
          //        clips are resampled and some are not
          return false;
       }

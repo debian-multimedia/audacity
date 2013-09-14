@@ -45,6 +45,7 @@ function.
 #include "../WaveTrack.h"
 
 #include "Export.h"
+#include "ExportFFmpeg.h"
 
 #include "ExportFFmpegDialogs.h"
 
@@ -245,7 +246,7 @@ void ExportFFmpeg::Destroy()
    delete this;
 }
 
-bool ExportFFmpeg::CheckFileName(wxFileName &filename, int format)
+bool ExportFFmpeg::CheckFileName(wxFileName & WXUNUSED(filename), int WXUNUSED(format))
 {
    bool result = true;
    if (!CheckFFmpegPresence())
@@ -537,14 +538,15 @@ bool ExportFFmpeg::Finalize()
          memset(mEncAudioFifoOutBuf,0,nAudioFrameSizeOut);
          AVCodec *codec = mEncAudioCodecCtx->codec;
 
+         // We have an incomplete buffer of samples left.  Is it OK to encode it?
          // If codec supports CODEC_CAP_SMALL_LAST_FRAME, we can feed it with smaller frame
-         // If codec is FLAC, feed it anyway (it doesn't have CODEC_CAP_SMALL_LAST_FRAME, but it works)
-         // If frame_size is 1, then it's some kind of PCM codec, they don't have frames
-         // If user configured the exporter to feed the encoder with silence
+         // Or if codec is FLAC, feed it anyway (it doesn't have CODEC_CAP_SMALL_LAST_FRAME, but it works)
+         // Or if frame_size is 1, then it's some kind of PCM codec, they don't have frames and will be fine with the samples
+         // Or if user configured the exporter to pad with silence, then we'll send audio + silence as a frame.
          if ((codec->capabilities & CODEC_CAP_SMALL_LAST_FRAME)
             || codec->id == CODEC_ID_FLAC
             || mEncAudioCodecCtx->frame_size == 1
-            || gPrefs->Read(wxT("/FileFormats/OverrideSmallLastFrame"),(long)1)
+            || gPrefs->Read(wxT("/FileFormats/OverrideSmallLastFrame"), true)
             )
          {
             int nFrameSizeTmp = mEncAudioCodecCtx->frame_size;
@@ -926,22 +928,10 @@ bool ExportFFmpeg::DisplayOptions(wxWindow *parent, int format)
    return false;
 }
 
-//----------------------------------------------------------------------------
-// Constructor
-//----------------------------------------------------------------------------
 ExportPlugin *New_ExportFFmpeg()
 {
    return new ExportFFmpeg();
 }
 
 #endif
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: c1f32472-520f-4864-8086-3dba0d593e84
+

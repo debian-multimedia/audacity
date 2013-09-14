@@ -107,7 +107,7 @@ void ThemePrefs::PopulateOrExchange(ShuttleGui & S)
    S.EndStatic();
 
    /* i18n-hint: && in here is an escape character to get a single & on screen,
-	* so keep it as is */
+    * so keep it as is */
    S.StartStatic(		_("Theme Cache - Images && Color"));
    {
       S.StartHorizontalLay(wxALIGN_LEFT);
@@ -156,20 +156,20 @@ void ThemePrefs::PopulateOrExchange(ShuttleGui & S)
 }
 
 /// Load Theme from multiple png files.
-void ThemePrefs::OnLoadThemeComponents(wxCommandEvent & e)
+void ThemePrefs::OnLoadThemeComponents(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.LoadComponents();
    theTheme.ApplyUpdatedImages();
 }
 
 /// Save Theme to multiple png files.
-void ThemePrefs::OnSaveThemeComponents(wxCommandEvent & e)
+void ThemePrefs::OnSaveThemeComponents(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.SaveComponents();
 }
 
 /// Load Theme from single png file.
-void ThemePrefs::OnLoadThemeCache(wxCommandEvent & e)
+void ThemePrefs::OnLoadThemeCache(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.ReadImageCache();
    AColor::ReInit();
@@ -177,21 +177,21 @@ void ThemePrefs::OnLoadThemeCache(wxCommandEvent & e)
 }
 
 /// Save Theme to single png file.
-void ThemePrefs::OnSaveThemeCache(wxCommandEvent & e)
+void ThemePrefs::OnSaveThemeCache(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.CreateImageCache();
    theTheme.WriteImageMap();// bonus - give them the html version.
 }
 
 /// Read Theme from internal storage.
-void ThemePrefs::OnReadThemeInternal(wxCommandEvent & e)
+void ThemePrefs::OnReadThemeInternal(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.ReadThemeInternal();
    theTheme.ApplyUpdatedImages();
 }
 
 /// Save Theme as C source code.
-void ThemePrefs::OnSaveThemeAsCode(wxCommandEvent & e)
+void ThemePrefs::OnSaveThemeAsCode(wxCommandEvent & WXUNUSED(event))
 {
    theTheme.SaveThemeAsCode();
    theTheme.WriteImageDefs();// bonus - give them the Defs too.

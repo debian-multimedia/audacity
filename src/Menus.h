@@ -225,7 +225,6 @@ void OnSilence();
 
 void OnSplit();
 void OnSplitNew();
-// void OnSplitLabelsToTracks();
 void OnJoin();
 void OnDisjoin();
 void OnDuplicate();
@@ -257,6 +256,8 @@ void OnZoomFit();
 void OnZoomFitV();
 void DoZoomFitV();
 void OnZoomSel();
+void OnGoSelStart();
+void OnGoSelEnd();
 
 void OnExpandAllTracks();
 void OnCollapseAllTracks();
@@ -320,9 +321,11 @@ void OnCursorTrackEnd();
 void OnCursorSelStart();
 void OnCursorSelEnd();
 
+void OnAlignNoSync(int index);
 void OnAlign(int index);
 void OnAlignMoveSel(int index);
 void HandleAlign(int index, bool moveSel);
+size_t mAlignLabelsCount;
 
 #ifdef EXPERIMENTAL_SCOREALIGN
 void OnScoreAlign();
@@ -352,19 +355,10 @@ void OnProcessEffect(int index);
 void OnProcessPlugin(int index);
 void OnAnalyzeEffect(int index);
 void OnAnalyzePlugin(int index);
-
-        //lda CleanSpeech Menu   //CLEANSPEECH
-
 void OnApplyChain();
 void OnEditChains();
-
-#ifdef CLEANSPEECH
-void OnImportCleanSpeechPresets();
-void OnExportCleanSpeechPresets();
-#endif   // CLEANSPEECH
-
 void OnStereoToMono(int index);
-wxString BuildCleanFileName(wxString fileName);
+wxString BuildCleanFileName(wxString fileName, wxString extension);
 
         // Help Menu
 

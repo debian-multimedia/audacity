@@ -269,7 +269,7 @@ public:
    {
    }
 
-   bool IsSupportedFormat(const wxDataFormat & format, Direction dir = Get) const
+   bool IsSupportedFormat(const wxDataFormat & format, Direction WXUNUSED(dir = Get)) const
    {
       if (format.GetType() == wxDF_FILENAME) {
          return true;
@@ -391,7 +391,7 @@ public:
 
 #endif
 
-   bool OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames)
+   bool OnDropFiles(wxCoord WXUNUSED(x), wxCoord WXUNUSED(y), const wxArrayString& filenames)
    {
       //sort by OD non OD.  load Non OD first so user can start editing asap.
       wxArrayString sortednames(filenames);
@@ -496,6 +496,10 @@ AudacityProject *CreateNewAudacityProject()
 
    //Set the new project as active:
    SetActiveProject(p);
+
+   // Okay, GetActiveProject() is ready. Now we can get its CommandManager, 
+   // and add the shortcut keys to the tooltips. 
+   p->GetControlToolBar()->RegenerateToolsTooltips();
 
    ModuleManager::Dispatch(ProjectInitialized);
 
@@ -736,16 +740,15 @@ AudacityProject::AudacityProject(wxWindow * parent, wxWindowID id,
      mMixerBoard(NULL),
      mMixerBoardFrame(NULL),
      mFreqWindow(NULL),
+     mAliasMissingWarningDialog(NULL),
      mToolManager(NULL),
+     mbBusyImporting(false), 
      mAudioIOToken(-1),
      mIsDeleting(false),
      mTracksFitVerticallyZoomed(false),  //lda
-#ifdef CLEANSPEECH
-     mCleanSpeechMode(false),            //lda
-#endif   // CLEANSPEECH
      mShowId3Dialog(true),               //lda
      mLastFocusedWindow(NULL),
-     mKeyboardCaptured(false),
+     mKeyboardCaptured(NULL),
      mImportXMLTagHandler(NULL),
      mAutoSaving(false),
      mIsRecovered(false),
@@ -755,8 +758,7 @@ AudacityProject::AudacityProject(wxWindow * parent, wxWindowID id,
      mLastEffect(NULL),
      mLastEffectType(0),
      mTimerRecordCanceled(false),
-     mMenuClose(false),
-     mAliasMissingWarningDialog(NULL)
+     mMenuClose(false)
 {
    int widths[] = {-2, -1};
    mStatusBar = CreateStatusBar(2);
@@ -1020,12 +1022,6 @@ void AudacityProject::UpdatePrefsVariables()
 {
    gPrefs->Read(wxT("/AudioFiles/ShowId3Dialog"), &mShowId3Dialog, true);
    gPrefs->Read(wxT("/AudioFiles/NormalizeOnLoad"),&mNormalizeOnLoad, false);
-
-#ifdef CLEANSPEECH
-   //gPrefs->Read(wxT("/Batch/CleanSpeechMode"), &mCleanSpeechMode, false);
-   mCleanSpeechMode = false;
-#endif   // CLEANSPEECH
-
    gPrefs->Read(wxT("/GUI/AutoScroll"), &mViewInfo.bUpdateTrackIndicator, true);
    gPrefs->Read(wxT("/GUI/EmptyCanBeDirty"), &mEmptyCanBeDirty, true );
    gPrefs->Read(wxT("/GUI/Help"), &mHelpPref, wxT("InBrowser") );
@@ -1166,11 +1162,7 @@ void AudacityProject::SetProjectTitle()
    wxString name = GetName();
    if( name.IsEmpty() )
    {
-#ifdef CLEANSPEECH
-      name = mCleanSpeechMode ? wxT("Audacity CleanSpeech") : wxT("Audacity");
-#else
       name = wxT("Audacity");
-#endif   // CLEANSPEECH
    }
    
    if (mIsRecovered)
@@ -1608,7 +1600,7 @@ void AudacityProject::AllProjectsDeleteUnlock()
 }
 
 ///Handles the redrawing necessary for tasks as they partially update in the background.
-void AudacityProject::OnODTaskUpdate(wxCommandEvent & event)
+void AudacityProject::OnODTaskUpdate(wxCommandEvent & WXUNUSED(event))
 {
    //todo: add track data to the event - check to see if the project contains it before redrawing.
    if(mTrackPanel)
@@ -1617,13 +1609,13 @@ void AudacityProject::OnODTaskUpdate(wxCommandEvent & event)
 }
 
 //redraws the task and does other book keeping after the task is complete.
-void AudacityProject::OnODTaskComplete(wxCommandEvent & event)
+void AudacityProject::OnODTaskComplete(wxCommandEvent & WXUNUSED(event))
 {
   if(mTrackPanel)
       mTrackPanel->Refresh(false);
  }
 
-void AudacityProject::OnScroll(wxScrollEvent & event)
+void AudacityProject::OnScroll(wxScrollEvent & WXUNUSED(event))
 {
    wxInt64 hlast = mViewInfo.sbarH;
 
@@ -1658,6 +1650,9 @@ void AudacityProject::OnScroll(wxScrollEvent & event)
 
 bool AudacityProject::HandleKeyDown(wxKeyEvent & event)
 {
+   if (event.GetKeyCode() == WXK_ALT)
+      mTrackPanel->HandleAltKey(true);
+
    // Allow the zoom cursor to change to a zoom out cursor
    if (event.GetKeyCode() == WXK_SHIFT)
       mTrackPanel->HandleShiftKey(true);
@@ -1690,13 +1685,16 @@ bool AudacityProject::HandleKeyDown(wxKeyEvent & event)
    return mCommandManager.HandleKey(event, GetUpdateFlags(), 0xFFFFFFFF);
 }
 
-bool AudacityProject::HandleChar(wxKeyEvent & event)
+bool AudacityProject::HandleChar(wxKeyEvent & WXUNUSED(event))
 {
    return false;
 }
 
 bool AudacityProject::HandleKeyUp(wxKeyEvent & event)
 {
+   if (event.GetKeyCode() == WXK_ALT)
+      mTrackPanel->HandleAltKey(false);
+
    // Allow the Zoom Out cursor back to Zoom In
    if (event.GetKeyCode() == WXK_SHIFT)
       mTrackPanel->HandleShiftKey(false);
@@ -1760,7 +1758,7 @@ void AudacityProject::OnMenu(wxCommandEvent & event)
       event.Skip(true);
 }
 
-void AudacityProject::OnUpdateUI(wxUpdateUIEvent & event)
+void AudacityProject::OnUpdateUI(wxUpdateUIEvent & WXUNUSED(event))
 {
    UpdateMenus();
 }
@@ -1832,14 +1830,15 @@ void AudacityProject::OnMouseEvent(wxMouseEvent & event)
 //     and/or attempts to delete objects twice.
 void AudacityProject::OnCloseWindow(wxCloseEvent & event)
 {
+   if (event.CanVeto() && (::wxIsBusy() || mbBusyImporting)) 
+   {
+      event.Veto();
+      return;
+   }
+
    if (mFreqWindow) {
       mFreqWindow->Destroy();
       mFreqWindow = NULL;
-   }
-
-   if (wxIsBusy()) {
-      event.Veto();
-      return;
    }
 
    // Check to see if we were playing or recording
@@ -2308,7 +2307,7 @@ bool AudacityProject::WarnOfLegacyFile( )
 }
 
 
-// FIX-ME? This should return a result that is checked. 
+// FIXME? This should return a result that is checked. 
 //    See comment in AudacityApp::MRUOpen().
 void AudacityProject::OpenFile(wxString fileName, bool addtohistory)
 {
@@ -2395,8 +2394,7 @@ void AudacityProject::OpenFile(wxString fileName, bool addtohistory)
       }
    }
    
-   //FIX-ME: //v Surely we could be smarter about this, 
-   // like checking much earlier that this is a .aup file.
+   //FIXME: //v Surely we could be smarter about this, like checking much earlier that this is a .aup file.
    if (temp.Mid(0, 6) != wxT("<?xml ")) {
       // If it's not XML, try opening it as any other form of audio
       Import(fileName);
@@ -2702,8 +2700,8 @@ bool AudacityProject::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
       if (!value || !XMLValueChecker::IsGoodString(value))
          break;
 
-      if (!wxStrcmp(attr, wxT("datadir"))) 
-	  {
+      if (!wxStrcmp(attr, wxT("datadir")))
+      {
          //
          // This is an auto-saved version whose data is in another directory
          //
@@ -2718,8 +2716,8 @@ bool AudacityProject::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          }
       }
 
-      if (!wxStrcmp(attr, wxT("version"))) 
-	  {
+      if (!wxStrcmp(attr, wxT("version")))
+      {
          fileVersion = value;
          bFileVersionFound = true;
          requiredTags++;
@@ -3102,20 +3100,6 @@ bool AudacityProject::Save(bool overwrite /* = true */ ,
             return false;
          mImportedDependencies = false; // do not show again
       }
-
-#ifdef CLEANSPEECH
-      //TIDY-ME: CleanSpeechMode could be split into a number of prefs?
-      // For example, this could be a preference to only work
-      // with wav files.
-      //
-      // CleanSpeechMode tries hard to ignore project files
-      // and just work with .Wav, so does an export on a save.
-      if( mCleanSpeechMode )
-      {
-         Exporter e;
-         return e.Process(this, false, 0.0, mTracks->GetEndTime());
-      }
-#endif   // CLEANSPEECH
    }
 
    //
@@ -3530,53 +3514,10 @@ bool AudacityProject::SaveAs(bool bWantSaveCompressed /*= false*/)
    wxString path = wxPathOnly(mFileName);
    wxString fName;
 
-#ifdef CLEANSPEECH
-   wxString ext = mCleanSpeechMode ? wxT(".wav") : wxT(".aup");
-#else   // CLEANSPEECH
    wxString ext = wxT(".aup");
-#endif   // CLEANSPEECH
 
    fName = GetName().Len()? GetName() + ext : wxString(wxT(""));
 
-#ifdef CLEANSPEECH
-   if( mCleanSpeechMode )
-   {
-      fName = FileSelector(_("Save Speech As:"),
-                  path, fName, wxT(""),
-                  /* i18n-hint: Do not translate PCM.*/
-                  _("Windows PCM Audio file (*.wav)|*.wav"),  //lda
-                  wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER, this);
-   }
-   else
-   {
-      wxString sProjName = this->GetName();
-      if (sProjName.IsEmpty())
-         sProjName = _("<untitled>");
-      wxString sDialogTitle;
-      if (bWantSaveCompressed)
-      {
-         ShowWarningDialog(this, wxT("FirstProjectSave"),
-                           _("Audacity compressed project files (.aup) save your work in a smaller, compressed (.ogg) format. \nCompressed project files are a good way to transmit your project online, because they are much smaller. \nTo open a compressed project takes longer than usual, as it imports each compressed track. \n\nMost other programs can't open Audacity project files.\nWhen you want to save a file that can be opened by other programs, select one of the\nExport commands."));
-         sDialogTitle.Printf(_("Save Compressed Project \"%s\" As..."), sProjName.c_str());
-      }
-      else
-      {
-         ShowWarningDialog(this, wxT("FirstProjectSave"),
-                           _("You are saving an Audacity project file (.aup).\n\nSaving a project creates a file that only Audacity can open.\n\nTo save an audio file for other programs, use one of the \"File > Export\" commands.\n"));
-         sDialogTitle.Printf(_("Save Project \"%s\" As..."), sProjName.c_str());
-      }
-
-      fName = FileSelector(
-         sDialogTitle,
-         path, fName, wxT(""),
-         _("Audacity projects") + static_cast<wxString>(wxT(" (*.aup)|*.aup")),
-         // JKC: I removed 'wxFD_OVERWRITE_PROMPT' because we are checking 
-         // for overwrite ourselves later, and we disallow it.
-         // We disallow overwrite because we would have to delete the many
-         // smaller files too, or prompt to move them.
-         wxFD_SAVE |  wxRESIZE_BORDER, this);
-   }
-#else   // CLEANSPEECH
    wxString sProjName = this->GetName();
    if (sProjName.IsEmpty())
       sProjName = _("<untitled>");
@@ -3603,7 +3544,6 @@ bool AudacityProject::SaveAs(bool bWantSaveCompressed /*= false*/)
       // We disallow overwrite because we would have to delete the many
       // smaller files too, or prompt to move them.
       wxFD_SAVE |  wxRESIZE_BORDER, this);
-#endif   // CLEANSPEECH
 
    if (fName == wxT(""))
       return false;
@@ -4040,7 +3980,7 @@ void AudacityProject::SetStop(bool bStopped)
    mTrackPanel->SetStop(bStopped);
 }
 
-void AudacityProject::OnTimer(wxTimerEvent& event)
+void AudacityProject::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
    MixerToolBar *mixerToolBar = GetMixerToolBar();
    if( mixerToolBar )

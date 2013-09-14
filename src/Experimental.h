@@ -150,12 +150,10 @@
    //#define AUTOMATED_INPUT_LEVEL_ADJUSTMENT
 #endif
 
-// AWD: new Truncate Silence code
-#define EXPERIMENTAL_TRUNC_SILENCE
+// John (Thales) work to make the display show the result of the pan and gain sliders, rather than their input.
+// First committed by Martyn, 30th May 2013.
+//#define EXPERIMENTAL_OUTPUT_DISPLAY
 
+// Module prefs may be used to treat 'official' modules differently to 3rd party ones
+//#define EXPERIMENTAL_MODULE_PREFS
 #endif
-
-//MJS: make the CleanSpeech stuff experimental, rather than deleting it directly
-// Normally disabled, for now.
-// CleanSpeech should be done somehow else and not be polluting the code
-//#define CLEANSPEECH 1

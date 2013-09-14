@@ -41,8 +41,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "locale", "Projects\locale\l
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "filedialog", "Projects\filedialog\filedialog.vcproj", "{5284D863-3813-479F-BBF0-AC234E216BC6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod-script-pipe", "Projects\mod-script-pipe\mod-script-pipe.vcproj", "{85774A29-EA2F-4A40-994F-6BE593D847A5}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libvamp", "Projects\libvamp\libvamp.vcproj", "{A61E2BF1-21AA-4118-B0D8-FD3D53DB892E}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "portsmf", "Projects\portsmf\portsmf.vcproj", "{8A1C2514-85DD-4AE2-9CF3-3183B66C537D}"
@@ -123,8 +121,6 @@ Global
 		{5284D863-3813-479F-BBF0-AC234E216BC6}.Unicode Debug|Win32.Build.0 = Unicode Debug|Win32
 		{5284D863-3813-479F-BBF0-AC234E216BC6}.Unicode Release|Win32.ActiveCfg = Unicode Release|Win32
 		{5284D863-3813-479F-BBF0-AC234E216BC6}.Unicode Release|Win32.Build.0 = Unicode Release|Win32
-		{85774A29-EA2F-4A40-994F-6BE593D847A5}.Unicode Debug|Win32.ActiveCfg = Unicode Debug|Win32
-		{85774A29-EA2F-4A40-994F-6BE593D847A5}.Unicode Release|Win32.ActiveCfg = Unicode Release|Win32
 		{A61E2BF1-21AA-4118-B0D8-FD3D53DB892E}.Unicode Debug|Win32.ActiveCfg = Unicode Debug|Win32
 		{A61E2BF1-21AA-4118-B0D8-FD3D53DB892E}.Unicode Debug|Win32.Build.0 = Unicode Debug|Win32
 		{A61E2BF1-21AA-4118-B0D8-FD3D53DB892E}.Unicode Release|Win32.ActiveCfg = Unicode Release|Win32

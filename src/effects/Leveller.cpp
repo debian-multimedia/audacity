@@ -47,20 +47,8 @@ EffectLeveller::EffectLeveller()
 
 bool EffectLeveller::Init()
 {
-#ifdef CLEANSPEECH
-   mLevellerNumPasses = gPrefs->Read(wxT("/CsPresets/LevellerNumPasses"), 2L) ;
-   if ((mLevellerNumPasses <= 0) || (mLevellerNumPasses >= NUM_PASSES_CHOICES)) {  // corrupted Prefs?
-      mLevellerNumPasses = 1;
-      gPrefs->Write(wxT("/CsPresets/LevellerNumPasses"), 1);
-   }
-   mLevellerDbChoiceIndex = gPrefs->Read(wxT("/CsPresets/LevellerDbChoiceIndex"), 10L);
-   if ((mLevellerDbChoiceIndex < 0) || (mLevellerDbChoiceIndex >= Enums::NumDbChoices)) {  // corrupted Prefs?
-      mLevellerDbChoiceIndex = 0;  //Least dB
-      gPrefs->Write(wxT("/CsPresets/LevellerDbChoiceIndex"), mLevellerDbChoiceIndex);
-   }
-#else   // CLEANSPEECH
    mLevellerNumPasses = gPrefs->Read(wxT("/Effects/Leveller/LevellerNumPasses"), 2L) ;
-   if ((mLevellerNumPasses <= 0) || (mLevellerNumPasses >= NUM_PASSES_CHOICES)) {  // corrupted Prefs?
+   if ((mLevellerNumPasses <= 0) || (mLevellerNumPasses > NUM_PASSES_CHOICES)) {  // corrupted Prefs?
       mLevellerNumPasses = 1;
       gPrefs->Write(wxT("/Effects/Leveller/LevellerNumPasses"), 1);
    }
@@ -69,7 +57,6 @@ bool EffectLeveller::Init()
       mLevellerDbChoiceIndex = 0;  //Least dB
       gPrefs->Write(wxT("/Effects/Leveller/LevellerDbChoiceIndex"), mLevellerDbChoiceIndex);
    }
-#endif   // CLEANSPEECH
    gPrefs->Flush();
 
    mLevellerDbSilenceThreshold = Enums::Db2Signal[mLevellerDbChoiceIndex];
@@ -107,7 +94,6 @@ void EffectLeveller::CalcLevellerFactors()
    double prevLimit     = 0.0;
    double limit         = gLimit[0];
    gAddOnValue[0]       = addOnValue;
-   double lowerAdjLimit = 0.0;
    double adjFactor     = gAdjFactor[0];
    double upperAdjLimit = gLimit[0] * adjFactor;
    double prevAdjLimit  = upperAdjLimit;
@@ -116,7 +102,6 @@ void EffectLeveller::CalcLevellerFactors()
    for (int f = 1; f < LEVELER_FACTORS; ++f) {
       prev          = f - 1;
       adjFactor     = gAdjFactor[f];
-      lowerAdjLimit = gAdjLimit[prev];
       prevLimit     = gLimit[prev];
       limit         = gLimit[f];
       prevAdjLimit  = gAdjLimit[prev];
@@ -132,7 +117,7 @@ bool EffectLeveller::PromptUser()
 {
    LevellerDialog dlog(this, mParent);
    dlog.mLevellerDbChoiceIndex = mLevellerDbChoiceIndex;
-   dlog.mLevellerNumPassesChoicIndex = mLevellerNumPasses-1;
+   dlog.mLevellerNumPassesChoiceIndex = mLevellerNumPasses-1;
    dlog.TransferDataToWindow();
 
    dlog.CentreOnParent();
@@ -142,16 +127,12 @@ bool EffectLeveller::PromptUser()
       return false;
    }
 
-   mLevellerNumPasses = dlog.mLevellerNumPassesChoicIndex+1;
+   mLevellerNumPasses = dlog.mLevellerNumPassesChoiceIndex+1;
    mLevellerDbChoiceIndex = dlog.mLevellerDbChoiceIndex;
    mLevellerDbSilenceThreshold = Enums::Db2Signal[mLevellerDbChoiceIndex];
-#ifdef CLEANSPEECH
-   gPrefs->Write(wxT("/CsPresets/LevellerDbChoiceIndex"), mLevellerDbChoiceIndex);
-   gPrefs->Write(wxT("/CsPresets/LevellerNumPasses"), mLevellerNumPasses);
-#else   // CLEANSPEECH
+
    gPrefs->Write(wxT("/Effects/Leveller/LevellerDbChoiceIndex"), mLevellerDbChoiceIndex);
    gPrefs->Write(wxT("/Effects/Leveller/LevellerNumPasses"), mLevellerNumPasses);
-#endif   // CLEANSPEECH
    gPrefs->Flush();
 
    CalcLevellerFactors();
@@ -211,10 +192,10 @@ BEGIN_EVENT_TABLE(LevellerDialog, EffectDialog)
 END_EVENT_TABLE()
 
 LevellerDialog::LevellerDialog(EffectLeveller *effect, wxWindow *parent)
-:  EffectDialog(parent, _("Leveller"), PROCESS_EFFECT),
+:  EffectDialog(parent, _("Leveler"), PROCESS_EFFECT), // Lynn called it "Leveller", but preferred spelling is "Leveler".
    mEffect(effect)
 {
-   mLevellerNumPassesChoicIndex = 0;// 
+   mLevellerNumPassesChoiceIndex = 0;// 
    mLevellerDbChoiceIndex = 0;
    Init();
 }
@@ -232,68 +213,34 @@ void LevellerDialog::PopulateOrExchange(ShuttleGui & S)
    numPasses.Add(_("Heavier"));
    numPasses.Add(_("Heaviest"));
 
-   S.StartHorizontalLay(wxCENTER, false);
-   {
-      S.AddTitle(_("by Lynn Allan"));
-   }
-   S.EndHorizontalLay();
+   S.SetBorder(5);
+   S.AddSpace(5);
 
-   S.StartHorizontalLay(wxCENTER, false);
+   S.StartMultiColumn(2);
    {
-      // Add a little space
+      S.TieChoice(_("Degree of Leveling:"),
+                  mLevellerNumPassesChoiceIndex,
+                  &numPasses);
+      S.TieChoice(_("Noise Threshold:"),
+                  mLevellerDbChoiceIndex,
+                  &db);
    }
-   S.EndHorizontalLay();
-
-   S.StartStatic(_("Degree of Leveling"));
-   {
-      S.StartHorizontalLay();
-      {
-         S.TieChoice(_("Degree of Leveling:"),
-                     mLevellerNumPassesChoicIndex,
-                     &numPasses);
-      }
-      S.EndHorizontalLay();
-   }
-   S.EndStatic();
-                                              
-   S.StartStatic(_("Noise Threshold (Hiss/Hum/Ambient Noise)"));
-   {
-      S.StartHorizontalLay();
-      {
-         S.TieChoice(_("Threshold for Noise:"),
-                     mLevellerDbChoiceIndex,
-                     &db);
-      }
-      S.EndHorizontalLay();
-   }
-   S.EndStatic();
+   S.EndMultiColumn();
 }
 
-void LevellerDialog::OnPreview(wxCommandEvent &event)
+void LevellerDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
 {
    TransferDataFromWindow();
 
-	// Save & restore parameters around Preview
+   // Save & restore parameters around Preview.
    int oldLevellerDbChoiceIndex = mEffect->mLevellerDbChoiceIndex;
    int oldLevellerNumPasses = mEffect->mLevellerNumPasses;
 
    mEffect->mLevellerDbChoiceIndex = mLevellerDbChoiceIndex;
-   mEffect->mLevellerNumPasses = mLevellerNumPassesChoicIndex+1;
+   mEffect->mLevellerNumPasses = mLevellerNumPassesChoiceIndex+1;
 
    mEffect->Preview();
    
-	mEffect->mLevellerDbChoiceIndex = oldLevellerDbChoiceIndex;
+   mEffect->mLevellerDbChoiceIndex = oldLevellerDbChoiceIndex;
    mEffect->mLevellerNumPasses = oldLevellerNumPasses;
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 0e9ab1c7-3cb3-4864-8f30-876218bea476
-
