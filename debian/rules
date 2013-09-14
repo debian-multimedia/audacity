@@ -27,9 +27,10 @@ configure_flags := \
 	dh $@ --parallel --with autoreconf
 
 override_dh_auto_clean:
-	# We want to run both clean and distclean
-	$(MAKE) clean
-	$(MAKE) distclean
+	# dh_auto_clean doesn't detect the clean targets since some Makefiles in the
+	# subdirectories don't have them. Hence dh_auto_clean thinks they don't exist.
+	# We also want to make sure that both clean and distclean are run.
+	[ ! -f Makefile ] || $(MAKE) clean distclean
 
 override_dh_auto_configure:
 	dh_auto_configure -- $(configure_flags)
