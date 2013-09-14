@@ -9,6 +9,7 @@ Standards-Version: 3.9.4
 Build-Depends: autoconf,
                automake,
                debhelper (>= 7.0.50~),
+               dh-autoreconf,
                gettext,
                libasound2-dev [linux-any],
                libavcodec-dev (>= 4:0.6),

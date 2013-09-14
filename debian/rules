@@ -26,10 +26,14 @@ configure_flags := \
 	$(NULL)
 
 %:
-	dh $@ --parallel
+	dh $@ --parallel --with autoreconf
+
+override_dh_auto_clean:
+	# We want to run both clean and distclean
+	$(MAKE) clean
+	$(MAKE) distclean
 
 override_dh_auto_configure:
-	./autogen.sh
 	dh_auto_configure -- $(configure_flags)
 
 override_dh_auto_install:
