@@ -1,10 +1,8 @@
 #!/usr/bin/make -f
 
+export DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,--as-needed
+
 configure_flags := \
-	CFLAGS="$(shell dpkg-buildflags --get CFLAGS)" \
-	CPPFLAGS="$(shell dpkg-buildflags --get CPPFLAGS)" \
-	CXXFLAGS="$(shell dpkg-buildflags --get CXXFLAGS)" \
-	LDFLAGS="$(shell dpkg-buildflags --get LDFLAGS) -Wl,-z,defs -Wl,--as-needed" \
 	--disable-dynamic-loading \
 	--with-expat=system \
 	--without-ffmpeg \
