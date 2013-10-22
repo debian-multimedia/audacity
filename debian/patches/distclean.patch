@@ -135,7 +135,7 @@ Author: Benjamin Drung <bdrung@debian.org>
  .PHONY: portsmf-recursive eexpat-recursive FileDialog-recursive \
 --- a/src/Makefile.in
 +++ b/src/Makefile.in
-@@ -335,6 +335,9 @@
+@@ -338,6 +338,9 @@
  	rm -rf $(OBJS) $(LIBAUDACITY_OBJS)
  	rm -f libaudacity.a AudacityHeaders.h.gch
  
