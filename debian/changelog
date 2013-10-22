@@ -1,3 +1,10 @@
+audacity (2.0.5-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add distclean.patch to make dh_auto_clean work again.
+
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 22 Oct 2013 12:53:52 +0200
+
 audacity (2.0.4-1) unstable; urgency=low
 
   * Team upload.
