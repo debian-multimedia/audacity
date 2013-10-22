@@ -25,6 +25,7 @@ It handles initialization and termination by subclassing wxApp.
 
 #include <wx/defs.h>
 #include <wx/app.h>
+#include <wx/bitmap.h>
 #include <wx/docview.h>
 #include <wx/event.h>
 #include <wx/ipc.h>
@@ -34,6 +35,7 @@ It handles initialization and termination by subclassing wxApp.
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 #include <wx/snglinst.h>
+#include <wx/splash.h>
 #include <wx/sysopt.h>
 #include <wx/fontmap.h>
 
@@ -204,6 +206,8 @@ It handles initialization and termination by subclassing wxApp.
 
 #endif //(__WXMSW__)
 
+#include "../images/AudacityLogoWithName.xpm"
+
 ////////////////////////////////////////////////////////////
 /// Custom events
 ////////////////////////////////////////////////////////////
@@ -232,7 +236,7 @@ static void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg
 
 static wxFrame *gParentFrame = NULL;
 
-bool gInited = false;
+static bool gInited = false;
 bool gIsQuitting = false;
 
 void QuitAudacity(bool bForce)
@@ -407,6 +411,11 @@ void SaveWindowSize()
 // Most of this was taken from nsNativeAppSupportUnix.cpp from Mozilla.
 ///////////////////////////////////////////////////////////////////////////////
 
+// TODO: May need updating.  Is this code too obsolete (relying on Gnome2 so's) to be 
+// worth keeping anymore?  
+// CB suggests we use libSM directly ref:
+// http://www.x.org/archive/X11R7.7/doc/libSM/SMlib.html#The_Save_Yourself_Callback
+
 #include <dlfcn.h>
 /* There is a conflict between the type names used in Glib >= 2.21 and those in
  * wxGTK (http://trac.wxwidgets.org/ticket/10883)
@@ -563,6 +572,8 @@ class GnomeShutdown
    GnomeClient *mClient;
 };
 
+// This variable exists to call the constructor and
+// connect a signal for the 'save-yourself' message.
 GnomeShutdown GnomeShutdownInstance;
 
 #endif
@@ -674,30 +685,21 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef __WXMAC__
-#include <wx/recguard.h>
+
+// Where drag/drop or "Open With" filenames get stored until
+// the timer routine gets around to picking them up.
+static wxArrayString ofqueue;
 
 // in response of an open-document apple event
 void AudacityApp::MacOpenFile(const wxString &fileName)
 {
-   if (!gInited) {
-      return;
-   }
-
-   wxCommandEvent e(EVT_OPEN_AUDIO_FILE);
-   e.SetString(fileName);
-   AddPendingEvent(e);
+   ofqueue.Add(fileName);
 }
 
 // in response of a print-document apple event
 void AudacityApp::MacPrintFile(const wxString &fileName)
 {
-   if (!gInited) {
-      return;
-   }
-
-   wxCommandEvent e(EVT_OPEN_AUDIO_FILE);
-   e.SetString(fileName);
-   AddPendingEvent(e);
+   ofqueue.Add(fileName);
 }
 
 // in response of a open-application apple event
@@ -714,32 +716,6 @@ void AudacityApp::MacNewFile()
    }
 }
 
-// in response of a reopen-application apple event
-void AudacityApp::MacReopenApp()
-{
-   // Not sure what to do here...bring it to the foreground???
-}
-
-void AudacityApp::OnMacOpenFile(wxCommandEvent & event)
-{
-   // Add name to queue
-   static wxArrayString ofqueue;
-   ofqueue.Add(event.GetString());
-
-   // Do not attempt to load more than one file at a time
-   static wxRecursionGuardFlag guardflag;
-   wxRecursionGuard guard(guardflag);
-   if (guard.IsInside()) {
-      return;
-   }
-
-   // Load each file on the queue
-   while (ofqueue.GetCount()) {
-      wxString name(ofqueue[0]);
-      ofqueue.RemoveAt(0);
-      wxASSERT(MRUOpen(name)); // FIXME: Check the return result? Meantime, assert it so failure shows in debug build. 
-   }
-}
 #endif //__WXMAC__
 
 typedef int (AudacityApp::*SPECIALKEYEVENT)(wxKeyEvent&);
@@ -764,8 +740,6 @@ BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_MENU(wxID_ABOUT, AudacityApp::OnMenuAbout)
    EVT_MENU(wxID_PREFERENCES, AudacityApp::OnMenuPreferences)
    EVT_MENU(wxID_EXIT, AudacityApp::OnMenuExit)
-
-   EVT_COMMAND(wxID_ANY, EVT_OPEN_AUDIO_FILE, AudacityApp::OnMacOpenFile)
 #endif
    // Recent file event handlers.  
    EVT_MENU(ID_RECENT_CLEAR, AudacityApp::OnMRUClear)
@@ -776,6 +750,9 @@ BEGIN_EVENT_TABLE(AudacityApp, wxApp)
 END_EVENT_TABLE()
 
 // backend for OnMRUFile 
+// TODO: Would be nice to make this handle not opening a file with more panache.
+//  - Inform the user if DefaultOpenPath not set.
+//  - Switch focus to correct instance of project window, if already open.
 bool AudacityApp::MRUOpen(wxString fullPathStr) {
    // Most of the checks below are copied from AudacityProject::OpenFiles.
    // - some rationalisation might be possible.
@@ -849,6 +826,28 @@ void AudacityApp::OnMRUFile(wxCommandEvent& event) {
 
 void AudacityApp::OnTimer(wxTimerEvent& WXUNUSED(event))
 {
+#if defined(__WXMAC__)
+   // Filenames are queued when Audacity receives the a few of the 
+   // AppleEvent messages (via wxWidgets).  So, open any that are
+   // in the queue and clean the queue.
+   if (ofqueue.GetCount()) {
+      // Load each file on the queue
+      while (ofqueue.GetCount()) {
+         wxString name(ofqueue[0]);
+         ofqueue.RemoveAt(0);
+         // TODO: Handle failures better.
+         // Some failures are OK, e.g. file not found, just would-be-nices to do better,
+         // so FAIL_MSG is more a case of an enhancement request than an actual  problem.
+         // LL:  In all but one case an appropriate message is already displayed.  The
+         //      instance that a message is NOT displayed is when a failure to write
+         //      to the config file has occurred.
+         if (!MRUOpen(name)) {
+            wxFAIL_MSG(wxT("MRUOpen failed"));
+         }
+      }
+   }
+#endif
+ 
    // Check if a warning for missing aliased files should be displayed
    if (ShouldShowMissingAliasedFileWarning()) {
       // find which project owns the blockfile
@@ -942,46 +941,45 @@ void AudacityApp::InitLang( const wxString & lang )
    if( mLocale )
       delete mLocale;
 
-   if (lang != wxT("en")) 
-   {
 // LL: I do not know why loading translations fail on the Mac if LANG is not
 //     set, but for some reason it does.  So wrap the creation of wxLocale
 //     with the default translation.
+//
+//     2013-09-13:  I've checked this again and it is still required.  Still
+//                  no idea why.
 #if defined(__WXMAC__)
-      wxString oldval;
-      bool existed;
-      
-      existed = wxGetEnv(wxT("LANG"), &oldval);
-      wxSetEnv(wxT("LANG"), wxT("en_US"));
+   wxString oldval;
+   bool existed;
+
+   existed = wxGetEnv(wxT("LANG"), &oldval);
+   wxSetEnv(wxT("LANG"), wxT("en_US"));
 #endif
 
-      mLocale = new wxLocale(wxT(""), lang, wxT(""), true, true);
+   mLocale = new wxLocale(wxT(""), lang, wxT(""), true, true);
 
 #if defined(__WXMAC__)
-      if (existed) {
-         wxSetEnv(wxT("LANG"), oldval);
-      }
-      else {
-         wxUnsetEnv(wxT("LANG"));
-      }
+   if (existed) {
+      wxSetEnv(wxT("LANG"), oldval);
+   }
+   else {
+      wxUnsetEnv(wxT("LANG"));
+   }
 #endif
 
-      for(unsigned int i=0; i<audacityPathList.GetCount(); i++)
-         mLocale->AddCatalogLookupPathPrefix(audacityPathList[i]);
+   for(unsigned int i=0; i<audacityPathList.GetCount(); i++)
+      mLocale->AddCatalogLookupPathPrefix(audacityPathList[i]);
 
-      // LL:  Must add the wxWidgets catalog manually since the search
-      //      paths were not set up when mLocale was created.  The
-      //      catalogs are search in LIFO order, so add wxstd first.
-      mLocale->AddCatalog(wxT("wxstd"));
+   // LL:  Must add the wxWidgets catalog manually since the search
+   //      paths were not set up when mLocale was created.  The
+   //      catalogs are search in LIFO order, so add wxstd first.
+   mLocale->AddCatalog(wxT("wxstd"));
 
 // AUDACITY_NAME is legitimately used on some *nix configurations. 
 #ifdef AUDACITY_NAME
-      mLocale->AddCatalog(wxT(AUDACITY_NAME));
+   mLocale->AddCatalog(wxT(AUDACITY_NAME));
 #else
-      mLocale->AddCatalog(IPC_APPL);
+   mLocale->AddCatalog(IPC_APPL);
 #endif
-   } else
-      mLocale = NULL;
 
    // Initialize internationalisation (number formats etc.)
    //
@@ -995,6 +993,30 @@ void AudacityApp::OnFatalException()
 {
    exit(-1);
 }
+
+#if defined(__WXGTK__)
+// On wxGTK, there's a focus issue where dialogs do not automatically pass focus
+// to the first child.  This means that you can use the keyboard to navigate within
+// the dialog.  Watching for the ACTIVATE event allows us to set the focus ourselves
+// when each dialog opens.
+//
+// See bug #57
+//
+int AudacityApp::FilterEvent(wxEvent & event)
+{
+   if (event.GetEventType() == wxEVT_ACTIVATE)
+   {
+      wxActivateEvent & e = (wxActivateEvent &) event;
+      
+      if (e.GetEventObject() && e.GetActive() && e.GetEventObject()->IsKindOf(CLASSINFO(wxDialog)))
+      {
+         ((wxWindow *)e.GetEventObject())->SetFocus();
+      }
+   }
+
+   return -1;
+}
+#endif
 
 // The `main program' equivalent, creating the windows and returning the
 // main frame
@@ -1153,7 +1175,19 @@ bool AudacityApp::OnInit()
    #endif //__WXMAC__
 
    // BG: Create a temporary window to set as the top window
-   wxFrame *temporarywindow = new wxFrame(NULL, -1, wxT("temporarytopwindow"));
+   wxImage logoimage((const char **) AudacityLogoWithName_xpm);
+   logoimage.Rescale(logoimage.GetWidth() / 2, logoimage.GetHeight() / 2);
+   wxBitmap logo(logoimage);
+   wxSplashScreen *temporarywindow =
+      new wxSplashScreen(logo,
+                         wxSPLASH_CENTRE_ON_SCREEN | wxSPLASH_NO_TIMEOUT,
+                         0,
+                         NULL,
+                         wxID_ANY,
+                         wxDefaultPosition,
+                         wxDefaultSize,
+                         wxSTAY_ON_TOP);
+   temporarywindow->SetTitle(_("Audacity is starting up..."));
    SetTopWindow(temporarywindow);
 
    // Initialize the CommandHandler

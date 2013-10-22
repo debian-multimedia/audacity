@@ -59,7 +59,8 @@ IMPLEMENT_CLASS(ToolsToolBar, ToolBar);
 
 // Strings to convert a tool number into a status message
 // These MUST be in the same order as the ids above.
-const wxChar * MessageOfTool[numTools] = { wxTRANSLATE("Click and drag to select audio"),
+static const wxChar * MessageOfTool[numTools] = {
+   wxTRANSLATE("Click and drag to select audio"),
    wxTRANSLATE("Click and drag to edit the amplitude envelope"),
    wxTRANSLATE("Click and drag to edit the samples"),
 #if defined( __WXMAC__ )
@@ -276,14 +277,3 @@ void ToolsToolBar::OnTool(wxCommandEvent & evt)
                  IsDown(multiTool));
    gPrefs->Flush();
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: ebfdc42a-6a03-4826-afa2-937a48c0565b

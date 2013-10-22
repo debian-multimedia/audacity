@@ -362,7 +362,7 @@ BEGIN_EVENT_TABLE(TrackPanel, wxWindow)
 END_EVENT_TABLE()
 
 /// Makes a cursor from an XPM, uses CursorId as a fallback.
-wxCursor * MakeCursor( int CursorId, const char * pXpm[36],  int HotX, int HotY )
+static wxCursor * MakeCursor( int WXUNUSED(CursorId), const char * pXpm[36],  int HotX, int HotY )
 {
    wxCursor * pCursor;
 
@@ -5213,11 +5213,10 @@ bool TrackPanel::HandleTrackLocationMouseEvent(WaveTrack * track, wxRect &r, wxM
             if (track->ExpandCutLine(mCapturedTrackLocation.pos, &cutlineStart, &cutlineEnd))
             {
                WaveTrack* linked = (WaveTrack*)mTracks->GetLink(track);
-               if (linked)
-               {
-                  bool bResult = linked->ExpandCutLine(mCapturedTrackLocation.pos);
-                  wxASSERT(bResult); // TO DO: Actually handle this.
-               }
+               if (linked && 
+                     !linked->ExpandCutLine(mCapturedTrackLocation.pos))
+                        return false;
+
                mViewInfo->sel0 = cutlineStart;
                mViewInfo->sel1 = cutlineEnd;
                DisplaySelection();
@@ -5226,14 +5225,14 @@ bool TrackPanel::HandleTrackLocationMouseEvent(WaveTrack * track, wxRect &r, wxM
             }
          } else if (mCapturedTrackLocation.typ == WaveTrack::locationMergePoint)
          {
-            bool bResult = track->MergeClips(mCapturedTrackLocation.clipidx1, mCapturedTrackLocation.clipidx2);
-            wxASSERT(bResult); // TO DO: Actually handle this.
+            if (!track->MergeClips(mCapturedTrackLocation.clipidx1, mCapturedTrackLocation.clipidx2))
+               return false;
+
             WaveTrack* linked = (WaveTrack*)mTracks->GetLink(track);
-            if (linked)
-            {
-               bResult = linked->MergeClips(mCapturedTrackLocation.clipidx1, mCapturedTrackLocation.clipidx2);
-               wxASSERT(bResult); // TO DO: Actually handle this.
-            }
+            if (linked && 
+                  !linked->MergeClips(mCapturedTrackLocation.clipidx1, mCapturedTrackLocation.clipidx2))
+                     return false;
+
             MakeParentPushState(_("Merged Clips"),_("Merge"), PUSH_CONSOLIDATE|PUSH_CALC_SPACE);
             handled = true;
          }
@@ -7314,11 +7313,11 @@ wxString TrackPanel::TrackSubText(Track * t)
 
 /// Handle the menu options that change a track between
 /// left channel, right channel, and mono.
-int channels[] = { Track::LeftChannel, Track::RightChannel,
+static int channels[] = { Track::LeftChannel, Track::RightChannel,
    Track::MonoChannel
 };
 
-const wxChar *channelmsgs[] = { _("Left Channel"), _("Right Channel"),
+static const wxChar *channelmsgs[] = { _("Left Channel"), _("Right Channel"),
    _("Mono")
 };
 
@@ -7592,7 +7591,7 @@ const int nRates=12;
 
 ///  gRates MUST CORRESPOND DIRECTLY TO THE RATES AS LISTED IN THE MENU!!
 ///  IN THE SAME ORDER!!
-int gRates[nRates] = { 8000, 11025, 16000, 22050, 44100, 48000, 88200, 96000,
+static int gRates[nRates] = { 8000, 11025, 16000, 22050, 44100, 48000, 88200, 96000,
                        176400, 192000, 352800, 384000 };
 
 /// This method handles the selection from the Rate
@@ -7662,6 +7661,11 @@ void TrackPanel::OnRateOther(wxCommandEvent &event)
             cb = S.AddCombo(_("New sample rate (Hz):"),
                             rate,
                             &rates);
+#if defined(__WXMAC__)
+            // As of wxMac-2.8.12, setting manually is required
+            // to handle rates not in the list.  See: Bug #427
+            cb->SetValue(rate);
+#endif
          }
          S.EndHorizontalLay();
          S.AddStandardButtons();
@@ -8748,7 +8752,7 @@ LWSlider * TrackInfo::PanSlider(int trackIndex)
    return mPans[trackIndex - mSliderOffset];
 }
 
-TrackPanel * TrackPanelFactory(wxWindow * parent,
+static TrackPanel * TrackPanelFactory(wxWindow * parent,
    wxWindowID id,
    const wxPoint & pos,
    const wxSize & size,

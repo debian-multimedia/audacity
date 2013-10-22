@@ -99,6 +99,9 @@ void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
 #ifdef DISABLE_DYNAMIC_LOADING_LAME
          locate_button->Enable(FALSE);
          download_button->Enable(FALSE);
+#else
+        (void)locate_button;
+        (void)download_button;
 #endif // DISABLE_DYNAMIC_LOADING_LAME
       }
       S.EndTwoColumn();
@@ -230,15 +233,3 @@ bool LibraryPrefs::Apply()
    
    return true;
 }
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 427b9e64-3fc6-40ef-bbf8-e6fff1d442f0

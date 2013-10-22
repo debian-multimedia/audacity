@@ -30,6 +30,14 @@
 #ifndef __EXPERIMENTAL__
 #define __EXPERIMENTAL__
 
+
+// JKC (effect by Norm C, 02 Oct 2013)  disabled for now.
+//#define EXPERIMENTAL_SCIENCE_FILTERS
+
+// LLL, 01 Oct 2013:
+// new key assignment view for preferences
+//#define EXPERIMENTAL_KEY_VIEW
+
 // feature to link audio tracks to a label track
 #define EXPERIMENTAL_SYNC_LOCK
 

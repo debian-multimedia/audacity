@@ -165,6 +165,7 @@ void CommandManager::PurgeData()
    mCurrentMenu = NULL;
    mCurrentMenuName = COMMAND;
    mCurrentID = 0;
+   mOpenMenu = NULL;
 }
 
 
@@ -537,43 +538,55 @@ void CommandManager::AddItemList(wxString name, wxArrayString labels,
    if( mHidingLevel  > 0 )
       return;
 
-   if (CurrentMenu()->GetMenuItemCount() + labels.GetCount() < MAX_MENU_LEN)
-      plugins = false;
-
-   if (!plugins) {
-      for(i=0; i<labels.GetCount(); i++) {
-         int ID = NewIdentifier(name, labels[i], CurrentMenu(), callback,
-                                true, i, labels.GetCount());
-         CurrentMenu()->Append(ID, labels[i]);
-      }
-      mbSeparatorAllowed = true;
-      return;
-   }
+   unsigned int effLen = labels.GetCount();
+   unsigned int nVisibleEffects=0;
 
    wxString label;
-   unsigned int effLen = labels.GetCount();
-   int listnum = 1;
-   int tmpmax = MAX_SUBMENU_LEN  < effLen? MAX_SUBMENU_LEN: effLen;
+   int tmpmax;
 
-   //The first submenu starts at 1.
-   BeginSubMenu(wxString::Format(_("Plugins 1 to %i"), tmpmax));
-
+   // Count the visible effects.
    for(i=0; i<effLen; i++) {
-      int ID = NewIdentifier(name, labels[i], CurrentMenu(), callback,
-                             true, i, effLen);
-
-      CurrentMenu()->Append(ID, labels[i]);
-     
-      if(((i+1) % MAX_SUBMENU_LEN) == 0 && i != (effLen - 1)) {
-         EndSubMenu();
-         listnum++;
-         
-         //This label the plugins by number in the submenu title (1 to 15, 15 to 30, etc.)
-         tmpmax = i + MAX_SUBMENU_LEN  < effLen? 1 + i + MAX_SUBMENU_LEN: effLen;
-         BeginSubMenu(wxString::Format(_("Plugins %i to %i"),i+2,tmpmax));
+      // ItemShouldBeHidden removes the ! so do it to a temporary.
+      label = labels[i];
+      if (!ItemShouldBeHidden(label)) {
+         nVisibleEffects++;
       }
    }
-   EndSubMenu();
+
+   if (CurrentMenu()->GetMenuItemCount() + nVisibleEffects < MAX_MENU_LEN)
+      plugins = false;
+
+   // j counts the visible menu items, i counts the actual menu items.
+   // These numbers are the same unless we are using a simplified interface 
+   // by hiding effects with a ! before them when translated.
+   int j=0;
+   for(i=0; i<effLen; i++) {
+      if (!ItemShouldBeHidden(labels[i])) {
+
+         // ---- Start of code for Plugin sub-menus.  Only relevant on wxGTK.
+         // If plugins, and at start of a sublist....
+         if( plugins && ((j % MAX_SUBMENU_LEN) == 0 )) {
+            // End previous sub-menu, if there was one.
+            if( j>0 )
+               EndSubMenu();
+
+            // Start new sub-menu
+            // tmpmax is number of last plugin for this sub-menu
+            tmpmax = wxMin(j + MAX_SUBMENU_LEN, (int)nVisibleEffects);
+            // Submenu titles are 1 to 15, 15 to 30, etc.
+            BeginSubMenu(wxString::Format(_("Plug-ins %i to %i"),j+1,tmpmax));
+         }
+         // ---- End of code for Plugin sub-menus.
+
+         j++;
+         int ID = NewIdentifier(name, labels[i], CurrentMenu(), callback,
+                                true, i, effLen);
+         CurrentMenu()->Append(ID, labels[i]);
+         mbSeparatorAllowed = true;
+      }
+   }
+   if( plugins && (nVisibleEffects>0 ))
+      EndSubMenu();
 }
 
 ///
@@ -1138,7 +1151,14 @@ void CommandManager::GetAllCommandLabels(wxArrayString &names,
 }
 
 void CommandManager::GetAllCommandData(
-   wxArrayString &names, wxArrayString &keys, wxArrayString &default_keys, wxArrayString &labels, wxArrayString & categories,
+   wxArrayString &names,
+   wxArrayString &keys,
+   wxArrayString &default_keys,
+   wxArrayString &labels,
+   wxArrayString &categories,
+#if defined(EXPERIMENTAL_KEY_VIEW)
+   wxArrayString &prefixes,  
+#endif
    bool includeMultis)
 {
    unsigned int i;
@@ -1151,6 +1171,9 @@ void CommandManager::GetAllCommandData(
          default_keys.Add( mCommandList[i]->defaultKey);
          labels.Add(mCommandList[i]->label);
          categories.Add(mCommandList[i]->labelTop);
+#if defined(EXPERIMENTAL_KEY_VIEW)
+         prefixes.Add(mCommandList[i]->labelPrefix);
+#endif
       }
       else if( includeMultis )
       {
@@ -1159,6 +1182,9 @@ void CommandManager::GetAllCommandData(
          default_keys.Add( mCommandList[i]->defaultKey);
          labels.Add(mCommandList[i]->label);
          categories.Add(mCommandList[i]->labelTop);
+#if defined(EXPERIMENTAL_KEY_VIEW)
+         prefixes.Add(mCommandList[i]->labelPrefix);
+#endif
       }
    }
 }
@@ -1177,7 +1203,15 @@ wxString CommandManager::GetPrefixedLabelFromName(wxString name)
    if (!entry)
       return wxT("");
 
+#if defined(EXPERIMENTAL_KEY_VIEW)
+   wxString prefix;
+   if (!entry->labelPrefix.IsEmpty()) {
+      prefix = entry->labelPrefix + wxT(" - ");
+   }
+   return wxMenuItem::GetLabelFromText(prefix + entry->label);
+#else
    return wxString(entry->labelPrefix + wxT(" ") + entry->label).Trim(false).Trim(true);
+#endif
 }
 
 wxString CommandManager::GetCategoryFromName(wxString name)
@@ -1346,15 +1380,3 @@ void CommandManager::CheckDups()
    }
 }
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 7202d707-9bf3-4735-bdf4-a45b7e004d9a
-

@@ -677,7 +677,7 @@ void GetNextWindowPlacement(wxRect *nextRect, bool *pMaximized, bool *pIconized)
    }
 }
 
-wxString CreateUniqueName()
+static wxString CreateUniqueName()
 {
    static int count = 0;
    return wxDateTime::Now().Format(wxT("%Y-%m-%d %H-%M-%S")) +
@@ -1478,9 +1478,7 @@ void AudacityProject::UpdateFirstVisible()
    mViewInfo.track = NULL;
 
    if (t->GetY() > mViewInfo.vpos) {
-      Track *l = NULL;
       while (t && t->GetY() > mViewInfo.vpos) {
-         l = t;
          t = mTracks->GetPrev(t);
       }
    }
@@ -2284,7 +2282,7 @@ void AudacityProject::OpenFiles(AudacityProject *proj)
 
 // Most of this string was duplicated 3 places. Made the warning consistent in this global. 
 // The %s is to be filled with the version string.
-wxString gsLegacyFileWarning = 
+static wxString gsLegacyFileWarning = 
 _("This file was saved by Audacity version %s. The format has changed. \
 \n\nAudacity can try to open and save this file, but saving it in this \
 \nversion will then prevent any 1.2 or earlier version opening it. \
@@ -3439,6 +3437,7 @@ void AudacityProject::AddImportedTracks(wxString fileName,
 
    OnZoomFit();
 
+   mTrackPanel->SetFocus();
    mTrackPanel->EnsureVisible(mTrackPanel->GetFirstSelectedTrack());
    mTrackPanel->Refresh(false);
 

@@ -892,7 +892,10 @@ bool WaveTrack::SyncLockAdjust(double oldT1, double newT1)
    if (newT1 > oldT1) {
       // Insert space within the track
 
-      if (oldT1 > GetEndTime())
+      // JKC: This is a rare case where using >= rather than > on a float matters.
+      // GetEndTime() looks through the clips and may give us EXACTLY the same
+      // value as T1, when T1 was set to be at the end of one of those clips.
+      if (oldT1 >= GetEndTime())
          return true;
 
       // If track is empty at oldT1 insert whitespace; otherwise, silence
@@ -2270,8 +2273,7 @@ bool WaveTrack::MergeClips(int clipidx1, int clipidx2)
    WaveClip* clip1 = GetClipByIndex(clipidx1);
    WaveClip* clip2 = GetClipByIndex(clipidx2);
 
-   wxASSERT(clip2);
-   if(clip2 == NULL) // could happen if one track of a linked pair had a split and the other didn't
+   if (!clip2) // Could happen if one track of a linked pair had a split and the other didn't.
       return false;
    
    // Append data from second clip to first clip
@@ -2332,15 +2334,3 @@ void WaveTrack::AddInvalidRegion(sampleCount startSample, sampleCount endSample)
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->AddInvalidRegion(startSample,endSample);
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 8cf4eb04-e9b7-4ca5-acd1-aecf564c11d2
-

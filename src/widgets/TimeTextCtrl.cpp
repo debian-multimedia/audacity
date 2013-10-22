@@ -1682,13 +1682,13 @@ wxAccStatus TimeTextCtrlAx::GetRole(int WXUNUSED(childId), wxAccRole *role)
 // - an integer representing the selected child element,
 //   or 0 if this object is selected (GetType() == wxT("long"))
 // - a "void*" pointer to a wxAccessible child object
-wxAccStatus TimeTextCtrlAx::GetSelections(wxVariant *selections)
+wxAccStatus TimeTextCtrlAx::GetSelections(wxVariant * WXUNUSED(selections))
 {
    return wxACC_NOT_IMPLEMENTED;
 }
 
 // Returns a state constant.
-wxAccStatus TimeTextCtrlAx::GetState(int childId, long *state)
+wxAccStatus TimeTextCtrlAx::GetState(int WXUNUSED(childId), long *state)
 {
    *state = wxACC_STATE_SYSTEM_FOCUSABLE;
    *state |= (mCtrl == wxWindow::FindFocus() ? wxACC_STATE_SYSTEM_FOCUSED : 0);
@@ -1698,23 +1698,9 @@ wxAccStatus TimeTextCtrlAx::GetState(int childId, long *state)
 
 // Returns a localized string representing the value for the object
 // or child.
-wxAccStatus TimeTextCtrlAx::GetValue(int childId, wxString *strValue)
+wxAccStatus TimeTextCtrlAx::GetValue(int WXUNUSED(childId), wxString * WXUNUSED(strValue))
 {
    return wxACC_NOT_IMPLEMENTED;
 }
 
 #endif
-
-
-// Indentation settings for Vim and Emacs.
-// Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// 
-
-

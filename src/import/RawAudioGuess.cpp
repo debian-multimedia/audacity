@@ -77,13 +77,12 @@ static float JumpStat(float *data, int len)
 static float SecondDStat(float *data, int len)
 {
    int i;
-   float v1=0, v2=0, v3=0;
+   float v1=0, v2=0;
    float a1=0, a2=0;
    float sum=0;
 
    for (i = 1; i < len; i++) {
       a2 = a1;
-      v3 = v2;
       v2 = v1;
       v1 = data[i]-data[i-1];
       a1 = v1 - v2;
@@ -1135,15 +1134,3 @@ int RawAudioGuess(const wxString &in_fname,
 
    return format;
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 2011274b-10b7-4fce-b2f6-9f4cad4a69c2
-

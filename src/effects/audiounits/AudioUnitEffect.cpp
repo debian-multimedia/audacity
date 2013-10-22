@@ -102,7 +102,6 @@ AudioUnitEffect::AudioUnitEffect(wxString name, Component component):
    SetEffectFlags(PLUGIN_EFFECT | PROCESS_EFFECT);
 
    mUnit = NULL;
-   OpenAComponent(mComponent, &mUnit);
 }
 
 AudioUnitEffect::~AudioUnitEffect()
@@ -145,6 +144,7 @@ wxString AudioUnitEffect::GetEffectAction()
 
 bool AudioUnitEffect::Init()
 {
+   OpenAComponent(mComponent, &mUnit);
    if (!mUnit) {
       return false;
    }
@@ -243,6 +243,8 @@ bool AudioUnitEffect::Process()
    
 void AudioUnitEffect::End()
 {
+   CloseComponent(mUnit);
+   mUnit = NULL;
 }
 
 bool AudioUnitEffect::SetRateAndChannels(AudioUnit unit,
@@ -945,14 +947,3 @@ void AudioUnitDialog::OnPreview(wxCommandEvent &event)
 {
    mEffect->Preview();
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 21aef079-ec47-4ff9-a359-7d159e2ba0e6

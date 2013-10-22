@@ -46,8 +46,8 @@
 
 #include "FFT.h"
 
-int **gFFTBitTable = NULL;
-const int MaxFastBits = 16;
+static int **gFFTBitTable = NULL;
+static const int MaxFastBits = 16;
 
 /* Declare Static functions */
 static int IsPowerOfTwo(int x);
@@ -590,15 +590,3 @@ void WindowFunc(int whichFunction, int NumSamples, float *in)
       fprintf(stderr,"FFT::WindowFunc - Invalid window function: %d\n",whichFunction);
    }
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 47691958-d393-488c-abc5-81178ea2686e
-

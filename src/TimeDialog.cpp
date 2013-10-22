@@ -35,10 +35,10 @@ TimeDialog::TimeDialog(wxWindow *parent,
                        double time,
                        const wxString &prompt)
 :  wxDialog(parent, wxID_ANY, title),
+   mPrompt(prompt),
    mFormat(format),
    mRate(rate),
    mTime(time),
-   mPrompt(prompt),
    mTimeCtrl(NULL)
 {
    ShuttleGui S(this, eIsCreating);
@@ -126,14 +126,3 @@ void TimeDialog::OnUpdate(wxCommandEvent &event)
 
    event.Skip(false);
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 94f72c32-970b-4f4e-bbf3-3880fce7b965

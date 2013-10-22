@@ -1195,10 +1195,8 @@ void EqualizationDialog::MakeEqualizationDialog()
 
    szrG = new wxBoxSizer( wxHORIZONTAL  );
    szrG->Add(0, 0, 0); // horizontal spacer, will be used to position LH EQ slider
-   for (int i = 0; thirdOct[i] <= mHiFreq; ++i)
+   for (int i = 0; (i < NUMBER_OF_BANDS) && (thirdOct[i] <= mHiFreq); ++i)
    {
-      if( i == NUMBER_OF_BANDS )
-         break;
       m_sliders[i] = new wxSliderBugfix(this, ID_SLIDER + i, 0, -20, +20,
                         wxDefaultPosition, wxSize(20, 124), wxSL_VERTICAL|
                          wxSL_INVERSE);
@@ -1304,7 +1302,12 @@ void EqualizationDialog::MakeEqualizationDialog()
    szrC->Add( btn, 0, wxALIGN_CENTRE | wxALL, 4 );
    mGridOnOff = new wxCheckBox(this, GridOnOffID, _("G&rids"),
                             wxDefaultPosition, wxDefaultSize,
+#if defined(__WXGTK__)
+// Fixes bug #662
+                            wxALIGN_LEFT);
+#else
                             wxALIGN_RIGHT);
+#endif
    mGridOnOff->SetName(_("Grids"));
    szrC->Add( mGridOnOff, 0, wxALIGN_CENTRE | wxALL, 4 );
 
@@ -1965,10 +1968,8 @@ void EqualizationDialog::WriteXML(XMLWriter &xmlFile)
 void EqualizationDialog::OnSlider(wxCommandEvent & event)
 {
    wxSliderBugfix *s = (wxSliderBugfix *)event.GetEventObject();
-   for (int i = 0; thirdOct[i] <= mHiFreq; ++i)
+   for (int i = 0; (i < NUMBER_OF_BANDS) && (thirdOct[i] <= mHiFreq); ++i)
    {
-      if( i == NUMBER_OF_BANDS )
-         break;
       if( s == m_sliders[i])
       {
          int posn = m_sliders[i]->GetValue();
@@ -2041,10 +2042,8 @@ void EqualizationDialog::LayoutEQSliders()
    double loLog = log10(mLoFreq);
    double hiLog = log10(mHiFreq);
    double denom = hiLog - loLog;
-   for (int i = 1; thirdOct[i] <= mHiFreq; ++i)   //go along the spacers
+   for (int i = 1; (i < NUMBER_OF_BANDS) && (thirdOct[i] <= mHiFreq); ++i)   //go along the spacers
    {
-      if( i == NUMBER_OF_BANDS )
-         break;
       float posn = range*(log10(thirdOct[i])-loLog)/denom;   //centre of this slider, from start
       w = start + ((int)(posn+.5)) - EQsliderSize.x/2;   //LH edge of slider, from 0
       w = w - so_far;   //gap needed to put it here
@@ -2618,10 +2617,8 @@ void EqualizationDialog::OnInvert(wxCommandEvent & WXUNUSED(event)) // Inverts a
 {
    if(!drawMode)   // Graphic (Slider) mode. Invert the sliders.
    {
-      for (int i = 0; thirdOct[i] <= mHiFreq; ++i)
+      for (int i = 0; (i < NUMBER_OF_BANDS) && (thirdOct[i] <= mHiFreq); ++i)
       {
-         if( i == NUMBER_OF_BANDS )
-            break;
          m_EQVals[i] = -m_EQVals[i];
          int newPosn = (int)m_EQVals[i];
          m_sliders[i]->SetValue( newPosn );
@@ -3327,7 +3324,7 @@ wxAccStatus SliderAx::GetChildCount(int* childCount)
 // The retrieved string describes the action that is performed on an object,
 // not what the object does as a result. For example, a toolbar button that prints
 // a document has a default action of "Press" rather than "Prints the current document."
-wxAccStatus SliderAx::GetDefaultAction( int childId, wxString *actionName )
+wxAccStatus SliderAx::GetDefaultAction( int WXUNUSED(childId), wxString *actionName )
 {
    actionName->Clear();
 
@@ -3335,7 +3332,7 @@ wxAccStatus SliderAx::GetDefaultAction( int childId, wxString *actionName )
 }
 
 // Returns the description for this object or a child.
-wxAccStatus SliderAx::GetDescription( int childId, wxString *description )
+wxAccStatus SliderAx::GetDescription( int WXUNUSED(childId), wxString *description )
 {
    description->Clear();
 
@@ -3355,7 +3352,7 @@ wxAccStatus SliderAx::GetFocus(int* childId, wxAccessible** child)
 }
 
 // Returns help text for this object or a child, similar to tooltip text.
-wxAccStatus SliderAx::GetHelpText( int childId, wxString *helpText )
+wxAccStatus SliderAx::GetHelpText( int WXUNUSED(childId), wxString *helpText )
 {
    helpText->Clear();
 
@@ -3364,7 +3361,7 @@ wxAccStatus SliderAx::GetHelpText( int childId, wxString *helpText )
 
 // Returns the keyboard shortcut for this object or child.
 // Return e.g. ALT+K
-wxAccStatus SliderAx::GetKeyboardShortcut( int childId, wxString *shortcut )
+wxAccStatus SliderAx::GetKeyboardShortcut( int WXUNUSED(childId), wxString *shortcut )
 {
    shortcut->Clear();
 
@@ -3373,7 +3370,7 @@ wxAccStatus SliderAx::GetKeyboardShortcut( int childId, wxString *shortcut )
 
 // Returns the rectangle for this object (id = 0) or a child element (id > 0).
 // rect is in screen coordinates.
-wxAccStatus SliderAx::GetLocation( wxRect& rect, int elementId )
+wxAccStatus SliderAx::GetLocation( wxRect& rect, int WXUNUSED(elementId) )
 {
    wxSliderBugfix *s = wxDynamicCast( GetWindow(), wxSliderBugfix );
 
@@ -3384,7 +3381,7 @@ wxAccStatus SliderAx::GetLocation( wxRect& rect, int elementId )
 }
 
 // Gets the name of the specified object.
-wxAccStatus SliderAx::GetName(int childId, wxString* name)
+wxAccStatus SliderAx::GetName(int WXUNUSED(childId), wxString* name)
 {
    wxSliderBugfix *s = wxDynamicCast( GetWindow(), wxSliderBugfix );
 
@@ -3423,7 +3420,7 @@ wxAccStatus SliderAx::GetRole(int childId, wxAccRole* role)
 // - an integer representing the selected child element,
 //   or 0 if this object is selected (GetType() == wxT("long"))
 // - a "void*" pointer to a wxAccessible child object
-wxAccStatus SliderAx::GetSelections( wxVariant *selections )
+wxAccStatus SliderAx::GetSelections( wxVariant * WXUNUSED(selections) )
 {
    return wxACC_NOT_IMPLEMENTED;
 }
@@ -3478,15 +3475,3 @@ wxAccStatus SliderAx::GetValue(int childId, wxString* strValue)
 }
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 65b35bfa-632c-46fe-9170-840a158b3c97
-

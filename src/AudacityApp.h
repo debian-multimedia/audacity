@@ -98,6 +98,10 @@ class AudacityApp:public wxApp {
    virtual int OnExit(void);
    virtual void OnFatalException();
 
+#if defined(__WXGTK__)
+   int FilterEvent(wxEvent & event);
+#endif
+
    void InitLang( const wxString & lang );
 
    // These are currently only used on Mac OS, where it's
@@ -149,8 +153,6 @@ class AudacityApp:public wxApp {
     virtual void MacOpenFile(const wxString &fileName) ;
     virtual void MacPrintFile(const wxString &fileName) ;
     virtual void MacNewFile() ;
-    virtual void MacReopenApp() ;
-    void OnMacOpenFile(wxCommandEvent & event);
    #endif
 
    #if defined(__WXMSW__) && !defined(__WXUNIVERSAL__) && !defined(__CYGWIN__)
@@ -234,14 +236,3 @@ extern AudacityApp & wxGetApp();
 
 #define MAX_AUDIO (1. - 1./(1<<15))
 #define JUST_BELOW_MAX_AUDIO (1. - 1./(1<<14))
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 31e7d5f1-bd9e-4348-bce1-6921effbd8e5
