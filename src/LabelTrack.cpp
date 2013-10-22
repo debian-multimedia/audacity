@@ -1345,7 +1345,7 @@ void LabelTrack::MayMoveLabel( int iLabel, int iEdge, double fNewTime)
 
 // Constrain function, as in processing/arduino.
 // returned value will be between min and max (inclusive).
-int Constrain( int value, int min, int max )
+static int Constrain( int value, int min, int max )
 {
    wxASSERT( min <= max );
    int result=value;
@@ -1834,16 +1834,32 @@ bool LabelTrack::OnKeyDown(double & newSel0, double & newSel1, wxKeyEvent & even
       case WXK_TAB:
       case WXK_NUMPAD_TAB:
          if (!mLabels.IsEmpty()) {
+            int len = (int) mLabels.Count();
             if (event.ShiftDown()) {
-               mSelIndex = (int)mLabels.Count() - 1;
+               mSelIndex = len - 1;
+               if (newSel0 > mLabels[0]->t) {
+                  while (mSelIndex >= 0 && mLabels[mSelIndex]->t >= newSel0) {
+                     mSelIndex--;
+                  }
+               }
             } else {
                mSelIndex = 0;
+               if (newSel0 < mLabels[len - 1]->t) {
+                  while (mSelIndex < len && mLabels[mSelIndex]->t <= newSel0) {
+                     mSelIndex++;
+                  }
+               }
             }
-            
-            mCurrentCursorPos = mLabels[mSelIndex]->title.Length();
-            //Set the selection region to be equal to the selection bounds of the tabbed-to label.
-            newSel0 = mLabels[mSelIndex]->t;
-            newSel1 = mLabels[mSelIndex]->t1;
+
+            if (mSelIndex >= 0 && mSelIndex < len) {
+               mCurrentCursorPos = mLabels[mSelIndex]->title.Length();
+               //Set the selection region to be equal to the selection bounds of the tabbed-to label.
+               newSel0 = mLabels[mSelIndex]->t;
+               newSel1 = mLabels[mSelIndex]->t1;
+            }
+            else {
+               mSelIndex = -1;
+            }
          }
          break;
 
@@ -2751,15 +2767,3 @@ wxString LabelTrack::GetTextOfLabels(double t0, double t1)
 
    return retVal;
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: f321cf69-6f22-4a1b-a44b-b70d533227e3
-

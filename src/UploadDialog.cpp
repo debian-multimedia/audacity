@@ -54,16 +54,6 @@
 //#include "../images/AudacityLogo.xpm"
 //#include "../images/UploadImages.h"
 
-#ifdef __WXMSW__
-# define DLOG_HEIGHT 430
-#else
-# if defined(__WXMAC__) && ((wxMAJOR_VERSION == 2) && (wxMINOR_VERSION >= 5))
-#  define DLOG_HEIGHT 430
-# else
-#  define DLOG_HEIGHT 400
-# endif
-#endif
-
 // Icon images
 
 ///\todo get these XPMs out of here and into Theme.
@@ -1462,14 +1452,3 @@ void UploadDialog::UpdateSiteList (void)
     }
 
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 4
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=4 sw=4
-

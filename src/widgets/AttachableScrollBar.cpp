@@ -74,7 +74,6 @@ void AttachableScrollBar::SetViewInfoFromScrollBar()
    ViewInfo & mViewInfo = *mpViewInfo;
 
    int hlast = mViewInfo.sbarH;
-   int hoffset = 0;
 
    mViewInfo.sbarH = GetThumbPosition();
 
@@ -85,7 +84,6 @@ void AttachableScrollBar::SetViewInfoFromScrollBar()
          mViewInfo.h = mViewInfo.total - mViewInfo.screen;
       if (mViewInfo.h < 0.0)
          mViewInfo.h = 0.0;
-      hoffset = (mViewInfo.sbarH - hlast);
    }
 }
 
@@ -106,12 +104,3 @@ void AttachableScrollBar::OnScroll(wxScrollEvent & event)
    SetViewInfoFromScrollBar();
    event.Skip(); // This is so that the parent control can refresh whatever it needs to...
 }
-
-// Indentation settings for Vim and Emacs
-// Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-

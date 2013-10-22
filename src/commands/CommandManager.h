@@ -195,7 +195,10 @@ class AUDACITY_DLL_API CommandManager: public XMLTagHandler
    void GetAllCommandLabels(wxArrayString &labels, bool includeMultis);
    void GetAllCommandData(
       wxArrayString &names, wxArrayString &keys, wxArrayString &default_keys,
-      wxArrayString &labels, wxArrayString & categories,
+      wxArrayString &labels, wxArrayString &categories,
+#if defined(EXPERIMENTAL_KEY_VIEW)
+      wxArrayString &prefixes,
+#endif
       bool includeMultis);
 
    wxString GetLabelFromName(wxString name);
@@ -262,15 +265,3 @@ private:
 };
 
 #endif
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 6f086a60-916f-41d6-bd0c-b4d39c6bcde3
-

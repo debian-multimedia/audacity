@@ -14,9 +14,9 @@
 
   Figure out what translations are installed and return a list
   of language codes (like "es", "fr", or "pt-br") and corresponding
-  language names (like "Español", "Français", and "Português").
+  language names (like "EspaÃ±ol", "FranÃ§ais", and "PortuguÃªs").
   We use our own list of translations of language names (i.e.
-  "Français" instead of "French") but we fallback on the language
+  "FranÃ§ais" instead of "French") but we fallback on the language
   name in wxWidgets if we don't have it listed.
 
   This code is designed to work well with all of the current
@@ -42,7 +42,7 @@
 
 WX_DECLARE_STRING_HASH_MAP(wxString, LangHash);
 
-bool TranslationExists(wxArrayString &audacityPathList, wxString code)
+static bool TranslationExists(wxArrayString &audacityPathList, wxString code)
 {
    wxArrayString results;   
    wxGetApp().FindFilesInPathList(wxString::Format(wxT("%s/audacity.mo"),
@@ -238,16 +238,3 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
       langCodes.Add(reverseHash[tempNames[j]]);
    }
 }
-
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: f4fe3d35-5ae6-4ca4-b151-293551801fa1
-

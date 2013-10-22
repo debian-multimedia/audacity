@@ -51,7 +51,7 @@ enum eCommandType { CtEffect, CtMenu, CtSpecial };
 // TIDY-ME: Not currently translated, 
 // but there are issues to address if we do.
 // CLEANSPEECH remnant
-wxString SpecialCommands[] = {
+static wxString SpecialCommands[] = {
    wxT("NoAction"),
    // wxT("Import"),   // non-functioning
    wxT("ExportMP3_56k_before"),
@@ -752,15 +752,3 @@ wxString BatchCommands::Join(const wxString & command, const wxString & param)
 {
    return command + wxT(": ") + param;
 }
-
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: TBD
-

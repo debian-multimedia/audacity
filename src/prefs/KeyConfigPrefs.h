@@ -12,6 +12,82 @@
 #ifndef __AUDACITY_KEY_CONFIG_PREFS__
 #define __AUDACITY_KEY_CONFIG_PREFS__
 
+#if defined(EXPERIMENTAL_KEY_VIEW)
+
+#include <wx/defs.h>
+#include <wx/imaglist.h>
+#include <wx/listctrl.h>
+#include <wx/radiobut.h>
+#include <wx/srchctrl.h>
+#include <wx/string.h>
+#include <wx/textctrl.h>
+#include <wx/timer.h>
+
+#include "../ShuttleGui.h"
+#include "../commands/CommandManager.h"
+#include "../widgets/KeyView.h"
+
+#include "PrefsPanel.h"
+
+class KeyConfigPrefs:public PrefsPanel 
+{
+public:
+   KeyConfigPrefs(wxWindow * parent);
+   ~KeyConfigPrefs();
+   virtual bool Apply();
+   virtual void Cancel();
+
+private:
+   void Populate();
+   void PopulateOrExchange(ShuttleGui & S);
+   void RefreshBindings();
+   wxString NameFromKey(const wxString & key);
+   void SetKeyForSelected(const wxString & key);
+
+   void OnViewBy(wxCommandEvent & e);
+   void OnDefaults(wxCommandEvent & e);
+   void OnImport(wxCommandEvent & e);
+   void OnExport(wxCommandEvent & e);
+   void OnSet(wxCommandEvent & e);
+   void OnClear(wxCommandEvent & e);
+   void OnSelected(wxCommandEvent & e);
+
+   void OnHotkeyKeyDown(wxKeyEvent & e);
+   void OnHotkeyChar(wxKeyEvent & e);
+   void OnHotkeyKillFocus(wxFocusEvent & e);
+
+   void OnFilterTimer(wxTimerEvent & e);
+   void OnFilterKeyDown(wxKeyEvent & e);
+   void OnFilterChar(wxKeyEvent & e);
+
+   KeyView *mView;
+   wxTextCtrl *mKey;
+   wxButton *mSet;
+   wxButton *mClear;
+
+   wxTextCtrl *mFilter;
+   wxStaticText *mFilterLabel;
+   wxTimer mFilterTimer;
+   bool mFilterPending;
+
+   ViewByType mViewType;
+   wxRadioButton *mViewByTree;
+   wxRadioButton *mViewByName;
+   wxRadioButton *mViewByKey;
+
+   CommandManager *mManager;
+   int mCommandSelected;
+
+   wxArrayString mNames;
+   wxArrayString mDefaultKeys;
+   wxArrayString mKeys;
+   wxArrayString mNewKeys; // Used for work in progress.
+
+   DECLARE_EVENT_TABLE();
+};
+
+#else
+
 #include <wx/defs.h>
 #include <wx/listctrl.h>
 #include <wx/textctrl.h>
@@ -67,14 +143,4 @@ class KeyConfigPrefs:public PrefsPanel
 };
 #endif
 
-// Indentation settings for Vim and Emacs and unique identifier for Arch, a
-// version control system. Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-// arch-tag: 40d9b726-ab6b-431f-b384-e1a66303dba5
-
+#endif

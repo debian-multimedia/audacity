@@ -13,7 +13,7 @@ Filename: "{app}\unins*.*";
 
 [Setup]
 ; compiler-related directives
-OutputBaseFilename=audacity-win-2.0.4
+OutputBaseFilename=audacity-win-2.0.5
 
 WizardImageFile=audacity_InnoWizardImage.bmp
 WizardSmallImageFile=audacity_InnoWizardSmallImage.bmp
@@ -22,9 +22,9 @@ SolidCompression=yes
 
 ; installer-related directives
 AppName=Audacity
-AppVerName=Audacity 2.0.4
+AppVerName=Audacity 2.0.5
 ; Specify AppVersion as well, so it appears in the Add/Remove Programs entry. 
-AppVersion=2.0.4
+AppVersion=2.0.5
 AppPublisher=Audacity Team
 AppPublisherURL=http://audacity.sourceforge.net
 AppSupportURL=http://audacity.sourceforge.net
@@ -119,7 +119,8 @@ Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC
 Source: "C:\Program Files\Microsoft Visual Studio 9.0\VC\redist\x86\Microsoft.VC90.CRT\msvcr90.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 Source: "..\win\unicode release\languages\*"; DestDir: "{app}\Languages\"; Flags: ignoreversion recursesubdirs
-Source: "..\win\unicode release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
+; We don't currently ship any modules, so the next line is commented out
+;Source: "..\win\unicode release\modules\*"; DestDir: "{app}\Modules\"; Flags: ignoreversion recursesubdirs skipifsourcedoesntexist
 Source: "..\win\unicode release\nyquist\*"; DestDir: "{app}\Nyquist\"; Flags: ignoreversion recursesubdirs
 Source: "..\win\unicode release\plug-ins\*"; DestDir: "{app}\Plug-Ins\"; Excludes: "analyze.ny"; Flags: ignoreversion
 
@@ -167,7 +168,17 @@ Type: files; Name: "{app}\Plug-Ins\GVerb.dll"
 Type: files; Name: "{app}\Plug-Ins\Hard Limiter.dll"
 Type: files; Name: "{app}\Plug-Ins\sc4.dll"
 
+;Get rid of any modules that we have ever installed
+Type: files; Name: "{app}\Modules\mod-script-pipe.dll"
+Type: files; Name: "{app}\Modules\mod-script-pipe.exp"
+Type: files; Name: "{app}\Modules\mod-script-pipe.lib"
 
+;get rid of the Modules dir, if it is empty
+Type: dirifempty; Name: "{app}\Modules"
+
+; Get rid of gverb that we no longer ship
+Type: files; Name: "{app}\Plug-Ins\gverb_1216.dll"
+                                            
 [Registry]
 ; No longer allow user to choose whether to associate AUP file type with Audacity.
 ; Leaving this one commented out example of the old way.

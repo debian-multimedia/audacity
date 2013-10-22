@@ -18,7 +18,7 @@
 #include "WaveTrack.h"
 #include "widgets/TimeTextCtrl.h"
 
-int CompareSnapPoints(SnapPoint *s1, SnapPoint *s2)
+static int CompareSnapPoints(SnapPoint *s1, SnapPoint *s2)
 {
    return (s1->t - s2->t > 0? 1 : -1);
 }
@@ -287,14 +287,3 @@ bool SnapManager::Snap(Track *currentTrack,
 
    return *snappedPoint || *snappedTime;
 }
-
-// Indentation settings for Vim and Emacs.
-// Please do not modify past this point.
-//
-// Local Variables:
-// c-basic-offset: 3
-// indent-tabs-mode: nil
-// End:
-//
-// vim: et sts=3 sw=3
-

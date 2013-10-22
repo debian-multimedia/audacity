@@ -51,7 +51,7 @@ typedef pwxWindow (*tPanelFn)(int);
 
 // This variable will hold the address of a subroutine in 
 // a DLL that can hijack the normal panel.
-tPanelFn pPanelHijack=NULL;
+static tPanelFn pPanelHijack=NULL;
 
 // Next two commented out lines are handy when investigating
 // strange DLL behaviour.  Instead of dynamic linking,
@@ -75,7 +75,7 @@ wxWindow * MakeHijackPanel()
 
 // This variable will hold the address of a subroutine in a DLL that
 // starts a thread and reads script commands.
-tpRegScriptServerFunc scriptFn;
+static tpRegScriptServerFunc scriptFn;
 
 #ifdef EXPERIMENTAL_MODULE_PREFS
 bool IsAllowedModule( wxString fname )
@@ -239,7 +239,7 @@ void ModuleManager::Initialize(CommandHandler &cmdHandler)
 
 #ifdef EXPERIMENTAL_MODULE_PREFS
       if( !IsAllowedModule( files[i] ) )  // don't try and check the in-date-ness before this as that means loading the module to call it's GetVersionString, which could do anything.
-#endif EXPERIMENTAL_MODULE_PREFS
+#endif
       {
          wxString ShortName = wxFileName( files[i] ).GetName();
          wxString msg;

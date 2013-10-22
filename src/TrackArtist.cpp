@@ -1019,7 +1019,7 @@ void TrackArtist::DrawMinMaxRMS(wxDC &dc, const wxRect &r, const double env[],
 void TrackArtist::DrawMinMaxRMS(wxDC &dc, const wxRect &r, const double env[],
                                 float zoomMin, float zoomMax, bool dB,
                                 const float min[], const float max[], const float rms[],
-                                const int bl[], bool showProgress, bool muted)
+                                const int bl[], bool WXUNUSED(showProgress), bool muted)
 #endif
 {
    // Display a line representing the
@@ -1707,7 +1707,7 @@ void TrackArtist::DrawSpectrum(WaveTrack *track,
    }
 }
 
-float sumFreqValues(float *freq, int x0, float bin0, float bin1)
+static float sumFreqValues(float *freq, int x0, float bin0, float bin1)
 {
    float value;
    if (int(bin1) == int(bin0)) {
@@ -2366,7 +2366,6 @@ const char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def
   }
   return def;
 }
-#endif // USE_MIDI
 
 #define TIME_TO_X(t) (r.x + (int) (((t) - h) * pps))
 #define X_TO_TIME(xx) (((xx) - r.x) / pps + h)
@@ -2387,8 +2386,6 @@ const char *LookupAtomAttribute(Alg_note_ptr note, Alg_attribute attr, char *def
 #define BLUE(i) ( unsigned char )( ((i) & 0xff) )
 
 //#define PITCH_TO_Y(p) (r.y + r.height - int(pitchht * ((p) + 0.5 - pitch0) + 0.5))
-
-#ifdef USE_MIDI
 
 /*
 int PitchToY(double p, int bottom)
