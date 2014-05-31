@@ -1,0 +1,24 @@
+Description: Fix default LADSPA search paths on Linux.
+ The default LADSPA search paths should be
+ /home/<user>/.ladspa:/usr/local/lib/ladspa:/usr/lib/ladspa according to
+ http://www.ladspa.org/ladspa_sdk/shared_plugins.html
+ .
+ Additional search in the ladspa subdirectory of the system library directory
+ (which could be /usr/lib/x86_64-linux-gnu/ on Debian, for example).
+Author: Benjamin Drung <bdrung@debian.org>
+Bug-Debian: http://bugs.debian.org/724836
+Bug-Ubuntu: https://launchpad.net/bugs/1261654
+
+--- a/src/effects/ladspa/LoadLadspa.cpp
++++ b/src/effects/ladspa/LoadLadspa.cpp
+@@ -286,8 +286,9 @@
+       wxGetApp().AddMultiPathsToPathList(pathVar, pathList);
+ 
+    #ifdef __WXGTK__
+-   wxGetApp().AddUniquePathToPathList(wxT(INSTALL_PREFIX) wxT("/ladspa"), pathList);
++   wxGetApp().AddUniquePathToPathList(wxT("~/.ladspa"), pathList);
+    wxGetApp().AddUniquePathToPathList(wxT("/usr/local/lib/ladspa"), pathList);
++   wxGetApp().AddUniquePathToPathList(wxT("/usr/lib/ladspa"), pathList);
+    wxGetApp().AddUniquePathToPathList(wxT(LIBDIR) wxT("/ladspa"), pathList);
+    #endif
+ 
