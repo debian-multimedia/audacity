@@ -1,3 +1,14 @@
+audacity (2.0.5-2) unstable; urgency=medium
+
+  * Add support for recent FFmpeg/libav versions. Thanks to Michael Niedermayer
+    for the porting work. (Closes: #740755, LP: #1076928)
+  * Fix default LADSPA search paths on Linux. (Closes: #724836, LP: #1261654)
+  * Fix build failure caused by undefined PATH_MAX.
+  * Bump Standards-Version to 3.9.5 (no changes needed).
+  * Remove -Wstrict-prototypes build flag from libnyquist.
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 31 May 2014 22:02:54 +0200
+
 audacity (2.0.5-1) unstable; urgency=low
 
   * New upstream release.
