@@ -5,7 +5,7 @@ export DEB_LDFLAGS_MAINT_APPEND=-Wl,-z,defs -Wl,--as-needed
 configure_flags := \
 	--disable-dynamic-loading \
 	--with-expat=system \
-	--without-ffmpeg \
+	--with-ffmpeg=system \
 	--with-lame=system \
 	--with-libflac=system \
 	--with-libid3tag=system \
