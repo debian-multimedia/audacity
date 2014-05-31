@@ -27,6 +27,7 @@ configure_flags := \
 	dh $@ --parallel --with autoreconf
 
 override_dh_auto_configure:
+	cd lib-src/libnyquist && autoreconf -i
 	dh_auto_configure -- $(configure_flags)
 
 override_dh_auto_install:
