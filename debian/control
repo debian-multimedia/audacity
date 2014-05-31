@@ -5,7 +5,7 @@ Maintainer: Debian Multimedia Maintainers <pkg-multimedia-maintainers@lists.alio
 Uploaders: Free Ekanayaka <freee@debian.org>,
            Benjamin Drung <bdrung@debian.org>,
            David Henningsson <diwic@ubuntu.com>
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Build-Depends: autoconf,
                automake,
                debhelper (>= 9),
