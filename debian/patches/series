@@ -1,5 +1,0 @@
-distclean.patch
-path-max.patch
-ffmpeg.patch
-remove-strict-prototype-warnings.patch
-fix-ladspa-search-path.patch
