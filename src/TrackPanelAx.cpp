@@ -309,7 +309,7 @@ wxAccStatus TrackPanelAx::GetName( int childId, wxString* name )
                on this track mute is on.*/
             *name->Append( _( " Mute On" ) );
          }
-         
+
          if( t->GetSolo() )
          {
             /* i18n-hint: This is for screen reader software and indicates that
@@ -385,7 +385,33 @@ wxAccStatus TrackPanelAx::GetSelections( wxVariant * WXUNUSED(selections) )
 // Returns a state constant.
 wxAccStatus TrackPanelAx::GetState( int childId, long* state )
 {
-  *state = wxACC_STATE_SYSTEM_FOCUSABLE | wxACC_STATE_SYSTEM_SELECTABLE;
+#if defined(__WXMSW__)
+   if( childId > 0 )
+   {
+      Track *t = FindTrack( childId );
+
+      *state = wxACC_STATE_SYSTEM_FOCUSABLE | wxACC_STATE_SYSTEM_SELECTABLE;
+      if (t)
+      {
+         if( t == mFocusedTrack )
+         {
+            *state |= wxACC_STATE_SYSTEM_FOCUSED;
+         }
+
+         if( t->GetSelected() )
+         {
+            *state |= wxACC_STATE_SYSTEM_SELECTED;
+         }
+      }
+   }
+   else     // childId == wxACC_SELF
+   {
+      *state = wxACC_STATE_SYSTEM_FOCUSABLE + wxACC_STATE_SYSTEM_FOCUSED;
+   }
+#endif
+
+#if defined(__WXMAC__)
+   *state = wxACC_STATE_SYSTEM_FOCUSABLE | wxACC_STATE_SYSTEM_SELECTABLE;
 
    if( childId > 0 )
    {
@@ -404,6 +430,7 @@ wxAccStatus TrackPanelAx::GetState( int childId, long* state )
          }
       }
    }
+#endif
 
    return wxACC_OK;
 }
@@ -442,7 +469,7 @@ wxAccStatus TrackPanelAx::GetValue( int childId, wxString* strValue )
          {
             strValue->Append( _( " Mute On" ) );
          }
-         
+
          if( t->GetSolo() )
          {
             strValue->Append( _( " Solo On" ) );
@@ -464,16 +491,17 @@ wxAccStatus TrackPanelAx::GetValue( int childId, wxString* strValue )
 wxAccStatus TrackPanelAx::GetFocus( int *childId, wxAccessible **child )
 {
 #if defined(__WXMSW__)
-   if( *childId == wxACC_SELF )
+
+   if (mTrackPanel == wxWindow::FindFocus())
    {
-      if( mFocusedTrack )
+      if (mFocusedTrack)
+      {
+         *childId = TrackNum(mFocusedTrack);
+      }
+      else
       {
          *child = this;
       }
-   }
-   else
-   {
-      *child = NULL;
    }
 
    return wxACC_OK;

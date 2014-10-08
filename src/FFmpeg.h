@@ -16,6 +16,10 @@ Describes shared object that is used to access FFmpeg libraries.
 #if !defined(__AUDACITY_FFMPEG__)
 #define __AUDACITY_FFMPEG__
 
+// TODO: Determine whether the libav* headers come from the FFmpeg or libav
+// project and set IS_FFMPEG_PROJECT depending on it.
+#define IS_FFMPEG_PROJECT 1
+
 /* FFmpeg is written in C99. It uses many types from stdint.h. Because we are
  * compiling this using a C++ compiler we have to put it in extern "C".
  * __STDC_CONSTANT_MACROS is defined to make <stdint.h> behave like it
@@ -31,7 +35,7 @@ Describes shared object that is used to access FFmpeg libraries.
 
 #if defined(USE_FFMPEG)
 extern "C" {
-   // Include errno.h before the ffmpeg includes since they depend on 
+   // Include errno.h before the ffmpeg includes since they depend on
    // knowing the value of EINVAL...see bottom of avcodec.h.  Not doing
    // so will produce positive error returns when they should be < 0.
    #include <errno.h>
@@ -41,28 +45,85 @@ extern "C" {
    #include <libavutil/fifo.h>
    #include <libavutil/mathematics.h>
 
-   #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 102, 0)
-   #define AVIOContext ByteIOContext
-   #endif
+   #if defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
+      #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 45, 101)
+      #define av_frame_alloc avcodec_alloc_frame
+      #define av_frame_free avcodec_free_frame
+      #endif
 
-   #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 94, 1)
-   #define AVSampleFormat SampleFormat
-   #endif
+      #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 59, 100)
+      inline void avcodec_free_frame(AVFrame **frame) {
+         av_free(*frame);
+      }
+      #endif
 
-   #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 120, 0)
-   #define CodecType AVMediaType
-   #define CODEC_TYPE_UNKNOWN    AVMEDIA_TYPE_UNKNOWN
-   #define CODEC_TYPE_VIDEO      AVMEDIA_TYPE_VIDEO
-   #define CODEC_TYPE_AUDIO      AVMEDIA_TYPE_AUDIO
-   #define CODEC_TYPE_DATA       AVMEDIA_TYPE_DATA
-   #define CODEC_TYPE_SUBTITLE   AVMEDIA_TYPE_SUBTITLE
-   #define CODEC_TYPE_ATTACHMENT AVMEDIA_TYPE_ATTACHMENT
-   #define CODEC_TYPE_NB         AVMEDIA_TYPE_NB
-   #endif
+      #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 51, 100)
+      #define AVCodecID CodecID
+      #define AV_CODEC_ID_AAC CODEC_ID_AAC
+      #define AV_CODEC_ID_AC CODEC_ID_AC
+      #define AV_CODEC_ID_AC3 CODEC_ID_AC3
+      #define AV_CODEC_ID_ADPCM CODEC_ID_ADPCM
+      #define AV_CODEC_ID_ADPCM_CT CODEC_ID_ADPCM_CT
+      #define AV_CODEC_ID_ADPCM_G726 CODEC_ID_ADPCM_G726
+      #define AV_CODEC_ID_ADPCM_IMA_QT CODEC_ID_ADPCM_IMA_QT
+      #define AV_CODEC_ID_ADPCM_IMA_WAV CODEC_ID_ADPCM_IMA_WAV
+      #define AV_CODEC_ID_ADPCM_MS CODEC_ID_ADPCM_MS
+      #define AV_CODEC_ID_ADPCM_SWF CODEC_ID_ADPCM_SWF
+      #define AV_CODEC_ID_ADPCM_YAMAHA CODEC_ID_ADPCM_YAMAHA
+      #define AV_CODEC_ID_ALAC CODEC_ID_ALAC
+      #define AV_CODEC_ID_AMR CODEC_ID_AMR
+      #define AV_CODEC_ID_AMR_NB CODEC_ID_AMR_NB
+      #define AV_CODEC_ID_AMR_WB CODEC_ID_AMR_WB
+      #define AV_CODEC_ID_ATRAC CODEC_ID_ATRAC
+      #define AV_CODEC_ID_ATRAC3 CODEC_ID_ATRAC3
+      #define AV_CODEC_ID_DTS CODEC_ID_DTS
+      #define AV_CODEC_ID_DVAUDIO CODEC_ID_DVAUDIO
+      #define AV_CODEC_ID_FLAC CODEC_ID_FLAC
+      #define AV_CODEC_ID_GSM CODEC_ID_GSM
+      #define AV_CODEC_ID_GSM_MS CODEC_ID_GSM_MS
+      #define AV_CODEC_ID_IMC CODEC_ID_IMC
+      #define AV_CODEC_ID_MACE CODEC_ID_MACE
+      #define AV_CODEC_ID_MACE3 CODEC_ID_MACE3
+      #define AV_CODEC_ID_MACE6 CODEC_ID_MACE6
+      #define AV_CODEC_ID_MP CODEC_ID_MP
+      #define AV_CODEC_ID_MP2 CODEC_ID_MP2
+      #define AV_CODEC_ID_MP3 CODEC_ID_MP3
+      #define AV_CODEC_ID_NELLYMOSER CODEC_ID_NELLYMOSER
+      #define AV_CODEC_ID_NONE CODEC_ID_NONE
+      #define AV_CODEC_ID_PCM CODEC_ID_PCM
+      #define AV_CODEC_ID_PCM_ALAW CODEC_ID_PCM_ALAW
+      #define AV_CODEC_ID_PCM_MULAW CODEC_ID_PCM_MULAW
+      #define AV_CODEC_ID_PCM_S16BE CODEC_ID_PCM_S16BE
+      #define AV_CODEC_ID_PCM_S16LE CODEC_ID_PCM_S16LE
+      #define AV_CODEC_ID_PCM_S24BE CODEC_ID_PCM_S24BE
+      #define AV_CODEC_ID_PCM_S24LE CODEC_ID_PCM_S24LE
+      #define AV_CODEC_ID_PCM_S32BE CODEC_ID_PCM_S32BE
+      #define AV_CODEC_ID_PCM_S32LE CODEC_ID_PCM_S32LE
+      #define AV_CODEC_ID_PCM_S8 CODEC_ID_PCM_S8
+      #define AV_CODEC_ID_PCM_U8 CODEC_ID_PCM_U8
+      #define AV_CODEC_ID_QCELP CODEC_ID_QCELP
+      #define AV_CODEC_ID_QDM CODEC_ID_QDM
+      #define AV_CODEC_ID_QDM2 CODEC_ID_QDM2
+      #define AV_CODEC_ID_ROQ CODEC_ID_ROQ
+      #define AV_CODEC_ID_ROQ_DPCM CODEC_ID_ROQ_DPCM
+      #define AV_CODEC_ID_SONIC CODEC_ID_SONIC
+      #define AV_CODEC_ID_SONIC_LS CODEC_ID_SONIC_LS
+      #define AV_CODEC_ID_TRUESPEECH CODEC_ID_TRUESPEECH
+      #define AV_CODEC_ID_VORBIS CODEC_ID_VORBIS
+      #define AV_CODEC_ID_VOXWARE CODEC_ID_VOXWARE
+      #define AV_CODEC_ID_WMAPRO CODEC_ID_WMAPRO
+      #define AV_CODEC_ID_WMAV CODEC_ID_WMAV
+      #define AV_CODEC_ID_WMAV1 CODEC_ID_WMAV1
+      #define AV_CODEC_ID_WMAV2 CODEC_ID_WMAV2
+      #define AV_CODEC_ID_WMAVOICE CODEC_ID_WMAVOICE
+      #endif
 
-   #ifndef PKT_FLAG_KEY
-   #define PKT_FLAG_KEY          AV_PKT_FLAG_KEY
-   #endif  
+      #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 8, 100)
+      inline bool av_codec_is_encoder(AVCodec *codec) {
+         return codec != NULL && (codec->encode != NULL || codec->encode2 != NULL);
+      }
+      #endif
+   #endif
 }
 #endif
 
@@ -71,13 +132,13 @@ extern "C" {
  * we need for the next bit */
 #include <wx/string.h>
 #include <wx/dynlib.h>
-#include <wx/log.h>			// for wxLogNull
-#include <wx/msgdlg.h>		// for wxMessageBox
+#include <wx/log.h>      // for wxLogNull
+#include <wx/msgdlg.h>   // for wxMessageBox
 #include <wx/utils.h>
-#include "../widgets/LinkingHtmlWindow.h"
+#include "widgets/LinkingHtmlWindow.h"
 #include "FileDialog.h"
 #include "ShuttleGui.h"
-#include "../Prefs.h"
+#include "Prefs.h"
 #include <wx/checkbox.h>
 #include <wx/textctrl.h>
 // needed for sampleCount
@@ -272,7 +333,7 @@ public:
     * other *nix platforms */
    wxString GetLibraryTypeString()
    {
-      return _("Only libavformat.so|libavformat.so*|Dynamically Linked Libraries (*.so*)|*.so*|All Files (*)|*");
+      return _("Only libavformat.so|libavformat*.so*|Dynamically Linked Libraries (*.so*)|*.so*|All Files (*)|*");
    }
 
    wxString GetLibAVFormatPath()
@@ -310,7 +371,7 @@ private:
    wxString mAVCodecVersion;
    wxString mAVFormatVersion;
    wxString mAVUtilVersion;
-   
+
    ///! wx interfaces for dynamic libraries
    wxDynamicLibrary *avformat;
    wxDynamicLibrary *avcodec;
@@ -331,6 +392,7 @@ void        DropFFmpegLibs();
 
 int ufile_fopen(AVIOContext **s, const wxString & name, int flags);
 int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name);
+int ufile_close(AVIOContext *pb);
 
 typedef struct _streamContext
 {
@@ -341,7 +403,7 @@ typedef struct _streamContext
    AVPacket             m_pkt;                           // the last AVPacket we read for this stream
    int                  m_pktValid;                      // is m_pkt valid?
    uint8_t             *m_pktDataPtr;                    // pointer into m_pkt.data
-   int                  m_pktRemainingSiz;  
+   int                  m_pktRemainingSiz;
 
    int64_t              m_pts;                           // the current presentation time of the input stream
    int64_t              m_ptsOffset;                     // packets associated with stream are relative to this
@@ -353,7 +415,7 @@ typedef struct _streamContext
    int                  m_initialchannels;               // number of channels allocated when we begin the importing. Assumes that number of channels doesn't change on the fly.
 
    int                  m_samplesize;                    // input sample size in bytes
-   SampleFormat         m_samplefmt;                     // input sample format
+   AVSampleFormat       m_samplefmt;                     // input sample format
 
    int                  m_osamplesize;                   // output sample size in bytes
    sampleFormat         m_osamplefmt;                    // output sample format
@@ -368,18 +430,7 @@ streamContext *import_ffmpeg_read_next_frame(AVFormatContext* formatContext,
 
 int import_ffmpeg_decode_frame(streamContext *sc, bool flushing);
 
-#if defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
-   // Use the preprocessor to rename old function names instead of checking the
-   // function names with FFMPEG_INITALT when loading the library.
-
-   #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 60, 0)
-   #define av_match_ext match_ext
-   #endif
-
-   #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 64, 0)
-   #define av_guess_format guess_format
-   #endif
-#else
+#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG)
 extern "C" {
    // A little explanation of what's going on here.
    //
@@ -401,7 +452,7 @@ extern "C" {
    // make sure that the definitions are the same.  If not, it will complain.  For this to occur,
    // the functions MUST be defined in an extern "C" block otherwise the compiler just thinks the
    // functions are being overloaded.
-   // 
+   //
    // The compiler should optimize away the inline function since it just passes control to the real
    // function and we should wind up with about the same function call we had before, only now it is
    // safer due to the validation.
@@ -458,7 +509,7 @@ extern "C" {
       return false;                                                     \
    }
 
-#define FFMPEG_INITALT(w, f, a)                                         \
+#define FFMPEG_INITALT(w, f, x, a)                                      \
    {                                                                    \
       wxLogNull off;                                                    \
       *(void**)&f ## _fp = (void*)w->GetSymbol(wxT(#f));                \
@@ -467,7 +518,7 @@ extern "C" {
    {                                                                    \
       {                                                                 \
          wxLogNull off;                                                 \
-         *(void**)&f ## _fp = (void*)w->GetSymbol(wxT(#a));             \
+         *(void**)&f ## _fp = (void*)x->GetSymbol(wxT(#a));             \
       }                                                                 \
       if (f ## _fp == NULL)                                             \
       {                                                                 \
@@ -476,7 +527,7 @@ extern "C" {
       }                                                                 \
    }
 
-   // 
+   //
    // libavutil
    //
    FFMPEG_FUNCTION_WITH_RETURN(
@@ -486,7 +537,7 @@ extern "C" {
       ()
    );
    FFMPEG_FUNCTION_NO_RETURN(
-      av_log_set_callback,           
+      av_log_set_callback,
       (void (*cb)(void*, int, const char*, va_list)),
       (cb)
    );
@@ -510,15 +561,10 @@ extern "C" {
       (void),
       ()
    );
-   FFMPEG_FUNCTION_NO_RETURN(
-      avcodec_init,
-      (void),
-      ()
-   );
    FFMPEG_FUNCTION_WITH_RETURN(
       AVCodec*,
       avcodec_find_encoder,
-      (enum CodecID id),
+      (enum AVCodecID id),
       (id)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
@@ -530,46 +576,41 @@ extern "C" {
    FFMPEG_FUNCTION_WITH_RETURN(
       AVCodec*,
       avcodec_find_decoder,
-      (enum CodecID id),
+      (enum AVCodecID id),
       (id)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       unsigned int,
       av_codec_get_tag,
-      (const struct AVCodecTag * const *tags, enum CodecID id),
+      (const struct AVCodecTag * const *tags, enum AVCodecID id),
       (tags, id)
    );
-   FFMPEG_FUNCTION_NO_RETURN(
-      avcodec_get_context_defaults,
-      (AVCodecContext *s),
-      (s)
-   );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      avcodec_open,
-      (AVCodecContext *avctx, AVCodec *codec),
-      (avctx, codec);
+      avcodec_open2,
+      (AVCodecContext *avctx, const AVCodec *codec, AVDictionary **options),
+      (avctx, codec, options);
    );
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 25, 0)
+#if defined(IS_FFMPEG_PROJECT)
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      avcodec_decode_audio3,
-      (AVCodecContext *avctx, int16_t *samples, int *frame_size_ptr, AVPacket *avpkt),
-      (avctx, samples, frame_size_ptr, avpkt)
+      avcodec_decode_audio4,
+      (AVCodecContext *avctx, AVFrame *frame, int *got_output, const AVPacket *avpkt),
+      (avctx, frame, got_output, avpkt)
    );
 #else
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      avcodec_decode_audio2,
-      (AVCodecContext *avctx, int16_t *samples, int *frame_size_ptr, const uint8_t *buf, int buf_size),
-      (avctx, samples, frame_size_ptr, buf, buf_size)
+      avcodec_decode_audio4,
+      (AVCodecContext *avctx, AVFrame *frame, int *got_output, AVPacket *avpkt),
+      (avctx, frame, got_output, avpkt)
    );
 #endif
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      avcodec_encode_audio,
-      (AVCodecContext *avctx, uint8_t *buf, int buf_size, const short *samples),
-      (avctx, buf, buf_size, samples)
+      avcodec_encode_audio2,
+      (AVCodecContext *avctx, AVPacket *pkt, const AVFrame *frame, int *got_output),
+      (avctx, pkt, frame, got_output)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
@@ -584,15 +625,15 @@ extern "C" {
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_get_bits_per_sample_format,
-      (enum SampleFormat sample_fmt),
+      av_get_bytes_per_sample,
+      (enum AVSampleFormat sample_fmt),
       (sample_fmt)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_get_bits_per_sample_fmt,
-      (enum AVSampleFormat sample_fmt),
-      (sample_fmt)
+      avcodec_fill_audio_frame,
+      (AVFrame *frame, int nb_channels, enum AVSampleFormat sample_fmt, const uint8_t *buf, int buf_size, int align),
+      (frame, nb_channels, sample_fmt, buf, buf_size, align)
    );
 
    //
@@ -604,32 +645,11 @@ extern "C" {
       (void),
       ()
    );
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
-   FFMPEG_FUNCTION_WITH_RETURN(
-      void*,
-      av_fast_realloc,
-      (void *ptr, unsigned int *size, unsigned int min_size),
-      (ptr, size, min_size)
-   );
-#else
-   FFMPEG_FUNCTION_WITH_RETURN(
-      void*,
-      av_fast_realloc,
-      (void *ptr, unsigned int *size, size_t min_size),
-      (ptr, size, min_size)
-   );
-#endif
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_open_input_stream,
-      (AVFormatContext **ic_ptr, AVIOContext *pb, const char *filename, AVInputFormat *fmt, AVFormatParameters *ap),
-      (ic_ptr, pb, filename, fmt, ap)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      get_buffer,
-      (AVIOContext *s, unsigned char *buf, int size),
-      (s, buf, size)
+      avformat_open_input,
+      (AVFormatContext **ic_ptr, const char *filename, AVInputFormat *fmt, AVDictionary **options),
+      (ic_ptr, filename, fmt, options)
    );
    FFMPEG_FUNCTION_NO_RETURN(
       av_register_all,
@@ -638,15 +658,9 @@ extern "C" {
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_register_protocol,
-      (URLProtocol *protocol),
-      (protocol)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_find_stream_info,
-      (AVFormatContext *ic),
-      (ic)
+      avformat_find_stream_info,
+      (AVFormatContext *ic, AVDictionary **options),
+      (ic, options)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
@@ -661,21 +675,15 @@ extern "C" {
       (s, stream_index, timestamp, flags)
    );
    FFMPEG_FUNCTION_NO_RETURN(
-      av_close_input_file,
-      (AVFormatContext *s),
+      avformat_close_input,
+      (AVFormatContext **s),
       (s)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_write_header,
-      (AVFormatContext *s),
-      (s)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      AVInputFormat*,
-      av_iformat_next,
-      (AVInputFormat *f),
-      (f)
+      avformat_write_header,
+      (AVFormatContext *s, AVDictionary **options),
+      (s, options)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       AVOutputFormat*,
@@ -686,69 +694,24 @@ extern "C" {
    FFMPEG_FUNCTION_WITH_RETURN(
       AVCodec*,
       av_codec_next,
-      (AVCodec *c),
+      (const AVCodec *c),
       (c)
    );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_set_parameters,
-      (AVFormatContext *s, AVFormatParameters *ap),
-      (s, ap)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_open_protocol,
-      (URLContext **puc, struct URLProtocol *up, const char *filename, int flags),
-      (puc, up, filename, flags)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_open,
-      (URLContext **puc, const char *filename, int flags),
-      (puc, filename, flags)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_fdopen,
-      (AVIOContext **s, URLContext *h),
-      (s, h)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_close,
-      (URLContext *h),
-      (h)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_fopen,
-      (AVIOContext **s, const char *filename, int flags),
-      (s, filename, flags)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int64_t,
-      url_fseek,
-      (AVIOContext *s, int64_t offset, int whence),
-      (s, offset, whence)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      url_fclose,
-      (AVIOContext *s),
-      (s)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int64_t,
-      url_fsize,
-      (AVIOContext *s),
-      (s)
-   );
+#if defined(IS_FFMPEG_PROJECT)
    FFMPEG_FUNCTION_WITH_RETURN(
       AVStream*,
-      av_new_stream,
-      (AVFormatContext *s, int id),
-      (s, id)
+      avformat_new_stream,
+      (AVFormatContext *s, const AVCodec *c),
+      (s, c)
    );
+#else
+   FFMPEG_FUNCTION_WITH_RETURN(
+      AVStream*,
+      avformat_new_stream,
+      (AVFormatContext *s, AVCodec *c),
+      (s, c)
+   );
+#endif
    FFMPEG_FUNCTION_WITH_RETURN(
       AVFormatContext*,
       avformat_alloc_context,
@@ -760,12 +723,6 @@ extern "C" {
       av_guess_format,
       (const char *short_name, const char *filename, const char *mime_type),
       (short_name, filename, mime_type)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_match_ext,
-      (const char *filename, const char *extensions),
-      (filename, extensions)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
@@ -801,21 +758,12 @@ extern "C" {
       (AVFifoBuffer *f),
       (f)
    );
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 0, 0)
-   FFMPEG_FUNCTION_WITH_RETURN(
-      void*,
-      av_malloc,
-      (unsigned int size),
-      (size)
-   );
-#else
    FFMPEG_FUNCTION_WITH_RETURN(
       void*,
       av_malloc,
       (size_t size),
       (size)
    );
-#endif
    FFMPEG_FUNCTION_NO_RETURN(
       av_freep,
       (void *ptr),
@@ -827,16 +775,11 @@ extern "C" {
       (int64_t a, AVRational bq, AVRational cq),
       (a, bq, cq)
    );
-
-#if LIBAVFORMAT_VERSION_INT > AV_VERSION_INT(52, 31, 0)
    FFMPEG_FUNCTION_NO_RETURN(
       av_free_packet,
       (AVPacket *pkt),
       (pkt)
    );
-#endif
-
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
    FFMPEG_FUNCTION_WITH_RETURN(
       AVFifoBuffer*,
       av_fifo_alloc,
@@ -849,20 +792,6 @@ extern "C" {
       (AVFifoBuffer *f, void *buf, int buf_size, void (*func)(void*, void*, int)),
       (f, buf, buf_size, func)
    );
-#else
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_fifo_init,
-      (AVFifoBuffer *f, unsigned int size),
-      (f, size)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_fifo_generic_read,
-      (AVFifoBuffer *f, int buf_size, void (*func)(void*, void*, int), void* dest),
-      (f, buf_size, func, dest)
-   );
-#endif
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
       av_fifo_realloc2,
@@ -870,46 +799,57 @@ extern "C" {
       (f, size)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
-      AVMetadataTag *,
-      av_metadata_get,
-      (AVMetadata *m, const char *key, const AVMetadataTag *prev, int flags),
+      AVDictionaryEntry *,
+      av_dict_get,
+      (AVDictionary *m, const char *key, const AVDictionaryEntry *prev, int flags),
       (m, key, prev, flags)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_metadata_set,
-      (AVMetadata **pm, const char *key, const char *value),
-      (pm, key, value)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      av_metadata_set2,
-      (AVMetadata **pm, const char *key, const char *value, int flags),
+      av_dict_set,
+      (AVDictionary **pm, const char *key, const char *value, int flags),
       (pm, key, value, flags)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      avio_read,
-      (AVIOContext *s, unsigned char *buf, int size),
-      (s, buf, size)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
       int64_t,
-      avio_seek,
-      (AVIOContext *s, int64_t offset, int whence),
-      (s, offset, whence)
-   );
-   FFMPEG_FUNCTION_WITH_RETURN(
-      int,
-      avio_close,
+      avio_size,
       (AVIOContext *s),
       (s)
    );
    FFMPEG_FUNCTION_WITH_RETURN(
+      AVIOContext *,
+      avio_alloc_context,
+      (unsigned char *buffer,
+                  int buffer_size,
+                  int write_flag,
+                  void *opaque,
+                  int (*read_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int (*write_packet)(void *opaque, uint8_t *buf, int buf_size),
+                  int64_t (*seek)(void *opaque, int64_t offset, int whence)),
+      (buffer, buffer_size, write_flag, opaque, read_packet, write_packet, seek)
+   );
+   FFMPEG_FUNCTION_WITH_RETURN(
       int,
-      av_register_protocol2,
-      (URLProtocol *protocol, int size),
-      (protocol, size)
+      av_codec_is_encoder,
+      (const AVCodec *codec),
+      (codec)
+   );
+   FFMPEG_FUNCTION_WITH_RETURN(
+      AVFrame*,
+      av_frame_alloc,
+      (void),
+      ()
+   );
+   FFMPEG_FUNCTION_NO_RETURN(
+      av_frame_free,
+      (AVFrame **frame),
+      (frame)
+   );
+   FFMPEG_FUNCTION_WITH_RETURN(
+      int,
+      av_samples_get_buffer_size,
+      (int *linesize, int nb_channels, int nb_samples, enum AVSampleFormat sample_fmt, int align),
+      (linesize, nb_channels, nb_samples, sample_fmt, align)
    );
 };
 #endif

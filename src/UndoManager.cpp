@@ -14,7 +14,7 @@
 *//****************************************************************//**
 
 \class UndoStackElem
-\brief Holds one item with description and time range for the 
+\brief Holds one item with description and time range for the
 UndoManager
 
 *//*******************************************************************/
@@ -65,7 +65,7 @@ wxLongLong UndoManager::CalculateSpaceUsage(int index)
    while (wt) {
       for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
          blocks = it->GetData()->GetSequenceBlockArray();
-         for (i = 0; i < blocks->GetCount(); i++) 
+         for (i = 0; i < blocks->GetCount(); i++)
          {
             BlockFile* pBlockFile = blocks->Item(i)->f;
             if (pBlockFile->GetFileName().FileExists())
@@ -158,7 +158,7 @@ void UndoManager::RemoveStates(int num)
       saved -= 1;
    }
 }
-   
+
 void UndoManager::ClearStates()
 {
    RemoveStates(stack.Count());
@@ -186,6 +186,10 @@ bool UndoManager::RedoAvailable()
 
 void UndoManager::ModifyState(TrackList * l, double sel0, double sel1)
 {
+   if (current == wxNOT_FOUND) {
+      return;
+   }
+
    SonifyBeginModifyState();
    // Delete current
    stack[current]->tracks->Clear(true);
@@ -233,7 +237,7 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
    while (i < stack.Count()) {
       RemoveStateAt(i);
    }
-             
+
    TrackList *tracksCopy = new TrackList();
    TrackListIterator iter(l);
    Track *t = iter.First();
@@ -265,7 +269,7 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
 TrackList *UndoManager::SetStateTo(unsigned int n, double *sel0, double *sel1)
 {
    n -= 1;
-   
+
    wxASSERT(n < stack.Count());
 
    current = n;
@@ -307,7 +311,7 @@ TrackList *UndoManager::Redo(double *sel0, double *sel1)
    wxASSERT(RedoAvailable());
 
    current++;
-   
+
    *sel0 = stack[current]->sel0;
    *sel1 = stack[current]->sel1;
 

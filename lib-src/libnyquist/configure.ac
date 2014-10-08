@@ -1,5 +1,5 @@
 dnl
-dnl portSMF configure.in script - version not using libtool
+dnl libnyquist configure.in script - version not using libtool
 dnl
 dnl Joshua Haberman
 dnl Dominic Mazzoni
@@ -14,21 +14,21 @@ dnl autoconf
 dnl Process this file with autoconf to produce a configure script.
 
 dnl Require autoconf >= 2.61
-AC_PREREQ(2.61)
+AC_PREREQ([2.61])
 
 dnl Init autoconf and automake
 AC_INIT([libnyquist],[0.1])
 dnl check that we have some source code
 AC_CONFIG_SRCDIR([nyquist/xlisp/xlisp.h])
 dnl keep autools files in a subdirectory
-AC_CONFIG_AUX_DIR(autotools)
+AC_CONFIG_AUX_DIR([autotools])
 # which also contains a subdir containing macros
 AC_CONFIG_MACRO_DIR([autotools/m4])
 dnl set up automake
-AM_INIT_AUTOMAKE([-Wall foreign])
+AM_INIT_AUTOMAKE([-Wall foreign subdir-objects])
 dnl Audacity policy: don't enable automatic rebuild of configure et al if 
 dnl sources change
-AM_MAINTAINER_MODE([enable])
+AM_MAINTAINER_MODE([disable])
 
 dnl -------------------------------------------------------
 dnl Checks for programs.
@@ -42,6 +42,8 @@ AC_PROG_CC
 AC_LANG([C++])
 AC_PROG_CXX
 AC_PROG_CXXCPP
+AM_PROG_AR
+AM_PROG_CC_C_O
 CFLAGS="$cflags_save"
 CPPFLAGS="$cppflags_save"
 CXXFLAGS="$cxxflags_save"
@@ -85,9 +87,6 @@ dnl We would like warnings enabled on the builds, but different compilers need
 dnl different options for these. This bit tries to work out what flags we 
 dnl should add to the compiler we are using.
 dnl --------------------------------------------------------------------------
-
-dnl Strict prototypes flags for C (only C because doesn't work for C++)
-AX_CFLAGS_STRICT_PROTOTYPES(CFLAGS)
 
 dnl Sensible warnings for C
 AX_CFLAGS_WARN_ALL(wall_flags)

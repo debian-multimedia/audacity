@@ -21,6 +21,7 @@
 #include "../Project.h"
 #include "../FileNames.h"
 #include "../widgets/LinkingHtmlWindow.h"
+#include "../widgets/HelpSystem.h"
 #include "FileDialog.h"
 
 #include <math.h>
@@ -68,7 +69,7 @@ void InitContrastDialog(wxWindow * parent)
       gContrastDialog->bBGset = false;
    }
 
-   // Zero dialog boxes.  Do we need to do this here? 
+   // Zero dialog boxes.  Do we need to do this here?
    if( !gContrastDialog->bFGset )
    {
       gContrastDialog->mForegroundStartT->SetTimeValue(0.0);
@@ -123,7 +124,7 @@ float ContrastDialog::GetDB()
       return 1234.0;
    }
    bool mSelected = false;
-   while(t) {  
+   while(t) {
       if( ((WaveTrack *)t)->GetSelected() )
       {
          if( mSelected == true ) // already measured one track
@@ -234,7 +235,7 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
    mProjectRate = p->GetRate();
 
    ShuttleGui S(this, eIsCreating);
-   
+
    S.SetBorder(5);
    S.StartHorizontalLay(wxCENTER, false);
    {
@@ -254,20 +255,19 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
          S.AddFixedText(_("Volume    "));
 
          //Foreground
-         S.AddFixedText(_("Foreground:"), false);
+         S.AddFixedText(_("&Foreground:"), false);
          if (mForegroundStartT == NULL)
          {
             mForegroundStartT = new
             TimeTextCtrl(this,
                          ID_FOREGROUNDSTART_T,
-                         wxT(""),
+                         _("hh:mm:ss + hundredths"),
                          0.0,
                          mProjectRate,
                          wxDefaultPosition,
                          wxDefaultSize,
                          true);
             mForegroundStartT->SetName(_("Foreground start time"));
-            mForegroundStartT->SetFormatString(mForegroundStartT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mForegroundStartT->EnableMenu(false);
          }
          S.AddWindow(mForegroundStartT);
@@ -277,37 +277,35 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
             mForegroundEndT = new
             TimeTextCtrl(this,
                          ID_FOREGROUNDEND_T,
-                         wxT(""),
+                         _("hh:mm:ss + hundredths"),
                          0.0,
                          mProjectRate,
                          wxDefaultPosition,
                          wxDefaultSize,
                          true);
             mForegroundEndT->SetName(_("Foreground end time"));
-            mForegroundEndT->SetFormatString(mForegroundEndT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mForegroundEndT->EnableMenu(false);
          }
          S.AddWindow(mForegroundEndT);
 
-         m_pButton_UseCurrentF = S.Id(ID_BUTTON_USECURRENTF).AddButton(_("Measure selection"));
+         m_pButton_UseCurrentF = S.Id(ID_BUTTON_USECURRENTF).AddButton(_("&Measure selection"));
          mForegroundRMSText=S.Id(ID_FOREGROUNDDB_TEXT).AddTextBox(wxT(""), wxT(""), 12);
          mForegroundRMSText->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(ContrastDialog::OnChar));
 
          //Background
-         S.AddFixedText(_("Background:"));
+         S.AddFixedText(_("&Background:"));
          if (mBackgroundStartT == NULL)
          {
             mBackgroundStartT = new
             TimeTextCtrl(this,
                          ID_BACKGROUNDSTART_T,
-                         wxT(""),
+                         _("hh:mm:ss + hundredths"),
                          0.0,
                          mProjectRate,
                          wxDefaultPosition,
                          wxDefaultSize,
                          true);
             mBackgroundStartT->SetName(_("Background start time"));
-            mBackgroundStartT->SetFormatString(mBackgroundStartT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mBackgroundStartT->EnableMenu(false);
          }
          S.AddWindow(mBackgroundStartT);
@@ -317,19 +315,18 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
             mBackgroundEndT = new
             TimeTextCtrl(this,
                          ID_BACKGROUNDEND_T,
-                         wxT(""),
+                         _("hh:mm:ss + hundredths"),
                          0.0,
                          mProjectRate,
                          wxDefaultPosition,
                          wxDefaultSize,
                          true);
             mBackgroundEndT->SetName(_("Background end time"));
-            mBackgroundEndT->SetFormatString(mBackgroundEndT->GetBuiltinFormat(_("hh:mm:ss + hundredths")));
             mBackgroundEndT->EnableMenu(false);
          }
          S.AddWindow(mBackgroundEndT);
 
-         m_pButton_UseCurrentB = S.Id(ID_BUTTON_USECURRENTB).AddButton(_("Measure selection"));
+         m_pButton_UseCurrentB = S.Id(ID_BUTTON_USECURRENTB).AddButton(_("Mea&sure selection"));
          mBackgroundRMSText = S.Id(ID_BACKGROUNDDB_TEXT).AddTextBox(wxT(""), wxT(""), 12);
          mBackgroundRMSText->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(ContrastDialog::OnChar));
       }
@@ -342,14 +339,14 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
    {
       S.StartMultiColumn(3, wxCENTER);
       {
-         S.AddFixedText(_("Contrast Result:"));
+         S.AddFixedText(_("Co&ntrast Result:"));
          mPassFailText = S.Id(ID_RESULTS_TEXT).AddTextBox(wxT(""), wxT(""), 40);
          mPassFailText->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(ContrastDialog::OnChar));
-         m_pButton_Reset = S.Id(ID_BUTTON_RESET).AddButton(_("Reset"));
-         S.AddFixedText(_("Difference:"));
+         m_pButton_Reset = S.Id(ID_BUTTON_RESET).AddButton(_("R&eset"));
+         S.AddFixedText(_("&Difference:"));
          mDiffText = S.Id(ID_RESULTSDB_TEXT).AddTextBox(wxT(""), wxT(""), 30);
          mDiffText->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(ContrastDialog::OnChar));
-         m_pButton_Export = S.Id(ID_BUTTON_EXPORT).AddButton(_("Export"));
+         m_pButton_Export = S.Id(ID_BUTTON_EXPORT).AddButton(_("E&xport..."));
       }
       S.EndMultiColumn();
    }
@@ -357,9 +354,9 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
    S.StartMultiColumn(3, wxEXPAND);
    {
       S.SetStretchyCol(1);
-      m_pButton_GetURL = S.Id(ID_BUTTON_GETURL).AddButton(_("WCAG 2 Help"));
+      m_pButton_GetURL = S.Id(ID_BUTTON_GETURL).AddButton(_("&Help"));
       S.AddFixedText(wxT(" "));   // spacer
-      m_pButton_Close = S.Id(ID_BUTTON_CLOSE).AddButton(_("Close"));
+      m_pButton_Close = S.Id(ID_BUTTON_CLOSE).AddButton(_("&Close"));
    }
    S.EndMultiColumn();
    Layout();
@@ -396,8 +393,9 @@ void ContrastDialog::OnGetBackgroundDB( wxCommandEvent & WXUNUSED(event))
 
 void ContrastDialog::OnGetURL(wxCommandEvent & WXUNUSED(event))
 {
-   wxString page = wxT("http://www.eramp.com/WCAG_2_audio_contrast_tool_help.htm");
-   ::OpenInDefaultBrowser(page);
+   // Original help page now a dead link.
+   // http://www.eramp.com/WCAG_2_audio_contrast_tool_help.htm
+   HelpSystem::ShowHelpDialog(this, wxT("Contrast"));
 }
 
 void ContrastDialog::OnClose(wxCommandEvent & WXUNUSED(event))
@@ -585,7 +583,7 @@ void ContrastDialog::OnExport(wxCommandEvent & WXUNUSED(event))
    int hour = now.GetHour();
    int minute = now.GetMinute();
    int second = now.GetSecond();
-   sNow = wxString::Format(wxT("%d %s %02d %02dh %02dm %02ds"), 
+   sNow = wxString::Format(wxT("%d %s %02d %02dh %02dm %02ds"),
         dom, monthName.c_str(), year, hour, minute, second);
    f.AddLine(sNow);
 

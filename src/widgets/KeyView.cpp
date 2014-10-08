@@ -304,7 +304,7 @@ KeyView::SetKey(int index, const wxString & key)
    {
       return false;
    }
-   
+
    // Set the new key
    node.key = key;
 
@@ -313,7 +313,7 @@ KeyView::SetKey(int index, const wxString & key)
    GetTextExtent(node.key, &x, &y);
    if (x > mKeyWidth || y > mLineHeight)
    {
-      // New key is wider than column to recalc extents (will refresh view)
+      // New key is wider than column so recalc extents (will refresh view)
       RecalcExtents();
       return true;
    }
@@ -560,6 +560,8 @@ KeyView::RefreshBindings(const wxArrayString & names,
                          const wxArrayString & labels,
                          const wxArrayString & keys)
 {
+   bool firsttime = mNodes.GetCount() == 0;
+
    // Start clean
    mNodes.Clear();
 
@@ -696,7 +698,7 @@ KeyView::RefreshBindings(const wxArrayString & names,
          // Strip any menu codes from label
          node.label = wxMenuItem::GetLabelFromText(labels[i].BeforeFirst(wxT('\t')));
       }
-      
+
       // Fill in remaining info
       node.name = name;
       node.key = KeyStringDisplay(keys[i]);
@@ -750,6 +752,12 @@ KeyView::RefreshBindings(const wxArrayString & names,
 
    // Refresh the view lines
    RefreshLines();
+
+   // Set the selected node if this was the first time through
+   if (firsttime)
+   {
+      SelectNode(LineToIndex(0));
+   }
 }
 
 //
@@ -801,8 +809,21 @@ KeyView::RefreshLines()
             continue;
          }
 
+         // For the Key View, if the filter is a single character,
+         // then it has to be the last character in the searchit string,
+         // and be preceded by nothing or +.
+         if ((mViewType == ViewByKey) && 
+               (mFilter.Len() == 1) && 
+               (!mFilter.IsSameAs(searchit.Last()) ||
+                  ((searchit.Len() > 1) && 
+                     ((wxString)(searchit.GetChar(searchit.Len() - 2)) != wxT("+")))))
+         {
+            // Not suitable so continue to next node
+            continue;
+         }
+
          // For tree view, we must make sure all parent nodes are included
-         // whether they match the filter or not
+         // whether they match the filter or not.
          if (mViewType == ViewByTree)
          {
             KeyNodeArrayPtr queue;
@@ -822,7 +843,7 @@ KeyView::RefreshLines()
             // Examine siblings until a parent is found.
             for (int j = node.index - 1; j >= 0 && depth > 0; j--)
             {
-               // Found a parent               
+               // Found a parent
                if (mNodes[j].depth < depth)
                {
                   // Examine all previously added nodes to see if this nodes
@@ -970,7 +991,7 @@ KeyView::RefreshLines()
    // Tell listbox the new count and refresh the entire view
    SetItemCount(mLines.GetCount());
    RefreshAll();
-   
+
 #if wxUSE_ACCESSIBILITY
    // Let accessibility know that the list has changed
    mAx->ListUpdated();
@@ -1058,7 +1079,7 @@ KeyView::OnDrawBackground(wxDC & dc, const wxRect & rect, size_t line) const
 
    // If the line width is less than the client width, then we want to
    // extend the background to the right edge of the client view.  Otherwise,
-   // go all the way to the end of the line width...this will draw past the 
+   // go all the way to the end of the line width...this will draw past the
    // right edge, but that's what we want.
    r.width = wxMax(mWidth, r.width);
 
@@ -1169,7 +1190,7 @@ KeyView::OnDrawItem(wxDC & dc, const wxRect & rect, size_t line) const
 // Provide the height of the given line
 //
 // This is called by the listbox when it needs to redraw the view.
-// 
+//
 wxCoord
 KeyView::OnMeasureItem(size_t WXUNUSED(line)) const
 {
@@ -1387,7 +1408,7 @@ KeyView::OnKeyDown(wxKeyEvent & event)
          int cnt = (int) mLines.GetCount();
          bool found = false;
 
-         // Search the entire list if not is currently selected
+         // Search the entire list if none is currently selected
          if (line == wxNOT_FOUND)
          {
             line = cnt;
@@ -1529,7 +1550,7 @@ KeyView::OnLeftDown(wxMouseEvent & event)
 // "command" nodes.
 //
 // To accomplish this, we prepend each label with it's line number
-// (in hex) for "menu" nodes.  This ensures they will remain in 
+// (in hex) for "menu" nodes.  This ensures they will remain in
 // their original order.
 //
 // We prefix all "command" nodes with "ffffffff" (highest hex value)
@@ -1543,7 +1564,7 @@ KeyView::CmpKeyNodeByTree(KeyNode ***n1, KeyNode ***n2)
    wxString k1 = t1->label;
    wxString k2 = t2->label;
 
-   // This is a "command" node if its category is "Command" 
+   // This is a "command" node if its category is "Command"
    // and it is a child of the "Command" category.  This latter
    // test ensures that the "Command" parent will be handled
    // as a "menu" node and remain at the bottom of the list.
@@ -1742,7 +1763,7 @@ KeyView::GetLineHeight(int line)
 //
 // Returns the value to be presented to accessibility
 //
-// Current, the command and key are both provided.
+// Currently, the command and key are both provided.
 //
 wxString
 KeyView::GetValue(int line)
@@ -1753,18 +1774,19 @@ KeyView::GetValue(int line)
       wxASSERT(false);
       return wxEmptyString;
    }
+   int index = LineToIndex(line);
 
    // Get the label and key values
    wxString value;
    if (mViewType == ViewByTree)
    {
-      value = GetLabel(LineToIndex(line));
+      value = GetLabel(index);
    }
    else
    {
-      value = GetFullLabel(LineToIndex(line));
+      value = GetFullLabel(index);
    }
-   wxString key = GetKey(LineToIndex(line));
+   wxString key = GetKey(index);
 
    // Add the key if it isn't empty
    if (!key.IsEmpty())
@@ -1780,6 +1802,15 @@ KeyView::GetValue(int line)
    }
 
    return value;
+}
+
+//
+// Returns the current view type
+//
+ViewByType
+KeyView::GetViewType()
+{
+   return mViewType;
 }
 
 // ============================================================================
@@ -1822,7 +1853,7 @@ KeyViewAx::SetCurrentLine(int line)
                mLastId);
    }
 
-   // Nothing is now selected
+   // Nothing is selected now
    mLastId = -1;
 
    // Just clearing selection
@@ -1860,6 +1891,13 @@ KeyViewAx::IdToLine(int childId, int & line)
    // Convert to line
    line = childId - 1;
 
+   // Make sure id is valid
+   if (line < 0 || line >= (int) mView->GetLineCount())
+   {
+      // Indicate the control itself in this case
+      return false;
+   }
+
    return true;
 }
 
@@ -1869,10 +1907,42 @@ KeyViewAx::IdToLine(int childId, int & line)
 bool
 KeyViewAx::LineToId(int line, int & childId)
 {
+   // Make sure line is valid
+   if (line < 0 || line >= (int) mView->GetLineCount())
+   {
+      // Indicate the control itself in this case
+      childId = wxACC_SELF;
+      return false;
+   }
+
    // Convert to line
    childId = line + 1;
 
    return true;
+}
+
+// Can return either a child object, or an integer
+// representing the child element, starting from 1.
+wxAccStatus
+KeyViewAx::HitTest(const wxPoint & pt, int *childId, wxAccessible **childObject)
+{
+   // Just to be safe
+   *childObject = NULL;
+
+   wxPoint pos = mView->ScreenToClient(pt);
+
+   // See if it's on a line within the view
+   int line = mView->HitTest(pos);
+
+   // It was on a line
+   if (line != wxNOT_FOUND)
+   {
+      LineToId(line, *childId);
+      return wxACC_OK;
+   }
+
+   // Let the base class handle it
+   return wxACC_NOT_IMPLEMENTED;
 }
 
 // Retrieves the address of an IDispatch interface for the specified child.
@@ -1952,12 +2022,17 @@ KeyViewAx::GetLocation(wxRect & rect, int elementId)
 
    if (IdToLine(elementId, line))
    {
+      if (!mView->IsVisible(line))
+      {
+         return wxACC_FAIL;
+      }
+
       wxRect rectLine;
 
       rectLine.width = mView->GetClientSize().GetWidth();
 
       // iterate over all visible lines
-      for (int i = 0; i < line; i++)
+      for (int i = (int) mView->GetVisibleBegin(); i <= line; i++)
       {
          wxCoord hLine = mView->GetLineHeight(i);
 
@@ -1980,13 +2055,22 @@ KeyViewAx::GetLocation(wxRect & rect, int elementId)
    return wxACC_OK;
 }
 
+wxAccStatus
+KeyViewAx::Navigate(wxNavDir WXUNUSED(navDir),
+                    int WXUNUSED(fromId),
+                    int *WXUNUSED(toId),
+                    wxAccessible **WXUNUSED(toObject))
+{
+   return wxACC_NOT_IMPLEMENTED;
+}
+
 // Gets the name of the specified object.
 wxAccStatus
 KeyViewAx::GetName(int childId, wxString *name)
 {
    int line;
 
-   if (childId == wxACC_SELF)
+   if (!IdToLine(childId, line))
    {
       *name = mView->GetName();
    }
@@ -2014,7 +2098,7 @@ KeyViewAx::GetRole(int childId, wxAccRole *role)
    if (childId == wxACC_SELF)
    {
 #if defined(__WXMSW__)
-      *role = wxROLE_SYSTEM_OUTLINE;
+      *role = mView->GetViewType() == ViewByTree ? wxROLE_SYSTEM_OUTLINE : wxROLE_SYSTEM_LIST;
 #endif
 
 #if defined(__WXMAC__)
@@ -2026,7 +2110,7 @@ KeyViewAx::GetRole(int childId, wxAccRole *role)
 #if defined(__WXMAC__)
       *role = wxROLE_SYSTEM_TEXT;
 #else
-      *role = wxROLE_SYSTEM_OUTLINEITEM;
+      *role = mView->GetViewType() == ViewByTree ? wxROLE_SYSTEM_OUTLINEITEM : wxROLE_SYSTEM_LISTITEM;
 #endif
    }
 
@@ -2042,35 +2126,48 @@ KeyViewAx::GetRole(int childId, wxAccRole *role)
 //   or 0 if this object is selected (GetType() == wxT("long"))
 // - a "void*" pointer to a wxAccessible child object
 wxAccStatus
-KeyViewAx::GetSelections(wxVariant * WXUNUSED(selections))
+KeyViewAx::GetSelections(wxVariant *selections)
 {
-   return wxACC_NOT_IMPLEMENTED;
+   int id;
+
+   LineToId(mView->GetSelection(), id);
+
+   *selections = (long) id;
+
+   return wxACC_OK;
 }
 
 // Returns a state constant.
 wxAccStatus
 KeyViewAx::GetState(int childId, long *state)
 {
-   int flag = wxACC_STATE_SYSTEM_FOCUSABLE |
-              wxACC_STATE_SYSTEM_SELECTABLE;
+   int flag = wxACC_STATE_SYSTEM_FOCUSABLE;
    int line;
 
    if (!IdToLine(childId, line))
    {
-      *state = 0;
-      return wxACC_FAIL;
+      *state = wxACC_STATE_SYSTEM_FOCUSABLE; // |
+               //mView->FindFocus() == mView ? wxACC_STATE_SYSTEM_FOCUSED : 0;
+      return wxACC_OK;
    }
 
 #if defined(__WXMSW__)
-   flag |= wxACC_STATE_SYSTEM_FOCUSED |
-           wxACC_STATE_SYSTEM_SELECTED;
+   int selected = mView->GetSelection();
 
-      if (mView->HasChildren(line))
-      {
-         flag = mView->IsExpanded(line) ? 
-            wxACC_STATE_SYSTEM_EXPANDED :
-            wxACC_STATE_SYSTEM_COLLAPSED;
-      }
+   flag |= wxACC_STATE_SYSTEM_SELECTABLE;
+
+   if (line == selected)
+   {
+      flag |= wxACC_STATE_SYSTEM_FOCUSED |
+              wxACC_STATE_SYSTEM_SELECTED;
+   }
+
+   if (mView->HasChildren(line))
+   {
+      flag |= mView->IsExpanded(line) ?
+         wxACC_STATE_SYSTEM_EXPANDED :
+         wxACC_STATE_SYSTEM_COLLAPSED;
+   }
 #endif
 
 #if defined(__WXMAC__1)
@@ -2100,10 +2197,24 @@ KeyViewAx::GetState(int childId, long *state)
 wxAccStatus
 KeyViewAx::GetValue(int childId, wxString *strValue)
 {
+   int line;
+
    strValue->Clear();
 
+   if (!IdToLine(childId, line))
+   {
+      return wxACC_NOT_IMPLEMENTED;
+   }
+
 #if defined(__WXMSW__)
-   return wxACC_OK;
+   if (mView->GetViewType() == ViewByTree)
+   {
+      KeyNode *node = mView->mLines[line];
+      strValue->Printf(wxT("%d"), node->depth - 1);
+   }
+
+   // Don't set a value for the other view types
+   return wxACC_NOT_IMPLEMENTED;
 #endif
 
 #if defined(__WXMAC__)

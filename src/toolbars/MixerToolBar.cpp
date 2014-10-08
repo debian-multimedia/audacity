@@ -5,7 +5,7 @@
   MixerToolBar.cpp
 
   Dominic Mazzoni
- 
+
 *******************************************************************//*!
 
 \class MixerToolBar
@@ -58,6 +58,8 @@ END_EVENT_TABLE()
 MixerToolBar::MixerToolBar()
 : ToolBar(MixerBarID, _("Mixer"), wxT("Mixer"))
 {
+   mInputSliderVolume = 0.0;
+   mOutputSliderVolume = 0.0;
 }
 
 MixerToolBar::~MixerToolBar()
@@ -83,25 +85,25 @@ void MixerToolBar::Populate()
    mPlayBitmap = new wxBitmap(theTheme.Bitmap(bmpSpeaker));
 
    Add(new wxStaticBitmap(this,
-                          wxID_ANY, 
+                          wxID_ANY,
                           *mPlayBitmap), 0, wxALIGN_CENTER);
 
-   mOutputSlider = new ASlider(this, wxID_ANY, _("Output Volume"),
+   mOutputSlider = new ASlider(this, wxID_ANY, _("Playback Volume"),
                                wxDefaultPosition, wxSize(130, 25));
    mOutputSlider->SetScroll(0.1f, 2.0f);
-   mOutputSlider->SetName(_("Slider Output"));
+   mOutputSlider->SetName(_("Slider Playback"));
    Add(mOutputSlider, 0, wxALIGN_CENTER);
 
    mRecordBitmap = new wxBitmap(theTheme.Bitmap(bmpMic));
 
    Add(new wxStaticBitmap(this,
-                          wxID_ANY, 
+                          wxID_ANY,
                           *mRecordBitmap), 0, wxALIGN_CENTER);
 
-   mInputSlider = new ASlider(this, wxID_ANY, _("Input Volume"),
+   mInputSlider = new ASlider(this, wxID_ANY, _("Recording Volume"),
                               wxDefaultPosition, wxSize(130, 25));
    mInputSlider->SetScroll(0.1f, 2.0f);
-   mInputSlider->SetName(_("Slider Input"));
+   mInputSlider->SetName(_("Slider Recording"));
    Add(mInputSlider, 0, wxALIGN_CENTER);
 
    // this bit taken from SelectionBar::Populate()
@@ -291,20 +293,20 @@ void MixerToolBar::SetToolTips()
 #if wxUSE_TOOLTIPS
    if (mInputSlider->IsEnabled()) {
       mInputSlider->SetToolTip(wxString::Format(
-            _("Input Volume: %.2f"), mInputSliderVolume));
+            _("Recording Volume: %.2f"), mInputSliderVolume));
    }
    else {
       mInputSlider->SetToolTip(
-            _("Input Volume (Unavailable; use system mixer.)"));
+            _("Recording Volume (Unavailable; use system mixer.)"));
    }
 
    if (mOutputSlider->IsEnabled()) {
       mOutputSlider->SetToolTip(wxString::Format(
-            _("Output Volume: %.2f%s"), mOutputSliderVolume, gAudioIO->OutputMixerEmulated() ? _(" (emulated)") : wxT("")));
+            _("Playback Volume: %.2f%s"), mOutputSliderVolume, gAudioIO->OutputMixerEmulated() ? _(" (emulated)") : wxT("")));
    }
    else {
       mOutputSlider->SetToolTip(
-            _("Output Volume (Unavailable; use system mixer.)"));
+            _("Playback Volume (Unavailable; use system mixer.)"));
    }
 #endif
 }

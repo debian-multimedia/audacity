@@ -19,7 +19,7 @@ close it.
 *//*****************************************************************//**
 
 \class AboutDialogCreditItem
-\brief AboutDialogCreditItem is a structure used by the AboutDialog to 
+\brief AboutDialogCreditItem is a structure used by the AboutDialog to
 hold information about one contributor to Audacity.
 
 *//********************************************************************/
@@ -41,8 +41,6 @@ hold information about one contributor to Audacity.
 #include "ShuttleGui.h"
 #include "widgets/LinkingHtmlWindow.h"
 
-#include "portaudio.h"
-
 #include <wx/listimpl.cpp>
 WX_DEFINE_LIST(AboutDialogCreditItemsList);
 
@@ -53,7 +51,7 @@ WX_DEFINE_LIST(AboutDialogCreditItemsList);
 
 void AboutDialog::CreateCreditsList()
 {
-   // The Audacity 1.3.x and 2.0.x team: developers and support
+   // The Audacity Team: developers and support
    AddCredit(wxT("Richard Ash"), roleTeamDeveloper);
    AddCredit(wxT("James Crook"), roleTeamDeveloper);
    AddCredit(wxString(wxT("Roger Dannenberg - ")) + _("co-founder"), roleTeamDeveloper);
@@ -72,7 +70,6 @@ void AboutDialog::CreateCreditsList()
    // Emeritus: people who were "lead developers" or made an
    // otherwise distinguished contribution, but who are no
    // longer active.
- 
    AddCredit(wxT("Matt Brubeck"), roleEmeritusDeveloper);
    AddCredit(wxT("Michael Chinen"), roleEmeritusDeveloper);
    AddCredit(wxT("Al Dimond"), roleEmeritusDeveloper);
@@ -86,7 +83,6 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Alexandre Prokoudine"), roleEmeritusSupport);
 
    // All other contributors
-   
    AddCredit(wxT("Lynn Allan"), roleContributor);
    AddCredit(wxT("David Bailes"), roleContributor);
    AddCredit(wxT("William Bland"), roleContributor);
@@ -121,7 +117,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Jun Wan"), roleContributor);
    AddCredit(wxT("Tom Woodhams"), roleContributor);
    AddCredit(wxT("Wing Yu"), roleContributor);
-   
+
    AddCredit(wxT("expat"), roleLibrary);
    AddCredit(wxT("FLAC"), roleLibrary);
    AddCredit(wxT("LAME"), roleLibrary);
@@ -134,6 +130,10 @@ void AboutDialog::CreateCreditsList()
    #endif
    #if USE_LIBSOXR
       AddCredit(wxT("libsoxr, by Rob Sykes"), roleLibrary);
+   #endif
+   #if USE_LV2
+      AddCredit(wxT("lilv, serd, sord, and sratom, by David Robillard"), roleLibrary);
+      AddCredit(wxT("msinttypes, by Alexander Chemeris"), roleLibrary);
    #endif
    AddCredit(wxT("libsndfile"), roleLibrary);
    AddCredit(wxT("Nyquist"), roleLibrary);
@@ -178,7 +178,7 @@ END_EVENT_TABLE()
 IMPLEMENT_CLASS(AboutDialog, wxDialog)
 
 AboutDialog::AboutDialog(wxWindow * parent)
-   :  wxDialog(parent, -1, _("About Audacity..."),
+   :  wxDialog(parent, -1, _("About Audacity"),
                wxDefaultPosition, wxDefaultSize,
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
@@ -192,10 +192,10 @@ AboutDialog::AboutDialog(wxWindow * parent)
       PopulateLicensePage( S );
    }
    S.EndNotebook();
-   /* i18n-hint: "OK... Audacious" appears on a button at the 
+   /* i18n-hint: "OK... Audacious" appears on a button at the
     * foot of the 'About Audacity' dialog box, after some text to read.
-    * In English it is slightly humorous alternative to an 'OK' button.  
-    * If the humour doesn't work in your language, then just use whatever 
+    * In English it is slightly humorous alternative to an 'OK' button.
+    * If the humour doesn't work in your language, then just use whatever
     * you would use for a translation for 'OK' on a button. */
    wxButton *ok = new wxButton(S.GetParent(), wxID_OK, _("OK... Audacious!"));
    ok->SetDefault();
@@ -217,10 +217,19 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
 We thank <a href=\"http://code.google.com\">Google Code</a> and <a href=\"http://sourceforge.net\">SourceForge</a> for hosting our project. \
 Audacity is <a href=\"http://audacity.sourceforge.net/download/\">available</a> for Windows, Mac, and GNU/Linux (and other Unix-like systems).");
 
-   wxString par2Str = _(
-"If you find a bug or have a suggestion for us, please write to our <a href=\"mailto:feedback@audacityteam.org\">feedback address</a>. \
+   // This trick here means that the English language version won't mention using
+   // English, whereas all translated versions will.
+   wxString par2StrUntranslated = wxT(
+"If you find a bug or have a suggestion for us, please write, in English, to our <a href=\"mailto:feedback@audacityteam.org\">feedback address</a>. \
 For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">wiki</a> or \
 visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
+   wxString par2Str = _(
+"If you find a bug or have a suggestion for us, please write, in English, to our <a href=\"mailto:feedback@audacityteam.org\">feedback address</a>. \
+For help, view the tips and tricks on our <a href=\"http://wiki.audacityteam.org/\">wiki</a> or \
+visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
+
+   if( par2Str == par2StrUntranslated )
+      par2Str.Replace( wxT(", in English,"), wxT("") );
 
    wxString translatorCredits;
    /* i18n-hint: The translation of "translator_credits" will appear
@@ -228,23 +237,23 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
     *  your own name(s) to the credits.
     *
     *  For example:  "English translation by Dominic Mazzoni." */
-   if (_("translator_credits") != wxString(wxT("translator_credits"))) 
+   if (_("translator_credits") != wxString(wxT("translator_credits")))
    {
       translatorCredits = _("translator_credits");
    }
    wxString localeStr = wxLocale::GetSystemEncodingName();
 
-   wxString creditStr = 
-      wxT("<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=") + 
-         localeStr + 
-         wxT("\"></head>") + 
-      wxT("<body bgcolor=\"#ffffff\"><center>") + 
-      wxT("<h3>Audacity ") + wxString(AUDACITY_VERSION_STRING) + wxT("</h3>")+ 
-      _("free, open source, cross-platform software for recording and editing sounds<br>") + 
+   wxString creditStr =
+      wxT("<html><head><META http-equiv=\"Content-Type\" content=\"text/html; charset=") +
+         localeStr +
+         wxT("\"></head>") +
+      wxT("<body bgcolor=\"#ffffff\"><center>") +
+      wxT("<h3>Audacity ") + wxString(AUDACITY_VERSION_STRING) + wxT("</h3>")+
+      _("free, open source, cross-platform software for recording and editing sounds<br>") +
       wxT("<a href=\"http://audacity.sourceforge.net/\">http://audacity.sourceforge.net/</a>") +
       wxT("<p><br>") + par1Str +
       wxT("<p>") + par2Str +
-      wxT("<h3>") + _("Credits") + wxT("</h3>") + 
+      wxT("<h3>") + _("Credits") + wxT("</h3>") +
       wxT("<p>") + translatorCredits +
 
       wxT("<p><b>") + wxString::Format(_("Audacity Developers")) + wxT("</b><br>") +
@@ -255,7 +264,7 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
 
       wxT("<p><b>") + _("Emeritus Developers") + wxT("</b><br>") +
       GetCreditsByRole(roleEmeritusDeveloper) +
-      
+
       wxT("<p><b>") + _(" Emeritus Team Members") + wxT("</b><br>") +
       GetCreditsByRole(roleEmeritusSupport) +
 
@@ -264,13 +273,13 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
 
       wxT("<p><b>") +  _("Audacity is based on code from the following projects:") + wxT("</b><br>") +
       GetCreditsByRole(roleLibrary) +
-      
+
       wxT("<p><b>") +  _("Special thanks:") + wxT("</b><br>") +
       GetCreditsByRole(roleThanks) +
-      
+
       wxT("<p><br>") + _("<b>Audacity&reg;</b> software is copyright")+
-      wxT("&copy; 1999-2013 Audacity Team.<br>") +
-      _("The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") + 
+      wxT("&copy; 1999-2014 Audacity Team.<br>") +
+      _("The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") +
       wxT("</center></font></body></html>");
 
 
@@ -294,19 +303,19 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
    wxBitmap RescaledBitmap( RescaledImage );
 
    icon =
-       new wxStaticBitmap(S.GetParent(), -1, 
+       new wxStaticBitmap(S.GetParent(), -1,
                           //*logo, //v
                           //v theTheme.Bitmap(bmpAudacityLogo), wxPoint(93, 10), wxSize(215, 190));
-                          //v theTheme.Bitmap(bmpAudacityLogoWithName), 
+                          //v theTheme.Bitmap(bmpAudacityLogoWithName),
                           RescaledBitmap,
-                          wxDefaultPosition, 
+                          wxDefaultPosition,
                           wxSize(int(LOGOWITHNAME_WIDTH*fScale), int(LOGOWITHNAME_HEIGHT*fScale)));
    delete logo;
    S.Prop(0).AddWindow( icon );
 
    HtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
-                                         wxSize(ABOUT_DIALOG_WIDTH, 359), 
+                                         wxSize(ABOUT_DIALOG_WIDTH, 359),
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    html->SetFocus();
    html->SetPage(creditStr);
@@ -318,7 +327,8 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
    S.EndNotebookPage();
 }
 
-/** \brief: Fills out the "Information" tab of the preferences dialogue 
+/** \brief: Fills out the "Information" tab of the preferences dialogue
+ *
  * Provides as much information as possible about build-time options and
  * the libraries used, to try and make Linux support easier. Basically anything
  * about the build we might wish to know should be visible here */
@@ -328,19 +338,19 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    S.StartNotebookPage( _("Build Information") );  // start the tab
    S.StartVerticalLay(2);  // create the window
    HtmlWindow *html = new HtmlWindow(S.GetParent(), -1, wxDefaultPosition,
-                           wxSize(ABOUT_DIALOG_WIDTH, 264), 
+                           wxSize(ABOUT_DIALOG_WIDTH, 264),
                            wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    // create a html pane in it to put the content in.
    wxString enabled = _("Enabled");
    wxString disabled = _("Disabled");
    wxString blank = wxT("");
-   
+
    /* this builds up the list of information to go in the window in the string
     * informationStr */
    informationStr = wxT("<h2><center>");
    informationStr += _("Build Information");
    informationStr += wxT("</center></h2>\n");
-   // top level heading 
+   // top level heading
    informationStr += wxT("<h3>");
    informationStr += _("File Format Support");
    informationStr += wxT("</h3>\n<p>");
@@ -357,7 +367,7 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("libmad"), _("MP3 Importing"), disabled);
    #endif
 
-   /* i18n-hint: Ogg is the container format. Vorbis is the compression codec. 
+   /* i18n-hint: Ogg is the container format. Vorbis is the compression codec.
     * Both are proper nouns and shouldn't be translated */
    #ifdef USE_LIBVORBIS
    AddBuildinfoRow(&informationStr, wxT("libvorbis"),
@@ -374,7 +384,7 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("libid3tag"), _("ID3 tag support"),
          disabled);
    #endif
-   
+
    /* i18n-hint: FLAC stands for Free Lossless Audio Codec, but is effectively
     * a proper noun and so shouldn't be translated */
    # if USE_LIBFLAC
@@ -400,6 +410,18 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("QuickTime"), _("Import via QuickTime"),
          disabled);
    # endif
+
+   #ifdef USE_FFMPEG
+   AddBuildinfoRow(&informationStr, wxT("ffmpeg"), _("FFmpeg Import/Export"), enabled);
+   #else
+   AddBuildinfoRow(&informationStr, wxT("ffmpeg"), _("FFmpeg Import/Export"), disabled);
+   #endif
+
+   #ifdef USE_GSTREAMER
+   AddBuildinfoRow(&informationStr, wxT("gstreamer"), _("Import via GStreamer"), enabled);
+   #else
+   AddBuildinfoRow(&informationStr, wxT("gstreamer"), _("Import via GStreamer"), disabled);
+   #endif
 
    informationStr += wxT("</table>\n");  //end table of file format libraries
    informationStr += wxT("<h3>");
@@ -475,6 +497,22 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
          disabled);
    # endif
 
+   # if USE_VST
+   AddBuildinfoRow(&informationStr, wxT("VST"), _("Plug-in support"),
+         enabled);
+   # else
+   AddBuildinfoRow(&informationStr, wxT("VST"), _("Plug-in support"),
+         disabled);
+   # endif
+
+   # if USE_LV2
+   AddBuildinfoRow(&informationStr, wxT("LV2"), _("Plug-in support"),
+         enabled);
+   # else
+   AddBuildinfoRow(&informationStr, wxT("LV2"), _("Plug-in support"),
+         disabled);
+   # endif
+
    # if USE_PORTMIXER
    AddBuildinfoRow(&informationStr, wxT("PortMixer"), _("Sound card mixer support"),
          enabled);
@@ -488,6 +526,14 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
          enabled);
    # else
    AddBuildinfoRow(&informationStr, wxT("SoundTouch"), _("Pitch and Tempo Change support"),
+         disabled);
+   # endif
+
+   # if USE_SBSMS
+   AddBuildinfoRow(&informationStr, wxT("SBSMS"), _("Extreme Pitch and Tempo Change support"),
+         enabled);
+   # else
+   AddBuildinfoRow(&informationStr, wxT("SBSMS"), _("Extreme Pitch and Tempo Change support"),
          disabled);
    # endif
 
@@ -532,7 +578,7 @@ void AboutDialog::PopulateLicensePage( ShuttleGui & S )
    S.StartVerticalLay(1);
    HtmlWindow *html = new HtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
-                                         wxSize(ABOUT_DIALOG_WIDTH, 264), 
+                                         wxSize(ABOUT_DIALOG_WIDTH, 264),
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
 
 // I tried using <pre> here to get a monospaced font,
@@ -844,7 +890,7 @@ void AboutDialog::AddCredit(const wxString& description, Role role)
 wxString AboutDialog::GetCreditsByRole(AboutDialog::Role role)
 {
    wxString s;
-   
+
    for (AboutDialogCreditItemsList::compatibility_iterator p=creditItems.GetFirst(); p; p = p->GetNext())
    {
       AboutDialogCreditItem* item = p->GetData();
@@ -854,7 +900,7 @@ wxString AboutDialog::GetCreditsByRole(AboutDialog::Role role)
          s += wxT("<br>");
       }
    }
-   
+
    // Strip last <br>, if any
    if (s.Right(4) == wxT("<br>"))
       s = s.Left(s.Length() - 4);

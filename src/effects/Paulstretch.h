@@ -39,8 +39,10 @@ class EffectPaulstretch:public Effect{
          return wxString(_("Stretching with Paulstretch"));
       }
 
-      // Useful only after PromptUser values have been set. 
-      virtual wxString GetEffectDescription(); 
+      virtual wxString GetEffectIdentifier() {return wxT("Paulstretch");}
+
+      // Useful only after PromptUser values have been set.
+      virtual wxString GetEffectDescription();
 
       virtual bool PromptUser();
       virtual bool TransferParameters( Shuttle & shuttle );

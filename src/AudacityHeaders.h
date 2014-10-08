@@ -24,6 +24,9 @@
 #include <string.h>
 #include <math.h>
 
+
+
+
 #include <wx/wx.h>
 #include <wx/bitmap.h>
 #include <wx/filedlg.h>
@@ -59,7 +62,6 @@
 #include "Resample.h"
 #include "SampleFormat.h"
 #include "Sequence.h"
-#include "TimeDialog.h"
 #include "TimeTrack.h"
 #include "Track.h"
 #include "UndoManager.h"
@@ -74,14 +76,12 @@
 
 //#ifdef __WXMSW__
 // Enable this to diagnose memory leaks too!
-//    #include <wx/msw/msvcrt.h>      // redefines the new() operator 
+//    #include <wx/msw/msvcrt.h>      // redefines the new() operator
 //#endif
 
-#if 0
-#define _DEBUG
+#if __WXMSW__
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
-#include <stdlib.h>
 #include <crtdbg.h>
 #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #define new DEBUG_NEW

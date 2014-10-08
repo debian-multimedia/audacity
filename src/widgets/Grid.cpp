@@ -46,18 +46,12 @@ void TimeEditor::Create(wxWindow *parent, wxWindowID id, wxEvtHandler *handler)
 {
    m_control = new TimeTextCtrl(parent,
                                 wxID_ANY,
-                                wxT(""),
+                                mFormat,
                                 mOld,
                                 mRate,
                                 wxDefaultPosition,
                                 wxDefaultSize,
                                 true);
-   /* look up provided format string name to a format string, then set that as
-    * the format string for the control. Unfortunately m_control is a base
-    * class pointer not a TimeTextCtrl pointer, so we have to cast it. It can't
-    * fail to cast, however unless the preceeding new operation failed, so it's
-    * reasonably safe. */
-   ((TimeTextCtrl *)m_control)->SetFormatString(((TimeTextCtrl *)m_control)->GetBuiltinFormat(mFormat));
 
    wxGridCellEditor::Create(parent, id, handler);
 }
@@ -164,20 +158,19 @@ void TimeRenderer::Draw(wxGrid &grid,
 
       TimeTextCtrl tt(&grid,
                       wxID_ANY,
-                      wxT(""),
+                      te->GetFormat(),
                       value,
                       te->GetRate(),
                       wxPoint(10000, 10000),  // create offscreen
                       wxDefaultSize,
                       true);
-      tt.SetFormatString(tt.GetBuiltinFormat(te->GetFormat()));
       tstr = tt.GetTimeString();
 
       te->DecRef();
    }
 
    dc.SetBackgroundMode(wxTRANSPARENT);
-   
+
    if (grid.IsEnabled())
    {
       if (isSelected)
@@ -196,7 +189,7 @@ void TimeRenderer::Draw(wxGrid &grid,
       dc.SetTextBackground(wxSystemSettings::GetColour(wxSYS_COLOUR_BTNFACE));
       dc.SetTextForeground(wxSystemSettings::GetColour(wxSYS_COLOUR_GRAYTEXT));
    }
-   
+
    dc.SetFont(attr.GetFont());
 
    int hAlign, vAlign;
@@ -221,13 +214,12 @@ wxSize TimeRenderer::GetBestSize(wxGrid &grid,
       table->GetValue(row, col).ToDouble(&value);
       TimeTextCtrl tt(&grid,
                       wxID_ANY,
-                      wxT(""),
+                      te->GetFormat(),
                       value,
                       te->GetRate(),
                       wxPoint(10000, 10000),  // create offscreen
                       wxDefaultSize,
                       true);
-      tt.SetFormatString(tt.GetBuiltinFormat(te->GetFormat()));
       sz = tt.GetSize();
 
       te->DecRef();
@@ -309,7 +301,7 @@ bool ChoiceEditor::EndEdit(int row, int col,
    int sel = Choice()->GetSelection();
 
    // This can happen if the wxChoice control is displayed and the list of choices get changed
-   if (sel < 0 || sel >= mChoices.GetCount())
+   if ((sel < 0) || (sel >= (int)(mChoices.GetCount())))
    {
       return false;
    }
@@ -541,7 +533,7 @@ bool Grid::InsertRows(int pos, int numRows, bool updateLabels)
 bool Grid::AppendRows(int numRows, bool updateLabels)
 {
    bool res = wxGrid::AppendRows(numRows, updateLabels);
-   
+
    mAx->TableUpdated();
 
    return res;
@@ -550,7 +542,7 @@ bool Grid::AppendRows(int numRows, bool updateLabels)
 bool Grid::DeleteRows(int pos, int numRows, bool updateLabels)
 {
    bool res = wxGrid::DeleteRows(pos, numRows, updateLabels);
-   
+
    mAx->TableUpdated();
 
    return res;
@@ -742,13 +734,12 @@ wxAccStatus GridAx::GetName(int childId, wxString *name)
 
          TimeTextCtrl tt(mGrid,
                          wxID_ANY,
-                         wxT(""),
+                         c->GetFormat(),
                          value,
                          c->GetRate(),
                          wxPoint(10000, 10000),  // create offscreen
                          wxDefaultSize,
                          true);
-         tt.SetFormatString(tt.GetBuiltinFormat(c->GetFormat()));
          v = tt.GetTimeString();
       }
 

@@ -11,7 +11,7 @@
 *******************************************************************//*!
 
 \file LoadModules.cpp
-\brief Based on LoadLadspa, this code loads pluggable Audacity 
+\brief Based on LoadLadspa, this code loads pluggable Audacity
 extension modules.  It also has the code to (a) invoke a script
 server and (b) invoke a function returning a replacement window,
 i.e. an alternative to the usual interface, for Audacity.
@@ -34,7 +34,9 @@ i.e. an alternative to the usual interface, for Audacity.
 
 #ifdef EXPERIMENTAL_MODULE_PREFS
 #include "Prefs.h"
+#include "./prefs/ModulePrefs.h"
 #endif
+
 #include "LoadModules.h"
 #include "widgets/MultiDialog.h"
 
@@ -49,7 +51,7 @@ typedef int (*tModuleInit)(int);
 typedef wxChar * (*tVersionFn)();
 typedef pwxWindow (*tPanelFn)(int);
 
-// This variable will hold the address of a subroutine in 
+// This variable will hold the address of a subroutine in
 // a DLL that can hijack the normal panel.
 static tPanelFn pPanelHijack=NULL;
 
@@ -57,7 +59,7 @@ static tPanelFn pPanelHijack=NULL;
 // strange DLL behaviour.  Instead of dynamic linking,
 // link the library which has the replacement panel statically.
 // Give the address of the routine here.
-// This is a great help in identifying missing 
+// This is a great help in identifying missing
 // symbols which otherwise cause a dll to unload after loading
 // without an explanation as to why!
 //extern wxWindow * MainPanelFunc( int i );
@@ -77,27 +79,6 @@ wxWindow * MakeHijackPanel()
 // starts a thread and reads script commands.
 static tpRegScriptServerFunc scriptFn;
 
-#ifdef EXPERIMENTAL_MODULE_PREFS
-bool IsAllowedModule( wxString fname )
-{
-   bool bLoad = false;
-   wxString ShortName = wxFileName( fname ).GetName();
-   if( (ShortName.CmpNoCase( wxT("mod-script-pipe")) == 0 ))
-   {
-      gPrefs->Read(wxT("/Module/mod-script-pipe"), &bLoad, false);
-   }
-   else if( (ShortName.CmpNoCase( wxT("mod-nyq-bench")) == 0 ))
-   {
-      gPrefs->Read(wxT("/Module/mod-nyq-bench"), &bLoad, false);
-   }
-   else if( (ShortName.CmpNoCase( wxT("mod-track-panel")) == 0 ))
-   {
-      gPrefs->Read(wxT("/Module/mod-track-panel"), &bLoad, false);
-   }
-   return bLoad;
-}
-#endif  // EXPERIMENTAL_MODULE_PREFS
-
 Module::Module(const wxString & name)
 {
    mName = name;
@@ -112,8 +93,6 @@ Module::~Module()
 
 bool Module::Load()
 {
-//   wxLogNull logNo;
-
    if (mLib->IsLoaded()) {
       if (mDispatch) {
          return true;
@@ -147,9 +126,12 @@ bool Module::Load()
    mDispatch = (fnModuleDispatch) mLib->GetSymbol(wxT(ModuleDispatchName));
    if (!mDispatch) {
       // Module does not provide a dispatch function...
-      return false;
+      // That can be OK, as long as we never try to call it.
+      return true;
    }
 
+   // However if we do have it and it does not work, 
+   // then the module is bad.
    bool res = ((mDispatch(ModuleInitialize))!=0);
    if (res) {
       return true;
@@ -170,9 +152,9 @@ void Module::Unload()
 
 int Module::Dispatch(ModuleDispatchTypes type)
 {
-   if (mLib->IsLoaded()) {
-      return mDispatch(type);
-   }
+   if (mLib->IsLoaded())
+      if( mDispatch != NULL )
+         return mDispatch(type);
 
    return 0;
 }
@@ -224,7 +206,7 @@ void ModuleManager::Initialize(CommandHandler &cmdHandler)
    }
 
    #if defined(__WXMSW__)
-   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, files);   
+   wxGetApp().FindFilesInPathList(wxT("*.dll"), pathList, files);
    #else
    wxGetApp().FindFilesInPathList(wxT("*.so"), pathList, files);
    #endif
@@ -238,8 +220,19 @@ void ModuleManager::Initialize(CommandHandler &cmdHandler)
       ::wxSetWorkingDirectory(prefix);
 
 #ifdef EXPERIMENTAL_MODULE_PREFS
-      if( !IsAllowedModule( files[i] ) )  // don't try and check the in-date-ness before this as that means loading the module to call it's GetVersionString, which could do anything.
+      int iModuleStatus = ModulePrefs::GetModuleStatus( files[i] );
+      if( iModuleStatus == kModuleDisabled )
+         continue;
+      if( iModuleStatus == kModuleFailed )
+         continue;
+
+      if( (iModuleStatus == kModuleAsk ) || 
+          (iModuleStatus == kModuleNew ) 
+        )
 #endif
+      // JKC: I don't like prompting for the plug-ins individually
+      // I think it would be better to show the module prefs page,
+      // and let the user decide for each one.
       {
          wxString ShortName = wxFileName( files[i] ).GetName();
          wxString msg;
@@ -248,9 +241,22 @@ void ModuleManager::Initialize(CommandHandler &cmdHandler)
          const wxChar *buttons[] = {_("Yes"), _("No"), NULL};  // could add a button here for 'yes and remember that', and put it into the cfg file.  Needs more thought.
          int action;
          action = ShowMultiDialog(msg, _("Module Loader"), buttons, _("Try and load this module?"), false);
-         if(action == 1)   // "No"
+#ifdef EXPERIMENTAL_MODULE_PREFS
+         // If we're not prompting always, accept the answer permanantly
+         if( iModuleStatus == kModuleNew ){
+            iModuleStatus = (action==1)?kModuleDisabled : kModuleEnabled;
+            ModulePrefs::SetModuleStatus( files[i], iModuleStatus );
+         }
+#endif
+         if(action == 1){   // "No"
             continue;
+         }
       }
+#ifdef EXPERIMENTAL_MODULE_PREFS
+      // Before attempting to load, we set the state to bad.
+      // That way, if we crash, we won't try again.
+      ModulePrefs::SetModuleStatus( files[i], kModuleFailed );
+#endif
 
       Module *module = new Module(files[i]);
       if (module->Load())   // it will get rejected if there  are version problems
@@ -267,8 +273,13 @@ void ModuleManager::Initialize(CommandHandler &cmdHandler)
          {
             pPanelHijack = (tPanelFn)(module->GetSymbol(wxT(mainPanelFnName)));
          }
+#ifdef EXPERIMENTAL_MODULE_PREFS
+         // Loaded successfully, restore the status.
+         ModulePrefs::SetModuleStatus( files[i], iModuleStatus);
+#endif
       }
       else {
+         // No need to save status, as we already set kModuleFailed.
          delete module;
       }
       ::wxSetWorkingDirectory(saveOldCWD);

@@ -8,13 +8,13 @@
 
 **********************************************************************/
 
-#include "../Audacity.h"         // to pull in USE_SYSTEM_EXPAT define
+#include "../Audacity.h"
 
 #include "expat.h"
 
 #include "XMLTagHandler.h"
 
-class XMLFileReader {
+class AUDACITY_DLL_API XMLFileReader {
  public:
    XMLFileReader();
    virtual ~XMLFileReader();

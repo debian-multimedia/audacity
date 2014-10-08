@@ -1,57 +1,57 @@
 dnl Add Audacity / libsamplerate license?
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_libsamplerate.m4 serial 2
+# audacity_checklib_libsamplerate.m4 serial 4
 
 AC_DEFUN([AUDACITY_CHECKLIB_LIBSAMPLERATE], [
 
    AC_ARG_WITH(libsamplerate,
                [AS_HELP_STRING([--with-libsamplerate],
-                               [use libsamplerate for sample rate conversion. Do not use in conjunction with VST plug-in support!])],
+                               [use libsamplerate for sample rate conversion])],
                LIBSAMPLERATE_ARGUMENT=$withval,
                LIBSAMPLERATE_ARGUMENT="unspecified")
 
-   if false ; then
-      AC_DEFINE(USE_LIBSAMPLERATE, 1,
-                [Define if libsamplerate support should be enabled])
-   fi
-
    dnl see if libsamplerate is installed on the system
-
-   PKG_CHECK_MODULES(SAMPLERATE, samplerate >= 0.1.2,
-                     samplerate_available_system="yes",
-                     samplerate_available_system="no")
-
-   if test "x$samplerate_available_system" = "xyes" ; then
-      LIBSAMPLERATE_SYSTEM_AVAILABLE="yes"
-      LIBSAMPLERATE_SYSTEM_LIBS=$SAMPLERATE_LIBS
-      LIBSAMPLERATE_SYSTEM_CXXFLAGS=$SAMPLERATE_CFLAGS
-      LIBSAMPLERATE_SYSTEM_CPPSYMBOLS="USE_LIBSAMPLERATE"
+   PKG_CHECK_MODULES(LIBSAMPLERATE_SYSTEM, samplerate >= 0.1.2,
+                     LIBSAMPLERATE_SYSTEM_AVAILABLE="yes",
+                     LIBSAMPLERATE_SYSTEM_AVAILABLE="no")
+   dnl the unusual choice of prefix above avoids having to re-assign the variables
+   dnl generates by PKG_CHECK_MODULES, which will be LIBSAMPLERATE_SYSTEML_LIBS and
+   dnl so on.
+   if test "$LIBSAMPLERATE_SYSTEM_AVAILABLE" = "yes" ; then
       AC_MSG_NOTICE([Libsamplerate libraries are available as system libraries])
    else
-      LIBSAMPLERATE_SYSTEM_AVAILABLE="no"
       AC_MSG_NOTICE([Libsamplerate libraries are NOT available as system libraries])
    fi
 
    dnl see if libsamplerate is available in the local tree
 
    AC_CHECK_FILE(${srcdir}/lib-src/libsamplerate/src/samplerate.h,
-                 samplerate_h_found="yes",
-                 samplerate_h_found="no")
+                 LIBSAMPLERATE_LOCAL_AVAILABLE="yes",
+                 LIBSAMPLERATE_LOCAL_AVAILABLE="no")
 
-   if test "x$samplerate_h_found" = "xyes" ; then
-      LIBSAMPLERATE_LOCAL_AVAILABLE="yes"
-      LIBSAMPLERATE_LOCAL_LIBS="libsamplerate.a"
-      LIBSAMPLERATE_LOCAL_CXXFLAGS='-I$(top_srcdir)/lib-src/libsamplerate/src'
-      LIBSAMPLERATE_LOCAL_CPPSYMBOLS="USE_LIBSAMPLERATE"
-
-      if test ! -f lib-src/libsamplerate/Makefile ; then
-         LIBSAMPLERATE_LOCAL_CONFIG_SUBDIRS="lib-src/libsamplerate"
-      fi
+   if test "$LIBSAMPLERATE_LOCAL_AVAILABLE" = "yes" ; then
       AC_MSG_NOTICE([libsamplerate libraries are available in the local tree])
    else
-      LIBSAMPLERATE_LOCAL_AVAILABLE="no"
       AC_MSG_NOTICE([libsamplerate libraries are NOT available in the local tree])
    fi
 ])
 
+AC_DEFUN([AUDACITY_CONFIG_LIBSAMPLERATE], [
+   if test "$LIBSAMPLERATE_USE_LOCAL" = yes; then
+      SAMPLERATE_CFLAGS='-I$(top_srcdir)/lib-src/libsamplerate/src'
+      SAMPLERATE_LIBS='$(top_builddir)/lib-src/libsamplerate/libsamplerate.a'
+      AC_CONFIG_SUBDIRS([lib-src/libsamplerate])
+   fi
+
+   AC_SUBST([SAMPLERATE_CFLAGS])
+   AC_SUBST([SAMPLERATE_LIBS])
+
+   AM_CONDITIONAL([USE_LIBSAMPLERATE], [test "$LIBSAMPLERATE_USE_LOCAL" = yes -o "$LIBSAMPLERATE_USE_SYSTEM" = yes])
+   AM_CONDITIONAL([USE_LOCAL_LIBSAMPLERATE], [test "$LIBSAMPLERATE_USE_LOCAL" = yes])
+
+   if test "$LIBSAMPLERATE_USE_LOCAL" = yes -o "$LIBSAMPLERATE_USE_SYSTEM" = yes; then
+      AC_DEFINE(USE_LIBSAMPLERATE, 1,
+                [Define if libsamplerate support should be enabled])
+   fi
+])

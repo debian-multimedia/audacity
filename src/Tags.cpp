@@ -5,13 +5,13 @@
   Tags.cpp
 
   Dominic Mazzoni
- 
+
 *******************************************************************//**
 
 \class Tags
 \brief ID3 Tags (for MP3)
 
-  This class started as an ID3 tag 
+  This class started as an ID3 tag
 
   This class holds a few informational tags, such as Title, Author,
   etc. that can be associated with a project or other audio file.
@@ -64,14 +64,6 @@
 #include <wx/textfile.h>
 #include <wx/combobox.h>
 #include <wx/display.h>
-
-#ifdef _DEBUG
-    #ifdef _MSC_VER
-        #undef THIS_FILE
-        static char*THIS_FILE= __FILE__;
-        #define new new(_NORMAL_BLOCK, THIS_FILE, __LINE__)
-    #endif
-#endif
 
 static const wxChar *DefaultGenres[] =
 {
@@ -722,8 +714,9 @@ TagsEditor::TagsEditor(wxWindow * parent,
    //on a monitor that has been removed or is unavailable.
    if (IsWindowRectValid(&r))
       Move(r.GetPosition());
-   
-//   SetSize(r.GetSize());
+
+   SetSize(r.GetSize());
+   Layout();
 
    // Resize value column width based on width of columns and the vertical scrollbar
    wxScrollBar sb(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxSB_VERTICAL);
@@ -775,7 +768,7 @@ void TagsEditor::PopulateOrExchange(ShuttleGui & S)
          wxArrayString cs(WXSIZEOF(names), names);
 
          // Build the initial (empty) grid
-         mGrid->CreateGrid(0, 2); 
+         mGrid->CreateGrid(0, 2);
          mGrid->SetRowLabelSize(0);
          mGrid->SetDefaultCellAlignment(wxALIGN_LEFT, wxALIGN_CENTER);
          mGrid->SetColLabelValue(0, _("Tag"));

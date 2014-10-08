@@ -44,17 +44,23 @@ WX_DECLARE_STRING_HASH_MAP(wxString, LangHash);
 
 static bool TranslationExists(wxArrayString &audacityPathList, wxString code)
 {
-   wxArrayString results;   
+   wxArrayString results;
    wxGetApp().FindFilesInPathList(wxString::Format(wxT("%s/audacity.mo"),
                                                    code.c_str()),
                                   audacityPathList,
                                   results);
-   
+#if defined(__WXMAC__)
+   wxGetApp().FindFilesInPathList(wxString::Format(wxT("%s.lproj/audacity.mo"),
+                                                   code.c_str()),
+                                  audacityPathList,
+                                  results);
+#endif
+
    wxGetApp().FindFilesInPathList(wxString::Format(wxT("%s/LC_MESSAGES/audacity.mo"),
                                                    code.c_str()),
                                   audacityPathList,
                                   results);
-   
+
    return (results.GetCount() > 0);
 }
 
@@ -66,7 +72,7 @@ wxString GetSystemLanguageCode()
    GetLanguages(langCodes, langNames);
    int sysLang = wxLocale::GetSystemLanguage();
    const wxLanguageInfo *info = wxLocale::GetLanguageInfo(sysLang);
-   
+
    if (info) {
       wxString fullCode = info->CanonicalName;
       if (fullCode.Length() < 2)
@@ -145,6 +151,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("sr_RS@latin")] = wxT("Serbian (Latin)");
    localLanguageName[wxT("sv")] = wxT("Svenska");
    localLanguageName[wxT("tg")] = wxT("Tajik");
+   localLanguageName[wxT("ta")] = wxT("Tamil");
    localLanguageName[wxT("tr")] = wxT("Turkce");
    localLanguageName[wxT("uk")] = wxT("Ukrainska");
    localLanguageName[wxT("vi")] = wxT("Vietnamese");

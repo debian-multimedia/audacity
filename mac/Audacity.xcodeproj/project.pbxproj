@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 45;
+	objectVersion = 42;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -44,19 +44,6 @@
 
 /* Begin PBXBuildFile section */
 		17048268098C0F5F00824C66 /* mad.h in Headers */ = {isa = PBXBuildFile; fileRef = 17048267098C0F5F00824C66 /* mad.h */; };
-		17073F490988E061008541CC /* xmlparse.c in Sources */ = {isa = PBXBuildFile; fileRef = 17072F580988D6A9008541CC /* xmlparse.c */; };
-		17073F4A0988E061008541CC /* xmlparse.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F590988D6A9008541CC /* xmlparse.h */; };
-		17073F4B0988E061008541CC /* ascii.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F5B0988D6A9008541CC /* ascii.h */; };
-		17073F4C0988E061008541CC /* asciitab.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F5C0988D6A9008541CC /* asciitab.h */; };
-		17073F4D0988E061008541CC /* iasciitab.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F5E0988D6A9008541CC /* iasciitab.h */; };
-		17073F4E0988E061008541CC /* latin1tab.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F5F0988D6A9008541CC /* latin1tab.h */; };
-		17073F4F0988E061008541CC /* nametab.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F600988D6A9008541CC /* nametab.h */; };
-		17073F500988E061008541CC /* utf8tab.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F610988D6A9008541CC /* utf8tab.h */; };
-		17073F510988E061008541CC /* xmldef.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F620988D6A9008541CC /* xmldef.h */; };
-		17073F520988E061008541CC /* xmlrole.c in Sources */ = {isa = PBXBuildFile; fileRef = 17072F630988D6A9008541CC /* xmlrole.c */; };
-		17073F530988E061008541CC /* xmlrole.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F640988D6A9008541CC /* xmlrole.h */; };
-		17073F540988E061008541CC /* xmltok.c in Sources */ = {isa = PBXBuildFile; fileRef = 17072F650988D6A9008541CC /* xmltok.c */; };
-		17073F550988E061008541CC /* xmltok.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F660988D6A9008541CC /* xmltok.h */; };
 		17073F630988E13B008541CC /* compat.c in Sources */ = {isa = PBXBuildFile; fileRef = 17072F810988D6A9008541CC /* compat.c */; };
 		17073F640988E13B008541CC /* compat.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F830988D6A9008541CC /* compat.h */; };
 		17073F650988E13B008541CC /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = 17072F850988D6A9008541CC /* config.h */; };
@@ -276,7 +263,6 @@
 		170741150988F835008541CC /* window.h in Headers */ = {isa = PBXBuildFile; fileRef = 170736BD0988D6AE008541CC /* window.h */; };
 		17190D24098A3F0B004583C6 /* AColor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790AFC909883BFD008A330A /* AColor.cpp */; };
 		17190D25098A3F15004583C6 /* AboutDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790AFC709883BFD008A330A /* AboutDialog.cpp */; };
-		17190D79098A439D004583C6 /* cpu_detect_x86_gcc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 17190D78098A439D004583C6 /* cpu_detect_x86_gcc.cpp */; };
 		174D9031098C78AF00D5909F /* CommandManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 174D9026098C78AF00D5909F /* CommandManager.cpp */; };
 		174D9033098C78AF00D5909F /* Keyboard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 174D902A098C78AF00D5909F /* Keyboard.cpp */; };
 		174F73D0098D516D009CD6E0 /* Audacity.icns in Resources */ = {isa = PBXBuildFile; fileRef = 174F73C9098D516D009CD6E0 /* Audacity.icns */; };
@@ -424,7 +410,6 @@
 		1790B19909883BFD008A330A /* TrackPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EC09883BFD008A330A /* TrackPanel.cpp */; };
 		1790B19A09883BFD008A330A /* TrackPanelAx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EE09883BFD008A330A /* TrackPanelAx.cpp */; };
 		1790B19C09883BFD008A330A /* UndoManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F209883BFD008A330A /* UndoManager.cpp */; };
-		1790B19D09883BFD008A330A /* UploadDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F409883BFD008A330A /* UploadDialog.cpp */; };
 		1790B19E09883BFD008A330A /* VoiceKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F709883BFD008A330A /* VoiceKey.cpp */; };
 		1790B19F09883BFD008A330A /* WaveClip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F909883BFD008A330A /* WaveClip.cpp */; };
 		1790B1A009883BFD008A330A /* WaveTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0FB09883BFD008A330A /* WaveTrack.cpp */; };
@@ -469,7 +454,7 @@
 		18CE3C951145511200282C50 /* ODDecodeFFmpegTask.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18CE3C941145511200282C50 /* ODDecodeFFmpegTask.cpp */; };
 		18D8314E0ED0F56300FD870D /* Contrast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 18D8314C0ED0F56200FD870D /* Contrast.cpp */; };
 		28006FFB132C167600BD34D7 /* Install.txt in Resources */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
-		28006FFC132C169700BD34D7 /* Install.txt in Install instructions */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
+		28006FFC132C169700BD34D7 /* Install.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
 		2800FE0D0FF32308005CA9E5 /* pminternal.h in Headers */ = {isa = PBXBuildFile; fileRef = 2800FDF40FF3225B005CA9E5 /* pminternal.h */; };
 		2800FE0E0FF32308005CA9E5 /* pmutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 2800FDF50FF3225B005CA9E5 /* pmutil.c */; };
 		2800FE0F0FF32308005CA9E5 /* pmutil.h in Headers */ = {isa = PBXBuildFile; fileRef = 2800FDF60FF3225B005CA9E5 /* pmutil.h */; };
@@ -486,6 +471,7 @@
 		2800FE1A0FF32308005CA9E5 /* ptmacosx_mach.c in Sources */ = {isa = PBXBuildFile; fileRef = 2800FE010FF322A1005CA9E5 /* ptmacosx_mach.c */; };
 		2800FE230FF32381005CA9E5 /* libportmidi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2800FE070FF322D4005CA9E5 /* libportmidi.a */; };
 		2800FE370FF32566005CA9E5 /* MidiIOPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2800FE350FF32566005CA9E5 /* MidiIOPrefs.cpp */; };
+		2801127B1943EE0E00D98A16 /* HelpSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 280112791943EE0E00D98A16 /* HelpSystem.cpp */; };
 		2801A6460BF9268700648258 /* ImportQT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2801A6430BF9268700648258 /* ImportQT.cpp */; };
 		280828550A75E0D0000002EF /* LabelDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 280828530A75E0D0000002EF /* LabelDialog.cpp */; };
 		2808285A0A75E0EA000002EF /* Grid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 280828580A75E0EA000002EF /* Grid.cpp */; };
@@ -494,12 +480,15 @@
 		28105DAA0AD09FC500BB4269 /* px_mac_coreaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = 28105DA00AD09FC500BB4269 /* px_mac_coreaudio.c */; };
 		28105DAB0AD09FC500BB4269 /* px_mixer.c in Sources */ = {isa = PBXBuildFile; fileRef = 28105DA10AD09FC500BB4269 /* px_mixer.c */; };
 		28105DAC0AD09FC500BB4269 /* px_mixer.h in Headers */ = {isa = PBXBuildFile; fileRef = 28105DA20AD09FC500BB4269 /* px_mixer.h */; };
+		2810644B1818EEB5004F678B /* cpu_detect_x86.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2810644A1818EEB5004F678B /* cpu_detect_x86.cpp */; };
+		2810644D1818EED3004F678B /* cpu_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = 2810644C1818EED3004F678B /* cpu_detect.h */; };
 		2816372E0BAE3B6C0079C746 /* LinkingHtmlWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2816372C0BAE3B6C0079C746 /* LinkingHtmlWindow.cpp */; };
 		282D474C0B9E8D900034BC49 /* Snap.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 282D474A0B9E8D900034BC49 /* Snap.cpp */; };
 		283135EC0DFB9D110076D551 /* ImportFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 283135EA0DFB9D110076D551 /* ImportFFmpeg.cpp */; };
 		283135FF0DFBA2E80076D551 /* FFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 283135FD0DFBA2E80076D551 /* FFmpeg.cpp */; };
 		2835062D0A3A88ED00EB1EBD /* pa_unix_util.c in Sources */ = {isa = PBXBuildFile; fileRef = 283506280A3A88ED00EB1EBD /* pa_unix_util.c */; };
 		2835062E0A3A88ED00EB1EBD /* pa_unix_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 283506290A3A88ED00EB1EBD /* pa_unix_util.h */; };
+		2835D8D11833D54100CF5EFF /* expat_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 2835D8D01833D54100CF5EFF /* expat_config.h */; };
 		283A11A50A2C0DE7004372C4 /* broadcast.c in Sources */ = {isa = PBXBuildFile; fileRef = 283A11A40A2C0DE7004372C4 /* broadcast.c */; };
 		283A11AA0A2C0E15004372C4 /* ShuttleGui.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 283A11A60A2C0E15004372C4 /* ShuttleGui.cpp */; };
 		283A11AB0A2C0E15004372C4 /* Theme.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 283A11A80A2C0E15004372C4 /* Theme.cpp */; };
@@ -762,6 +751,9 @@
 		284B279F0FC66864005EAC96 /* RecordingPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 284B27980FC66863005EAC96 /* RecordingPrefs.cpp */; };
 		284B27E40FC66CCD005EAC96 /* TracksPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 284B27E00FC66CCD005EAC96 /* TracksPrefs.cpp */; };
 		284B27E50FC66CCD005EAC96 /* WarningsPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 284B27E20FC66CCD005EAC96 /* WarningsPrefs.cpp */; };
+		284B8E27181CFB1000304E49 /* liblv2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 286229B0181CE4B600E1AD1A /* liblv2.a */; };
+		284B8E29181CFB1100304E49 /* liblv2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 286229B0181CE4B600E1AD1A /* liblv2.a */; };
+		284B8E2A181CFB1200304E49 /* liblv2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 286229B0181CE4B600E1AD1A /* liblv2.a */; };
 		284FD04217FC72A50009A025 /* ScienFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 284FD04017FC72A50009A025 /* ScienFilter.cpp */; };
 		284FD04517FC72EE0009A025 /* Biquad.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 284FD04317FC72EE0009A025 /* Biquad.cpp */; };
 		28501EA10CEECEF80029ABAA /* HelpText.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28501E9D0CEECEF80029ABAA /* HelpText.cpp */; };
@@ -772,6 +764,7 @@
 		28530C4C0DF2105200555C94 /* HtmlWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28530C480DF2105200555C94 /* HtmlWindow.cpp */; };
 		28530C4D0DF2105200555C94 /* ProgressDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28530C4A0DF2105200555C94 /* ProgressDialog.cpp */; };
 		28560C910A75E40F00A3429E /* AutoRecovery.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28560C8F0A75E40F00A3429E /* AutoRecovery.cpp */; };
+		285B11861833D14D0073B36C /* libexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FADDEF1833C3C500BA4141 /* libexpat.a */; };
 		285D3CB40F09FC8F007883FC /* PluginBufferingAdapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 285D3CAC0F09FC8F007883FC /* PluginBufferingAdapter.cpp */; };
 		285D3CB50F09FC8F007883FC /* PluginChannelAdapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 285D3CAD0F09FC8F007883FC /* PluginChannelAdapter.cpp */; };
 		285D3CB60F09FC8F007883FC /* PluginHostAdapter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 285D3CAE0F09FC8F007883FC /* PluginHostAdapter.cpp */; };
@@ -786,6 +779,42 @@
 		2860BA240E0F0D8600A13878 /* SoundActivatedRecord.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2860BA200E0F0D8600A13878 /* SoundActivatedRecord.cpp */; };
 		2860BA250E0F0D8600A13878 /* TimerRecordDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2860BA220E0F0D8600A13878 /* TimerRecordDialog.cpp */; };
 		2860BA280E0F0DD800A13878 /* ExportFFmpeg.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2860BA260E0F0DD800A13878 /* ExportFFmpeg.cpp */; };
+		286229C3181CE51800E1AD1A /* lilv.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229B1181CE51800E1AD1A /* lilv.h */; };
+		286229C4181CE51800E1AD1A /* collections.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B2181CE51800E1AD1A /* collections.c */; };
+		286229C5181CE51800E1AD1A /* instance.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B3181CE51800E1AD1A /* instance.c */; };
+		286229C6181CE51800E1AD1A /* lib.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B4181CE51800E1AD1A /* lib.c */; };
+		286229C7181CE51800E1AD1A /* lilv_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229B5181CE51800E1AD1A /* lilv_internal.h */; };
+		286229C8181CE51800E1AD1A /* node.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B6181CE51800E1AD1A /* node.c */; };
+		286229C9181CE51800E1AD1A /* plugin.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B7181CE51800E1AD1A /* plugin.c */; };
+		286229CA181CE51800E1AD1A /* pluginclass.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B8181CE51800E1AD1A /* pluginclass.c */; };
+		286229CB181CE51800E1AD1A /* port.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229B9181CE51800E1AD1A /* port.c */; };
+		286229CC181CE51800E1AD1A /* query.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BA181CE51800E1AD1A /* query.c */; };
+		286229CD181CE51800E1AD1A /* scalepoint.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BB181CE51800E1AD1A /* scalepoint.c */; };
+		286229CE181CE51800E1AD1A /* state.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BC181CE51800E1AD1A /* state.c */; };
+		286229CF181CE51800E1AD1A /* ui.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BD181CE51800E1AD1A /* ui.c */; };
+		286229D0181CE51800E1AD1A /* util.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BE181CE51800E1AD1A /* util.c */; };
+		286229D1181CE51800E1AD1A /* world.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229BF181CE51800E1AD1A /* world.c */; };
+		286229D2181CE51800E1AD1A /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229C0181CE51800E1AD1A /* common.h */; };
+		286229D3181CE51800E1AD1A /* tree.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229C1181CE51800E1AD1A /* tree.c */; };
+		286229D4181CE51800E1AD1A /* tree.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229C2181CE51800E1AD1A /* tree.h */; };
+		286229DD181CE5EC00E1AD1A /* serd.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229D5181CE5EC00E1AD1A /* serd.h */; };
+		286229DE181CE5EC00E1AD1A /* env.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229D6181CE5EC00E1AD1A /* env.c */; };
+		286229DF181CE5EC00E1AD1A /* node.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229D7181CE5EC00E1AD1A /* node.c */; };
+		286229E0181CE5EC00E1AD1A /* reader.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229D8181CE5EC00E1AD1A /* reader.c */; };
+		286229E1181CE5EC00E1AD1A /* serd_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229D9181CE5EC00E1AD1A /* serd_internal.h */; };
+		286229E2181CE5EC00E1AD1A /* string.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229DA181CE5EC00E1AD1A /* string.c */; };
+		286229E3181CE5EC00E1AD1A /* uri.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229DB181CE5EC00E1AD1A /* uri.c */; };
+		286229E4181CE5EC00E1AD1A /* writer.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229DC181CE5EC00E1AD1A /* writer.c */; };
+		286229E9181CE62A00E1AD1A /* sord.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229E5181CE62A00E1AD1A /* sord.h */; };
+		286229EA181CE62A00E1AD1A /* sord_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 286229E6181CE62A00E1AD1A /* sord_internal.h */; };
+		286229EB181CE62A00E1AD1A /* sord.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229E7181CE62A00E1AD1A /* sord.c */; };
+		286229EC181CE62A00E1AD1A /* syntax.c in Sources */ = {isa = PBXBuildFile; fileRef = 286229E8181CE62A00E1AD1A /* syntax.c */; };
+		28624C0E181CE65700E1AD1A /* sratom_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 2862439F181CE65500E1AD1A /* sratom_config.h */; };
+		28624C0F181CE65700E1AD1A /* sratom.h in Headers */ = {isa = PBXBuildFile; fileRef = 286243A0181CE65500E1AD1A /* sratom.h */; };
+		28624C10181CE65700E1AD1A /* sratom.c in Sources */ = {isa = PBXBuildFile; fileRef = 286243A1181CE65500E1AD1A /* sratom.c */; };
+		28640874181CE74100CC4E2C /* sord_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 28640873181CE74100CC4E2C /* sord_config.h */; };
+		28640876181CE75800CC4E2C /* serd_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 28640875181CE75800CC4E2C /* serd_config.h */; };
+		28640878181CE77200CC4E2C /* lilv_config.h in Headers */ = {isa = PBXBuildFile; fileRef = 28640877181CE77200CC4E2C /* lilv_config.h */; };
 		287DBE890F3F6B2700C5BBED /* audio_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = 287DBE830F3F6B2700C5BBED /* audio_detect.c */; };
 		287DBE8A0F3F6B2700C5BBED /* chunk.c in Sources */ = {isa = PBXBuildFile; fileRef = 287DBE840F3F6B2700C5BBED /* chunk.c */; };
 		287DBE8B0F3F6B2700C5BBED /* ima_oki_adpcm.c in Sources */ = {isa = PBXBuildFile; fileRef = 287DBE850F3F6B2700C5BBED /* ima_oki_adpcm.c */; };
@@ -896,12 +925,15 @@
 		28A96DC10E28642200F3CE01 /* mfmidi.h in Headers */ = {isa = PBXBuildFile; fileRef = 28F3A3FF0E28289500729866 /* mfmidi.h */; };
 		28A96DC20E28642300F3CE01 /* strparse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F3A4000E28289500729866 /* strparse.cpp */; };
 		28A96DC30E28642300F3CE01 /* strparse.h in Headers */ = {isa = PBXBuildFile; fileRef = 28F3A4010E28289500729866 /* strparse.h */; };
+		28B3C5DC1833D23E0024BE6D /* libexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FADDEF1833C3C500BA4141 /* libexpat.a */; };
+		28B3C5DF1833D24E0024BE6D /* libexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 28FADDEF1833C3C500BA4141 /* libexpat.a */; };
 		28B6ED8F0DE3D1B50046F0F3 /* LoadModules.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28B6ED8D0DE3D1B50046F0F3 /* LoadModules.cpp */; };
 		28B97B890FBF771A0076CF28 /* VSTEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28B97B850FBF771A0076CF28 /* VSTEffect.cpp */; };
 		28BD8AB1101DF4C700686679 /* BatchEvalCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AA9101DF4C600686679 /* BatchEvalCommand.cpp */; };
 		28BD8AB2101DF4C700686679 /* CommandDirectory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAA101DF4C600686679 /* CommandDirectory.cpp */; };
 		28BD8AB3101DF4C700686679 /* ExecMenuCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAC101DF4C600686679 /* ExecMenuCommand.cpp */; };
 		28BD8AB4101DF4C700686679 /* GetAllMenuCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28BD8AAE101DF4C600686679 /* GetAllMenuCommands.cpp */; };
+		28C3946D1818356800FDDAC9 /* AudacityLogger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28C3946B1818356800FDDAC9 /* AudacityLogger.cpp */; };
 		28C816BA131255790035BB10 /* Audacity.sh in Install wrapper */ = {isa = PBXBuildFile; fileRef = 28C816B81312555B0035BB10 /* Audacity.sh */; };
 		28CCDD000F939FD70081F2FC /* FileHistory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28CCDCFF0F939FD70081F2FC /* FileHistory.cpp */; };
 		28D540050FD1912A00FA7C75 /* AppCommandEvent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28D53FFA0FD1912A00FA7C75 /* AppCommandEvent.cpp */; };
@@ -918,8 +950,6 @@
 		28DE72AE10388583007E18EC /* PreferenceCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72AA10388583007E18EC /* PreferenceCommands.cpp */; };
 		28DE72AF10388583007E18EC /* SetTrackInfoCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72AC10388583007E18EC /* SetTrackInfoCommand.cpp */; };
 		28DE72B2103885AA007E18EC /* TimeWarper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28DE72B0103885AA007E18EC /* TimeWarper.cpp */; };
-		28E2370D0E515D9200281398 /* audiomixerreader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1000E50AD5700CC4BD3 /* audiomixerreader.cpp */; };
-		28E2370E0E515D9300281398 /* audiomixerreader.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1010E50AD5700CC4BD3 /* audiomixerreader.h */; };
 		28E2370F0E515D9400281398 /* audioreader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1020E50AD5700CC4BD3 /* audioreader.cpp */; };
 		28E237100E515D9400281398 /* audioreader.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1030E50AD5700CC4BD3 /* audioreader.h */; };
 		28E237110E515D9500281398 /* comp_chroma.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1140E50AD5700CC4BD3 /* comp_chroma.cpp */; };
@@ -936,8 +966,6 @@
 		28E2371C0E515D9C00281398 /* regression.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1240E50AD5700CC4BD3 /* regression.h */; };
 		28E2371D0E515D9D00281398 /* sautils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1250E50AD5700CC4BD3 /* sautils.cpp */; };
 		28E2371E0E515D9D00281398 /* sautils.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1260E50AD5700CC4BD3 /* sautils.h */; };
-		28E2371F0E515D9E00281398 /* scorealign-glue.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1270E50AD5700CC4BD3 /* scorealign-glue.cpp */; };
-		28E237200E515D9E00281398 /* scorealign-glue.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D1280E50AD5700CC4BD3 /* scorealign-glue.h */; };
 		28E237210E515D9F00281398 /* scorealign.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED05D1290E50AD5700CC4BD3 /* scorealign.cpp */; };
 		28E237220E515D9F00281398 /* scorealign.h in Headers */ = {isa = PBXBuildFile; fileRef = ED05D12A0E50AD5700CC4BD3 /* scorealign.h */; };
 		28E2373A0E5163A200281398 /* libscorealign.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 28E237080E515D1D00281398 /* libscorealign.a */; };
@@ -1161,7 +1189,28 @@
 		28F1D81D0A2D0019005506A7 /* AttachableScrollBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F1D8170A2D0018005506A7 /* AttachableScrollBar.cpp */; };
 		28F1D81E0A2D0019005506A7 /* ExpandingToolBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F1D8190A2D0018005506A7 /* ExpandingToolBar.cpp */; };
 		28F1D81F0A2D0019005506A7 /* ImageRoll.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F1D81B0A2D0019005506A7 /* ImageRoll.cpp */; };
+		28F2CED4181867BB00573D61 /* numformatter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F2CED0181867BB00573D61 /* numformatter.cpp */; };
+		28F2CED5181867BB00573D61 /* valnum.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F2CED2181867BB00573D61 /* valnum.cpp */; };
 		28F5C1110BE5886A00D17341 /* FileDialogPrivate.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F5C10F0BE5886A00D17341 /* FileDialogPrivate.cpp */; };
+		28F67179197DFA1C00075C32 /* FormatClassifier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F67173197DFA1C00075C32 /* FormatClassifier.cpp */; };
+		28F6717A197DFA1C00075C32 /* MultiFormatReader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F67175197DFA1C00075C32 /* MultiFormatReader.cpp */; };
+		28F6717B197DFA1C00075C32 /* SpecPowerMeter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28F67177197DFA1C00075C32 /* SpecPowerMeter.cpp */; };
+		28FADEF71833C78C00BA4141 /* ascii.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEDC1833C78C00BA4141 /* ascii.h */; };
+		28FADEF81833C78C00BA4141 /* asciitab.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEDD1833C78C00BA4141 /* asciitab.h */; };
+		28FADEF91833C78C00BA4141 /* expat.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEDF1833C78C00BA4141 /* expat.h */; };
+		28FADEFA1833C78C00BA4141 /* expat_external.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEE01833C78C00BA4141 /* expat_external.h */; };
+		28FADEFC1833C78C00BA4141 /* internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEE51833C78C00BA4141 /* internal.h */; };
+		28FADEFD1833C78C00BA4141 /* latin1tab.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEE61833C78C00BA4141 /* latin1tab.h */; };
+		28FADEFF1833C78C00BA4141 /* nametab.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEEB1833C78C00BA4141 /* nametab.h */; };
+		28FADF001833C78C00BA4141 /* utf8tab.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEEC1833C78C00BA4141 /* utf8tab.h */; };
+		28FADF021833C78C00BA4141 /* xmlparse.c in Sources */ = {isa = PBXBuildFile; fileRef = 28FADEEE1833C78C00BA4141 /* xmlparse.c */; };
+		28FADF031833C78C00BA4141 /* xmlrole.c in Sources */ = {isa = PBXBuildFile; fileRef = 28FADEEF1833C78C00BA4141 /* xmlrole.c */; };
+		28FADF041833C78C00BA4141 /* xmlrole.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEF01833C78C00BA4141 /* xmlrole.h */; };
+		28FADF051833C78C00BA4141 /* xmltok.c in Sources */ = {isa = PBXBuildFile; fileRef = 28FADEF11833C78C00BA4141 /* xmltok.c */; };
+		28FADF061833C78C00BA4141 /* xmltok.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEF21833C78C00BA4141 /* xmltok.h */; };
+		28FADF071833C78C00BA4141 /* xmltok_impl.c in Sources */ = {isa = PBXBuildFile; fileRef = 28FADEF31833C78C00BA4141 /* xmltok_impl.c */; };
+		28FADF081833C78C00BA4141 /* xmltok_impl.h in Headers */ = {isa = PBXBuildFile; fileRef = 28FADEF41833C78C00BA4141 /* xmltok_impl.h */; };
+		28FADF091833C78C00BA4141 /* xmltok_ns.c in Sources */ = {isa = PBXBuildFile; fileRef = 28FADEF51833C78C00BA4141 /* xmltok_ns.c */; };
 		28FC1AFB0A47762C00A188AE /* WrappedType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28FC1AF90A47762C00A188AE /* WrappedType.cpp */; };
 		28FE4A080ABF4E960056F5C4 /* mmx_optimized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28FE4A060ABF4E960056F5C4 /* mmx_optimized.cpp */; };
 		28FE4A090ABF4E960056F5C4 /* sse_optimized.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 28FE4A070ABF4E960056F5C4 /* sse_optimized.cpp */; };
@@ -1216,7 +1265,6 @@
 		ED3D7FF00DF73889000F43E3 /* EffectCategory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D7FEC0DF73889000F43E3 /* EffectCategory.cpp */; };
 		ED3D7FF10DF73889000F43E3 /* EffectManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED3D7FEE0DF73889000F43E3 /* EffectManager.cpp */; };
 		ED64C823124567ED007CF2FC /* ScoreAlignDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED64C821124567ED007CF2FC /* ScoreAlignDialog.cpp */; };
-		ED64C82512456831007CF2FC /* ScoreAlignParams.h in Headers */ = {isa = PBXBuildFile; fileRef = ED64C82412456831007CF2FC /* ScoreAlignParams.h */; };
 		ED663B42165435BF007F53A5 /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = ED663B2716543501007F53A5 /* common.h */; };
 		ED663B43165435BF007F53A5 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = ED663B3716543556007F53A5 /* config.h */; };
 		ED663B44165435BF007F53A5 /* fastest_coeffs.h in Headers */ = {isa = PBXBuildFile; fileRef = ED663B2916543501007F53A5 /* fastest_coeffs.h */; };
@@ -1340,7 +1388,6 @@
 		ED663BF316543647007F53A5 /* TrackPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EC09883BFD008A330A /* TrackPanel.cpp */; };
 		ED663BF416543647007F53A5 /* TrackPanelAx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EE09883BFD008A330A /* TrackPanelAx.cpp */; };
 		ED663BF516543647007F53A5 /* UndoManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F209883BFD008A330A /* UndoManager.cpp */; };
-		ED663BF616543647007F53A5 /* UploadDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F409883BFD008A330A /* UploadDialog.cpp */; };
 		ED663BF716543647007F53A5 /* VoiceKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F709883BFD008A330A /* VoiceKey.cpp */; };
 		ED663BF816543647007F53A5 /* WaveClip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F909883BFD008A330A /* WaveClip.cpp */; };
 		ED663BF916543647007F53A5 /* WaveTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0FB09883BFD008A330A /* WaveTrack.cpp */; };
@@ -1554,7 +1601,7 @@
 		ED663CD116543647007F53A5 /* Audacity.sh in Install wrapper */ = {isa = PBXBuildFile; fileRef = 28C816B81312555B0035BB10 /* Audacity.sh */; };
 		ED663CD316543647007F53A5 /* LICENSE.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 288F0977131A3EE00008E860 /* LICENSE.txt */; };
 		ED663CD416543647007F53A5 /* README.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 288F097A131A3F130008E860 /* README.txt */; };
-		ED663CD616543647007F53A5 /* Install.txt in Install instructions */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
+		ED663CD616543647007F53A5 /* Install.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
 		ED663D0016543835007F53A5 /* libsamplerate.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED663B3C16543581007F53A5 /* libsamplerate.a */; };
 		ED85B3DA16A46FC9006DA21D /* hr.po in Sources */ = {isa = PBXBuildFile; fileRef = ED85B3CF16A46DDA006DA21D /* hr.po */; };
 		ED85B3DB16A4702F006DA21D /* hr.po in Sources */ = {isa = PBXBuildFile; fileRef = ED85B3CF16A46DDA006DA21D /* hr.po */; };
@@ -1670,7 +1717,6 @@
 		ED85B4CB16A47353006DA21D /* TrackPanel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EC09883BFD008A330A /* TrackPanel.cpp */; };
 		ED85B4CC16A47353006DA21D /* TrackPanelAx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0EE09883BFD008A330A /* TrackPanelAx.cpp */; };
 		ED85B4CD16A47353006DA21D /* UndoManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F209883BFD008A330A /* UndoManager.cpp */; };
-		ED85B4CE16A47353006DA21D /* UploadDialog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F409883BFD008A330A /* UploadDialog.cpp */; };
 		ED85B4CF16A47353006DA21D /* VoiceKey.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F709883BFD008A330A /* VoiceKey.cpp */; };
 		ED85B4D016A47353006DA21D /* WaveClip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0F909883BFD008A330A /* WaveClip.cpp */; };
 		ED85B4D116A47353006DA21D /* WaveTrack.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1790B0FB09883BFD008A330A /* WaveTrack.cpp */; };
@@ -1886,10 +1932,24 @@
 		ED85B5AB16A47353006DA21D /* Audacity.sh in Install wrapper */ = {isa = PBXBuildFile; fileRef = 28C816B81312555B0035BB10 /* Audacity.sh */; };
 		ED85B5AD16A47353006DA21D /* LICENSE.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 288F0977131A3EE00008E860 /* LICENSE.txt */; };
 		ED85B5AE16A47353006DA21D /* README.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 288F097A131A3F130008E860 /* README.txt */; };
-		ED85B5B016A47353006DA21D /* Install.txt in Install instructions */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
+		ED85B5B016A47353006DA21D /* Install.txt in Install miscellany */ = {isa = PBXBuildFile; fileRef = 28006FFA132C167600BD34D7 /* Install.txt */; };
 		ED85B60316A47B80006DA21D /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1707400D0988EB90008541CC /* libresample.a */; };
+		ED87F50A1986424100AC520B /* ta.po in Sources */ = {isa = PBXBuildFile; fileRef = ED87F4F619863DF500AC520B /* ta.po */; };
+		ED87F50C1986427500AC520B /* ta.po in Resources */ = {isa = PBXBuildFile; fileRef = ED87F4F619863DF500AC520B /* ta.po */; };
+		ED87F50D198642DE00AC520B /* ta.po in Sources */ = {isa = PBXBuildFile; fileRef = ED87F4F619863DF500AC520B /* ta.po */; };
+		ED87F50E1986430500AC520B /* ta.po in Sources */ = {isa = PBXBuildFile; fileRef = ED87F4F619863DF500AC520B /* ta.po */; };
 		ED90976D116CAD49002F7479 /* ExtImportPrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED90976B116CAD49002F7479 /* ExtImportPrefs.cpp */; };
 		ED920CAF15B19F61008CA12C /* ModulePrefs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = ED920CAE15B19F61008CA12C /* ModulePrefs.cpp */; };
+		ED924BD1182EA20500319F81 /* ogg_decoder_aspect.c in Sources */ = {isa = PBXBuildFile; fileRef = ED924BCD182EA20500319F81 /* ogg_decoder_aspect.c */; };
+		ED924BD2182EA20500319F81 /* ogg_encoder_aspect.c in Sources */ = {isa = PBXBuildFile; fileRef = ED924BCE182EA20500319F81 /* ogg_encoder_aspect.c */; };
+		ED924BD3182EA20500319F81 /* ogg_helper.c in Sources */ = {isa = PBXBuildFile; fileRef = ED924BCF182EA20500319F81 /* ogg_helper.c */; };
+		ED924BD4182EA20500319F81 /* ogg_mapping.c in Sources */ = {isa = PBXBuildFile; fileRef = ED924BD0182EA20500319F81 /* ogg_mapping.c */; };
+		ED9551A1195D95FC0027176E /* Audacity-DMG-background.png in Resources */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
+		ED9551A2195D95FC0027176E /* Audacity-DMG-background.png in Resources */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
+		ED9551A3195D95FC0027176E /* Audacity-DMG-background.png in Resources */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
+		ED9551A6195D96290027176E /* Audacity-DMG-background.png in Install background image */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
+		ED955288195DBC080027176E /* Audacity-DMG-background.png in Install background image */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
+		ED955289195DBC1E0027176E /* Audacity-DMG-background.png in Install background image */ = {isa = PBXBuildFile; fileRef = ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */; };
 		EDAD326B1544452E009C6220 /* sl.po in Sources */ = {isa = PBXBuildFile; fileRef = EDAD325515444371009C6220 /* sl.po */; };
 		EDAD326C1544452E009C6220 /* sr_RS.po in Sources */ = {isa = PBXBuildFile; fileRef = EDAD325615444371009C6220 /* sr_RS.po */; };
 		EDAD326D1544452E009C6220 /* sr_RS@latin.po in Sources */ = {isa = PBXBuildFile; fileRef = 2888493B131B6CF600B59735 /* sr_RS@latin.po */; };
@@ -1901,6 +1961,18 @@
 		EDD94EDB103CB520000873F1 /* ImportExportCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDD94ED9103CB520000873F1 /* ImportExportCommands.cpp */; };
 		EDE32600168243EF00C19E60 /* vr32.c in Sources */ = {isa = PBXBuildFile; fileRef = EDE325FF168243EF00C19E60 /* vr32.c */; };
 		EDF3B7B01588C0D50032D35F /* Paulstretch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDF3B7AF1588C0D50032D35F /* Paulstretch.cpp */; };
+		EDFCEB9C18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEB9A18894AE600C98E51 /* OpenSaveCommands.cpp */; };
+		EDFCEB9D18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEB9A18894AE600C98E51 /* OpenSaveCommands.cpp */; };
+		EDFCEB9E18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEB9A18894AE600C98E51 /* OpenSaveCommands.cpp */; };
+		EDFCEBA618894B2A00C98E51 /* RealFFTf48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA218894B2A00C98E51 /* RealFFTf48x.cpp */; };
+		EDFCEBA718894B2A00C98E51 /* SseMathFuncs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA418894B2A00C98E51 /* SseMathFuncs.cpp */; };
+		EDFCEBA818894B2A00C98E51 /* RealFFTf48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA218894B2A00C98E51 /* RealFFTf48x.cpp */; };
+		EDFCEBA918894B2A00C98E51 /* SseMathFuncs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA418894B2A00C98E51 /* SseMathFuncs.cpp */; };
+		EDFCEBAA18894B2A00C98E51 /* RealFFTf48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA218894B2A00C98E51 /* RealFFTf48x.cpp */; };
+		EDFCEBAB18894B2A00C98E51 /* SseMathFuncs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBA418894B2A00C98E51 /* SseMathFuncs.cpp */; };
+		EDFCEBB518894B9E00C98E51 /* Equalization48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBB318894B9E00C98E51 /* Equalization48x.cpp */; };
+		EDFCEBB618894B9E00C98E51 /* Equalization48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBB318894B9E00C98E51 /* Equalization48x.cpp */; };
+		EDFCEBB718894B9E00C98E51 /* Equalization48x.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EDFCEBB318894B9E00C98E51 /* Equalization48x.cpp */; };
 		EEFF576E109AB4E20032EDFE /* CaptureEvents.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EEFF576C109AB4E10032EDFE /* CaptureEvents.cpp */; };
 /* End PBXBuildFile section */
 
@@ -1914,7 +1986,7 @@
 			outputFiles = (
 				"$(DERIVED_FILES_DIR)/$(INPUT_FILE_BASE).mo",
 			);
-			script = "if [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/Languages\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   OD=\"${TARGET_BUILD_DIR}/Languages/${INPUT_FILE_BASE}\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
+			script = "# Always make sure there's an empty English folder.  Otherwise, some menu items will be translated to the next language listed\n# in System Preferences/Language & Text\n\nOD=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/en.lproj\"\nif [ ! -d \"${OD}\" ]\nthen\n   mkdir -p \"${OD}\"\n   chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n   chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\nfi\n\nif [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${INPUT_FILE_BASE}.lproj\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
 		};
 		ED663CD816543647007F53A5 /* PBXBuildRule */ = {
 			isa = PBXBuildRule;
@@ -1925,7 +1997,7 @@
 			outputFiles = (
 				"$(DERIVED_FILES_DIR)/$(INPUT_FILE_BASE).mo",
 			);
-			script = "if [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/Languages\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   OD=\"${TARGET_BUILD_DIR}/Languages/${INPUT_FILE_BASE}\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
+			script = "if [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${INPUT_FILE_BASE}.lproj\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
 		};
 		ED85B5B216A47353006DA21D /* PBXBuildRule */ = {
 			isa = PBXBuildRule;
@@ -1936,7 +2008,7 @@
 			outputFiles = (
 				"$(DERIVED_FILES_DIR)/$(INPUT_FILE_BASE).mo",
 			);
-			script = "if [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/Languages\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   OD=\"${TARGET_BUILD_DIR}/Languages/${INPUT_FILE_BASE}\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
+			script = "if [ -n \"`which msgfmt`\" ]\nthen\n   msgfmt -v -o \"${SCRIPT_OUTPUT_FILE_0}\" \"${SCRIPT_INPUT_FILE}\"\n\n   OD=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/${INPUT_FILE_BASE}.lproj\"\n   if [ ! -d \"${OD}\" ]\n   then\n      mkdir -p \"${OD}\"\n      chmod -RH \"${INSTALL_MODE_FLAG}\" \"${OD}\"\n      chown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}\"\n   fi\n\n   cp \"${SCRIPT_OUTPUT_FILE_0}\" \"${OD}/audacity.mo\"\n   chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/audacity.mo\"\n   chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/audacity.mo\"\n\n   case \"${INPUT_FILE_BASE}\" in\n      gl)\n\t\tINPUT_FILE_BASE=gl_ES\n      ;;\n   esac\n\n   if [ -e \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" ]\n   then\n      cp \"${WX_PREFIX}/share/locale/${INPUT_FILE_BASE}/LC_MESSAGES/wxstd.mo\" \"${OD}/wxstd.mo\"\n      chmod \"${INSTALL_MODE_FLAG}\" \"${OD}/wxstd.mo\"\n      chown \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${OD}/wxstd.mo\"\n   fi\n   \nelse\n   echo \"msgfmt not available\"\n   touch \"${SCRIPT_OUTPUT_FILE_0}\"\nfi";
 		};
 /* End PBXBuildRule section */
 
@@ -2018,13 +2090,6 @@
 			remoteGlobalIDString = 17073F610988E121008541CC;
 			remoteInfo = libid3tag;
 		};
-		17C99D50098970800041B1BC /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1790ABE309883346008A330A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 17073F470988E04A008541CC;
-			remoteInfo = expat;
-		};
 		17C99D52098970800041B1BC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1790ABE309883346008A330A /* Project object */;
@@ -2053,6 +2118,34 @@
 			remoteGlobalIDString = 28501EAF0CEED1F00029ABAA;
 			remoteInfo = libvamp;
 		};
+		285B11841833D0F10073B36C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1790ABE309883346008A330A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28FADDCA1833C3C500BA4141;
+			remoteInfo = expat;
+		};
+		28640879181CE78E00CC4E2C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1790ABE309883346008A330A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2862299E181CE4B600E1AD1A;
+			remoteInfo = lv2;
+		};
+		28B3C5DA1833D2390024BE6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1790ABE309883346008A330A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28FADDCA1833C3C500BA4141;
+			remoteInfo = expat;
+		};
+		28B3C5DD1833D2490024BE6D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1790ABE309883346008A330A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 28FADDCA1833C3C500BA4141;
+			remoteInfo = expat;
+		};
 		28E237260E515E1300281398 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 1790ABE309883346008A330A /* Project object */;
@@ -2080,13 +2173,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = ED2706F30EF9C3C6007D4FFD;
 			remoteInfo = libsbsms;
-		};
-		ED663B5916543647007F53A5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1790ABE309883346008A330A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 17073F470988E04A008541CC;
-			remoteInfo = expat;
 		};
 		ED663B5B16543647007F53A5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -2220,13 +2306,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = ED663B3B16543581007F53A5;
 			remoteInfo = libsamplerate;
-		};
-		ED85B43216A47353006DA21D /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1790ABE309883346008A330A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 17073F470988E04A008541CC;
-			remoteInfo = expat;
 		};
 		ED85B43416A47353006DA21D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -2364,23 +2443,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		28006FF9132C15E800BD34D7 /* Install instructions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 8;
-			dstPath = "";
-			dstSubfolderSpec = 0;
-			files = (
-				28006FFC132C169700BD34D7 /* Install.txt in Install instructions */,
-			);
-			name = "Install instructions";
-			runOnlyForDeploymentPostprocessing = 1;
-		};
 		2892CE28131AFB1900E1E17D /* Install miscellany */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 8;
 			dstPath = /Audacity;
 			dstSubfolderSpec = 0;
 			files = (
+				28006FFC132C169700BD34D7 /* Install.txt in Install miscellany */,
 				2892CE24131AFAE200E1E17D /* LICENSE.txt in Install miscellany */,
 				2892CE25131AFAEF00E1E17D /* README.txt in Install miscellany */,
 			);
@@ -2415,21 +2484,11 @@
 			dstPath = /Audacity;
 			dstSubfolderSpec = 0;
 			files = (
+				ED663CD616543647007F53A5 /* Install.txt in Install miscellany */,
 				ED663CD316543647007F53A5 /* LICENSE.txt in Install miscellany */,
 				ED663CD416543647007F53A5 /* README.txt in Install miscellany */,
 			);
 			name = "Install miscellany";
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-		ED663CD516543647007F53A5 /* Install instructions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 8;
-			dstPath = "";
-			dstSubfolderSpec = 0;
-			files = (
-				ED663CD616543647007F53A5 /* Install.txt in Install instructions */,
-			);
-			name = "Install instructions";
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 		ED85B5AA16A47353006DA21D /* Install wrapper */ = {
@@ -2449,40 +2508,50 @@
 			dstPath = /Audacity;
 			dstSubfolderSpec = 0;
 			files = (
+				ED85B5B016A47353006DA21D /* Install.txt in Install miscellany */,
 				ED85B5AD16A47353006DA21D /* LICENSE.txt in Install miscellany */,
 				ED85B5AE16A47353006DA21D /* README.txt in Install miscellany */,
 			);
 			name = "Install miscellany";
 			runOnlyForDeploymentPostprocessing = 1;
 		};
-		ED85B5AF16A47353006DA21D /* Install instructions */ = {
+		ED95519E195D956F0027176E /* Install background image */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = .background;
+			dstSubfolderSpec = 0;
+			files = (
+				ED9551A6195D96290027176E /* Audacity-DMG-background.png in Install background image */,
+			);
+			name = "Install background image";
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		ED95528A195DBC3C0027176E /* Install background image */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 8;
 			dstPath = "";
-			dstSubfolderSpec = 0;
+			dstSubfolderSpec = 7;
 			files = (
-				ED85B5B016A47353006DA21D /* Install.txt in Install instructions */,
+				ED955289195DBC1E0027176E /* Audacity-DMG-background.png in Install background image */,
 			);
-			name = "Install instructions";
+			name = "Install background image";
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		ED95528B195DBC3C0027176E /* Install background image */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				ED955288195DBC080027176E /* Audacity-DMG-background.png in Install background image */,
+			);
+			name = "Install background image";
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		17048267098C0F5F00824C66 /* mad.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = mad.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F580988D6A9008541CC /* xmlparse.c */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = xmlparse.c; sourceTree = "<group>"; tabWidth = 3; };
-		17072F590988D6A9008541CC /* xmlparse.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = xmlparse.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F5B0988D6A9008541CC /* ascii.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ascii.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F5C0988D6A9008541CC /* asciitab.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = asciitab.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F5E0988D6A9008541CC /* iasciitab.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = iasciitab.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F5F0988D6A9008541CC /* latin1tab.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = latin1tab.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F600988D6A9008541CC /* nametab.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = nametab.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F610988D6A9008541CC /* utf8tab.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = utf8tab.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F620988D6A9008541CC /* xmldef.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = xmldef.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F630988D6A9008541CC /* xmlrole.c */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = xmlrole.c; sourceTree = "<group>"; tabWidth = 3; };
-		17072F640988D6A9008541CC /* xmlrole.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = xmlrole.h; sourceTree = "<group>"; tabWidth = 3; };
-		17072F650988D6A9008541CC /* xmltok.c */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = xmltok.c; sourceTree = "<group>"; tabWidth = 3; };
-		17072F660988D6A9008541CC /* xmltok.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = xmltok.h; sourceTree = "<group>"; tabWidth = 3; };
 		17072F810988D6A9008541CC /* compat.c */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = compat.c; sourceTree = "<group>"; tabWidth = 3; };
 		17072F830988D6A9008541CC /* compat.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = compat.h; sourceTree = "<group>"; tabWidth = 3; };
 		17072F850988D6A9008541CC /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = config.h; sourceTree = "<group>"; tabWidth = 3; };
@@ -2709,7 +2778,6 @@
 		170738410988D6B0008541CC /* TDStretch.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = TDStretch.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		170738420988D6B0008541CC /* TDStretch.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = TDStretch.h; sourceTree = "<group>"; tabWidth = 3; };
 		17073EE80988DBDD008541CC /* libportsmf.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libportsmf.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		17073F480988E04A008541CC /* libexpat.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libexpat.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		17073F620988E121008541CC /* libid3tag.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libid3tag.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		17073FC40988E561008541CC /* libmad.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libmad.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		17073FFE0988EA60008541CC /* libogg.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libogg.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2718,7 +2786,6 @@
 		1707407A0988F1BB008541CC /* libsoundtouch.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsoundtouch.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		170740960988F2F7008541CC /* libportmixer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libportmixer.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		170740D40988F820008541CC /* libvorbis.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libvorbis.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		17190D78098A439D004583C6 /* cpu_detect_x86_gcc.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = cpu_detect_x86_gcc.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		174D9026098C78AF00D5909F /* CommandManager.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = CommandManager.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		174D9027098C78AF00D5909F /* CommandManager.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = CommandManager.h; sourceTree = "<group>"; tabWidth = 3; };
 		174D902A098C78AF00D5909F /* Keyboard.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = Keyboard.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -2918,7 +2985,6 @@
 		1790B08F09883BFD008A330A /* ImportRaw.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ImportRaw.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B09009883BFD008A330A /* RawAudioGuess.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = RawAudioGuess.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B09109883BFD008A330A /* RawAudioGuess.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = RawAudioGuess.h; sourceTree = "<group>"; tabWidth = 3; };
-		1790B09509883BFD008A330A /* lame.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = lame.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B09909883BFD008A330A /* Internat.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = Internat.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B09A09883BFD008A330A /* Internat.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = Internat.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B09B09883BFD008A330A /* LabelTrack.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = LabelTrack.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -2988,8 +3054,6 @@
 		1790B0EF09883BFD008A330A /* TrackPanelAx.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = TrackPanelAx.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B0F209883BFD008A330A /* UndoManager.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = UndoManager.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B0F309883BFD008A330A /* UndoManager.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = UndoManager.h; sourceTree = "<group>"; tabWidth = 3; };
-		1790B0F409883BFD008A330A /* UploadDialog.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = UploadDialog.cpp; sourceTree = "<group>"; tabWidth = 3; };
-		1790B0F509883BFD008A330A /* UploadDialog.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = UploadDialog.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B0F609883BFD008A330A /* ViewInfo.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ViewInfo.h; sourceTree = "<group>"; tabWidth = 3; };
 		1790B0F709883BFD008A330A /* VoiceKey.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = VoiceKey.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		1790B0F809883BFD008A330A /* VoiceKey.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = VoiceKey.h; sourceTree = "<group>"; tabWidth = 3; };
@@ -3068,8 +3132,11 @@
 		2800FE070FF322D4005CA9E5 /* libportmidi.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libportmidi.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		2800FE350FF32566005CA9E5 /* MidiIOPrefs.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = MidiIOPrefs.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		2800FE360FF32566005CA9E5 /* MidiIOPrefs.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = MidiIOPrefs.h; sourceTree = "<group>"; tabWidth = 3; };
+		280112791943EE0E00D98A16 /* HelpSystem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = HelpSystem.cpp; sourceTree = "<group>"; };
+		2801127A1943EE0E00D98A16 /* HelpSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HelpSystem.h; sourceTree = "<group>"; };
 		2801A6430BF9268700648258 /* ImportQT.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ImportQT.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		2801A6440BF9268700648258 /* ImportQT.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ImportQT.h; sourceTree = "<group>"; tabWidth = 3; };
+		2803810018313B070078452A /* lame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lame.h; path = lame/lame/lame.h; sourceTree = "<group>"; };
 		2808025B0F32C11F0021001D /* bug.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = bug.lsp; path = ../nyquist/bug.lsp; sourceTree = SOURCE_ROOT; };
 		2808025C0F32C11F0021001D /* dspprims.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = dspprims.lsp; path = ../nyquist/dspprims.lsp; sourceTree = SOURCE_ROOT; };
 		2808025D0F32C11F0021001D /* envelopes.lsp */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text; name = envelopes.lsp; path = ../nyquist/envelopes.lsp; sourceTree = SOURCE_ROOT; };
@@ -3120,6 +3187,8 @@
 		28105DA00AD09FC500BB4269 /* px_mac_coreaudio.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = px_mac_coreaudio.c; sourceTree = "<group>"; tabWidth = 3; };
 		28105DA10AD09FC500BB4269 /* px_mixer.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = px_mixer.c; sourceTree = "<group>"; tabWidth = 3; };
 		28105DA20AD09FC500BB4269 /* px_mixer.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = px_mixer.h; sourceTree = "<group>"; tabWidth = 3; };
+		2810644A1818EEB5004F678B /* cpu_detect_x86.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cpu_detect_x86.cpp; sourceTree = "<group>"; };
+		2810644C1818EED3004F678B /* cpu_detect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cpu_detect.h; path = "../lib-src/soundtouch/source/SoundTouch/cpu_detect.h"; sourceTree = SOURCE_ROOT; };
 		2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug_Shared.xcconfig; sourceTree = "<group>"; };
 		2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug_Static.xcconfig; sourceTree = "<group>"; };
 		2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Release_Shared.xcconfig; sourceTree = "<group>"; };
@@ -3128,13 +3197,13 @@
 		2816372D0BAE3B6C0079C746 /* LinkingHtmlWindow.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = LinkingHtmlWindow.h; sourceTree = "<group>"; tabWidth = 3; };
 		282D474A0B9E8D900034BC49 /* Snap.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = Snap.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		282D474B0B9E8D900034BC49 /* Snap.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = Snap.h; sourceTree = "<group>"; tabWidth = 3; };
-		28307AA60E163AF800A553C7 /* expat.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = expat.h; sourceTree = "<group>"; tabWidth = 3; };
 		283135EA0DFB9D110076D551 /* ImportFFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ImportFFmpeg.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		283135EB0DFB9D110076D551 /* ImportFFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ImportFFmpeg.h; sourceTree = "<group>"; tabWidth = 3; };
 		283135FD0DFBA2E80076D551 /* FFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = FFmpeg.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		283135FE0DFBA2E80076D551 /* FFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = FFmpeg.h; sourceTree = "<group>"; tabWidth = 3; };
 		283506280A3A88ED00EB1EBD /* pa_unix_util.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = pa_unix_util.c; sourceTree = "<group>"; tabWidth = 3; };
 		283506290A3A88ED00EB1EBD /* pa_unix_util.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = pa_unix_util.h; sourceTree = "<group>"; tabWidth = 3; };
+		2835D8D01833D54100CF5EFF /* expat_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = expat_config.h; path = expat/expat_config.h; sourceTree = "<group>"; };
 		283A11A40A2C0DE7004372C4 /* broadcast.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = broadcast.c; sourceTree = "<group>"; tabWidth = 3; };
 		283A11A60A2C0E15004372C4 /* ShuttleGui.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ShuttleGui.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		283A11A70A2C0E15004372C4 /* ShuttleGui.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ShuttleGui.h; sourceTree = "<group>"; tabWidth = 3; };
@@ -3453,6 +3522,43 @@
 		2860BA230E0F0D8600A13878 /* TimerRecordDialog.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = TimerRecordDialog.h; sourceTree = "<group>"; tabWidth = 3; };
 		2860BA260E0F0DD800A13878 /* ExportFFmpeg.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ExportFFmpeg.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		2860BA270E0F0DD800A13878 /* ExportFFmpeg.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ExportFFmpeg.h; sourceTree = "<group>"; tabWidth = 3; };
+		286229B0181CE4B600E1AD1A /* liblv2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblv2.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		286229B1181CE51800E1AD1A /* lilv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lilv.h; path = lv2/lilv/lilv/lilv.h; sourceTree = "<group>"; };
+		286229B2181CE51800E1AD1A /* collections.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = collections.c; path = lv2/lilv/src/collections.c; sourceTree = "<group>"; };
+		286229B3181CE51800E1AD1A /* instance.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = instance.c; path = lv2/lilv/src/instance.c; sourceTree = "<group>"; };
+		286229B4181CE51800E1AD1A /* lib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = lib.c; path = lv2/lilv/src/lib.c; sourceTree = "<group>"; };
+		286229B5181CE51800E1AD1A /* lilv_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lilv_internal.h; path = lv2/lilv/src/lilv_internal.h; sourceTree = "<group>"; };
+		286229B6181CE51800E1AD1A /* node.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = node.c; path = lv2/lilv/src/node.c; sourceTree = "<group>"; };
+		286229B7181CE51800E1AD1A /* plugin.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = plugin.c; path = lv2/lilv/src/plugin.c; sourceTree = "<group>"; };
+		286229B8181CE51800E1AD1A /* pluginclass.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pluginclass.c; path = lv2/lilv/src/pluginclass.c; sourceTree = "<group>"; };
+		286229B9181CE51800E1AD1A /* port.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = port.c; path = lv2/lilv/src/port.c; sourceTree = "<group>"; };
+		286229BA181CE51800E1AD1A /* query.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = query.c; path = lv2/lilv/src/query.c; sourceTree = "<group>"; };
+		286229BB181CE51800E1AD1A /* scalepoint.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = scalepoint.c; path = lv2/lilv/src/scalepoint.c; sourceTree = "<group>"; };
+		286229BC181CE51800E1AD1A /* state.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = state.c; path = lv2/lilv/src/state.c; sourceTree = "<group>"; };
+		286229BD181CE51800E1AD1A /* ui.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ui.c; path = lv2/lilv/src/ui.c; sourceTree = "<group>"; };
+		286229BE181CE51800E1AD1A /* util.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = util.c; path = lv2/lilv/src/util.c; sourceTree = "<group>"; };
+		286229BF181CE51800E1AD1A /* world.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = world.c; path = lv2/lilv/src/world.c; sourceTree = "<group>"; };
+		286229C0181CE51800E1AD1A /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = lv2/lilv/src/zix/common.h; sourceTree = "<group>"; };
+		286229C1181CE51800E1AD1A /* tree.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = tree.c; path = lv2/lilv/src/zix/tree.c; sourceTree = "<group>"; };
+		286229C2181CE51800E1AD1A /* tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tree.h; path = lv2/lilv/src/zix/tree.h; sourceTree = "<group>"; };
+		286229D5181CE5EC00E1AD1A /* serd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = serd.h; path = lv2/serd/serd/serd.h; sourceTree = "<group>"; };
+		286229D6181CE5EC00E1AD1A /* env.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = env.c; path = lv2/serd/src/env.c; sourceTree = "<group>"; };
+		286229D7181CE5EC00E1AD1A /* node.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = node.c; path = lv2/serd/src/node.c; sourceTree = "<group>"; };
+		286229D8181CE5EC00E1AD1A /* reader.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = reader.c; path = lv2/serd/src/reader.c; sourceTree = "<group>"; };
+		286229D9181CE5EC00E1AD1A /* serd_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = serd_internal.h; path = lv2/serd/src/serd_internal.h; sourceTree = "<group>"; };
+		286229DA181CE5EC00E1AD1A /* string.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = string.c; path = lv2/serd/src/string.c; sourceTree = "<group>"; };
+		286229DB181CE5EC00E1AD1A /* uri.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = uri.c; path = lv2/serd/src/uri.c; sourceTree = "<group>"; };
+		286229DC181CE5EC00E1AD1A /* writer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = writer.c; path = lv2/serd/src/writer.c; sourceTree = "<group>"; };
+		286229E5181CE62A00E1AD1A /* sord.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sord.h; path = lv2/sord/sord/sord.h; sourceTree = "<group>"; };
+		286229E6181CE62A00E1AD1A /* sord_internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sord_internal.h; path = lv2/sord/src/sord_internal.h; sourceTree = "<group>"; };
+		286229E7181CE62A00E1AD1A /* sord.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sord.c; path = lv2/sord/src/sord.c; sourceTree = "<group>"; };
+		286229E8181CE62A00E1AD1A /* syntax.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = syntax.c; path = lv2/sord/src/syntax.c; sourceTree = "<group>"; };
+		2862439F181CE65500E1AD1A /* sratom_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sratom_config.h; path = lv2/sratom/build/sratom_config.h; sourceTree = "<group>"; };
+		286243A0181CE65500E1AD1A /* sratom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sratom.h; path = lv2/sratom/sratom/sratom.h; sourceTree = "<group>"; };
+		286243A1181CE65500E1AD1A /* sratom.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sratom.c; path = lv2/sratom/src/sratom.c; sourceTree = "<group>"; };
+		28640873181CE74100CC4E2C /* sord_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sord_config.h; path = lv2/sord/build/sord_config.h; sourceTree = "<group>"; };
+		28640875181CE75800CC4E2C /* serd_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = serd_config.h; path = lv2/serd/build/serd_config.h; sourceTree = "<group>"; };
+		28640877181CE77200CC4E2C /* lilv_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = lilv_config.h; path = lv2/lilv/build/lilv_config.h; sourceTree = "<group>"; };
 		287DBE830F3F6B2700C5BBED /* audio_detect.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = audio_detect.c; sourceTree = "<group>"; tabWidth = 3; };
 		287DBE840F3F6B2700C5BBED /* chunk.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = chunk.c; sourceTree = "<group>"; tabWidth = 3; };
 		287DBE850F3F6B2700C5BBED /* ima_oki_adpcm.c */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.c; path = ima_oki_adpcm.c; sourceTree = "<group>"; tabWidth = 3; };
@@ -3607,6 +3713,8 @@
 		28BD8AAE101DF4C600686679 /* GetAllMenuCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = GetAllMenuCommands.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		28BD8AAF101DF4C600686679 /* GetAllMenuCommands.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = GetAllMenuCommands.h; sourceTree = "<group>"; tabWidth = 3; };
 		28BD8AB0101DF4C600686679 /* Validators.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = Validators.h; sourceTree = "<group>"; tabWidth = 3; };
+		28C3946B1818356800FDDAC9 /* AudacityLogger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = AudacityLogger.cpp; sourceTree = "<group>"; };
+		28C3946C1818356800FDDAC9 /* AudacityLogger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudacityLogger.h; sourceTree = "<group>"; };
 		28C816B81312555B0035BB10 /* Audacity.sh */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text.script.sh; name = Audacity.sh; path = mac/Audacity.sh; sourceTree = "<group>"; };
 		28CCDCFF0F939FD70081F2FC /* FileHistory.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = FileHistory.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		28CCDD040F93A0B20081F2FC /* FileHistory.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = FileHistory.h; sourceTree = "<group>"; tabWidth = 3; };
@@ -3873,6 +3981,10 @@
 		28F1D81A0A2D0018005506A7 /* ExpandingToolBar.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ExpandingToolBar.h; sourceTree = "<group>"; tabWidth = 3; };
 		28F1D81B0A2D0019005506A7 /* ImageRoll.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ImageRoll.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		28F1D81C0A2D0019005506A7 /* ImageRoll.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ImageRoll.h; sourceTree = "<group>"; tabWidth = 3; };
+		28F2CED0181867BB00573D61 /* numformatter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = numformatter.cpp; sourceTree = "<group>"; };
+		28F2CED1181867BB00573D61 /* numformatter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = numformatter.h; sourceTree = "<group>"; };
+		28F2CED2181867BB00573D61 /* valnum.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = valnum.cpp; sourceTree = "<group>"; };
+		28F2CED3181867BB00573D61 /* valnum.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = valnum.h; sourceTree = "<group>"; };
 		28F3A3F60E28289500729866 /* algrd_internal.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; name = algrd_internal.h; path = portsmf/algrd_internal.h; sourceTree = "<group>"; tabWidth = 3; };
 		28F3A3F70E28289500729866 /* algsmfrd_internal.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; name = algsmfrd_internal.h; path = portsmf/algsmfrd_internal.h; sourceTree = "<group>"; tabWidth = 3; };
 		28F3A3F80E28289500729866 /* allegro.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; name = allegro.cpp; path = portsmf/allegro.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -3887,6 +3999,29 @@
 		28F3A4010E28289500729866 /* strparse.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; name = strparse.h; path = portsmf/strparse.h; sourceTree = "<group>"; tabWidth = 3; };
 		28F5C10F0BE5886A00D17341 /* FileDialogPrivate.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = FileDialogPrivate.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		28F5C1100BE5886A00D17341 /* FileDialogPrivate.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = FileDialogPrivate.h; sourceTree = "<group>"; tabWidth = 3; };
+		28F67173197DFA1C00075C32 /* FormatClassifier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = FormatClassifier.cpp; sourceTree = "<group>"; };
+		28F67174197DFA1C00075C32 /* FormatClassifier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = FormatClassifier.h; sourceTree = "<group>"; };
+		28F67175197DFA1C00075C32 /* MultiFormatReader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MultiFormatReader.cpp; sourceTree = "<group>"; };
+		28F67176197DFA1C00075C32 /* MultiFormatReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MultiFormatReader.h; sourceTree = "<group>"; };
+		28F67177197DFA1C00075C32 /* SpecPowerMeter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SpecPowerMeter.cpp; sourceTree = "<group>"; };
+		28F67178197DFA1C00075C32 /* SpecPowerMeter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SpecPowerMeter.h; sourceTree = "<group>"; };
+		28FADDEF1833C3C500BA4141 /* libexpat.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libexpat.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		28FADEDC1833C78C00BA4141 /* ascii.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ascii.h; sourceTree = "<group>"; };
+		28FADEDD1833C78C00BA4141 /* asciitab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = asciitab.h; sourceTree = "<group>"; };
+		28FADEDF1833C78C00BA4141 /* expat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expat.h; sourceTree = "<group>"; };
+		28FADEE01833C78C00BA4141 /* expat_external.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = expat_external.h; sourceTree = "<group>"; };
+		28FADEE51833C78C00BA4141 /* internal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = internal.h; sourceTree = "<group>"; };
+		28FADEE61833C78C00BA4141 /* latin1tab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = latin1tab.h; sourceTree = "<group>"; };
+		28FADEEB1833C78C00BA4141 /* nametab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nametab.h; sourceTree = "<group>"; };
+		28FADEEC1833C78C00BA4141 /* utf8tab.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = utf8tab.h; sourceTree = "<group>"; };
+		28FADEEE1833C78C00BA4141 /* xmlparse.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmlparse.c; sourceTree = "<group>"; };
+		28FADEEF1833C78C00BA4141 /* xmlrole.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmlrole.c; sourceTree = "<group>"; };
+		28FADEF01833C78C00BA4141 /* xmlrole.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmlrole.h; sourceTree = "<group>"; };
+		28FADEF11833C78C00BA4141 /* xmltok.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmltok.c; sourceTree = "<group>"; };
+		28FADEF21833C78C00BA4141 /* xmltok.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmltok.h; sourceTree = "<group>"; };
+		28FADEF31833C78C00BA4141 /* xmltok_impl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmltok_impl.c; sourceTree = "<group>"; };
+		28FADEF41833C78C00BA4141 /* xmltok_impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = xmltok_impl.h; sourceTree = "<group>"; };
+		28FADEF51833C78C00BA4141 /* xmltok_ns.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = xmltok_ns.c; sourceTree = "<group>"; };
 		28FB121F0A3790A8006F0917 /* MacroMagic.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = MacroMagic.h; sourceTree = "<group>"; tabWidth = 3; };
 		28FB12230A3790DF006F0917 /* AllThemeResources.h */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = AllThemeResources.h; sourceTree = "<group>"; tabWidth = 3; };
 		28FC1AF90A47762C00A188AE /* WrappedType.cpp */ = {isa = PBXFileReference; fileEncoding = 5; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = WrappedType.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -3902,8 +4037,6 @@
 		8406A93712D0F2510011EA01 /* EQDefaultCurves.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = EQDefaultCurves.xml; path = ../presets/EQDefaultCurves.xml; sourceTree = SOURCE_ROOT; };
 		8484F31213086237002DF7F0 /* DeviceManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = DeviceManager.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		8484F31313086237002DF7F0 /* DeviceManager.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = DeviceManager.h; sourceTree = "<group>"; tabWidth = 3; };
-		ED05D1000E50AD5700CC4BD3 /* audiomixerreader.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = audiomixerreader.cpp; sourceTree = "<group>"; tabWidth = 3; };
-		ED05D1010E50AD5700CC4BD3 /* audiomixerreader.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = audiomixerreader.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1020E50AD5700CC4BD3 /* audioreader.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = audioreader.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1030E50AD5700CC4BD3 /* audioreader.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = audioreader.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1140E50AD5700CC4BD3 /* comp_chroma.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = comp_chroma.cpp; sourceTree = "<group>"; tabWidth = 3; };
@@ -3920,8 +4053,6 @@
 		ED05D1240E50AD5700CC4BD3 /* regression.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = regression.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1250E50AD5700CC4BD3 /* sautils.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = sautils.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1260E50AD5700CC4BD3 /* sautils.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = sautils.h; sourceTree = "<group>"; tabWidth = 3; };
-		ED05D1270E50AD5700CC4BD3 /* scorealign-glue.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = "scorealign-glue.cpp"; sourceTree = "<group>"; tabWidth = 3; };
-		ED05D1280E50AD5700CC4BD3 /* scorealign-glue.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = "scorealign-glue.h"; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D1290E50AD5700CC4BD3 /* scorealign.cpp */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = scorealign.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		ED05D12A0E50AD5700CC4BD3 /* scorealign.h */ = {isa = PBXFileReference; fileEncoding = 30; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = scorealign.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED152123163C220300451B5F /* lsr.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = lsr.c; sourceTree = "<group>"; };
@@ -3974,7 +4105,6 @@
 		ED3D7FEF0DF73889000F43E3 /* EffectManager.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = EffectManager.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED64C821124567ED007CF2FC /* ScoreAlignDialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ScoreAlignDialog.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		ED64C822124567ED007CF2FC /* ScoreAlignDialog.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ScoreAlignDialog.h; sourceTree = "<group>"; tabWidth = 3; };
-		ED64C82412456831007CF2FC /* ScoreAlignParams.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ScoreAlignParams.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED663B2716543501007F53A5 /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = common.h; path = libsamplerate/src/common.h; sourceTree = "<group>"; };
 		ED663B2916543501007F53A5 /* fastest_coeffs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = fastest_coeffs.h; path = libsamplerate/src/fastest_coeffs.h; sourceTree = "<group>"; };
 		ED663B2A16543501007F53A5 /* float_cast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = float_cast.h; path = libsamplerate/src/float_cast.h; sourceTree = "<group>"; };
@@ -3991,10 +4121,16 @@
 		ED85B3CF16A46DDA006DA21D /* hr.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = hr.po; path = ../locale/hr.po; sourceTree = SOURCE_ROOT; };
 		ED85B5B816A47353006DA21D /* Audacity.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Audacity.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED85B5BA16A47353006DA21D /* Info copy.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "Info copy.plist"; path = "mac/Info copy.plist"; sourceTree = "<group>"; };
+		ED87F4F619863DF500AC520B /* ta.po */ = {isa = PBXFileReference; explicitFileType = sourcecode; fileEncoding = 4; name = ta.po; path = ../locale/ta.po; sourceTree = SOURCE_ROOT; };
 		ED90976B116CAD49002F7479 /* ExtImportPrefs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; path = ExtImportPrefs.cpp; sourceTree = "<group>"; tabWidth = 3; };
 		ED90976C116CAD49002F7479 /* ExtImportPrefs.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; path = ExtImportPrefs.h; sourceTree = "<group>"; tabWidth = 3; };
 		ED920CAD15B19F61008CA12C /* ModulePrefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModulePrefs.h; sourceTree = "<group>"; };
 		ED920CAE15B19F61008CA12C /* ModulePrefs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModulePrefs.cpp; sourceTree = "<group>"; };
+		ED924BCD182EA20500319F81 /* ogg_decoder_aspect.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ogg_decoder_aspect.c; sourceTree = "<group>"; };
+		ED924BCE182EA20500319F81 /* ogg_encoder_aspect.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ogg_encoder_aspect.c; sourceTree = "<group>"; };
+		ED924BCF182EA20500319F81 /* ogg_helper.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ogg_helper.c; sourceTree = "<group>"; };
+		ED924BD0182EA20500319F81 /* ogg_mapping.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ogg_mapping.c; sourceTree = "<group>"; };
+		ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Audacity-DMG-background.png"; sourceTree = "<group>"; };
 		EDAD325515444371009C6220 /* sl.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sl.po; path = ../locale/sl.po; sourceTree = SOURCE_ROOT; };
 		EDAD325615444371009C6220 /* sr_RS.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sr_RS.po; path = ../locale/sr_RS.po; sourceTree = SOURCE_ROOT; };
 		EDAD325715444372009C6220 /* sv.po */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = sv.po; path = ../locale/sv.po; sourceTree = SOURCE_ROOT; };
@@ -4008,6 +4144,14 @@
 		EDE325FF168243EF00C19E60 /* vr32.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = vr32.c; sourceTree = "<group>"; };
 		EDF3B7AE1588C0D50032D35F /* Paulstretch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Paulstretch.h; path = effects/Paulstretch.h; sourceTree = "<group>"; };
 		EDF3B7AF1588C0D50032D35F /* Paulstretch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Paulstretch.cpp; path = effects/Paulstretch.cpp; sourceTree = "<group>"; };
+		EDFCEB9A18894AE600C98E51 /* OpenSaveCommands.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenSaveCommands.cpp; sourceTree = "<group>"; };
+		EDFCEB9B18894AE600C98E51 /* OpenSaveCommands.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenSaveCommands.h; sourceTree = "<group>"; };
+		EDFCEBA218894B2A00C98E51 /* RealFFTf48x.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RealFFTf48x.cpp; sourceTree = "<group>"; };
+		EDFCEBA318894B2A00C98E51 /* RealFFTf48x.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RealFFTf48x.h; sourceTree = "<group>"; };
+		EDFCEBA418894B2A00C98E51 /* SseMathFuncs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = SseMathFuncs.cpp; sourceTree = "<group>"; };
+		EDFCEBA518894B2A00C98E51 /* SseMathFuncs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SseMathFuncs.h; sourceTree = "<group>"; };
+		EDFCEBB318894B9E00C98E51 /* Equalization48x.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Equalization48x.cpp; sourceTree = "<group>"; };
+		EDFCEBB418894B9E00C98E51 /* Equalization48x.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Equalization48x.h; sourceTree = "<group>"; };
 		EEFF576C109AB4E10032EDFE /* CaptureEvents.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.cpp.cpp; name = CaptureEvents.cpp; path = ../src/CaptureEvents.cpp; sourceTree = SOURCE_ROOT; tabWidth = 3; };
 		EEFF576D109AB4E20032EDFE /* CaptureEvents.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 3; lastKnownFileType = sourcecode.c.h; name = CaptureEvents.h; path = ../src/CaptureEvents.h; sourceTree = SOURCE_ROOT; tabWidth = 3; };
 /* End PBXFileReference section */
@@ -4035,6 +4179,8 @@
 				28E2373A0E5163A200281398 /* libscorealign.a in Frameworks */,
 				ED2707460EF9C550007D4FFD /* libsbsms.a in Frameworks */,
 				2800FE230FF32381005CA9E5 /* libportmidi.a in Frameworks */,
+				284B8E27181CFB1000304E49 /* liblv2.a in Frameworks */,
+				285B11861833D14D0073B36C /* libexpat.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4081,6 +4227,8 @@
 				ED663CC916543647007F53A5 /* libscorealign.a in Frameworks */,
 				ED663CCA16543647007F53A5 /* libsbsms.a in Frameworks */,
 				ED663CCB16543647007F53A5 /* libportmidi.a in Frameworks */,
+				284B8E2A181CFB1200304E49 /* liblv2.a in Frameworks */,
+				28B3C5DC1833D23E0024BE6D /* libexpat.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4106,6 +4254,8 @@
 				ED85B5A316A47353006DA21D /* libscorealign.a in Frameworks */,
 				ED85B5A416A47353006DA21D /* libsbsms.a in Frameworks */,
 				ED85B5A516A47353006DA21D /* libportmidi.a in Frameworks */,
+				284B8E29181CFB1100304E49 /* liblv2.a in Frameworks */,
+				28B3C5DF1833D24E0024BE6D /* libexpat.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4122,8 +4272,9 @@
 		17072F220988D4F4008541CC /* lib-src */ = {
 			isa = PBXGroup;
 			children = (
-				17072F4C0988D6A9008541CC /* expat */,
 				283B3D3E0BC21EBE00FA01D5 /* FileDialog */,
+				28FADDC71833C38F00BA4141 /* expat */,
+				280380FC18313AE40078452A /* lame */,
 				2880529A0DEA71B000671EA4 /* lib-widget-extra */,
 				176EE9E209A2EF1000188F3B /* libflac */,
 				17072F6A0988D6A9008541CC /* libid3tag */,
@@ -4137,6 +4288,7 @@
 				ED151F3F163BFD0400451B5F /* libsoxr */,
 				28501EAC0CEED0740029ABAA /* libvamp */,
 				1707357C0988D6AD008541CC /* libvorbis */,
+				28622998181CE35900E1AD1A /* lv2 */,
 				EDBFAD18177E5424004CC1C1 /* mod-nyq-bench */,
 				2844B48E0DEA66900087C656 /* mod-script-pipe */,
 				28E821F50A39FC1300DCE280 /* portaudio-v19 */,
@@ -4150,42 +4302,6 @@
 			name = "lib-src";
 			path = "../lib-src";
 			sourceTree = SOURCE_ROOT;
-		};
-		17072F4C0988D6A9008541CC /* expat */ = {
-			isa = PBXGroup;
-			children = (
-				17072F560988D6A9008541CC /* xmlparse */,
-				17072F5A0988D6A9008541CC /* xmltok */,
-			);
-			path = expat;
-			sourceTree = "<group>";
-		};
-		17072F560988D6A9008541CC /* xmlparse */ = {
-			isa = PBXGroup;
-			children = (
-				17072F580988D6A9008541CC /* xmlparse.c */,
-				17072F590988D6A9008541CC /* xmlparse.h */,
-			);
-			path = xmlparse;
-			sourceTree = "<group>";
-		};
-		17072F5A0988D6A9008541CC /* xmltok */ = {
-			isa = PBXGroup;
-			children = (
-				17072F5B0988D6A9008541CC /* ascii.h */,
-				17072F5C0988D6A9008541CC /* asciitab.h */,
-				17072F5E0988D6A9008541CC /* iasciitab.h */,
-				17072F5F0988D6A9008541CC /* latin1tab.h */,
-				17072F600988D6A9008541CC /* nametab.h */,
-				17072F610988D6A9008541CC /* utf8tab.h */,
-				17072F620988D6A9008541CC /* xmldef.h */,
-				17072F630988D6A9008541CC /* xmlrole.c */,
-				17072F640988D6A9008541CC /* xmlrole.h */,
-				17072F650988D6A9008541CC /* xmltok.c */,
-				17072F660988D6A9008541CC /* xmltok.h */,
-			);
-			path = xmltok;
-			sourceTree = "<group>";
 		};
 		17072F6A0988D6A9008541CC /* libid3tag */ = {
 			isa = PBXGroup;
@@ -4580,6 +4696,7 @@
 			isa = PBXGroup;
 			children = (
 				170737EB0988D6AF008541CC /* BPMDetect.h */,
+				2810644C1818EED3004F678B /* cpu_detect.h */,
 				170737ED0988D6AF008541CC /* FIFOSampleBuffer.h */,
 				170737EE0988D6AF008541CC /* FIFOSamplePipe.h */,
 				170737F20988D6AF008541CC /* SoundTouch.h */,
@@ -4601,6 +4718,7 @@
 			children = (
 				1707382D0988D6B0008541CC /* AAFilter.cpp */,
 				1707382E0988D6B0008541CC /* AAFilter.h */,
+				2810644A1818EEB5004F678B /* cpu_detect_x86.cpp */,
 				170738330988D6B0008541CC /* FIFOSampleBuffer.cpp */,
 				170738340988D6B0008541CC /* FIRFilter.cpp */,
 				170738350988D6B0008541CC /* FIRFilter.h */,
@@ -4609,7 +4727,6 @@
 				1707383D0988D6B0008541CC /* SoundTouch.cpp */,
 				170738410988D6B0008541CC /* TDStretch.cpp */,
 				170738420988D6B0008541CC /* TDStretch.h */,
-				17190D78098A439D004583C6 /* cpu_detect_x86_gcc.cpp */,
 				28FE4A060ABF4E960056F5C4 /* mmx_optimized.cpp */,
 				28FE4A070ABF4E960056F5C4 /* sse_optimized.cpp */,
 			);
@@ -4657,6 +4774,8 @@
 				174D902B098C78AF00D5909F /* Keyboard.h */,
 				28851FA71027F16400152EE1 /* MessageCommand.cpp */,
 				28851FA81027F16400152EE1 /* MessageCommand.h */,
+				EDFCEB9A18894AE600C98E51 /* OpenSaveCommands.cpp */,
+				EDFCEB9B18894AE600C98E51 /* OpenSaveCommands.h */,
 				28DE72AA10388583007E18EC /* PreferenceCommands.cpp */,
 				28DE72AB10388583007E18EC /* PreferenceCommands.h */,
 				28DB34770FDC2C5D0011F589 /* ResponseQueue.h */,
@@ -4687,6 +4806,7 @@
 				174F73CD098D516D009CD6E0 /* AudacityOGG.icns */,
 				174F73CE098D516D009CD6E0 /* AudacityProject.icns */,
 				174F73CF098D516D009CD6E0 /* AudacityWAV.icns */,
+				ED9551A0195D95FC0027176E /* Audacity-DMG-background.png */,
 			);
 			name = Resources;
 			path = mac/Resources;
@@ -4762,6 +4882,10 @@
 				176EEB0B09A2EF1100188F3B /* memory.c */,
 				176EEB0E09A2EF1100188F3B /* metadata_iterators.c */,
 				176EEB1109A2EF1100188F3B /* metadata_object.c */,
+				ED924BCD182EA20500319F81 /* ogg_decoder_aspect.c */,
+				ED924BCE182EA20500319F81 /* ogg_encoder_aspect.c */,
+				ED924BCF182EA20500319F81 /* ogg_helper.c */,
+				ED924BD0182EA20500319F81 /* ogg_mapping.c */,
 				176EEB2809A2EF1100188F3B /* stream_decoder.c */,
 				176EEB2B09A2EF1100188F3B /* stream_encoder.c */,
 				176EEB2E09A2EF1100188F3B /* stream_encoder_framing.c */,
@@ -4815,7 +4939,6 @@
 			children = (
 				1790AFB009883B6D008A330A /* Audacity.app */,
 				17073EE80988DBDD008541CC /* libportsmf.a */,
-				17073F480988E04A008541CC /* libexpat.a */,
 				176EEBEA09A2F16200188F3B /* libFLAC.a */,
 				176EEC1E09A2F2DD00188F3B /* libFLAC++.a */,
 				17073F620988E121008541CC /* libid3tag.a */,
@@ -4839,6 +4962,8 @@
 				ED663CDE16543647007F53A5 /* Audacity.app */,
 				ED85B5B816A47353006DA21D /* Audacity.app */,
 				EDBFAD13177E5399004CC1C1 /* mod-nyq-bench.so */,
+				286229B0181CE4B600E1AD1A /* liblv2.a */,
+				28FADDEF1833C3C500BA4141 /* libexpat.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -4851,7 +4976,6 @@
 				1790AFFD09883BFD008A330A /* effects */,
 				1790B06209883BFD008A330A /* export */,
 				1790B07D09883BFD008A330A /* import */,
-				1790B09209883BFD008A330A /* include */,
 				1841B4FD0E00AD3D00F386E9 /* ondemand */,
 				1790B0B509883BFD008A330A /* prefs */,
 				2897F6DB0AB3DB5A003C20C5 /* toolbars */,
@@ -4866,6 +4990,8 @@
 				1790AFCE09883BFD008A330A /* AudacityApp.cpp */,
 				1790AFCF09883BFD008A330A /* AudacityApp.h */,
 				1790AFD009883BFD008A330A /* AudacityHeaders.h */,
+				28C3946B1818356800FDDAC9 /* AudacityLogger.cpp */,
+				28C3946C1818356800FDDAC9 /* AudacityLogger.h */,
 				1790AFD209883BFD008A330A /* AudioIO.cpp */,
 				1790AFD309883BFD008A330A /* AudioIO.h */,
 				28560C8F0A75E40F00A3429E /* AutoRecovery.cpp */,
@@ -4962,6 +5088,8 @@
 				1790B0D109883BFD008A330A /* Project.h */,
 				28DABFBC0FF19DB100AC7848 /* RealFFTf.cpp */,
 				28DABFBD0FF19DB100AC7848 /* RealFFTf.h */,
+				EDFCEBA218894B2A00C98E51 /* RealFFTf48x.cpp */,
+				EDFCEBA318894B2A00C98E51 /* RealFFTf48x.h */,
 				1790B0D209883BFD008A330A /* Resample.cpp */,
 				1790B0D309883BFD008A330A /* Resample.h */,
 				1790B0D409883BFD008A330A /* RingBuffer.cpp */,
@@ -4986,6 +5114,8 @@
 				1790B0DF09883BFD008A330A /* Spectrum.h */,
 				28501E9F0CEECEF80029ABAA /* SplashDialog.cpp */,
 				28501EA00CEECEF80029ABAA /* SplashDialog.h */,
+				EDFCEBA418894B2A00C98E51 /* SseMathFuncs.cpp */,
+				EDFCEBA518894B2A00C98E51 /* SseMathFuncs.h */,
 				1790B0E009883BFD008A330A /* Tags.cpp */,
 				1790B0E109883BFD008A330A /* Tags.h */,
 				283A11A80A2C0E15004372C4 /* Theme.cpp */,
@@ -5007,8 +5137,6 @@
 				1790B0EF09883BFD008A330A /* TrackPanelAx.h */,
 				1790B0F209883BFD008A330A /* UndoManager.cpp */,
 				1790B0F309883BFD008A330A /* UndoManager.h */,
-				1790B0F409883BFD008A330A /* UploadDialog.cpp */,
-				1790B0F509883BFD008A330A /* UploadDialog.h */,
 				1790B0F609883BFD008A330A /* ViewInfo.h */,
 				1790B0F709883BFD008A330A /* VoiceKey.cpp */,
 				1790B0F809883BFD008A330A /* VoiceKey.h */,
@@ -5085,6 +5213,8 @@
 				ED3D7FEF0DF73889000F43E3 /* EffectManager.h */,
 				1790B01B09883BFD008A330A /* Equalization.cpp */,
 				1790B01C09883BFD008A330A /* Equalization.h */,
+				EDFCEBB318894B9E00C98E51 /* Equalization48x.cpp */,
+				EDFCEBB418894B9E00C98E51 /* Equalization48x.h */,
 				1790B01D09883BFD008A330A /* Fade.cpp */,
 				1790B01E09883BFD008A330A /* Fade.h */,
 				2891B2850C531D2C0044FBE3 /* FindClipping.cpp */,
@@ -5207,6 +5337,12 @@
 		1790B07D09883BFD008A330A /* import */ = {
 			isa = PBXGroup;
 			children = (
+				28F67173197DFA1C00075C32 /* FormatClassifier.cpp */,
+				28F67174197DFA1C00075C32 /* FormatClassifier.h */,
+				28F67175197DFA1C00075C32 /* MultiFormatReader.cpp */,
+				28F67176197DFA1C00075C32 /* MultiFormatReader.h */,
+				28F67177197DFA1C00075C32 /* SpecPowerMeter.cpp */,
+				28F67178197DFA1C00075C32 /* SpecPowerMeter.h */,
 				1790B07F09883BFD008A330A /* Import.cpp */,
 				1790B08009883BFD008A330A /* Import.h */,
 				283135EA0DFB9D110076D551 /* ImportFFmpeg.cpp */,
@@ -5232,15 +5368,6 @@
 				1790B09109883BFD008A330A /* RawAudioGuess.h */,
 			);
 			path = import;
-			sourceTree = "<group>";
-		};
-		1790B09209883BFD008A330A /* include */ = {
-			isa = PBXGroup;
-			children = (
-				28307AA60E163AF800A553C7 /* expat.h */,
-				1790B09509883BFD008A330A /* lame.h */,
-			);
-			path = include;
 			sourceTree = "<group>";
 		};
 		1790B0B509883BFD008A330A /* prefs */ = {
@@ -5298,6 +5425,8 @@
 		1790B0FD09883BFD008A330A /* widgets */ = {
 			isa = PBXGroup;
 			children = (
+				280112791943EE0E00D98A16 /* HelpSystem.cpp */,
+				2801127A1943EE0E00D98A16 /* HelpSystem.h */,
 				1790B0FE09883BFD008A330A /* AButton.cpp */,
 				1790B0FF09883BFD008A330A /* AButton.h */,
 				1790B10009883BFD008A330A /* ASlider.cpp */,
@@ -5326,12 +5455,16 @@
 				1790B10409883BFD008A330A /* Meter.h */,
 				1790B10509883BFD008A330A /* MultiDialog.cpp */,
 				1790B10609883BFD008A330A /* MultiDialog.h */,
+				28F2CED0181867BB00573D61 /* numformatter.cpp */,
+				28F2CED1181867BB00573D61 /* numformatter.h */,
 				28530C4A0DF2105200555C94 /* ProgressDialog.cpp */,
 				28530C4B0DF2105200555C94 /* ProgressDialog.h */,
 				1790B10709883BFD008A330A /* Ruler.cpp */,
 				1790B10809883BFD008A330A /* Ruler.h */,
 				1790B10909883BFD008A330A /* TimeTextCtrl.cpp */,
 				1790B10A09883BFD008A330A /* TimeTextCtrl.h */,
+				28F2CED2181867BB00573D61 /* valnum.cpp */,
+				28F2CED3181867BB00573D61 /* valnum.h */,
 				1790B10B09883BFD008A330A /* Warning.cpp */,
 				1790B10C09883BFD008A330A /* Warning.h */,
 			);
@@ -5428,6 +5561,22 @@
 				2800FE010FF322A1005CA9E5 /* ptmacosx_mach.c */,
 			);
 			name = porttime;
+			sourceTree = "<group>";
+		};
+		280380FC18313AE40078452A /* lame */ = {
+			isa = PBXGroup;
+			children = (
+				280380FF18313AEB0078452A /* lame */,
+			);
+			name = lame;
+			sourceTree = "<group>";
+		};
+		280380FF18313AEB0078452A /* lame */ = {
+			isa = PBXGroup;
+			children = (
+				2803810018313B070078452A /* lame.h */,
+			);
+			name = lame;
 			sourceTree = "<group>";
 		};
 		2808026A0F32C11F0021001D /* rawwaves */ = {
@@ -5997,6 +6146,81 @@
 			name = "vamp-hostsdk";
 			sourceTree = "<group>";
 		};
+		28622998181CE35900E1AD1A /* lv2 */ = {
+			isa = PBXGroup;
+			children = (
+				28622999181CE37800E1AD1A /* lilv */,
+				2862299A181CE3AE00E1AD1A /* serd */,
+				2862299B181CE3B400E1AD1A /* sord */,
+				2862299C181CE3BA00E1AD1A /* sratom */,
+			);
+			name = lv2;
+			sourceTree = "<group>";
+		};
+		28622999181CE37800E1AD1A /* lilv */ = {
+			isa = PBXGroup;
+			children = (
+				28640877181CE77200CC4E2C /* lilv_config.h */,
+				286229B1181CE51800E1AD1A /* lilv.h */,
+				286229B2181CE51800E1AD1A /* collections.c */,
+				286229B3181CE51800E1AD1A /* instance.c */,
+				286229B4181CE51800E1AD1A /* lib.c */,
+				286229B5181CE51800E1AD1A /* lilv_internal.h */,
+				286229B6181CE51800E1AD1A /* node.c */,
+				286229B7181CE51800E1AD1A /* plugin.c */,
+				286229B8181CE51800E1AD1A /* pluginclass.c */,
+				286229B9181CE51800E1AD1A /* port.c */,
+				286229BA181CE51800E1AD1A /* query.c */,
+				286229BB181CE51800E1AD1A /* scalepoint.c */,
+				286229BC181CE51800E1AD1A /* state.c */,
+				286229BD181CE51800E1AD1A /* ui.c */,
+				286229BE181CE51800E1AD1A /* util.c */,
+				286229BF181CE51800E1AD1A /* world.c */,
+				286229C0181CE51800E1AD1A /* common.h */,
+				286229C1181CE51800E1AD1A /* tree.c */,
+				286229C2181CE51800E1AD1A /* tree.h */,
+			);
+			name = lilv;
+			sourceTree = "<group>";
+		};
+		2862299A181CE3AE00E1AD1A /* serd */ = {
+			isa = PBXGroup;
+			children = (
+				28640875181CE75800CC4E2C /* serd_config.h */,
+				286229D5181CE5EC00E1AD1A /* serd.h */,
+				286229D6181CE5EC00E1AD1A /* env.c */,
+				286229D7181CE5EC00E1AD1A /* node.c */,
+				286229D8181CE5EC00E1AD1A /* reader.c */,
+				286229D9181CE5EC00E1AD1A /* serd_internal.h */,
+				286229DA181CE5EC00E1AD1A /* string.c */,
+				286229DB181CE5EC00E1AD1A /* uri.c */,
+				286229DC181CE5EC00E1AD1A /* writer.c */,
+			);
+			name = serd;
+			sourceTree = "<group>";
+		};
+		2862299B181CE3B400E1AD1A /* sord */ = {
+			isa = PBXGroup;
+			children = (
+				28640873181CE74100CC4E2C /* sord_config.h */,
+				286229E5181CE62A00E1AD1A /* sord.h */,
+				286229E6181CE62A00E1AD1A /* sord_internal.h */,
+				286229E7181CE62A00E1AD1A /* sord.c */,
+				286229E8181CE62A00E1AD1A /* syntax.c */,
+			);
+			name = sord;
+			sourceTree = "<group>";
+		};
+		2862299C181CE3BA00E1AD1A /* sratom */ = {
+			isa = PBXGroup;
+			children = (
+				2862439F181CE65500E1AD1A /* sratom_config.h */,
+				286243A0181CE65500E1AD1A /* sratom.h */,
+				286243A1181CE65500E1AD1A /* sratom.c */,
+			);
+			name = sratom;
+			sourceTree = "<group>";
+		};
 		286D30AC0F264B58004E6E4A /* locale */ = {
 			isa = PBXGroup;
 			children = (
@@ -6046,6 +6270,7 @@
 				EDAD325615444371009C6220 /* sr_RS.po */,
 				2888493B131B6CF600B59735 /* sr_RS@latin.po */,
 				EDAD325715444372009C6220 /* sv.po */,
+				ED87F4F619863DF500AC520B /* ta.po */,
 				2888493D131B6CF600B59735 /* tg.po */,
 				2888493E131B6CF600B59735 /* tr.po */,
 				2888493F131B6CF600B59735 /* uk.po */,
@@ -6364,13 +6589,43 @@
 			path = mac;
 			sourceTree = "<group>";
 		};
+		28FADDC71833C38F00BA4141 /* expat */ = {
+			isa = PBXGroup;
+			children = (
+				28FADEDA1833C78C00BA4141 /* lib */,
+				2835D8D01833D54100CF5EFF /* expat_config.h */,
+			);
+			name = expat;
+			sourceTree = "<group>";
+		};
+		28FADEDA1833C78C00BA4141 /* lib */ = {
+			isa = PBXGroup;
+			children = (
+				28FADEDC1833C78C00BA4141 /* ascii.h */,
+				28FADEDD1833C78C00BA4141 /* asciitab.h */,
+				28FADEDF1833C78C00BA4141 /* expat.h */,
+				28FADEE01833C78C00BA4141 /* expat_external.h */,
+				28FADEE51833C78C00BA4141 /* internal.h */,
+				28FADEE61833C78C00BA4141 /* latin1tab.h */,
+				28FADEEB1833C78C00BA4141 /* nametab.h */,
+				28FADEEC1833C78C00BA4141 /* utf8tab.h */,
+				28FADEEE1833C78C00BA4141 /* xmlparse.c */,
+				28FADEEF1833C78C00BA4141 /* xmlrole.c */,
+				28FADEF01833C78C00BA4141 /* xmlrole.h */,
+				28FADEF11833C78C00BA4141 /* xmltok.c */,
+				28FADEF21833C78C00BA4141 /* xmltok.h */,
+				28FADEF31833C78C00BA4141 /* xmltok_impl.c */,
+				28FADEF41833C78C00BA4141 /* xmltok_impl.h */,
+				28FADEF51833C78C00BA4141 /* xmltok_ns.c */,
+			);
+			name = lib;
+			path = expat/lib;
+			sourceTree = "<group>";
+		};
 		ED05D0FF0E50AD5600CC4BD3 /* libscorealign */ = {
 			isa = PBXGroup;
 			children = (
-				ED64C82412456831007CF2FC /* ScoreAlignParams.h */,
 				ED05D1180E50AD5700CC4BD3 /* fft3 */,
-				ED05D1000E50AD5700CC4BD3 /* audiomixerreader.cpp */,
-				ED05D1010E50AD5700CC4BD3 /* audiomixerreader.h */,
 				ED05D1020E50AD5700CC4BD3 /* audioreader.cpp */,
 				ED05D1030E50AD5700CC4BD3 /* audioreader.h */,
 				ED05D1140E50AD5700CC4BD3 /* comp_chroma.cpp */,
@@ -6385,8 +6640,6 @@
 				ED05D1240E50AD5700CC4BD3 /* regression.h */,
 				ED05D1250E50AD5700CC4BD3 /* sautils.cpp */,
 				ED05D1260E50AD5700CC4BD3 /* sautils.h */,
-				ED05D1270E50AD5700CC4BD3 /* scorealign-glue.cpp */,
-				ED05D1280E50AD5700CC4BD3 /* scorealign-glue.h */,
 				ED05D1290E50AD5700CC4BD3 /* scorealign.cpp */,
 				ED05D12A0E50AD5700CC4BD3 /* scorealign.h */,
 			);
@@ -6534,23 +6787,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		17073F440988E04A008541CC /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				17073F4A0988E061008541CC /* xmlparse.h in Headers */,
-				17073F4B0988E061008541CC /* ascii.h in Headers */,
-				17073F4C0988E061008541CC /* asciitab.h in Headers */,
-				17073F4D0988E061008541CC /* iasciitab.h in Headers */,
-				17073F4E0988E061008541CC /* latin1tab.h in Headers */,
-				17073F4F0988E061008541CC /* nametab.h in Headers */,
-				17073F500988E061008541CC /* utf8tab.h in Headers */,
-				17073F510988E061008541CC /* xmldef.h in Headers */,
-				17073F530988E061008541CC /* xmlrole.h in Headers */,
-				17073F550988E061008541CC /* xmltok.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		17073F5E0988E121008541CC /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -6656,6 +6892,7 @@
 				170740880988F1CC008541CC /* RateTransposer.h in Headers */,
 				1707408B0988F1CC008541CC /* TDStretch.h in Headers */,
 				28FE4A3A0ABF58360056F5C4 /* soundtouch_config.h in Headers */,
+				2810644D1818EED3004F678B /* cpu_detect.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -6978,6 +7215,26 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2862299F181CE4B600E1AD1A /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286229C3181CE51800E1AD1A /* lilv.h in Headers */,
+				286229C7181CE51800E1AD1A /* lilv_internal.h in Headers */,
+				286229D2181CE51800E1AD1A /* common.h in Headers */,
+				286229D4181CE51800E1AD1A /* tree.h in Headers */,
+				286229DD181CE5EC00E1AD1A /* serd.h in Headers */,
+				286229E1181CE5EC00E1AD1A /* serd_internal.h in Headers */,
+				286229E9181CE62A00E1AD1A /* sord.h in Headers */,
+				286229EA181CE62A00E1AD1A /* sord_internal.h in Headers */,
+				28624C0E181CE65700E1AD1A /* sratom_config.h in Headers */,
+				28624C0F181CE65700E1AD1A /* sratom.h in Headers */,
+				28640874181CE74100CC4E2C /* sord_config.h in Headers */,
+				28640876181CE75800CC4E2C /* serd_config.h in Headers */,
+				28640878181CE77200CC4E2C /* lilv_config.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2880527A0DEA694100671EA4 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -6990,7 +7247,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28E2370E0E515D9300281398 /* audiomixerreader.h in Headers */,
 				28E237100E515D9400281398 /* audioreader.h in Headers */,
 				28E237120E515D9500281398 /* comp_chroma.h in Headers */,
 				28E237130E515D9600281398 /* curvefit.h in Headers */,
@@ -6999,9 +7255,7 @@
 				28E2371A0E515D9B00281398 /* hillclimb.h in Headers */,
 				28E2371C0E515D9C00281398 /* regression.h in Headers */,
 				28E2371E0E515D9D00281398 /* sautils.h in Headers */,
-				28E237200E515D9E00281398 /* scorealign-glue.h in Headers */,
 				28E237220E515D9F00281398 /* scorealign.h in Headers */,
-				ED64C82512456831007CF2FC /* ScoreAlignParams.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7032,6 +7286,25 @@
 				28A520560C12BE0300BF6811 /* pa_debugprint.h in Headers */,
 				28A520580C12BE0300BF6811 /* pa_ringbuffer.h in Headers */,
 				28EA567F0D976EE700C8D1B6 /* pa_memorybarrier.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28FADDCB1833C3C500BA4141 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28FADEF71833C78C00BA4141 /* ascii.h in Headers */,
+				28FADEF81833C78C00BA4141 /* asciitab.h in Headers */,
+				28FADEF91833C78C00BA4141 /* expat.h in Headers */,
+				28FADEFA1833C78C00BA4141 /* expat_external.h in Headers */,
+				28FADEFC1833C78C00BA4141 /* internal.h in Headers */,
+				28FADEFD1833C78C00BA4141 /* latin1tab.h in Headers */,
+				28FADEFF1833C78C00BA4141 /* nametab.h in Headers */,
+				28FADF001833C78C00BA4141 /* utf8tab.h in Headers */,
+				28FADF041833C78C00BA4141 /* xmlrole.h in Headers */,
+				28FADF061833C78C00BA4141 /* xmltok.h in Headers */,
+				28FADF081833C78C00BA4141 /* xmltok_impl.h in Headers */,
+				2835D8D11833D54100CF5EFF /* expat_config.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7135,22 +7408,6 @@
 			name = portsmf;
 			productName = allegro;
 			productReference = 17073EE80988DBDD008541CC /* libportsmf.a */;
-			productType = "com.apple.product-type.library.static";
-		};
-		17073F470988E04A008541CC /* expat */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 17073F570988E07F008541CC /* Build configuration list for PBXNativeTarget "expat" */;
-			buildPhases = (
-				17073F440988E04A008541CC /* Headers */,
-				17073F450988E04A008541CC /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = expat;
-			productName = expat;
-			productReference = 17073F480988E04A008541CC /* libexpat.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		17073F610988E121008541CC /* libid3tag */ = {
@@ -7344,7 +7601,7 @@
 				282413DA131D52CE009FD931 /* Install plugins */,
 				28C816B7131255550035BB10 /* Install wrapper */,
 				2892CE28131AFB1900E1E17D /* Install miscellany */,
-				28006FF9132C15E800BD34D7 /* Install instructions */,
+				ED95519E195D956F0027176E /* Install background image */,
 				282413D8131D51FC009FD931 /* Create dist */,
 			);
 			buildRules = (
@@ -7352,7 +7609,7 @@
 			);
 			dependencies = (
 				17072E940988C35B008541CC /* PBXTargetDependency */,
-				17C99D51098970800041B1BC /* PBXTargetDependency */,
+				285B11851833D0F10073B36C /* PBXTargetDependency */,
 				176EEC7109A2F54D00188F3B /* PBXTargetDependency */,
 				176EEC7309A2F55100188F3B /* PBXTargetDependency */,
 				2800FE280FF323C0005CA9E5 /* PBXTargetDependency */,
@@ -7420,10 +7677,27 @@
 			buildRules = (
 			);
 			dependencies = (
+				2864087A181CE78E00CC4E2C /* PBXTargetDependency */,
 			);
 			name = libvamp;
 			productName = libsndfile;
 			productReference = 28501F060CEED1F00029ABAA /* libvamp.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		2862299E181CE4B600E1AD1A /* lv2 */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 286229AB181CE4B600E1AD1A /* Build configuration list for PBXNativeTarget "lv2" */;
+			buildPhases = (
+				2862299F181CE4B600E1AD1A /* Headers */,
+				286229A0181CE4B600E1AD1A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = lv2;
+			productName = libsndfile;
+			productReference = 286229B0181CE4B600E1AD1A /* liblv2.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		2880527D0DEA694100671EA4 /* mod-script-pipe */ = {
@@ -7473,6 +7747,22 @@
 			name = "portaudio-v19";
 			productName = portaudio;
 			productReference = 28E67F5F0A3A160D0021D89F /* libportaudio.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		28FADDCA1833C3C500BA4141 /* expat */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 28FADDEA1833C3C500BA4141 /* Build configuration list for PBXNativeTarget "expat" */;
+			buildPhases = (
+				28FADDCB1833C3C500BA4141 /* Headers */,
+				28FADDD41833C3C500BA4141 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = expat;
+			productName = libFLAC;
+			productReference = 28FADDEF1833C3C500BA4141 /* libexpat.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		ED15212F163C227C00451B5F /* libsoxr */ = {
@@ -7538,7 +7828,7 @@
 				ED663CCF16543647007F53A5 /* Install plugins */,
 				ED663CD016543647007F53A5 /* Install wrapper */,
 				ED663CD216543647007F53A5 /* Install miscellany */,
-				ED663CD516543647007F53A5 /* Install instructions */,
+				ED95528A195DBC3C0027176E /* Install background image */,
 				ED663CD716543647007F53A5 /* Create dist */,
 			);
 			buildRules = (
@@ -7546,7 +7836,6 @@
 			);
 			dependencies = (
 				ED663CEA165436C3007F53A5 /* PBXTargetDependency */,
-				ED663B5816543647007F53A5 /* PBXTargetDependency */,
 				ED663B5A16543647007F53A5 /* PBXTargetDependency */,
 				ED663B5C16543647007F53A5 /* PBXTargetDependency */,
 				ED663B5E16543647007F53A5 /* PBXTargetDependency */,
@@ -7565,6 +7854,7 @@
 				ED663B7A16543647007F53A5 /* PBXTargetDependency */,
 				ED663B7C16543647007F53A5 /* PBXTargetDependency */,
 				ED663B7E16543647007F53A5 /* PBXTargetDependency */,
+				28B3C5DB1833D2390024BE6D /* PBXTargetDependency */,
 			);
 			name = "Audacity-libsamplerate";
 			productName = Audacity;
@@ -7585,7 +7875,7 @@
 				ED85B5A916A47353006DA21D /* Install plugins */,
 				ED85B5AA16A47353006DA21D /* Install wrapper */,
 				ED85B5AC16A47353006DA21D /* Install miscellany */,
-				ED85B5AF16A47353006DA21D /* Install instructions */,
+				ED95528B195DBC3C0027176E /* Install background image */,
 				ED85B5B116A47353006DA21D /* Create dist */,
 			);
 			buildRules = (
@@ -7593,7 +7883,6 @@
 			);
 			dependencies = (
 				ED85B5BC16A4736E006DA21D /* PBXTargetDependency */,
-				ED85B43116A47353006DA21D /* PBXTargetDependency */,
 				ED85B43316A47353006DA21D /* PBXTargetDependency */,
 				ED85B43516A47353006DA21D /* PBXTargetDependency */,
 				ED85B43716A47353006DA21D /* PBXTargetDependency */,
@@ -7612,6 +7901,7 @@
 				ED85B45316A47353006DA21D /* PBXTargetDependency */,
 				ED85B45516A47353006DA21D /* PBXTargetDependency */,
 				ED85B45716A47353006DA21D /* PBXTargetDependency */,
+				28B3C5DE1833D2490024BE6D /* PBXTargetDependency */,
 			);
 			name = "Audacity-libresample";
 			productName = Audacity;
@@ -7661,7 +7951,7 @@
 				17072E880988BD39008541CC /* Configure */,
 				ED663CE11654366F007F53A5 /* Configure-libsamplerate */,
 				ED85B42716A47329006DA21D /* Configure-libresample */,
-				17073F470988E04A008541CC /* expat */,
+				28FADDCA1833C3C500BA4141 /* expat */,
 				176EEBE909A2F16200188F3B /* libFLAC */,
 				176EEC1D09A2F2DD00188F3B /* libFLAC++ */,
 				17073F610988E121008541CC /* libid3tag */,
@@ -7674,6 +7964,7 @@
 				1707401D0988EEAA008541CC /* libsndfile */,
 				ED15212F163C227C00451B5F /* libsoxr */,
 				28501EAF0CEED1F00029ABAA /* libvamp */,
+				2862299E181CE4B600E1AD1A /* lv2 */,
 				EDBFAD07177E5399004CC1C1 /* mod-nyq-bench */,
 				2880527D0DEA694100671EA4 /* mod-script-pipe */,
 				28E67F510A3A160D0021D89F /* portaudio-v19 */,
@@ -7704,6 +7995,7 @@
 				174F73D6098D516D009CD6E0 /* AudacityWAV.icns in Resources */,
 				8406A93812D0F2510011EA01 /* EQDefaultCurves.xml in Resources */,
 				28006FFB132C167600BD34D7 /* Install.txt in Resources */,
+				ED9551A1195D95FC0027176E /* Audacity-DMG-background.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7720,6 +8012,8 @@
 				ED663B8816543647007F53A5 /* AudacityWAV.icns in Resources */,
 				ED663B8916543647007F53A5 /* EQDefaultCurves.xml in Resources */,
 				ED663B8A16543647007F53A5 /* Install.txt in Resources */,
+				ED9551A2195D95FC0027176E /* Audacity-DMG-background.png in Resources */,
+				ED87F50C1986427500AC520B /* ta.po in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7736,6 +8030,7 @@
 				ED85B46116A47353006DA21D /* AudacityWAV.icns in Resources */,
 				ED85B46216A47353006DA21D /* EQDefaultCurves.xml in Resources */,
 				ED85B46316A47353006DA21D /* Install.txt in Resources */,
+				ED9551A3195D95FC0027176E /* Audacity-DMG-background.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7779,7 +8074,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsoxr's endianness detection is a bit unfriendly to universal binary\n# builds. We need to disable SIMD since we can't build UBs with it enabled.\n#\nFILE=lib-src/libsoxr/soxr-config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#if defined(__BIG_ENDIAN__)\n#undef WORDS_BIGENDIAN\n#define WORDS_BIGENDIAN 1\n#endif\n#undef HAVE_SIMD\n#define HAVE_SIMD 0\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And expat.\n#\nFILE=lib-src/expat/expat_config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef BYTEORDER\n#undef BYTEORDER\n#endif\n#if defined(__BIG_ENDIAN__)\n#define BYTEORDER 4321\n#else\n#define BYTEORDER 1234\n#endif\nEOF\n\n#\n# Libsoxr's endianness detection is a bit unfriendly to universal binary\n# builds. We need to disable SIMD since we can't build UBs with it enabled.\n#\nFILE=lib-src/libsoxr/soxr-config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#if defined(__BIG_ENDIAN__)\n#undef WORDS_BIGENDIAN\n#define WORDS_BIGENDIAN 1\n#endif\n#undef HAVE_SIMD\n#define HAVE_SIMD 0\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		17073FEB0988E6C9008541CC /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7840,7 +8135,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\"* \"${DMG}\"\n\n# Create and mount the image\nhdiutil create -ov -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nrm \"${DMG}/install.txt\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
+			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\" \"${DMG}\"\n\n#Add a custom icon for the DMG\n#cp -p mac/Resources/Audacity.icns \"${DMG}\"/.VolumeIcon.icns\n\n# Create and mount the image\nhdiutil create -ov -format UDRW -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n#Mount the DMG and store the name it was mounted with\nTITLE=`hdiutil attach TMP.dmg | grep \\/Volumes | sed \"s/^.*\\/Volumes\\///\"`\n\n#Set the custom icon flag\n#SetFile -a C /Volumes/\"$TITLE\"\n\n#Make our DMG look pretty and install the custom background image\necho '\n   tell application \"Finder\"\n     tell disk \"'${TITLE}'\"\n           open\n           set current view of container window to icon view\n           set toolbar visible of container window to false\n           set statusbar visible of container window to false\n           set the bounds of container window to {400, 100, 1000, 550}\n           set theViewOptions to the icon view options of container window\n           set arrangement of theViewOptions to not arranged\n           set icon size of theViewOptions to 72\n           set background picture of theViewOptions to file \".background:Audacity-DMG-background.png\" \n           make new alias file at container window to POSIX file \"/Applications\" with properties {name:\"Applications\"}\n           set position of item \"Audacity\" of container window to {170, 350}\n           set position of item \"Applications\" of container window to {430, 350}\n           close\n           open\n           update without registering applications\n           delay 5\n           eject\n     end tell\n   end tell\n' | osascript\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
 		};
 		282413DA131D52CE009FD931 /* Install plugins */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7942,7 +8237,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\"* \"${DMG}\"\n\n# Create and mount the image\nhdiutil create -ov -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nrm \"${DMG}/install.txt\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
+			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\" \"${DMG}\"\n\n#Add a custom icon for the DMG\n#cp -p mac/Resources/Audacity.icns \"${DMG}\"/.VolumeIcon.icns\n\n# Create and mount the image\nhdiutil create -ov -format UDRW -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n#Mount the DMG and store the name it was mounted with\nTITLE=`hdiutil attach TMP.dmg | grep \\/Volumes | sed \"s/^.*\\/Volumes\\///\"`\n\n#Set the custom icon flag\n#SetFile -a C /Volumes/\"$TITLE\"\n\n#Make our DMG look pretty and install the custom background image\necho '\n   tell application \"Finder\"\n     tell disk \"'${TITLE}'\"\n           open\n           set current view of container window to icon view\n           set toolbar visible of container window to false\n           set statusbar visible of container window to false\n           set the bounds of container window to {400, 100, 1000, 550}\n           set theViewOptions to the icon view options of container window\n           set arrangement of theViewOptions to not arranged\n           set icon size of theViewOptions to 72\n           set background picture of theViewOptions to file \".background:Audacity-DMG-background.png\" \n           make new alias file at container window to POSIX file \"/Applications\" with properties {name:\"Applications\"}\n           set position of item \"Audacity\" of container window to {170, 350}\n           set position of item \"Applications\" of container window to {430, 350}\n           close\n           open\n           update without registering applications\n           delay 5\n           eject\n     end tell\n   end tell\n' | osascript\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
 		};
 		ED663CE21654366F007F53A5 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7957,7 +8252,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libsamplerate \\\n             --with-libsoxr \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Libsamplerate's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsamplerate/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libsamplerate \\\n             --with-libsoxr \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And expat.\n#\nFILE=lib-src/expat/expat_config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef BYTEORDER\n#undef BYTEORDER\n#endif\n#if defined(__BIG_ENDIAN__)\n#define BYTEORDER 4321\n#else\n#define BYTEORDER 1234\n#endif\nEOF\n\n#\n# Libsamplerate's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsamplerate/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		ED85B42816A47329006DA21D /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -7972,7 +8267,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libresample \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
+			shellScript = "#\n# Make building on Lion or higher easier\n#\nexport CPP=cpp-4.0\nexport CC=gcc-4.0\nexport CXX=g++-4.0\nexport CPPFLAGS=\"-isysroot ${SDKROOT}\"\nexport CFLAGS=\"-isysroot ${SDKROOT}\"\nexport CXXFLAGS=\"-isysroot ${SDKROOT}\"\n\nif [ -z \"$WX_CONFIG\" ]\nthen\n   echo \"WX_CONFIG environment variable not set...aborting\"\n   exit 1\nfi\n\nif [ ! -z \"${DYLD_LIBRARY_PATH}\" ]\nthen\n\techo \"warning: -----\"\n\techo \"warning: Warning:\"\n\techo \"warning: -----\"\n\techo \"warning: You have DYLD_LIBRARY_PATH set to '${DYLD_LIBRARY_PATH}'\"\n\techo \"warning: When you run or debug Audacity it will be unset so that libraries loaded by Audacity (like Lame or FFmpeg) will be searched for in a similar manner as in released versions.\"\n\techo \"warning: If this is a problem, copy the DYLD_LIBRARY_PATH value to DYLD_FALLBACK_LIBRARY_PATH before starting Xcode.\"\n\techo \"warning: -----\"\nfi\n\n#\n# Here we create empty xcconfig files if they do not exist.  Otherwise,\n# the build will fail.\n#\nconfigs='Debug_Shared Debug_Static Release_Shared Release_Static'\nfor config in $configs\ndo\n\t[ ! -f $TOPLEVEL/mac/$config.xcconfig ] && touch $TOPLEVEL/mac/$config.xcconfig\ndone\n\n#\n# Get to a known location\n#\ncd $TOPLEVEL\n\n#\n# Libsndfile seems to have some date/time issues, so placate him.\n#\n# Run aclocal to make libsndfile happy\n#\n#touch lib-src/libsndfile/configure.ac\n\n#\n# Configure the world\n#\nsh configure --enable-static=$CONFIG_STATIC \\\n             --enable-unicode=$CONFIG_UNICODE \\\n             --enable-debug=$CONFIG_DEBUG \\\n             --with-lib-preference=local,system \\\n             --with-libresample \\\n             --with-wx-version=$WX_VER \\\n             $CONFIG_FLAGS || exit 1\n\n#\n# Libsndfile's endianness detection is a bit unfriendly to universal binary\n# builds, so we coerce it into working our way.\n#\nFILE=lib-src/libsndfile/src/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#undef CPU_IS_BIG_ENDIAN\n#undef CPU_IS_LITTLE_ENDIAN\n#if defined(__BIG_ENDIAN__)\n#define CPU_IS_BIG_ENDIAN 1\n#define CPU_IS_LITTLE_ENDIAN 0\n#else\n#define CPU_IS_BIG_ENDIAN 0\n#define CPU_IS_LITTLE_ENDIAN 1\n#endif\nEOF\n\n#\n# Ditto for libflac.\n#\nFILE=lib-src/libflac/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And libmad.\n#\nFILE=lib-src/libmad/config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef WORDS_BIGENDIAN\n#undef WORDS_BIGENDIAN\n#endif\n#if defined(__BIG_ENDIAN__)\n#define WORDS_BIGENDIAN 1\n#endif\nEOF\n\n#\n# And expat.\n#\nFILE=lib-src/expat/expat_config.h\ngrep -q '__BIG_ENDIAN__' $FILE || cat <<EOF >>$FILE\n#ifdef BYTEORDER\n#undef BYTEORDER\n#endif\n#if defined(__BIG_ENDIAN__)\n#define BYTEORDER 4321\n#else\n#define BYTEORDER 1234\n#endif\nEOF\n\n#\n# Generate the header file for preprocessing the Info.plist\n#\ngcc -E -dM src/Audacity.h | grep AUDACITY >mac/Info.plist.h\necho >>mac/Info.plist.h '#define AUDACITY_EXECUTABLE Audacity'\n\nexit 0\n";
 		};
 		ED85B5A616A47353006DA21D /* Copy nyquist */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -8046,7 +8341,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
-			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\"* \"${DMG}\"\n\n# Create and mount the image\nhdiutil create -ov -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nrm \"${DMG}/install.txt\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
+			shellScript = "set -x\n\n# Setup\nVERSION=`awk '/^#define+ AUDACITY_VERSION / {print $3}' Info.plist.h`\nRELEASE=`awk '/^#define+ AUDACITY_RELEASE / {print $3}' Info.plist.h`\nREVISION=`awk '/^#define+ AUDACITY_REVISION / {print $3}' Info.plist.h`\nVERSION=$VERSION.$RELEASE.$REVISION\n\ncd \"${DSTROOT}\"\nchmod -RH \"${INSTALL_MODE_FLAG}\" \"${TARGET_BUILD_DIR}\"\nchown -RH \"${INSTALL_OWNER}:${INSTALL_GROUP}\" \"${TARGET_BUILD_DIR}\"\n\necho \"Audacity has been installed to: ${DSTROOT}\"\n\ncd ..\n\nVOL=\"Audacity $VERSION\"\nDMG=\"audacity-macosx-ub-$VERSION\"\n\n# Preclean\nrm -rf \"$DMG\" \"$DMG.dmg\" TMP.dmg\n\n# Create structure\nmkdir \"$DMG\"\ncp -pR \"${DSTROOT}/\" \"${DMG}\"\n\n#Add a custom icon for the DMG\n#cp -p mac/Resources/Audacity.icns \"${DMG}\"/.VolumeIcon.icns\n\n# Create and mount the image\nhdiutil create -ov -format UDRW -srcdir \"$DMG\" -fs HFS+ -volname \"$VOL\" TMP.dmg\n\n#Mount the DMG and store the name it was mounted with\nTITLE=`hdiutil attach TMP.dmg | grep \\/Volumes | sed \"s/^.*\\/Volumes\\///\"`\n\n#Set the custom icon flag\n#SetFile -a C /Volumes/\"$TITLE\"\n\n#Make our DMG look pretty and install the custom background image\necho '\n   tell application \"Finder\"\n     tell disk \"'${TITLE}'\"\n           open\n           set current view of container window to icon view\n           set toolbar visible of container window to false\n           set statusbar visible of container window to false\n           set the bounds of container window to {400, 100, 1000, 550}\n           set theViewOptions to the icon view options of container window\n           set arrangement of theViewOptions to not arranged\n           set icon size of theViewOptions to 72\n           set background picture of theViewOptions to file \".background:Audacity-DMG-background.png\" \n           make new alias file at container window to POSIX file \"/Applications\" with properties {name:\"Applications\"}\n           set position of item \"Audacity\" of container window to {170, 350}\n           set position of item \"Applications\" of container window to {430, 350}\n           close\n           open\n           update without registering applications\n           delay 5\n           eject\n     end tell\n   end tell\n' | osascript\n\n# Compress and prepare for Internet delivery\nhdiutil convert TMP.dmg -format UDZO -imagekey zlib-level=9 -o \"$DMG.dmg\"\n\n# Create zip version\nrm -rf \"${DMG}/Audacity/help/\"\nzip -r9 \"${DMG}.zip\" \"${DMG}\"\n\n# Cleanup\nrm -rf ${DMG} TMP.dmg\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -8062,16 +8357,6 @@
 				28A96DBF0E28642000F3CE01 /* allegrowr.cpp in Sources */,
 				28A96DC00E28642100F3CE01 /* mfmidi.cpp in Sources */,
 				28A96DC20E28642300F3CE01 /* strparse.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		17073F450988E04A008541CC /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				17073F490988E061008541CC /* xmlparse.c in Sources */,
-				17073F520988E061008541CC /* xmlrole.c in Sources */,
-				17073F540988E061008541CC /* xmltok.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8226,9 +8511,9 @@
 				170740870988F1CC008541CC /* RateTransposer.cpp in Sources */,
 				170740890988F1CC008541CC /* SoundTouch.cpp in Sources */,
 				1707408A0988F1CC008541CC /* TDStretch.cpp in Sources */,
-				17190D79098A439D004583C6 /* cpu_detect_x86_gcc.cpp in Sources */,
 				28FE4A080ABF4E960056F5C4 /* mmx_optimized.cpp in Sources */,
 				28FE4A090ABF4E960056F5C4 /* sse_optimized.cpp in Sources */,
+				2810644B1818EEB5004F678B /* cpu_detect_x86.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8498,6 +8783,10 @@
 				28EA56630D9753B000C8D1B6 /* bitreader.c in Sources */,
 				28EA56640D9753B000C8D1B6 /* bitwriter.c in Sources */,
 				28EA56650D9753B000C8D1B6 /* window.c in Sources */,
+				ED924BD1182EA20500319F81 /* ogg_decoder_aspect.c in Sources */,
+				ED924BD2182EA20500319F81 /* ogg_encoder_aspect.c in Sources */,
+				ED924BD3182EA20500319F81 /* ogg_helper.c in Sources */,
+				ED924BD4182EA20500319F81 /* ogg_mapping.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8618,7 +8907,6 @@
 				1790B19909883BFD008A330A /* TrackPanel.cpp in Sources */,
 				1790B19A09883BFD008A330A /* TrackPanelAx.cpp in Sources */,
 				1790B19C09883BFD008A330A /* UndoManager.cpp in Sources */,
-				1790B19D09883BFD008A330A /* UploadDialog.cpp in Sources */,
 				1790B19E09883BFD008A330A /* VoiceKey.cpp in Sources */,
 				1790B19F09883BFD008A330A /* WaveClip.cpp in Sources */,
 				1790B1A009883BFD008A330A /* WaveTrack.cpp in Sources */,
@@ -8803,6 +9091,7 @@
 				EDAD326C1544452E009C6220 /* sr_RS.po in Sources */,
 				EDAD326D1544452E009C6220 /* sr_RS@latin.po in Sources */,
 				EDAD326E1544452E009C6220 /* sv.po in Sources */,
+				ED87F50A1986424100AC520B /* ta.po in Sources */,
 				2888496E131B6CF600B59735 /* tg.po in Sources */,
 				2888496F131B6CF600B59735 /* tr.po in Sources */,
 				28884970131B6CF600B59735 /* uk.po in Sources */,
@@ -8818,6 +9107,17 @@
 				2849A42017F8BEC2005C653F /* KeyView.cpp in Sources */,
 				284FD04217FC72A50009A025 /* ScienFilter.cpp in Sources */,
 				284FD04517FC72EE0009A025 /* Biquad.cpp in Sources */,
+				28C3946D1818356800FDDAC9 /* AudacityLogger.cpp in Sources */,
+				28F2CED4181867BB00573D61 /* numformatter.cpp in Sources */,
+				28F2CED5181867BB00573D61 /* valnum.cpp in Sources */,
+				EDFCEB9C18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */,
+				EDFCEBA618894B2A00C98E51 /* RealFFTf48x.cpp in Sources */,
+				EDFCEBA718894B2A00C98E51 /* SseMathFuncs.cpp in Sources */,
+				EDFCEBB518894B9E00C98E51 /* Equalization48x.cpp in Sources */,
+				2801127B1943EE0E00D98A16 /* HelpSystem.cpp in Sources */,
+				28F67179197DFA1C00075C32 /* FormatClassifier.cpp in Sources */,
+				28F6717A197DFA1C00075C32 /* MultiFormatReader.cpp in Sources */,
+				28F6717B197DFA1C00075C32 /* SpecPowerMeter.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8878,6 +9178,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		286229A0181CE4B600E1AD1A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				286229C4181CE51800E1AD1A /* collections.c in Sources */,
+				286229C5181CE51800E1AD1A /* instance.c in Sources */,
+				286229C6181CE51800E1AD1A /* lib.c in Sources */,
+				286229C8181CE51800E1AD1A /* node.c in Sources */,
+				286229C9181CE51800E1AD1A /* plugin.c in Sources */,
+				286229CA181CE51800E1AD1A /* pluginclass.c in Sources */,
+				286229CB181CE51800E1AD1A /* port.c in Sources */,
+				286229CC181CE51800E1AD1A /* query.c in Sources */,
+				286229CD181CE51800E1AD1A /* scalepoint.c in Sources */,
+				286229CE181CE51800E1AD1A /* state.c in Sources */,
+				286229CF181CE51800E1AD1A /* ui.c in Sources */,
+				286229D0181CE51800E1AD1A /* util.c in Sources */,
+				286229D1181CE51800E1AD1A /* world.c in Sources */,
+				286229D3181CE51800E1AD1A /* tree.c in Sources */,
+				286229DE181CE5EC00E1AD1A /* env.c in Sources */,
+				286229DF181CE5EC00E1AD1A /* node.c in Sources */,
+				286229E0181CE5EC00E1AD1A /* reader.c in Sources */,
+				286229E2181CE5EC00E1AD1A /* string.c in Sources */,
+				286229E3181CE5EC00E1AD1A /* uri.c in Sources */,
+				286229E4181CE5EC00E1AD1A /* writer.c in Sources */,
+				286229EB181CE62A00E1AD1A /* sord.c in Sources */,
+				286229EC181CE62A00E1AD1A /* syntax.c in Sources */,
+				28624C10181CE65700E1AD1A /* sratom.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		2880527B0DEA694100671EA4 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -8891,7 +9221,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28E2370D0E515D9200281398 /* audiomixerreader.cpp in Sources */,
 				28E2370F0E515D9400281398 /* audioreader.cpp in Sources */,
 				28E237110E515D9500281398 /* comp_chroma.cpp in Sources */,
 				28E237140E515D9600281398 /* curvefit.cpp in Sources */,
@@ -8900,7 +9229,6 @@
 				28E237190E515D9A00281398 /* hillclimb.cpp in Sources */,
 				28E2371B0E515D9B00281398 /* regression.cpp in Sources */,
 				28E2371D0E515D9D00281398 /* sautils.cpp in Sources */,
-				28E2371F0E515D9E00281398 /* scorealign-glue.cpp in Sources */,
 				28E237210E515D9F00281398 /* scorealign.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -8924,6 +9252,18 @@
 				28A520550C12BE0300BF6811 /* pa_debugprint.c in Sources */,
 				28A520570C12BE0300BF6811 /* pa_ringbuffer.c in Sources */,
 				28EA567D0D976E9500C8D1B6 /* pa_unix_hostapis.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		28FADDD41833C3C500BA4141 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28FADF021833C78C00BA4141 /* xmlparse.c in Sources */,
+				28FADF031833C78C00BA4141 /* xmlrole.c in Sources */,
+				28FADF051833C78C00BA4141 /* xmltok.c in Sources */,
+				28FADF071833C78C00BA4141 /* xmltok_impl.c in Sources */,
+				28FADF091833C78C00BA4141 /* xmltok_ns.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9078,7 +9418,6 @@
 				ED663BF316543647007F53A5 /* TrackPanel.cpp in Sources */,
 				ED663BF416543647007F53A5 /* TrackPanelAx.cpp in Sources */,
 				ED663BF516543647007F53A5 /* UndoManager.cpp in Sources */,
-				ED663BF616543647007F53A5 /* UploadDialog.cpp in Sources */,
 				ED663BF716543647007F53A5 /* VoiceKey.cpp in Sources */,
 				ED663BF816543647007F53A5 /* WaveClip.cpp in Sources */,
 				ED663BF916543647007F53A5 /* WaveTrack.cpp in Sources */,
@@ -9263,6 +9602,7 @@
 				ED663CAB16543647007F53A5 /* sr_RS.po in Sources */,
 				ED663CAC16543647007F53A5 /* sr_RS@latin.po in Sources */,
 				ED663CAD16543647007F53A5 /* sv.po in Sources */,
+				ED87F50D198642DE00AC520B /* ta.po in Sources */,
 				ED663CAE16543647007F53A5 /* tg.po in Sources */,
 				ED663CAF16543647007F53A5 /* tr.po in Sources */,
 				ED663CB016543647007F53A5 /* uk.po in Sources */,
@@ -9275,6 +9615,10 @@
 				ED663CB716543647007F53A5 /* ModulePrefs.cpp in Sources */,
 				EDD2431516934A6100D9DEC2 /* BassTreble.cpp in Sources */,
 				ED19449B1733F92800F4F5CA /* Reverb.cpp in Sources */,
+				EDFCEB9D18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */,
+				EDFCEBA818894B2A00C98E51 /* RealFFTf48x.cpp in Sources */,
+				EDFCEBA918894B2A00C98E51 /* SseMathFuncs.cpp in Sources */,
+				EDFCEBB618894B9E00C98E51 /* Equalization48x.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9385,7 +9729,6 @@
 				ED85B4CB16A47353006DA21D /* TrackPanel.cpp in Sources */,
 				ED85B4CC16A47353006DA21D /* TrackPanelAx.cpp in Sources */,
 				ED85B4CD16A47353006DA21D /* UndoManager.cpp in Sources */,
-				ED85B4CE16A47353006DA21D /* UploadDialog.cpp in Sources */,
 				ED85B4CF16A47353006DA21D /* VoiceKey.cpp in Sources */,
 				ED85B4D016A47353006DA21D /* WaveClip.cpp in Sources */,
 				ED85B4D116A47353006DA21D /* WaveTrack.cpp in Sources */,
@@ -9570,6 +9913,7 @@
 				ED85B58416A47353006DA21D /* sr_RS.po in Sources */,
 				ED85B58516A47353006DA21D /* sr_RS@latin.po in Sources */,
 				ED85B58616A47353006DA21D /* sv.po in Sources */,
+				ED87F50E1986430500AC520B /* ta.po in Sources */,
 				ED85B58716A47353006DA21D /* tg.po in Sources */,
 				ED85B58816A47353006DA21D /* tr.po in Sources */,
 				ED85B58916A47353006DA21D /* uk.po in Sources */,
@@ -9582,6 +9926,10 @@
 				ED85B59016A47353006DA21D /* ModulePrefs.cpp in Sources */,
 				ED85B59116A47353006DA21D /* BassTreble.cpp in Sources */,
 				ED19449C1733F92800F4F5CA /* Reverb.cpp in Sources */,
+				EDFCEB9E18894AE600C98E51 /* OpenSaveCommands.cpp in Sources */,
+				EDFCEBAA18894B2A00C98E51 /* RealFFTf48x.cpp in Sources */,
+				EDFCEBAB18894B2A00C98E51 /* SseMathFuncs.cpp in Sources */,
+				EDFCEBB718894B9E00C98E51 /* Equalization48x.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9651,11 +9999,6 @@
 			target = 17073F610988E121008541CC /* libid3tag */;
 			targetProxy = 17C99D4E098970800041B1BC /* PBXContainerItemProxy */;
 		};
-		17C99D51098970800041B1BC /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 17073F470988E04A008541CC /* expat */;
-			targetProxy = 17C99D50098970800041B1BC /* PBXContainerItemProxy */;
-		};
 		17C99D53098970800041B1BC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 17073EE70988DBDD008541CC /* portsmf */;
@@ -9676,6 +10019,26 @@
 			target = 28501EAF0CEED1F00029ABAA /* libvamp */;
 			targetProxy = 28501F520CEED9A80029ABAA /* PBXContainerItemProxy */;
 		};
+		285B11851833D0F10073B36C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28FADDCA1833C3C500BA4141 /* expat */;
+			targetProxy = 285B11841833D0F10073B36C /* PBXContainerItemProxy */;
+		};
+		2864087A181CE78E00CC4E2C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2862299E181CE4B600E1AD1A /* lv2 */;
+			targetProxy = 28640879181CE78E00CC4E2C /* PBXContainerItemProxy */;
+		};
+		28B3C5DB1833D2390024BE6D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28FADDCA1833C3C500BA4141 /* expat */;
+			targetProxy = 28B3C5DA1833D2390024BE6D /* PBXContainerItemProxy */;
+		};
+		28B3C5DE1833D2490024BE6D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 28FADDCA1833C3C500BA4141 /* expat */;
+			targetProxy = 28B3C5DD1833D2490024BE6D /* PBXContainerItemProxy */;
+		};
 		28E237270E515E1300281398 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 28E236F40E515D1D00281398 /* libscorealign */;
@@ -9695,11 +10058,6 @@
 			isa = PBXTargetDependency;
 			target = ED2706F30EF9C3C6007D4FFD /* libsbsms */;
 			targetProxy = ED2707470EF9C55A007D4FFD /* PBXContainerItemProxy */;
-		};
-		ED663B5816543647007F53A5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 17073F470988E04A008541CC /* expat */;
-			targetProxy = ED663B5916543647007F53A5 /* PBXContainerItemProxy */;
 		};
 		ED663B5A16543647007F53A5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -9795,11 +10153,6 @@
 			isa = PBXTargetDependency;
 			target = ED663B3B16543581007F53A5 /* libsamplerate */;
 			targetProxy = ED663CED1654370C007F53A5 /* PBXContainerItemProxy */;
-		};
-		ED85B43116A47353006DA21D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 17073F470988E04A008541CC /* expat */;
-			targetProxy = ED85B43216A47353006DA21D /* PBXContainerItemProxy */;
 		};
 		ED85B43316A47353006DA21D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -9910,7 +10263,7 @@
 					NDEBUG,
 				);
 				PRODUCT_NAME = FLAC;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include $(TOPLEVEL)/lib-src/libogg/include";
 			};
 			name = "Debug Static";
 		};
@@ -9941,14 +10294,6 @@
 			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
 			buildSettings = {
 				PRODUCT_NAME = portsmf;
-			};
-			name = "Debug Static";
-		};
-		17CAEBA9098C9B8E00337968 /* Debug Static */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = expat;
 			};
 			name = "Debug Static";
 		};
@@ -10107,7 +10452,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/lame $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/lv2/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Static";
 		};
@@ -10129,7 +10474,7 @@
 				INFOPLIST_PREPROCESS = YES;
 				KEEP_PRIVATE_EXTERNS = YES;
 				ONLY_LINK_ESSENTIAL_SYMBOLS = YES;
-				SDKROOT = macosx10.4;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 				SSE_CPPFLAGS = "-Xarch_i386 -DAPPLE_I386 -Xarch_ppc -DAPPLE_PPC";
 				TOPLEVEL = ..;
 				WX_CFLAGS = "-I$(WX_PREFIX)/lib/wx/include/mac-unicode-debug-static-$(WX_VER) -I$(WX_PREFIX)/include/wx-$(WX_VER) -D__WXDEBUG__ -D__WXMAC__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -DNO_GCC_PRAGMA";
@@ -10238,6 +10583,74 @@
 			};
 			name = "Release Static";
 		};
+		286229AC181CE4B600E1AD1A /* Debug Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
+			buildSettings = {
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_CONFIG_H;
+				HEADER_SEARCH_PATHS = (
+					"$(TOPLEVEL)/lib-src/lv2/include",
+					"$(TOPLEVEL)/lib-src/lv2/lilv/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/serd/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sord/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sratom/src/**",
+				);
+				PRODUCT_NAME = lv2;
+			};
+			name = "Debug Static";
+		};
+		286229AD181CE4B600E1AD1A /* Debug Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */;
+			buildSettings = {
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_CONFIG_H;
+				HEADER_SEARCH_PATHS = (
+					"$(TOPLEVEL)/lib-src/lv2/include",
+					"$(TOPLEVEL)/lib-src/lv2/lilv/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/serd/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sord/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sratom/src/**",
+				);
+				PRODUCT_NAME = lv2;
+			};
+			name = "Debug Shared";
+		};
+		286229AE181CE4B600E1AD1A /* Release Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BD0DF6400E00576305 /* Release_Static.xcconfig */;
+			buildSettings = {
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_CONFIG_H;
+				HEADER_SEARCH_PATHS = (
+					"$(TOPLEVEL)/lib-src/lv2/include",
+					"$(TOPLEVEL)/lib-src/lv2/lilv/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/serd/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sord/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sratom/src/**",
+				);
+				PRODUCT_NAME = lv2;
+			};
+			name = "Release Static";
+		};
+		286229AF181CE4B600E1AD1A /* Release Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */;
+			buildSettings = {
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_CONFIG_H;
+				HEADER_SEARCH_PATHS = (
+					"$(TOPLEVEL)/lib-src/lv2/include",
+					"$(TOPLEVEL)/lib-src/lv2/lilv/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/serd/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sord/src/**",
+					"$(TOPLEVEL)/lib-src/lv2/sratom/src/**",
+				);
+				PRODUCT_NAME = lv2;
+			};
+			name = "Release Shared";
+		};
 		288052800DEA694100671EA4 /* Debug Static */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
@@ -10315,13 +10728,12 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				GCC_VERSION = 4.0;
-				"GCC_VERSION[sdk=macosx10.5][arch=x86_64]" = 4.2;
 				INFOPLIST_OTHER_PREPROCESSOR_FLAGS = "-traditional";
 				INFOPLIST_PREFIX_HEADER = Info.plist.h;
 				INFOPLIST_PREPROCESS = YES;
 				KEEP_PRIVATE_EXTERNS = YES;
 				ONLY_LINK_ESSENTIAL_SYMBOLS = YES;
-				SDKROOT = macosx10.4;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 				SSE_CPPFLAGS = "-Xarch_i386 -DAPPLE_I386 -Xarch_ppc -DAPPLE_PPC";
 				TOPLEVEL = ..;
 				WX_CFLAGS = "-I$(WX_PREFIX)/lib/wx/include/mac-unicode-debug-$(WX_VER) -I$(WX_PREFIX)/include/wx-$(WX_VER) -D__WXDEBUG__ -D__WXMAC__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -DNO_GCC_PRAGMA";
@@ -10391,7 +10803,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/lame $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/lv2/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Shared";
 		};
@@ -10411,14 +10823,6 @@
 			};
 			name = "Debug Shared";
 		};
-		288052CE0DEA74F100671EA4 /* Debug Shared */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = expat;
-			};
-			name = "Debug Shared";
-		};
 		288052CF0DEA74F100671EA4 /* Debug Shared */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */;
@@ -10430,7 +10834,7 @@
 					NDEBUG,
 				);
 				PRODUCT_NAME = FLAC;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include $(TOPLEVEL)/lib-src/libogg/include";
 			};
 			name = "Debug Shared";
 		};
@@ -10644,7 +11048,7 @@
 				INFOPLIST_PREPROCESS = YES;
 				KEEP_PRIVATE_EXTERNS = YES;
 				ONLY_LINK_ESSENTIAL_SYMBOLS = YES;
-				SDKROOT = macosx10.4;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 				SSE_CPPFLAGS = "-Xarch_i386 -DAPPLE_I386 -Xarch_ppc -DAPPLE_PPC";
 				TOPLEVEL = ..;
 				WX_CFLAGS = "-I$(WX_PREFIX)/lib/wx/include/mac-unicode-release-$(WX_VER) -I$(WX_PREFIX)/include/wx-$(WX_VER) -D__WXMAC__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -DNO_GCC_PRAGMA";
@@ -10716,7 +11120,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/lame $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/lv2/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Shared";
 		};
@@ -10736,14 +11140,6 @@
 			};
 			name = "Release Shared";
 		};
-		288052E30DEA74FD00671EA4 /* Release Shared */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = expat;
-			};
-			name = "Release Shared";
-		};
 		288052E40DEA74FD00671EA4 /* Release Shared */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */;
@@ -10755,7 +11151,7 @@
 					NDEBUG,
 				);
 				PRODUCT_NAME = FLAC;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include $(TOPLEVEL)/lib-src/libogg/include";
 			};
 			name = "Release Shared";
 		};
@@ -11021,14 +11417,6 @@
 			};
 			name = "Release Static";
 		};
-		28E5DA2B0AC4CBA200E7F64C /* Release Static */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = 2812A5BD0DF6400E00576305 /* Release_Static.xcconfig */;
-			buildSettings = {
-				PRODUCT_NAME = expat;
-			};
-			name = "Release Static";
-		};
 		28E5DA2C0AC4CBA200E7F64C /* Release Static */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 2812A5BD0DF6400E00576305 /* Release_Static.xcconfig */;
@@ -11040,7 +11428,7 @@
 					NDEBUG,
 				);
 				PRODUCT_NAME = FLAC;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libflac/src/libFLAC/include $(TOPLEVEL)/lib-src/libogg/include";
 			};
 			name = "Release Static";
 		};
@@ -11240,7 +11628,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/lame $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/lv2/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Static";
 		};
@@ -11266,7 +11654,7 @@
 				INFOPLIST_PREPROCESS = YES;
 				KEEP_PRIVATE_EXTERNS = YES;
 				ONLY_LINK_ESSENTIAL_SYMBOLS = YES;
-				SDKROOT = macosx10.4;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 				SSE_CPPFLAGS = "-Xarch_i386 -DAPPLE_I386 -Xarch_ppc -DAPPLE_PPC";
 				TOPLEVEL = ..;
 				WX_CFLAGS = "-I$(WX_PREFIX)/lib/wx/include/mac-unicode-release-static-$(WX_VER) -I$(WX_PREFIX)/include/wx-$(WX_VER) -D__WXMAC__ -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -DNO_GCC_PRAGMA";
@@ -11305,6 +11693,46 @@
 				PRODUCT_NAME = portaudio;
 			};
 			name = "Debug Static";
+		};
+		28FADDEB1833C3C500BA4141 /* Debug Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B90DF63FF000576305 /* Debug_Static.xcconfig */;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_EXPAT_CONFIG_H;
+				PRODUCT_NAME = expat;
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/expat/lib";
+			};
+			name = "Debug Static";
+		};
+		28FADDEC1833C3C500BA4141 /* Debug Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5B70DF63FE500576305 /* Debug_Shared.xcconfig */;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_EXPAT_CONFIG_H;
+				PRODUCT_NAME = expat;
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/expat/lib";
+			};
+			name = "Debug Shared";
+		};
+		28FADDED1833C3C500BA4141 /* Release Static */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BD0DF6400E00576305 /* Release_Static.xcconfig */;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_EXPAT_CONFIG_H;
+				PRODUCT_NAME = expat;
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/expat/lib";
+			};
+			name = "Release Static";
+		};
+		28FADDEE1833C3C500BA4141 /* Release Shared */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2812A5BB0DF63FFD00576305 /* Release_Shared.xcconfig */;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = HAVE_EXPAT_CONFIG_H;
+				PRODUCT_NAME = expat;
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/lib-src/expat/lib";
+			};
+			name = "Release Shared";
 		};
 		ED152131163C227C00451B5F /* Debug Static */ = {
 			isa = XCBuildConfiguration;
@@ -11546,7 +11974,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Static";
 		};
@@ -11608,7 +12036,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Shared";
 		};
@@ -11674,7 +12102,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Static";
 		};
@@ -11738,7 +12166,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Shared";
 		};
@@ -11866,7 +12294,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Static";
 		};
@@ -11928,7 +12356,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Debug Shared";
 		};
@@ -11994,7 +12422,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Static";
 		};
@@ -12058,7 +12486,7 @@
 				);
 				PRODUCT_NAME = Audacity;
 				SKIP_INSTALL = NO;
-				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/expat $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
+				USER_HEADER_SEARCH_PATHS = "$(TOPLEVEL)/mac $(TOPLEVEL)/src/** $(TOPLEVEL)/lib-src/FileDialog $(TOPLEVEL)/lib-src/libflac/include $(TOPLEVEL)/lib-src/libid3tag $(TOPLEVEL)/lib-src/libmad $(TOPLEVEL)/lib-src/libogg/include $(TOPLEVEL)/lib-src/libnyquist/nyq $(TOPLEVEL)/lib-src/libresample/include $(TOPLEVEL)/lib-src/libsndfile/src $(TOPLEVEL)/lib-src/libvamp $(TOPLEVEL)/lib-src/libvorbis/include $(TOPLEVEL)/lib-src/liblrdf/src $(TOPLEVEL)/lib-src/portaudio-v19/include $(TOPLEVEL)/lib-src/portmixer/px_common $(TOPLEVEL)/lib-src/portsmf $(TOPLEVEL)/lib-src/redland/librdf $(TOPLEVEL)/lib-src/slv2 $(TOPLEVEL)/lib-src/soundtouch/include $(TOPLEVEL)/lib-src/twolame/libtwolame";
 			};
 			name = "Release Shared";
 		};
@@ -12231,17 +12659,6 @@
 				288052CD0DEA74F100671EA4 /* Debug Shared */,
 				28E5DA2A0AC4CBA200E7F64C /* Release Static */,
 				288052E20DEA74FD00671EA4 /* Release Shared */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = "Debug Static";
-		};
-		17073F570988E07F008541CC /* Build configuration list for PBXNativeTarget "expat" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				17CAEBA9098C9B8E00337968 /* Debug Static */,
-				288052CE0DEA74F100671EA4 /* Debug Shared */,
-				28E5DA2B0AC4CBA200E7F64C /* Release Static */,
-				288052E30DEA74FD00671EA4 /* Release Shared */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Debug Static";
@@ -12433,6 +12850,17 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Debug Static";
 		};
+		286229AB181CE4B600E1AD1A /* Build configuration list for PBXNativeTarget "lv2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				286229AC181CE4B600E1AD1A /* Debug Static */,
+				286229AD181CE4B600E1AD1A /* Debug Shared */,
+				286229AE181CE4B600E1AD1A /* Release Static */,
+				286229AF181CE4B600E1AD1A /* Release Shared */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Debug Static";
+		};
 		288052830DEA698A00671EA4 /* Build configuration list for PBXNativeTarget "mod-script-pipe" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -12473,6 +12901,17 @@
 				288052D90DEA74F100671EA4 /* Debug Shared */,
 				28E5DA360AC4CBA200E7F64C /* Release Static */,
 				288052EE0DEA74FD00671EA4 /* Release Shared */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Debug Static";
+		};
+		28FADDEA1833C3C500BA4141 /* Build configuration list for PBXNativeTarget "expat" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28FADDEB1833C3C500BA4141 /* Debug Static */,
+				28FADDEC1833C3C500BA4141 /* Debug Shared */,
+				28FADDED1833C3C500BA4141 /* Release Static */,
+				28FADDEE1833C3C500BA4141 /* Release Shared */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Debug Static";

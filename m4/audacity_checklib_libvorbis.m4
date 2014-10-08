@@ -2,15 +2,9 @@ dnl Add audacity / vorbis license?
 dnl
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_libvorbis.m4 serial 1
+# audacity_checklib_libvorbis.m4 serial 4
 
 AC_DEFUN([AUDACITY_CHECKLIB_LIBVORBIS], [
-
-   if false ; then
-      AC_DEFINE(USE_LIBVORBIS, 1,
-                [Define if the ogg vorbis decoding library is present])
-   fi
-
    AC_ARG_WITH(libvorbis,
                [AS_HELP_STRING([--with-libvorbis],
                                [use libvorbis for Ogg Vorbis support])],
@@ -19,23 +13,18 @@ AC_DEFUN([AUDACITY_CHECKLIB_LIBVORBIS], [
 
    dnl See if Vorbis is installed in the system
 
-   AC_CHECK_LIB(vorbisfile,
-                vorbis_bitrate_addblock,
-                lib_found="yes",
-                lib_found="no",
-                -lvorbis -logg)
+   PKG_CHECK_MODULES(LIBVORBIS, vorbisenc vorbisfile vorbis ogg,
+                     LIBVORBIS_SYSTEM_AVAILABLE="yes",
+                     LIBVORBIS_SYSTEM_AVAILABLE="no")
+   dnl Have to list the dependent libraries (vorbis and ogg) here because their
+   dnl symbols are used from Audacity directly, and (in a minimally linked system,
+   dnl e.g. with LDFLAGS including -Wl,--as-needed and with libtool patched to not
+   dnl break this) pulling in libraries that use libvorbis does not automagically
+   dnl cause the libvorbis symbols to be linkable.
 
-   AC_CHECK_HEADER(vorbis/vorbisfile.h,
-                   header_found="yes",
-                   header_found="no")
-
-   if test "x$lib_found" = "xyes" && test "x$header_found" = "xyes" ; then
-      LIBVORBIS_SYSTEM_AVAILABLE="yes"
-      LIBVORBIS_SYSTEM_LIBS="-lvorbisenc -lvorbisfile -lvorbis -logg"
-      LIBVORBIS_SYSTEM_CPPSYMBOLS="USE_LIBVORBIS"
+   if test "$LIBVORBIS_SYSTEM_AVAILABLE" = "yes"; then
       AC_MSG_NOTICE([Vorbis libraries are available as system libraries])
    else
-      LIBVORBIS_SYSTEM_AVAILABLE="no"
       AC_MSG_NOTICE([Vorbis libraries are NOT available as system libraries])
    fi
 
@@ -49,17 +38,18 @@ AC_DEFUN([AUDACITY_CHECKLIB_LIBVORBIS], [
                  ogg_h_available="yes",
                  ogg_h_available="no")
 
-   if test "x$vorbisenc_h_available" = "xyes" && test "x$ogg_h_available" = "xyes" ; then
+   if test "$vorbisenc_h_available" = "yes" -a "$ogg_h_available" = "yes"; then
       LIBVORBIS_LOCAL_AVAILABLE="yes"
 
-      LIBVORBIS_LOCAL_LIBS="libvorbisenc.a libvorbisfile.a libvorbis.a libogg.a"
+      dnl We need to override the pkg-config check for libogg by passing
+      dnl OGG_CFLAGS and OGG_LIBS to the configure script of libvorbis.
+      libogg_dir="$(pwd)/lib-src/libogg"
+      LIBVORBIS_LOCAL_CONFIGURE_ARGS="--disable-oggtest OGG_CFLAGS=-I${libogg_dir}/include OGG_LIBS=${libogg_dir}/src/libogg.la"
 
-      LIBVORBIS_LOCAL_CXXFLAGS='-I$(top_srcdir)/lib-src/libogg/include'
-      LIBVORBIS_LOCAL_CXXFLAGS="$LIBVORBIS_LOCAL_CXXFLAGS -I\$(top_srcdir)/lib-src/libvorbis/include"
+      dnl libflac needs libogg too. So we need to pass these flags to the
+      dnl configure script of libflac, because it does not use pkg-config.
+      LIBVORBIS_LOCAL_CONFIGURE_ARGS="$LIBVORBIS_LOCAL_CONFIGURE_ARGS --with-ogg-includes=${libogg_dir}/include --with-ogg-libraries=${libogg_dir}/src/.libs"
 
-      LIBVORBIS_LOCAL_CPPSYMBOLS="USE_LIBVORBIS"
-
-      LIBVORBIS_LOCAL_CONFIG_SUBDIRS="lib-src/libogg lib-src/libvorbis"
       AC_MSG_NOTICE([Vorbis libraries are available in this source tree])
    else
       AC_MSG_NOTICE([Vorbis libraries are NOT available in this source tree])
@@ -67,3 +57,21 @@ AC_DEFUN([AUDACITY_CHECKLIB_LIBVORBIS], [
    LIBVORBIS_MIMETYPES="application/ogg;audio/x-vorbis+ogg;"
 ])
 
+AC_DEFUN([AUDACITY_CONFIG_LIBVORBIS], [
+   if test "$LIBVORBIS_USE_LOCAL" = yes; then
+      LIBVORBIS_CFLAGS='-I$(top_srcdir)/lib-src/libogg/include -I$(top_srcdir)/lib-src/libvorbis/include'
+      LIBVORBIS_LIBS='$(top_builddir)/lib-src/libvorbis/lib/libvorbisenc.la $(top_builddir)/lib-src/libvorbis/lib/libvorbisfile.la'
+      AC_CONFIG_SUBDIRS([lib-src/libogg lib-src/libvorbis])
+   fi
+
+   AC_SUBST([LIBVORBIS_CFLAGS])
+   AC_SUBST([LIBVORBIS_LIBS])
+
+   AM_CONDITIONAL([USE_LIBVORBIS], [test "$LIBVORBIS_USE_LOCAL" = yes -o "$LIBVORBIS_USE_SYSTEM" = yes])
+   AM_CONDITIONAL([USE_LOCAL_LIBVORBIS], [test "$LIBVORBIS_USE_LOCAL" = yes])
+
+   if test "$LIBVORBIS_USE_LOCAL" = yes -o "$LIBVORBIS_USE_SYSTEM" = yes; then
+      AC_DEFINE(USE_LIBVORBIS, 1,
+                [Define if the ogg vorbis decoding library is present])
+   fi
+])

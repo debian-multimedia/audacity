@@ -17,23 +17,14 @@ License: GPL v2.  See License.txt.
 // Store function pointers here when including FFmpeg.h
 #define DEFINE_FFMPEG_POINTERS
 
-#include "Audacity.h"	// for config*.h
+#include "Audacity.h"   // for config*.h
 #include "FFmpeg.h"
 #include "AudacityApp.h"
 #include "FileNames.h"
 #include "Internat.h"
+#include "widgets/HelpSystem.h"
 
 #include <wx/file.h>
-
-#ifdef _DEBUG
-   #ifdef _MSC_VER
-      #undef THIS_FILE
-      static char*THIS_FILE= __FILE__;
-      #define new new(_NORMAL_BLOCK, THIS_FILE, __LINE__)
-   #endif
-#endif
-
-#define UFILE_PROTOCOL "ufile"
 
 #if !defined(USE_FFMPEG)
 /// FFmpeg support may or may not be compiled in,
@@ -81,8 +72,8 @@ bool LoadFFmpeg(bool showerror)
    PickFFmpegLibs();
    if (FFmpegLibsInst->ValidLibsLoaded())
    {
-     DropFFmpegLibs();
-     return true;
+      DropFFmpegLibs();
+      return true;
    }
    if (!FFmpegLibsInst->LoadLibs(NULL,showerror))
    {
@@ -135,7 +126,7 @@ wxString GetFFmpegVersion(wxWindow * WXUNUSED(parent))
 void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
 {
    //Most of this stuff is taken from FFmpeg tutorials and FFmpeg itself
-   int av_log_level = AV_LOG_WARNING;
+   int av_log_level = AV_LOG_INFO;
    AVClass* avc = ptr ? *(AVClass**)ptr : NULL;
    if (level > av_log_level)
       return;
@@ -165,7 +156,7 @@ void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
    }
 #ifdef EXPERIMENTAL_OD_FFMPEG
 //if the decoding happens thru OD then this gets called from a non main thread, which means wxLogDebug
-//will crash.  
+//will crash.
 //TODO:find some workaround for the log.  perhaps use ODManager as a bridge. for now just print
    if(!wxThread::IsMain())
       printf("%s: %s\n",(char*)cpt.char_str(),(char*)printstring.char_str());
@@ -177,56 +168,18 @@ void av_log_wx_callback(void* ptr, int level, const char* fmt, va_list vl)
 //======================= Unicode aware uri protocol for FFmpeg
 // Code inspired from ffmpeg-users mailing list sample
 
-static int ufile_open(URLContext *h, const char *filename, int flags)
+static int ufile_read(void *opaque, uint8_t *buf, int size)
 {
-   wxString name(strchr(filename, ':') + 1, wxConvUTF8);
-   wxFile *f;
-   wxFile::OpenMode mode;
-
-   f = new wxFile;
-   if (!f) {
-      return AVERROR(ENOMEM);
-   }
-
-   // LLL:  These really should be logical AND tests, but on 2011/04/28, the URL_ open flags
-   //       changed in the FFmpeg source to values that were not compatible with previous
-   //       values.
-   //
-   //       Since Audacity doesn't use any other open flags (there aren't any others defined
-   //       anyway), making equality tests works for older and new FFmpeg headers.
-   if (flags == URL_RDWR) {
-      mode = wxFile::read_write;
-   } else if (flags == URL_WRONLY) {
-      mode = wxFile::write;
-   } else {
-      mode = wxFile::read;
-   }
-
-   if (!f->Open(name, mode)) {
-      delete f;
-      return AVERROR(ENOENT);
-   }
-
-   h->priv_data = (void *)f;
-
-   return 0;
+   int ret = (int)((wxFile *) opaque)->Read(buf, size);
+   return ret;
 }
 
-static int ufile_read(URLContext *h, unsigned char *buf, int size)
+static int ufile_write(void *opaque, uint8_t *buf, int size)
 {
-   return (int) ((wxFile *) h->priv_data)->Read(buf, size);
+   return (int) ((wxFile *) opaque)->Write(buf, size);
 }
 
-#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 68, 0)
-static int ufile_write(URLContext *h, unsigned char *buf, int size)
-#else
-static int ufile_write(URLContext *h, const unsigned char *buf, int size)
-#endif
-{
-   return (int) ((wxFile *) h->priv_data)->Write(buf, size);
-}
-
-static int64_t ufile_seek(URLContext *h, int64_t pos, int whence)
+static int64_t ufile_seek(void *opaque, int64_t pos, int whence)
 {
    wxSeekMode mode = wxFromStart;
 
@@ -237,72 +190,72 @@ static int64_t ufile_seek(URLContext *h, int64_t pos, int whence)
    switch (whence & ~AVSEEK_FORCE)
    {
    case (SEEK_SET):
-     mode = wxFromStart;
-     break;
+      mode = wxFromStart;
+      break;
    case (SEEK_CUR):
-     mode = wxFromCurrent;
-     break;
+      mode = wxFromCurrent;
+      break;
    case (SEEK_END):
-     mode = wxFromEnd;
-     break;
+      mode = wxFromEnd;
+      break;
    case (AVSEEK_SIZE):
-     return ((wxFile *) h->priv_data)->Length();
+      return ((wxFile *) opaque)->Length();
    }
 
-   return ((wxFile *) h->priv_data)->Seek(pos, mode);
+   return ((wxFile *) opaque)->Seek(pos, mode);
 }
 
-static int ufile_close(URLContext *h)
+int ufile_close(AVIOContext *pb)
 {
-   wxFile *f = (wxFile *) h->priv_data;
+   wxFile *f = (wxFile *) pb->opaque;
 
    if (f) {
       f->Close();
       delete f;
    }
 
-    return 0;
+   return 0;
 }
-
-URLProtocol ufile_protocol = {
-    UFILE_PROTOCOL,
-    ufile_open,
-    ufile_read,
-    ufile_write,
-    ufile_seek,
-    ufile_close,
-};
 
 // Open a file with a (possibly) Unicode filename
 int ufile_fopen(AVIOContext **s, const wxString & name, int flags)
 {
-   wxString url(wxString(wxT(UFILE_PROTOCOL)) + wxT(":") + name);
-   URLContext *h;
-   int err;
+   wxFile *f;
+   wxFile::OpenMode mode;
 
-   // Open the file using our custom protocol and passing the (possibly) Unicode
-   // filename.  We convert the name to UTF8 here and it will be converted back
-   // to original encoding in ufile_open().  This allows us to support Unicode
-   // filenames even though FFmpeg does not.
-   err = url_open(&h, (const char *) url.ToUTF8(), flags);
-   if (err < 0) {
-      return err;
+   f = new wxFile;
+   if (!f) {
+      return ENOMEM;
    }
 
-   // Associate the file with a context
-   err = url_fdopen(s, h);
-   if (err < 0) {
-      url_close(h);
-      return err;
+   if (flags == (AVIO_FLAG_READ | AVIO_FLAG_WRITE)) {
+      delete f;
+      return EINVAL;
+   } else if (flags == AVIO_FLAG_WRITE) {
+      mode = wxFile::write;
+   } else {
+      mode = wxFile::read;
+   }
+
+   if (!f->Open(name, mode)) {
+      delete f;
+      return ENOENT;
+   }
+
+   *s = avio_alloc_context((unsigned char*)av_malloc(32768), 32768,
+                           flags & AVIO_FLAG_WRITE,
+                           /*opaque*/f,
+                           ufile_read,
+                           ufile_write,
+                           ufile_seek);
+   if (!*s) {
+      delete f;
+      return ENOMEM;
    }
 
    return 0;
 }
 
-
-// Size of probe buffer, for guessing file type from file contents
-#define PROBE_BUF_MIN 2048
-#define PROBE_BUF_MAX (1<<20)
 
 // Detect type of input file and open it if recognized. Routine
 // based on the av_open_input_file() libavformat function.
@@ -311,110 +264,32 @@ int ufile_fopen_input(AVFormatContext **ic_ptr, wxString & name)
    wxFileName f(name);
    wxCharBuffer fname;
    const char *filename;
-   AVProbeData pd;
    AVIOContext *pb = NULL;
-   AVInputFormat *fmt = NULL;
-   AVInputFormat *fmt1;
-   int probe_size;
    int err;
 
-   // Create a dummy file name using the extension from the original
-   f.SetName(wxT(UFILE_PROTOCOL));
    fname = f.GetFullName().mb_str();
    filename = (const char *) fname;
 
-   // Initialize probe data...go ahead and preallocate the maximum buffer size.
-   pd.filename = filename;
-   pd.buf_size = 0;
-   pd.buf = (unsigned char *) av_malloc(PROBE_BUF_MAX + AVPROBE_PADDING_SIZE);
-   if (pd.buf == NULL) {
-      err = AVERROR(ENOMEM);
-      goto fail;
-   }
-
    // Open the file to prepare for probing
-   if ((err = ufile_fopen(&pb, name, URL_RDONLY)) < 0) {
+   if ((err = ufile_fopen(&pb, name, AVIO_FLAG_READ)) < 0) {
       goto fail;
    }
 
-   for (probe_size = PROBE_BUF_MIN; probe_size <= PROBE_BUF_MAX && !fmt; probe_size <<= 1) {
-      int score_max = probe_size < PROBE_BUF_MAX ? AVPROBE_SCORE_MAX / 4 : 0;
-
-      // Read up to a "probe_size" worth of data
-      pd.buf_size = avio_read(pb, pd.buf, probe_size);
-
-      // AWD: with zero-length input files buf_size can come back negative;
-      // this causes problems so we might as well just fail
-      if (pd.buf_size < 0) {
-         err = AVERROR_INVALIDDATA;
-         goto fail;
-      }
-
-      // Clear up to a "AVPROBE_PADDING_SIZE" worth of unused buffer
-      memset(pd.buf + pd.buf_size, 0, AVPROBE_PADDING_SIZE);
-
-      // Reposition file for succeeding scan
-      if (avio_seek(pb, 0, SEEK_SET) < 0) {
-         err = AVERROR(EIO);
-         goto fail;
-      }
-
-      // Scan all input formats
-      fmt = NULL;
-      for (fmt1 = av_iformat_next(NULL); fmt1 != NULL; fmt1 = av_iformat_next(fmt1)) {
-         int score = 0;
-
-         // Ignore the ones that are not file based
-         if (fmt1->flags & AVFMT_NOFILE) {
-            continue;
-         }
-
-         // If the format can probe the file then try that first
-         if (fmt1->read_probe) {
-            score = fmt1->read_probe(&pd);
-         }
-         // Otherwize, resort to extension matching if available
-         else if (fmt1->extensions) {
-            if (av_match_ext(filename, fmt1->extensions)) {
-               score = 50;
-            }
-         }
-
-         // Remember this format if it scored higher than a previous match
-         if (score > score_max) {
-            score_max = score;
-            fmt = fmt1;
-         }
-         else if (score == score_max) {
-            fmt = NULL;
-         }
-      }
-   }
-
-   // Didn't find a suitable format, so bail
-   if (!fmt) {
-      err = AVERROR(EILSEQ);
-      goto fail;
-   }
+   *ic_ptr = avformat_alloc_context();
+   (*ic_ptr)->pb = pb;
 
    // And finally, attempt to associate an input stream with the file
-   err = av_open_input_stream(ic_ptr, pb, filename, fmt, NULL);
+   err = avformat_open_input(ic_ptr, filename, NULL, NULL);
    if (err) {
       goto fail;
    }
 
-   // Done with the probe buffer
-   av_freep(&pd.buf);
-
    return 0;
 
 fail:
-   if (pd.buf) {
-      av_freep(&pd.buf);
-   }
 
    if (pb) {
-      avio_close(pb);
+      ufile_close(pb);
    }
 
    *ic_ptr = NULL;
@@ -461,7 +336,7 @@ streamContext *import_ffmpeg_read_next_frame(AVFormatContext* formatContext,
 
 int import_ffmpeg_decode_frame(streamContext *sc, bool flushing)
 {
-   int      nBytesDecoded;          
+   int      nBytesDecoded;
    wxUint8 *pDecode = sc->m_pktDataPtr;
    int      nDecodeSiz = sc->m_pktRemainingSiz;
 
@@ -482,10 +357,32 @@ int import_ffmpeg_decode_frame(streamContext *sc, bool flushing)
       }
    }
 
-   sc->m_samplefmt = sc->m_codecCtx->sample_fmt;
-   sc->m_samplesize = av_get_bits_per_sample_format(sc->m_samplefmt) / 8;
+   AVPacket avpkt;
+   av_init_packet(&avpkt);
+   avpkt.data = pDecode;
+   avpkt.size = nDecodeSiz;
 
-   unsigned int newsize = FFMAX(sc->m_pkt.size * sc->m_samplesize, AVCODEC_MAX_AUDIO_FRAME_SIZE);
+   AVFrame *frame = av_frame_alloc();
+   int got_output = 0;
+
+   nBytesDecoded =
+      avcodec_decode_audio4(sc->m_codecCtx,
+                            frame,                                   // out
+                            &got_output,                             // out
+                            &avpkt);                                 // in
+
+   if (nBytesDecoded < 0)
+   {
+      // Decoding failed. Don't stop.
+      return -1;
+   }
+
+   sc->m_samplefmt = sc->m_codecCtx->sample_fmt;
+   sc->m_samplesize = av_get_bytes_per_sample(sc->m_samplefmt);
+
+   int channels = sc->m_codecCtx->channels;
+   unsigned int newsize = sc->m_samplesize * frame->nb_samples * channels;
+   sc->m_decodedAudioSamplesValidSiz = newsize;
    // Reallocate the audio sample buffer if it's smaller than the frame size.
    if (newsize > sc->m_decodedAudioSamplesSiz )
    {
@@ -503,37 +400,19 @@ int import_ffmpeg_decode_frame(streamContext *sc, bool flushing)
          return -1;
       }
    }
-
-
-   sc->m_decodedAudioSamplesValidSiz = sc->m_decodedAudioSamplesSiz;
-
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 25, 0)
-   // avcodec_decode_audio3() expects the size of the output buffer as the 3rd parameter but
-   // also returns the number of bytes it decoded in the same parameter.
-   AVPacket avpkt;
-   av_init_packet(&avpkt);
-   avpkt.data = pDecode;
-   avpkt.size = nDecodeSiz;
-   nBytesDecoded =
-      avcodec_decode_audio3(sc->m_codecCtx,
-                            (int16_t *)sc->m_decodedAudioSamples,    // out
-                            &sc->m_decodedAudioSamplesValidSiz,      // in/out
-                            &avpkt);                                 // in
-#else
-   // avcodec_decode_audio2() expects the size of the output buffer as the 3rd parameter but
-   // also returns the number of bytes it decoded in the same parameter.
-   nBytesDecoded =
-      avcodec_decode_audio2(sc->m_codecCtx, 
-                            (int16_t *) sc->m_decodedAudioSamples,   // out
-                            &sc->m_decodedAudioSamplesValidSiz,      // in/out
-                            pDecode,                                 // in
-                            nDecodeSiz);                             // in
-#endif
-   if (nBytesDecoded < 0)
-   {
-      // Decoding failed. Don't stop.
-      return -1;
+   if (frame->data[1]) {
+      for (int i = 0; i<frame->nb_samples; i++) {
+         for (int ch = 0; ch<channels; ch++) {
+            memcpy(sc->m_decodedAudioSamples + sc->m_samplesize * (ch + channels*i),
+                  frame->extended_data[ch] + sc->m_samplesize*i,
+                  sc->m_samplesize);
+         }
+      }
+   } else {
+      memcpy(sc->m_decodedAudioSamples, frame->data[0], newsize);
    }
+
+   av_frame_free(&frame);
 
    // We may not have read all of the data from this packet. If so, the user can call again.
    // Whether or not they do depends on if m_pktRemainingSiz == 0 (they can check).
@@ -636,7 +515,7 @@ public:
       "Where would I find the file '%s'?" instead if you want. */
       question.Printf(_("Where is '%s'?"), mName.c_str());
 
-      wxString path = FileSelector(question, 
+      wxString path = FileSelector(question,
          mLibPath.GetPath(),
          mLibPath.GetName(),
          wxT(""),
@@ -651,8 +530,7 @@ public:
 
    void OnDownload(wxCommandEvent & WXUNUSED(event))
    {
-      wxString page = wxT("http://manual.audacityteam.org/o/man/faq_installation_and_plug_ins.html#ffdown");
-      ::OpenInDefaultBrowser(page);
+      HelpSystem::ShowHelpDialog(this, wxT("FAQ_Installation_and_Plug-ins#ffdown"));
    }
 
    wxString GetLibPath()
@@ -723,7 +601,7 @@ bool FFmpegLibs::FindLibs(wxWindow *parent)
    else {
       path = GetLibAVFormatPath();
       name = GetLibAVFormatName();
-      wxLogMessage(wxT("mLibAVFormatPath is empty, starting with path '%s', name '%s'."), 
+      wxLogMessage(wxT("mLibAVFormatPath is empty, starting with path '%s', name '%s'."),
                   path.c_str(), name.c_str());
    }
 
@@ -781,7 +659,7 @@ bool FFmpegLibs::LoadLibs(wxWindow * WXUNUSED(parent), bool showerr)
          mLibAVFormatPath = path;
       }
    }
-   
+
 #if defined(__WXMAC__)
    // If not successful, try loading it from legacy path
    if (!mLibsLoaded && !GetLibAVFormatPath().IsEmpty()) {
@@ -815,16 +693,16 @@ bool FFmpegLibs::LoadLibs(wxWindow * WXUNUSED(parent), bool showerr)
       gPrefs->Read(wxT("/FFmpeg/NotFoundDontShow"),&dontShowDlg,0);
       if ((dontShowDlg == 0) && (showerr))
       {
-          dlg = new FFmpegNotFoundDialog(NULL);
-          dlg->ShowModal();
-          delete dlg;
+         dlg = new FFmpegNotFoundDialog(NULL);
+         dlg->ShowModal();
+         delete dlg;
       }
    }
    */
    // Oh well, just give up
    if (!ValidLibsLoaded()) {
       wxString msg = _("Failed to find compatible FFmpeg libraries.");
-      if (showerr) 
+      if (showerr)
          wxMessageBox(msg);
       wxLogError(msg);
       return false;
@@ -860,7 +738,7 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
       // If the directory, where libavformat is, is not in PATH - add it
       if (!syspath.Contains(fmtdirsc) && !syspath.Contains(scfmtdir) && !syspath.Contains(fmtdir))
       {
-         wxLogWarning(wxT("FFmpeg directory is not in PATH."), fmtdir.c_str());
+         wxLogWarning(wxT("FFmpeg directory '%s' is not in PATH."), fmtdir.c_str());
          if (syspath.Last() == wxT(';'))
          {
             wxLogMessage(wxT("Temporarily appending '%s' to PATH..."), fmtdir.c_str());
@@ -893,6 +771,8 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
    // Initially we don't know where are the avcodec and avutl libs
    wxDynamicLibrary *codec = NULL;
    wxDynamicLibrary *util = NULL;
+   wxFileName avcodec_filename;
+   wxFileName avutil_filename;
    wxFileName name(libpath_format);
    bool gotError = false;
 
@@ -903,15 +783,19 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
 
    // Verify it really is monolithic
    if (!gotError) {
-      wxFileName actual;
-
-      actual = FileNames::PathFromAddr(avformat->GetSymbol(wxT("avutil_version")));
-      if (actual.GetFullPath().IsSameAs(name.GetFullPath())) {
-         actual = FileNames::PathFromAddr(avformat->GetSymbol(wxT("avcodec_version")));
-         if (actual.GetFullPath().IsSameAs(name.GetFullPath())) {
-             util = avformat;
-             codec = avformat;
+      avutil_filename = FileNames::PathFromAddr(avformat->GetSymbol(wxT("avutil_version")));
+      avcodec_filename = FileNames::PathFromAddr(avformat->GetSymbol(wxT("avcodec_version")));
+      if (avutil_filename.GetFullPath().IsSameAs(name.GetFullPath())) {
+         if (avcodec_filename.GetFullPath().IsSameAs(name.GetFullPath())) {
+            util = avformat;
+            codec = avformat;
          }
+      }
+      if (!avcodec_filename.FileExists()) {
+         avcodec_filename = GetLibAVCodecName();
+      }
+      if (!avutil_filename.FileExists()) {
+         avutil_filename = GetLibAVUtilName();
       }
 
       if (util == NULL || codec == NULL) {
@@ -926,17 +810,15 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
    }
 
    if (!util) {
-      name.SetFullName(GetLibAVUtilName());
       avutil = util = new wxDynamicLibrary();
-      wxLogMessage(wxT("Loading avutil from '%s'."), name.GetFullPath().c_str());
-      util->Load(name.GetFullPath(), wxDL_LAZY);
+      wxLogMessage(wxT("Loading avutil from '%s'."), avutil_filename.GetFullPath().c_str());
+      util->Load(avutil_filename.GetFullPath(), wxDL_LAZY);
    }
 
    if (!codec) {
-      name.SetFullName(GetLibAVCodecName());
       avcodec = codec = new wxDynamicLibrary();
-      wxLogMessage(wxT("Loading avcodec from '%s'."), name.GetFullPath().c_str());
-      codec->Load(name.GetFullPath(), wxDL_LAZY);
+      wxLogMessage(wxT("Loading avcodec from '%s'."), avcodec_filename.GetFullPath().c_str());
+      codec->Load(avcodec_filename.GetFullPath(), wxDL_LAZY);
    }
 
    if (!avformat->IsLoaded()) {
@@ -977,74 +859,45 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
 
    wxLogMessage(wxT("Importing symbols..."));
    FFMPEG_INITDYN(avformat, av_register_all);
-   FFMPEG_INITDYN(avformat, av_find_stream_info);
+   FFMPEG_INITDYN(avformat, avformat_find_stream_info);
    FFMPEG_INITDYN(avformat, av_read_frame);
    FFMPEG_INITDYN(avformat, av_seek_frame);
-   FFMPEG_INITDYN(avformat, av_close_input_file);
-   FFMPEG_INITDYN(avformat, av_write_header);
+   FFMPEG_INITDYN(avformat, avformat_close_input);
+   FFMPEG_INITDYN(avformat, avformat_write_header);
    FFMPEG_INITDYN(avformat, av_interleaved_write_frame);
-   FFMPEG_INITDYN(avformat, av_iformat_next);
    FFMPEG_INITDYN(avformat, av_oformat_next);
-   FFMPEG_INITDYN(avformat, av_set_parameters);
-   FFMPEG_INITDYN(avformat, url_open_protocol);
-   FFMPEG_INITDYN(avformat, url_open);
-   FFMPEG_INITDYN(avformat, url_fdopen);
-   FFMPEG_INITDYN(avformat, url_close);
-   FFMPEG_INITDYN(avformat, url_fseek);
-   FFMPEG_INITDYN(avformat, url_fclose);
-   FFMPEG_INITDYN(avformat, av_new_stream);
+   FFMPEG_INITDYN(avformat, avformat_new_stream);
    FFMPEG_INITDYN(avformat, avformat_alloc_context);
    FFMPEG_INITDYN(avformat, av_write_trailer);
    FFMPEG_INITDYN(avformat, av_codec_get_tag);
    FFMPEG_INITDYN(avformat, avformat_version);
-   FFMPEG_INITDYN(avformat, av_open_input_stream);
-   FFMPEG_INITDYN(avformat, av_metadata_get);
+   FFMPEG_INITDYN(avformat, avformat_open_input);
+   FFMPEG_INITDYN(avformat, avio_size);
+   FFMPEG_INITDYN(avformat, avio_alloc_context);
+   FFMPEG_INITALT(avformat, av_guess_format, avformat, guess_format);
 
-   FFMPEG_INITALT(avformat, av_register_protocol2, av_register_protocol);
-   FFMPEG_INITALT(avformat, avio_read, get_buffer);
-   FFMPEG_INITALT(avformat, avio_seek, url_fseek);
-   FFMPEG_INITALT(avformat, avio_close, url_fclose);
-   FFMPEG_INITALT(avformat, av_metadata_set2, av_metadata_set);
-   FFMPEG_INITALT(avformat, av_guess_format, guess_format);
-   FFMPEG_INITALT(avformat, av_match_ext, match_ext);
-
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 58, 0)
    FFMPEG_INITDYN(avcodec, av_init_packet);
-#else
-   FFMPEG_INITDYN(avformat, av_init_packet);
-#endif
-
-#if LIBAVFORMAT_VERSION_INT > AV_VERSION_INT(52, 31, 0)
    FFMPEG_INITDYN(avcodec, av_free_packet);
-#endif
-   FFMPEG_INITDYN(avcodec, avcodec_init);
    FFMPEG_INITDYN(avcodec, avcodec_find_encoder);
    FFMPEG_INITDYN(avcodec, avcodec_find_encoder_by_name);
    FFMPEG_INITDYN(avcodec, avcodec_find_decoder);
-   FFMPEG_INITDYN(avcodec, avcodec_get_context_defaults);
-   FFMPEG_INITDYN(avcodec, avcodec_open);
-#if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(52, 25, 0)
-   FFMPEG_INITDYN(avcodec, avcodec_decode_audio3);
-#else
-   FFMPEG_INITDYN(avcodec, avcodec_decode_audio2);
-#endif
-   FFMPEG_INITDYN(avcodec, avcodec_encode_audio);
+   FFMPEG_INITDYN(avcodec, avcodec_open2);
+   FFMPEG_INITDYN(avcodec, avcodec_decode_audio4);
+   FFMPEG_INITDYN(avcodec, avcodec_encode_audio2);
    FFMPEG_INITDYN(avcodec, avcodec_close);
    FFMPEG_INITDYN(avcodec, avcodec_register_all);
    FFMPEG_INITDYN(avcodec, avcodec_version);
-   FFMPEG_INITDYN(avcodec, av_fast_realloc);
    FFMPEG_INITDYN(avcodec, av_codec_next);
-
-   FFMPEG_INITALT(avcodec, av_get_bits_per_sample_format, av_get_bits_per_sample_fmt);
+   FFMPEG_INITDYN(avcodec, av_codec_is_encoder);
+   FFMPEG_INITDYN(avcodec, avcodec_fill_audio_frame);
 
    FFMPEG_INITDYN(avutil, av_free);
+   FFMPEG_INITDYN(avutil, av_dict_get);
+   FFMPEG_INITDYN(avutil, av_dict_set);
+   FFMPEG_INITDYN(avutil, av_get_bytes_per_sample);
    FFMPEG_INITDYN(avutil, av_log_set_callback);
    FFMPEG_INITDYN(avutil, av_log_default_callback);
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
    FFMPEG_INITDYN(avutil, av_fifo_alloc);
-#else
-   FFMPEG_INITDYN(avutil, av_fifo_init);
-#endif
    FFMPEG_INITDYN(avutil, av_fifo_generic_read);
    FFMPEG_INITDYN(avutil, av_fifo_realloc2);
    FFMPEG_INITDYN(avutil, av_fifo_free);
@@ -1054,15 +907,17 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
    FFMPEG_INITDYN(avutil, av_freep);
    FFMPEG_INITDYN(avutil, av_rescale_q);
    FFMPEG_INITDYN(avutil, avutil_version);
+   FFMPEG_INITALT(avutil, av_frame_alloc, avcodec, avcodec_alloc_frame);
+   FFMPEG_INITALT(avutil, av_frame_free, avcodec, avcodec_free_frame);
+   FFMPEG_INITDYN(avutil, av_samples_get_buffer_size);
 
    wxLogMessage(wxT("All symbols loaded successfully. Initializing the library."));
 #endif
 
    //FFmpeg initialization
-   avcodec_init();
    avcodec_register_all();
    av_register_all();
-   
+
    wxLogMessage(wxT("Retrieving FFmpeg library version numbers:"));
    int avfver = avformat_version();
    int avcver = avcodec_version();
@@ -1071,14 +926,14 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
    mAVFormatVersion = wxString::Format(wxT("%d.%d.%d"),avfver >> 16 & 0xFF, avfver >> 8 & 0xFF, avfver & 0xFF);
    mAVUtilVersion = wxString::Format(wxT("%d.%d.%d"),avuver >> 16 & 0xFF, avuver >> 8 & 0xFF, avuver & 0xFF);
 
-   wxLogMessage(wxT("   AVCodec version 0x%06x - %s (built against 0x%06x - %s)"), 
-                  avcver, mAVCodecVersion.c_str(), LIBAVCODEC_VERSION_INT, 
+   wxLogMessage(wxT("   AVCodec version 0x%06x - %s (built against 0x%06x - %s)"),
+                  avcver, mAVCodecVersion.c_str(), LIBAVCODEC_VERSION_INT,
                   wxString::FromUTF8(AV_STRINGIFY(LIBAVCODEC_VERSION)).c_str());
-   wxLogMessage(wxT("   AVFormat version 0x%06x - %s (built against 0x%06x - %s)"), 
-                  avfver, mAVFormatVersion.c_str(), LIBAVFORMAT_VERSION_INT, 
+   wxLogMessage(wxT("   AVFormat version 0x%06x - %s (built against 0x%06x - %s)"),
+                  avfver, mAVFormatVersion.c_str(), LIBAVFORMAT_VERSION_INT,
                   wxString::FromUTF8(AV_STRINGIFY(LIBAVFORMAT_VERSION)).c_str());
-   wxLogMessage(wxT("   AVUtil version 0x%06x - %s (built against 0x%06x - %s)"), 
-                  avuver,mAVUtilVersion.c_str(), LIBAVUTIL_VERSION_INT, 
+   wxLogMessage(wxT("   AVUtil version 0x%06x - %s (built against 0x%06x - %s)"),
+                  avuver,mAVUtilVersion.c_str(), LIBAVUTIL_VERSION_INT,
                   wxString::FromUTF8(AV_STRINGIFY(LIBAVUTIL_VERSION)).c_str());
 
    int avcverdiff = (avcver >> 16 & 0xFF) - int(LIBAVCODEC_VERSION_MAJOR);
@@ -1096,12 +951,6 @@ bool FFmpegLibs::InitLibs(wxString libpath_format, bool WXUNUSED(showerr))
       wxLogError(wxT("Version mismatch. FFmpeg libraries are unusable."));
       return false;
    }
-
-#if defined(DISABLE_DYNAMIC_LOADING_FFMPEG) && (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(52, 69, 0))
-   av_register_protocol(&ufile_protocol);
-#else
-   av_register_protocol2(&ufile_protocol, sizeof(ufile_protocol));
-#endif
 
    return true;
 }

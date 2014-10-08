@@ -23,7 +23,7 @@
 #ifndef __AUDACITY_H__
 #define __AUDACITY_H__
 
-// We only do alpha builds and release versions. 
+// We only do alpha builds and release versions.
 // Most of the time we're in development, so IS_ALPHA should be defined
 // to 1.
 #define IS_ALPHA 0
@@ -31,11 +31,11 @@
 // Increment as appropriate every time we release a new version.
 #define AUDACITY_VERSION   2
 #define AUDACITY_RELEASE   0
-#define AUDACITY_REVISION  5
+#define AUDACITY_REVISION  6
 #define AUDACITY_MODLEVEL  0
 
 #if IS_ALPHA
-   #define AUDACITY_SUFFIX wxT("-alpha-") __TDATE__ 
+   #define AUDACITY_SUFFIX wxT("-alpha-") __TDATE__
 #else
    #define AUDACITY_SUFFIX    wxT("") // for a stable release
 #endif
@@ -69,8 +69,9 @@ class wxWindow;
 void QuitAudacity(bool bForce);
 void QuitAudacity();
 
-// Define one constant for maximum path value, so we don't have to do 
-// platform-specific conditionals everywhere we want to check it. 
+// Please try to support unlimited path length instead of using PLATFORM_MAX_PATH!
+// Define one constant for maximum path value, so we don't have to do
+// platform-specific conditionals everywhere we want to check it.
 #define PLATFORM_MAX_PATH 260 // Play it safe for default, with same value as Windows' MAX_PATH.
 
 #ifdef __WXMAC__
@@ -81,8 +82,11 @@ void QuitAudacity();
 
 #ifdef __WXGTK__
 #include "configunix.h"
+// Some systems do not restrict the path length and therefore PATH_MAX is undefined
+#ifdef PATH_MAX
 #undef PLATFORM_MAX_PATH
 #define PLATFORM_MAX_PATH PATH_MAX
+#endif
 #endif
 
 #ifdef __WXX11__
@@ -118,7 +122,7 @@ void QuitAudacity();
 /* The GCC-elf implementation */
 #ifdef HAVE_VISIBILITY // this is provided by the configure script, is only
 // enabled for suitable GCC versions
-/* The incantation is a bit weird here because it uses ELF symbol stuff. If we 
+/* The incantation is a bit weird here because it uses ELF symbol stuff. If we
  * make a symbol "default" it makes it visible (for import or export). Making it
  * "hidden" means it is invisible outside the shared object. */
    #ifndef AUDACITY_DLL_API
@@ -150,11 +154,11 @@ void QuitAudacity();
 // For compilers that support precompilation, includes "wx/wx.h".
 // Mainly for MSVC developers.
 //
-// This precompilation is only done for non-unicode debug builds.  
+// This precompilation is only done for non-unicode debug builds.
 // The rationale is that this is where there is the big time saving
 // because that's what you build whilst debugging.
 // Whilst disabling precompilation for other builds will ensure
-// that missing headers that would affect other platforms do get 
+// that missing headers that would affect other platforms do get
 // seen by MSVC developers too.
 
 #ifndef UNICODE

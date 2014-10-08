@@ -102,7 +102,7 @@ bool EffectCompressor::TransferParameters( Shuttle & shuttle )
    shuttle.TransferDouble( wxT("NoiseFloor"), mNoiseFloorDB, -40.0f );
    shuttle.TransferDouble( wxT("Ratio"), mRatio, 2.0f );
    shuttle.TransferDouble( wxT("AttackTime"), mAttackTime, 0.2f );
-   shuttle.TransferDouble( wxT("DecayTime"), mDecayTime, 1.0f );
+   shuttle.TransferDouble( wxT("ReleaseTime"), mDecayTime, 1.0f );
    shuttle.TransferBool( wxT("Normalize"), mNormalize, true );
    shuttle.TransferBool( wxT("UsePeak"), mUsePeak, false );
    return true;
@@ -479,7 +479,7 @@ void CompressorPanel::OnPaint(wxPaintEvent & WXUNUSED(event))
    vRuler.SetFormat(Ruler::LinearDBFormat);
    vRuler.SetUnits(_("dB"));
    vRuler.GetMaxSize(&w, NULL);
-   
+
    Ruler hRuler;
    hRuler.SetBounds(0, 0, mWidth, mHeight);
    hRuler.SetOrientation(wxHORIZONTAL);
@@ -647,8 +647,8 @@ void CompressorDialog::PopulateOrExchange(ShuttleGui & S)
          mRatioText = S.AddVariableText(wxT("XXXX:1"), true,
                                              wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL);
 
-         /* i18n-hint: Particularly in percussion, sounds can be regarded as having 
-          * an 'attack' phase where the sound builds up and a 'decay' where the 
+         /* i18n-hint: Particularly in percussion, sounds can be regarded as having
+          * an 'attack' phase where the sound builds up and a 'decay' where the
           * sound dies away.  So this means 'onset duration'.  */
          mAttackLabel = S.AddVariableText(_("Attack Time:"), true,
                                          wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
@@ -658,11 +658,11 @@ void CompressorDialog::PopulateOrExchange(ShuttleGui & S)
          mAttackText = S.AddVariableText(wxT("XXXX secs"), true,
                                          wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL);
 
-         mDecayLabel = S.AddVariableText(_("Decay Time:"), true,
+         mDecayLabel = S.AddVariableText(_("Release Time:"), true,
                                          wxALIGN_RIGHT | wxALIGN_CENTER_VERTICAL);
          S.SetStyle(wxSL_HORIZONTAL);
          mDecaySlider = S.Id(DecayID).AddSlider(wxT(""), 2, 30, 1);
-         mDecaySlider->SetName(_("Decay Time"));
+         mDecaySlider->SetName(_("Release Time"));
          mDecayText = S.AddVariableText(wxT("XXXX secs"), true,
                                         wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL);
       }
@@ -673,7 +673,7 @@ void CompressorDialog::PopulateOrExchange(ShuttleGui & S)
    S.StartHorizontalLay(wxCENTER, false);
    {
       /* i18n-hint: Make-up, i.e. correct for any reduction, rather than fabricate it.*/
-      mGainCheckBox = S.AddCheckBox(_("Make-up gain for 0dB after compressing"),
+      mGainCheckBox = S.AddCheckBox(_("Make-up gain for 0 dB after compressing"),
                                     wxT("true"));
       mPeakCheckBox = S.AddCheckBox(_("Compress based on Peaks"),
                                     wxT("false"));
@@ -725,13 +725,13 @@ bool CompressorDialog::TransferDataFromWindow()
 
    if (mRatioSlider->GetValue()%2 == 0) {
       mRatioLabel->SetName(wxString::Format(_("Ratio %.0f to 1"), ratio));
-      /* i18n-hint: Unless your language has a different convention for ratios, 
+      /* i18n-hint: Unless your language has a different convention for ratios,
        * like 8:1, leave as is.*/
       mRatioText->SetLabel(wxString::Format(_("%.0f:1"), ratio));
    }
    else {
       mRatioLabel->SetName(wxString::Format(_("Ratio %.1f to 1"), ratio));
-      /* i18n-hint: Unless your language has a different convention for ratios, 
+      /* i18n-hint: Unless your language has a different convention for ratios,
        * like 8:1, leave as is.*/
       mRatioText->SetLabel(wxString::Format(_("%.1f:1"), ratio));
    }
@@ -741,7 +741,7 @@ bool CompressorDialog::TransferDataFromWindow()
    mAttackText->SetLabel(wxString::Format(_("%.1f secs"), attack));
    mAttackText->SetName(mAttackText->GetLabel()); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 
-   mDecayLabel->SetName(wxString::Format(_("Decay Time %.1f secs"), decay));
+   mDecayLabel->SetName(wxString::Format(_("Release Time %.1f secs"), decay));
    mDecayText->SetLabel(wxString::Format(_("%.1f secs"), decay));
    mDecayText->SetName(mDecayText->GetLabel()); // fix for bug 577 (NVDA/Narrator screen readers do not read static text in dialogs)
 

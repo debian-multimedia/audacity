@@ -48,7 +48,7 @@ public:
    virtual ~EffectScienFilter();
 
    virtual wxString GetEffectName() {
-      return wxString(_("Scientific Filter..."));
+      return wxString(_("Classic Filters..."));
    }
 
    virtual std::set<wxString> GetEffectCategories() {
@@ -58,11 +58,11 @@ public:
    }
 
    virtual wxString GetEffectIdentifier() {
-      return wxString(wxT("Scientific Filter"));
+      return wxString(wxT("Classic Filters"));
    }
 
    virtual wxString GetEffectAction() {
-      return wxString(_("Performing ScienFilter"));
+      return wxString(_("Performing Classic Filtering"));
    }
 
    virtual bool Init();
@@ -157,7 +157,6 @@ public:
    // constructors and destructors
    ScienFilterDialog(EffectScienFilter * effect,
       double loFreq, double hiFreq,
-      //long windowSize, wxString CurveName, bool disallowCustom,
       wxWindow *parent, wxWindowID id,
       const wxString &title,
       const wxPoint& pos = wxDefaultPosition,
@@ -247,6 +246,10 @@ private:
    wxTextCtrl* mRippleCtl;
    wxTextCtrl* mStopbandRippleCtl;
    wxTextCtrl* mCutoffCtl;
+
+   // sizers for pass and stop-band attenuations
+   wxBoxSizer *szrPass;
+   wxBoxSizer *szrStop;
 
 private:
    DECLARE_EVENT_TABLE()

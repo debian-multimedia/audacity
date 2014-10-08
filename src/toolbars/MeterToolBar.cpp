@@ -6,7 +6,7 @@
 
   Dominic Mazzoni
   Leland Lucius
- 
+
   See MeterToolBar.h for details
 
 *******************************************************************//*!
@@ -126,8 +126,8 @@ void MeterToolBar::UpdatePrefs()
 void MeterToolBar::RegenerateTooltips()
 {
 #if wxUSE_TOOLTIPS
-   mPlayMeter->SetToolTip( _("Output Level") );
-   mRecordMeter->SetToolTip( _("Input Level (Click to monitor.)") );
+   mPlayMeter->SetToolTip( _("Playback Level") );
+   mRecordMeter->SetToolTip( _("Recording Level (Click to monitor.)") );
 #endif
 }
 
