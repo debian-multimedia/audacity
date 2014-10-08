@@ -1,3 +1,9 @@
+audacity (2.0.6-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Benjamin Drung <bdrung@debian.org>  Wed, 08 Oct 2014 21:52:35 +0200
+
 audacity (2.0.5-2) unstable; urgency=medium
 
   * Add support for recent FFmpeg/libav versions. Thanks to Michael Niedermayer
