@@ -1,4 +1,7 @@
-version=3
-opts="uversionmangle=s/-beta//;s/\.?rc/~rc/" \
-  http://code.google.com/p/audacity/downloads/list?can=1&num=1000 \
-  .*/audacity-minsrc-(.+)\.tar\.(?:bz2|xz)
+# FossHub tries to restrict downloads to browsers and I found no way to make it
+# work with uscan. You have to download the source manually throught your
+# browser from http://www.fosshub.com/Audacity.html
+#version=3
+#opts="uversionmangle=s/-beta//;s/\.?rc/~rc/" \
+#  http://www.fosshub.com/Audacity.html \
+#  .*/audacity-minsrc-(.+)\.tar\.(?:bz2|xz)
