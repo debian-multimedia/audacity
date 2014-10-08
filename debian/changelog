@@ -1,6 +1,13 @@
 audacity (2.0.6-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+  * Update debian/watch to point to FossHub.
+  * Bump Standards-Version to 3.9.6 (no changes required)
+  * Drop all patches (all included in new upstream release) and the
+    libnyquist autoreconf workaround
+  * Disable tests (they fail to build, because they are bitrotten)
+  * Fix autoreconf for the minimal audacity source tarball.
+  * Backport upstream preliminary changes for wxWidgets 3.0.1
 
  -- Benjamin Drung <bdrung@debian.org>  Wed, 08 Oct 2014 21:52:35 +0200
 
