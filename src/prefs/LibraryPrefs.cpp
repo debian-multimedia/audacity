@@ -25,6 +25,7 @@ MP3 and FFmpeg encoding libraries.
 #include "../ShuttleGui.h"
 #include "../export/ExportMP3.h"
 #include "../widgets/LinkingHtmlWindow.h"
+#include "../widgets/HelpSystem.h"
 
 #include "LibraryPrefs.h"
 
@@ -57,7 +58,7 @@ void LibraryPrefs::Populate()
 {
    //------------------------- Main section --------------------
    // Now construct the GUI itself.
-   // Use 'eIsCreatingFromPrefs' so that the GUI is 
+   // Use 'eIsCreatingFromPrefs' so that the GUI is
    // initialised with values from gPrefs.
    ShuttleGui S(this, eIsCreatingFromPrefs);
    PopulateOrExchange(S);
@@ -68,11 +69,11 @@ void LibraryPrefs::Populate()
    SetFFmpegVersionText();
 }
 
-/// This PopulateOrExchange function is a good example of mixing the fully 
+/// This PopulateOrExchange function is a good example of mixing the fully
 /// automatic style of reading/writing from GUI to prefs with the partial form.
-/// 
+///
 /// You'll notice that some of the Tie functions have Prefs identifiers in them
-/// and others don't.  
+/// and others don't.
 void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
 {
    S.SetBorder(2);
@@ -128,7 +129,7 @@ void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
                            true,
                            wxALL | wxALIGN_RIGHT | wxALIGN_CENTRE_VERTICAL);
          S.Id(ID_FFMPEG_FIND_BUTTON);
-         wxButton *bfnd = S.AddButton(_("Loca&te..."), 
+         wxButton *bfnd = S.AddButton(_("Loca&te..."),
                                       wxALL | wxALIGN_LEFT | wxALIGN_CENTRE_VERTICAL);
          S.AddVariableText(_("FFmpeg Library:"),
                            true,
@@ -169,12 +170,11 @@ void LibraryPrefs::OnMP3FindButton(wxCommandEvent & WXUNUSED(event))
    SetMP3VersionText(true);
 }
 
-/// Opens a file-finder dialog so that the user can
-/// tell us where the MP3 library is.
+/// Opens help on downloading a suitable MP3 library is.
 void LibraryPrefs::OnMP3DownButton(wxCommandEvent & WXUNUSED(event))
 {
-   wxString url = wxT("http://manual.audacityteam.org/o/man/faq_installation_and_plug_ins.html#lame");
-   ::OpenInDefaultBrowser(url);
+   // Modal help dialogue required here
+   HelpSystem::ShowHelpDialog(this, wxT("FAQ:Installation_and_Plug-Ins#lame"), true);
 }
 
 void LibraryPrefs::SetFFmpegVersionText()
@@ -222,14 +222,13 @@ void LibraryPrefs::OnFFmpegFindButton(wxCommandEvent & WXUNUSED(event))
 
 void LibraryPrefs::OnFFmpegDownButton(wxCommandEvent & WXUNUSED(event))
 {
-   wxString url = wxT("http://manual.audacityteam.org/o/man/faq_installation_and_plug_ins.html#ffdown");
-   ::OpenInDefaultBrowser(url);
+   HelpSystem::ShowHelpDialog(this, wxT("FAQ:Installation_and_Plug-Ins#ffdown"), true);
 }
 
 bool LibraryPrefs::Apply()
-{  
+{
    ShuttleGui S(this, eIsSavingToPrefs);
-   PopulateOrExchange(S);    
-   
+   PopulateOrExchange(S);
+
    return true;
 }

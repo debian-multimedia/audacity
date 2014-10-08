@@ -5,7 +5,7 @@
   SelectionBar.cpp
 
   Copyright 2005 Dominic Mazzoni
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -14,13 +14,13 @@
 *******************************************************************//**
 
 \class SelectionBar
-\brief (not quite a Toolbar) at foot of screen for setting and viewing the 
+\brief (not quite a Toolbar) at foot of screen for setting and viewing the
 selection range.
 
 *//****************************************************************//**
 
 \class SelectionBarListener
-\brief A parent class of SelectionBar, used to forward events to do 
+\brief A parent class of SelectionBar, used to forward events to do
 with changes in the SelectionBar.
 
 *//*******************************************************************/
@@ -49,6 +49,7 @@ with changes in the SelectionBar.
 #include "../AudioIO.h"
 #include "../AColor.h"
 #include "../Prefs.h"
+#include "../Snap.h"
 #include "../widgets/TimeTextCtrl.h"
 
 IMPLEMENT_CLASS(SelectionBar, ToolBar);
@@ -75,7 +76,7 @@ BEGIN_EVENT_TABLE(SelectionBar, ToolBar)
    EVT_TEXT(OnRightTimeID, SelectionBar::OnRightTime)
    EVT_RADIOBUTTON(OnLengthRadioID, SelectionBar::OnLengthRadio)
    EVT_RADIOBUTTON(OnEndRadioID, SelectionBar::OnEndRadio)
-   EVT_CHECKBOX(OnSnapToID, SelectionBar::OnSnapTo)
+   EVT_CHOICE(OnSnapToID, SelectionBar::OnSnapTo)
    EVT_COMBOBOX(OnRateID, SelectionBar::OnRate)
    EVT_TEXT(OnRateID, SelectionBar::OnRate)
    EVT_COMMAND(wxID_ANY, EVT_TIMETEXTCTRL_UPDATED, SelectionBar::OnUpdate)
@@ -111,14 +112,10 @@ void SelectionBar::Populate()
    wxBoxSizer *hSizer;
 
    /* we don't actually need a control yet, but we want to use it's methods
-    * to do some look-ups, so we'll have to create one. We can't make the 
+    * to do some look-ups, so we'll have to create one. We can't make the
     * look-ups static because they depend on translations which are done at
     * runtime */
-   TimeTextCtrl *ttc = new TimeTextCtrl(this, wxID_ANY, wxT(""), 0.0, mRate);
-   wxString formatName;
-   gPrefs->Read(wxT("/SelectionFormat"), &formatName);
-   wxString format = ttc->GetBuiltinFormat(formatName);
-   delete ttc;
+   wxString formatName = mListener ? mListener->AS_GetSelectionFormat() : wxString(wxEmptyString);
 
    mainSizer = new wxFlexGridSizer(7, 1, 1);
    Add(mainSizer, 0, wxALIGN_CENTER_VERTICAL);
@@ -139,14 +136,15 @@ void SelectionBar::Populate()
 
    mainSizer->Add(5, 1);
 
-   mainSizer->Add(5, 1);
+   mainSizer->Add(new wxStaticText(this, -1, _("Snap To:")),
+               0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
 
    mainSizer->Add(new wxStaticText(this, -1, _("Selection Start:")),
                0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
 
    bool showSelectionLength = false;
    gPrefs->Read(wxT("/ShowSelectionLength"), &showSelectionLength);
-   
+
    hSizer = new wxBoxSizer(wxHORIZONTAL);
    mRightEndButton = new wxRadioButton(this, OnEndRadioID, _("End"),
                                        wxDefaultPosition, wxDefaultSize,
@@ -165,7 +163,7 @@ void SelectionBar::Populate()
       // to why this is needed.  We've only experienced it under Win2k
       // so it's probably been fixed.  But, it doesn't hurt to have this
       // in for all versions.
-      wxRadioButton* dummyButton = 
+      wxRadioButton* dummyButton =
          new wxRadioButton(this, wxID_ANY, _("hidden"),
                            wxDefaultPosition, wxDefaultSize,
                            wxRB_GROUP);
@@ -227,21 +225,14 @@ void SelectionBar::Populate()
                                    wxSize(1, toolbarSingle),
                                    wxLI_VERTICAL),
                   0,  wxRIGHT, 5);
-   /* i18n-hint: The snap-to mode, when enabled, means for example that selections 
-    * are always at whole second boundaries.  You can't select a range 4.5s to 7.9s 
-    * because the boundaries 'snap to' the nearest whole number.*/
-   mSnapTo = new wxCheckBox(this, OnSnapToID, _("Snap To"),
-                            wxDefaultPosition, wxDefaultSize,
-#if defined(__WXGTK__)
-   // See bug #356 for explanation
-                            wxALIGN_LEFT);
-#else
-                            wxALIGN_RIGHT);
-#endif
+
+   mSnapTo = new wxChoice(this, OnSnapToID,
+                          wxDefaultPosition, wxDefaultSize,
+                          SnapManager::GetSnapLabels());
    mainSizer->Add(mSnapTo,
-                  0, wxALIGN_CENTER_VERTICAL | wxALIGN_CENTER | wxRIGHT, 5);
+                  0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
    mSnapTo->SetName(_("Snap To"));
-   mSnapTo->SetValue(gPrefs->Read(wxT("/SnapTo"), 0L)!=0);
+   mSnapTo->SetSelection(mListener ? mListener->AS_GetSnapTo() : SNAP_OFF);
    #if wxUSE_TOOLTIPS
       mSnapTo->SetToolTip(wxString::Format(_("Snap Clicks/Selections to %s"), formatName.c_str()));
    #endif
@@ -254,14 +245,13 @@ void SelectionBar::Populate()
                     wxFocusEventHandler(SelectionBar::OnFocus),
                     NULL,
                     this);
-   
-   mLeftTime = new TimeTextCtrl(this, OnLeftTimeID, wxT(""), 0.0, mRate);
-   mLeftTime->SetFormatString(format);
+
+   mLeftTime = new TimeTextCtrl(this, OnLeftTimeID, formatName, 0.0, mRate);
    mLeftTime->SetName(_("Selection Start:"));
    mLeftTime->EnableMenu();
    mainSizer->Add(mLeftTime, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 5);
 
-   mRightTime = new TimeTextCtrl(this, OnRightTimeID, format, 0.0, mRate);
+   mRightTime = new TimeTextCtrl(this, OnRightTimeID, formatName, 0.0, mRate);
    mRightTime->SetName(wxString(_("Selection ")) + (showSelectionLength ?
                                                    _("Length") :
                                                    _("End")));
@@ -273,7 +263,7 @@ void SelectionBar::Populate()
                                    wxLI_VERTICAL),
                   0, wxRIGHT, 5);
 
-   mAudioTime = new TimeTextCtrl(this, -1, format, 0.0, mRate);
+   mAudioTime = new TimeTextCtrl(this, wxID_ANY, formatName, 0.0, mRate);
    mAudioTime->SetName(_("Audio Position:"));
    mAudioTime->EnableMenu();
    mainSizer->Add(mAudioTime, 0, wxALIGN_CENTER_VERTICAL | wxRIGHT, 0);
@@ -303,6 +293,9 @@ void SelectionBar::UpdatePrefs()
 void SelectionBar::SetListener(SelectionBarListener *l)
 {
    mListener = l;
+   SetRate(mListener->AS_GetRate());
+   SetSnapTo(mListener->AS_GetSnapTo());
+   SetSelectionFormat(mListener->AS_GetSelectionFormat());
 };
 
 void SelectionBar::OnSize(wxSizeEvent &evt)
@@ -312,7 +305,7 @@ void SelectionBar::OnSize(wxSizeEvent &evt)
    evt.Skip();
 }
 
-void SelectionBar::ModifySelection()
+void SelectionBar::ModifySelection(bool done)
 {
    mStart = mLeftTime->GetTimeValue();
    double right = mRightTime->GetTimeValue();
@@ -326,17 +319,17 @@ void SelectionBar::ModifySelection()
    else
       mEnd = mStart + right;
 
-   mListener->AS_ModifySelection(mStart, mEnd);
+   mListener->AS_ModifySelection(mStart, mEnd, done);
 }
 
-void SelectionBar::OnLeftTime(wxCommandEvent & WXUNUSED(event))
+void SelectionBar::OnLeftTime(wxCommandEvent & event)
 {
-   ModifySelection();
+   ModifySelection(event.GetInt() != 0);
 }
 
-void SelectionBar::OnRightTime(wxCommandEvent & WXUNUSED(event))
+void SelectionBar::OnRightTime(wxCommandEvent & event)
 {
-   ModifySelection();
+   ModifySelection(event.GetInt() != 0);
 }
 
 void SelectionBar::OnLengthRadio(wxCommandEvent & WXUNUSED(event))
@@ -363,20 +356,18 @@ void SelectionBar::OnUpdate(wxCommandEvent &evt)
    bool leftFocus = (w == mLeftTime);
    bool rightFocus = (w == mRightTime);
    bool audioFocus = (w == mAudioTime);
-   
+
    evt.Skip(false);
-   
-   /* we don't actually need a TimeTextCtrl, but need it's 
-    * translations which are done at runtime */
-   
-   TimeTextCtrl *ttc = new TimeTextCtrl(this, wxID_ANY, wxT(""), 0.0, mRate);
-   wxString formatName(ttc->GetBuiltinName(index));
-   gPrefs->Write(wxT("/SelectionFormat"), formatName);
-   gPrefs->Flush();
-   #if wxUSE_TOOLTIPS
-      mSnapTo->SetToolTip(wxString::Format(_("Snap Clicks/Selections to %s"), formatName.c_str()));
-   #endif
-   delete ttc;
+
+   wxString format;
+
+   // Save format name before recreating the controls so they resize properly
+   format = mLeftTime->GetBuiltinName(index);
+   mListener->AS_SetSelectionFormat(format);
+
+#if wxUSE_TOOLTIPS
+   mSnapTo->SetToolTip(wxString::Format(_("Snap Clicks/Selections to %s"), format.c_str()));
+#endif
 
    // ToolBar::ReCreateButtons() will get rid of our sizers and controls
    // so reset pointers first.
@@ -394,10 +385,10 @@ void SelectionBar::OnUpdate(wxCommandEvent &evt)
 
    ValuesToControls();
 
-   wxString formatString = mLeftTime->GetBuiltinFormat(index);
-   mLeftTime->SetFormatString(formatString);
-   mRightTime->SetFormatString(formatString);
-   mAudioTime->SetFormatString(formatString);
+   format = mLeftTime->GetBuiltinFormat(index);
+   mLeftTime->SetFormatString(format);
+   mRightTime->SetFormatString(format);
+   mAudioTime->SetFormatString(format);
 
    if (leftFocus) {
       mLeftTime->SetFocus();
@@ -470,9 +461,18 @@ void SelectionBar::SetField(const wxChar *msg, int fieldNum)
    }
 }
 
-void SelectionBar::SetSnapTo(bool state)
+void SelectionBar::SetSnapTo(int snap)
 {
-   mSnapTo->SetValue(state);
+   mSnapTo->SetSelection(snap);
+}
+
+void SelectionBar::SetSelectionFormat(const wxString & format)
+{
+   mLeftTime->SetFormatString(mLeftTime->GetBuiltinFormat(format));
+
+   wxCommandEvent e;
+   e.SetInt(mLeftTime->GetFormatIndex());
+   OnUpdate(e);
 }
 
 void SelectionBar::SetRate(double rate)
@@ -558,7 +558,7 @@ void SelectionBar::OnCaptureKey(wxCommandEvent &event)
             return;
       }
    }
-   
+
    event.Skip();
 
    return;
@@ -566,7 +566,7 @@ void SelectionBar::OnCaptureKey(wxCommandEvent &event)
 
 void SelectionBar::OnSnapTo(wxCommandEvent & WXUNUSED(event))
 {
-   mListener->AS_SetSnapTo(mSnapTo->GetValue());
+   mListener->AS_SetSnapTo(mSnapTo->GetSelection());
 
    return;
 }

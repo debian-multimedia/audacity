@@ -15,7 +15,7 @@ unknown sample audio data.  Implements ImportRawDialog.
 *//****************************************************************//**
 
 \class ImportRawDialog
-\brief ImportRawDialog prompts you with options such as endianness 
+\brief ImportRawDialog prompts you with options such as endianness
 and sample size to help you importing data of an unknown format.
 
 *//*******************************************************************/
@@ -26,8 +26,6 @@ and sample size to help you importing data of an unknown format.
 #include "ImportRaw.h"
 #include "Import.h"
 
-#include "RawAudioGuess.h"
-
 #include "../DirManager.h"
 #include "../FileFormats.h"
 #include "../Internat.h"
@@ -35,7 +33,10 @@ and sample size to help you importing data of an unknown format.
 #include "../ShuttleGui.h"
 #include "../WaveTrack.h"
 
-#include <math.h>
+#include <cmath>
+#include <cstdio>
+#include <stdint.h>
+#include <vector>
 
 #include <wx/defs.h>
 #include <wx/button.h>
@@ -48,6 +49,11 @@ and sample size to help you importing data of an unknown format.
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
 #include <wx/timer.h>
+
+#include "RawAudioGuess.h"
+#include "MultiFormatReader.h"
+#include "SpecPowerMeter.h"
+#include "FormatClassifier.h"
 
 #include "sndfile.h"
 
@@ -94,7 +100,6 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    int numChannels = 0;
    sampleFormat format;
    sf_count_t offset = 0;
-   int int_offset = 0;
    sampleCount totalFrames;
    double rate = 44100.0;
    double percent = 100.0;
@@ -102,9 +107,17 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    SF_INFO sndInfo;
    int result;
 
-   encoding = RawAudioGuess(fileName,
-                            &int_offset, &numChannels);
-   offset = (sf_count_t)int_offset;
+   try {
+      // Yes, FormatClassifier currently handles filenames in UTF8 format only, that's
+      // a TODO ...
+      FormatClassifier theClassifier(fileName.utf8_str());
+      encoding = theClassifier.GetResultFormatLibSndfile();
+      numChannels = theClassifier.GetResultChannels();
+      offset = 0;
+   } catch (...) {
+      // Something went wrong in FormatClassifier, use defaults instead.
+      encoding = 0;
+   }
 
    if (encoding <= 0) {
       // Unable to guess.  Use mono, 16-bit samples with CPU endianness
@@ -156,7 +169,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    }
 
    sf_seek(sndFile, 0, SEEK_SET);
-   
+
    totalFrames = (sampleCount)(sndInfo.frames * percent / 100.0);
 
    //
@@ -166,7 +179,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
    // the file is higher-quality, go with a format which preserves
    // the quality of the original file.
    //
-   
+
    format = (sampleFormat)
       gPrefs->Read(wxT("/SamplingRate/DefaultProjectSampleFormat"), floatSample);
 
@@ -202,7 +215,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
 
    samplePtr srcbuffer = NewSamples(maxBlockSize * numChannels, format);
    samplePtr buffer = NewSamples(maxBlockSize, format);
-   
+
    sampleCount framescompleted = 0;
 
    wxString msg;
@@ -218,7 +231,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
 
       if (block + framescompleted > totalFrames)
          block = totalFrames - framescompleted;
-      
+
       if (format == int16Sample)
          block = sf_readf_short(sndFile, (short *)srcbuffer, block);
       else
@@ -236,7 +249,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
                   ((float *)buffer)[j] =
                      ((float *)srcbuffer)[numChannels*j+c];
             }
-            
+
             channels[c]->Append(buffer, format, block);
          }
          framescompleted += block;
@@ -246,7 +259,7 @@ int ImportRaw(wxWindow *parent, wxString fileName,
                                    (wxULongLong_t)totalFrames);
       if (updateResult != eProgressSuccess)
          break;
-      
+
    } while (block > 0 && framescompleted < totalFrames);
 
    sf_close(sndFile);
@@ -401,7 +414,7 @@ ImportRawDialog::ImportRawDialog(wxWindow * parent,
                                      wxT("100"),
                                      12);
          S.AddUnits(wxT("%"));
-         
+
          // Rate text
          /* i18n-hint: (noun)*/
          mRateText = S.AddTextBox(_("Sample rate:"),
@@ -439,7 +452,7 @@ ImportRawDialog::~ImportRawDialog()
 void ImportRawDialog::OnOK(wxCommandEvent & WXUNUSED(event))
 {
    long l;
-   
+
    mEncoding = mEncodingSubtype[mEncodingChoice->GetSelection()];
    mEncoding += (mEndianChoice->GetSelection() * 0x10000000);
    mChannels = mChannelChoice->GetSelection() + 1;

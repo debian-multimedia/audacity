@@ -11,8 +11,8 @@
 \class FileNames
 \brief Provides Static functions to yield filenames.
 
-This class helps us with setting a base path, and makes it easier 
-for us to keep track of the different kinds of files we read and write 
+This class helps us with setting a base path, and makes it easier
+for us to keep track of the different kinds of files we read and write
 from.
 
 JKC: In time I plan to add all file names and file extensions
@@ -20,7 +20,7 @@ used throughout Audacity into this one place.
 
 *//********************************************************************/
 
-#include "../Audacity.h"
+#include "Audacity.h"
 
 #include <wx/defs.h>
 #include <wx/filename.h>
@@ -53,7 +53,7 @@ wxString FileNames::MkDir(const wxString &Str)
 
 /// Returns the directory used for temp files.
 /// \todo put a counter in here to see if it gets used a lot.
-/// if it does, then maybe we should cache the path name 
+/// if it does, then maybe we should cache the path name
 /// each time.
 wxString FileNames::TempDir()
 {
@@ -103,7 +103,7 @@ wxString FileNames::DataDir()
       exePath.RemoveLastDir();
 #endif
       wxFileName portablePrefsPath(exePath.GetPath(), wxT("Portable Settings"));
-      
+
       if (::wxDirExists(portablePrefsPath.GetFullPath()))
       {
          // Use "Portable Settings" folder
@@ -121,7 +121,7 @@ wxString FileNames::DataDir()
          gDataDir = FileNames::MkDir(dataDir);
       }
    }
-   
+
    return gDataDir;
 }
 
@@ -133,26 +133,16 @@ wxString FileNames::HtmlHelpDir()
       exePath.RemoveLastDir();
       exePath.RemoveLastDir();
       exePath.RemoveLastDir();
-   
+
    return wxFileName( exePath.GetPath()+wxT("/help/manual"), wxEmptyString ).GetFullPath();
 #else
    //linux goes into /*prefix*/share/audacity/
    //windows goes into the dir containing the .exe
    wxString exeDir = wxStandardPaths::Get().GetDataDir();
-   
+
    //for mac this puts us within the .app: Audacity.app/Contents/SharedSupport/
    return wxFileName( exeDir+wxT("/help/manual"), wxEmptyString ).GetFullPath();
-#endif   
-}
-
-wxString FileNames::HtmlHelpIndexFile(bool quick)
-{
-   wxString htmlHelpIndex;
-   if(quick)
-      htmlHelpIndex = wxFileName( HtmlHelpDir(), wxT("quick_help.html") ).GetFullPath();
-   else
-      htmlHelpIndex = wxFileName( HtmlHelpDir(), wxT("index.html") ).GetFullPath();
-   return htmlHelpIndex;
+#endif
 }
 
 wxString FileNames::ChainDir()
@@ -225,10 +215,10 @@ wxString FileNames::PathFromAddr(void *addr)
 #if defined(__WXMAC__) || defined(__WXGTK__)
    Dl_info info;
    if (dladdr(addr, &info)) {
-      char realname[PATH_MAX + 1];
+      char realname[PLATFORM_MAX_PATH + 1];
       int len;
       name = LAT1CTOWX(info.dli_fname);
-      len = readlink(OSINPUT(name.GetFullPath()), realname, PATH_MAX);
+      len = readlink(OSINPUT(name.GetFullPath()), realname, PLATFORM_MAX_PATH);
       if (len > 0) {
          realname[len] = 0;
          name.SetFullName(LAT1CTOWX(realname));
@@ -236,7 +226,7 @@ wxString FileNames::PathFromAddr(void *addr)
    }
 #elif defined(__WXMSW__) && defined(_UNICODE)
    // The GetModuleHandlEx() function did not appear until Windows XP and
-   // GetModuleFileName() did appear until Windows 2000, so we have to 
+   // GetModuleFileName() did appear until Windows 2000, so we have to
    // check for them at runtime.
    typedef BOOL (WINAPI *getmodulehandleex)(DWORD dwFlags, LPCWSTR lpModuleName, HMODULE* phModule);
    typedef DWORD (WINAPI *getmodulefilename)(HMODULE hModule, LPWCH lpFilename, DWORD nSize);

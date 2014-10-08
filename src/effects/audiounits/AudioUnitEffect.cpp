@@ -138,13 +138,16 @@ wxString AudioUnitEffect::GetEffectIdentifier()
 
 wxString AudioUnitEffect::GetEffectAction()
 {
-   return wxString::Format(_("Performing Effect: %s"), 
+   return wxString::Format(_("Performing Effect: %s"),
                            mName.c_str());
 }
 
 bool AudioUnitEffect::Init()
 {
-   OpenAComponent(mComponent, &mUnit);
+   if (!mUnit) {
+      OpenAComponent(mComponent, &mUnit);
+   }
+
    if (!mUnit) {
       return false;
    }
@@ -156,7 +159,7 @@ bool AudioUnitEffect::Init()
 
       mSupportsMono = SetRateAndChannels(mUnit, 1, 44100.0);
       mSupportsStereo = SetRateAndChannels(mUnit, 2, 44100.0);
-      
+
       if (!mSupportsMono && !mSupportsStereo) {
          printf("Audio Unit doesn't support mono or stereo.\n");
          return false;
@@ -187,14 +190,14 @@ bool AudioUnitEffect::PromptUser()
    dlog.ShowModal();
 
    CloseComponent(carbonView);
-   
+
    return (dlog.GetReturnCode() == wxID_OK);
 }
-   
+
 bool AudioUnitEffect::Process()
 {
    bool bGoodResult = true;
- 
+
    CopyInputTracks();
 
    TrackListIterator iter(mOutputTracks);
@@ -206,10 +209,10 @@ bool AudioUnitEffect::Process()
       sampleCount lstart, rstart;
       sampleCount len;
       GetSamples((WaveTrack *)left, &lstart, &len);
-      
+
       right = NULL;
       if (left->GetLinked() && mSupportsStereo) {
-         right = iter.Next();         
+         right = iter.Next();
          GetSamples((WaveTrack *)right, &rstart, &len);
       }
 
@@ -231,20 +234,18 @@ bool AudioUnitEffect::Process()
          bGoodResult = false;
          break;
       }
-   
+
       left = iter.Next();
       count++;
    }
 
-   ReplaceProcessedTracks(bGoodResult); 
+   ReplaceProcessedTracks(bGoodResult);
 
    return bGoodResult;
 }
-   
+
 void AudioUnitEffect::End()
 {
-   CloseComponent(mUnit);
-   mUnit = NULL;
 }
 
 bool AudioUnitEffect::SetRateAndChannels(AudioUnit unit,
@@ -271,7 +272,7 @@ bool AudioUnitEffect::SetRateAndChannels(AudioUnit unit,
    streamFormat.mFramesPerPacket = 1;
    streamFormat.mBytesPerFrame = 4;
    streamFormat.mBytesPerPacket = 4;
-   
+
    auResult = AudioUnitSetProperty(unit, kAudioUnitProperty_StreamFormat,
                                    kAudioUnitScope_Input, 0,
                                    &streamFormat,
@@ -332,7 +333,7 @@ bool AudioUnitEffect::CopyParameters(AudioUnit srcUnit, AudioUnit dstUnit)
       printf("Couldn't get parameter list\n");
       delete[] parameters;
       return false;
-   }   
+   }
 
    // Copy the parameters from the main unit to the unit specific to
    // this track
@@ -408,7 +409,7 @@ bool AudioUnitEffect::ProcessStereo(int count,
    }
 
    auResult = AudioUnitInitialize(trackUnit);
-   if (auResult != 0) {   
+   if (auResult != 0) {
       printf("Couldn't initialize audio unit\n");
       return false;
    }
@@ -456,10 +457,17 @@ bool AudioUnitEffect::ProcessStereo(int count,
 
    bufferList = (AudioBufferList *)malloc(sizeof(UInt32) +
                                           numChannels * sizeof(AudioBuffer));
-   if (!bufferList) 
+   if (!bufferList)
    {
       printf("Setting input render callback failed.\n");
       AudioUnitUninitialize(trackUnit);
+      // free allocated memory
+      if (leftBuffer) {
+         delete[] leftBuffer;
+      }
+      if (rightBuffer) {
+         delete[] rightBuffer;
+      }
       return false;
    }
    bufferList->mNumberBuffers = numChannels;
@@ -512,7 +520,7 @@ bool AudioUnitEffect::ProcessStereo(int count,
          }
       }
    }
-   
+
    if (bufferList) {
       free(bufferList);
    }
@@ -582,11 +590,11 @@ bool AudioUnitEffect::DoRender(AudioUnit unit,
 
 // static
 OSStatus AudioUnitEffect::SimpleAudioRenderCallback
-                           (void                            *inRefCon, 
+                           (void                            *inRefCon,
                             AudioUnitRenderActionFlags      *inActionFlags,
-                            const AudioTimeStamp            *inTimeStamp, 
+                            const AudioTimeStamp            *inTimeStamp,
                             UInt32                          inBusNumber,
-                            UInt32                          inNumFrames, 
+                            UInt32                          inNumFrames,
                             AudioBufferList                 *ioData)
 {
    AudioUnitEffect *This = (AudioUnitEffect *)inRefCon;
@@ -648,14 +656,14 @@ bool AudioUnitGUIControl::Create(wxWindow *parent, wxWindowID id,
                                  ControlRef controlRef)
 {
    m_macIsUserPane = FALSE ;
-   
+
    if ( !wxControl::Create(parent, id, pos, size,
                            0, wxDefaultValidator,
                            wxString(wxT("AudioUnitControl"))) )
       return false;
-   
+
    m_peer = new wxMacControl(this, controlRef);
-   
+
    Rect outBounds;
    GetControlBounds(controlRef, &outBounds);
 
@@ -663,9 +671,9 @@ bool AudioUnitGUIControl::Create(wxWindow *parent, wxWindowID id,
    pos.y = outBounds.top;
    size.x = outBounds.right - outBounds.left;
    size.y = outBounds.bottom - outBounds.top;
-   
+
    MacPostControlCreate(pos, size);
-   
+
    return true;
 }
 
@@ -675,16 +683,16 @@ short AudioUnitGUIControl::GetModifiers(wxMouseEvent &event)
 
    if ( !event.m_leftDown && !event.m_rightDown )
       modifiers  |= btnState ;
-   
+
    if ( event.m_shiftDown )
       modifiers |= shiftKey ;
-   
+
    if ( event.m_controlDown )
       modifiers |= controlKey ;
-   
+
    if ( event.m_altDown )
       modifiers |= optionKey ;
-   
+
    if ( event.m_metaDown )
       modifiers |= cmdKey ;
 
@@ -695,17 +703,17 @@ void AudioUnitGUIControl::OnMouse(wxMouseEvent &event)
 {
    int x = event.m_x ;
    int y = event.m_y ;
-   
+
    MacClientToRootWindow( &x , &y ) ;
-   
+
    Point          localwhere ;
    ControlHandle  control;
-   
+
    localwhere.h = x ;
    localwhere.v = y ;
-   
+
    short modifiers = GetModifiers(event);
-   
+
    if (event.GetEventType() == wxEVT_LEFT_DOWN ||
        event.GetEventType() == wxEVT_LEFT_DCLICK ) {
     #if ((wxMAJOR_VERSION == 2) && (wxMINOR_VERSION <= 4))
@@ -715,15 +723,15 @@ void AudioUnitGUIControl::OnMouse(wxMouseEvent &event)
     #endif
 
       ControlPartCode code;
-      
+
       code = FindControl(localwhere,
                          rootWindow,
                          &control);
-      
+
       if (code) {
          Rect outBounds;
          GetControlBounds((ControlRef)control, &outBounds);
-         
+
          code = ::HandleControlClick(control,
                                      localwhere, modifiers,
                                      (ControlActionUPP)-1) ;
@@ -757,9 +765,9 @@ static pascal OSStatus EventHandler(EventHandlerCallRef handler, EventRef event,
 }
 
 
-void EventListener(void *inUserData, AudioUnitCarbonView inView, 
+void EventListener(void *inUserData, AudioUnitCarbonView inView,
                    const AudioUnitParameter *inParameter,
-                   AudioUnitCarbonViewEventID inEvent, 
+                   AudioUnitCarbonViewEventID inEvent,
                    const void *inEventParam)
 {
    // We're not actually using this yet...
@@ -786,7 +794,7 @@ AudioUnitDialog::AudioUnitDialog(wxWindow *parent, wxWindowID id,
    mHandlerRef(NULL)
 {
    long style = wxDEFAULT_DIALOG_STYLE;
-   
+
   #if ((wxMAJOR_VERSION == 2) && (wxMINOR_VERSION <= 4))
 
    wxDialog::Create(parent, id, title,
@@ -815,7 +823,7 @@ AudioUnitDialog::AudioUnitDialog(wxWindow *parent, wxWindowID id,
    //      way to disable compositing, so bypass it until a way
    //      is found.
 #if !wxCHECK_VERSION(2, 7, 0)
-   m_macUsesCompositing = false; 
+   m_macUsesCompositing = false;
 #endif
 
    // Rest of wxTopLevelWindow::Create
@@ -823,7 +831,7 @@ AudioUnitDialog::AudioUnitDialog(wxWindow *parent, wxWindowID id,
    m_windowId = id == -1 ? NewControlId() : id;
    MacCreateRealWindow(title, wxDefaultPosition, wxSize(500, 400),
                        MacRemoveBordersFromStyle(style) , title) ;
-   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE));   
+   SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE));
    wxTopLevelWindows.Append(this);
    if ( parent )
       parent->AddChild(this);
@@ -862,7 +870,7 @@ AudioUnitDialog::AudioUnitDialog(wxWindow *parent, wxWindowID id,
                                             wxPoint(0, 0),
                                             wxSize(width, height),
                                             audioUnitControl);
-      
+
       // Eventually, to handle resizing controls, call:
       // AudioUnitCarbonViewSetEventListener with the event:
       //   kEventControlBoundsChanged
@@ -875,7 +883,7 @@ AudioUnitDialog::AudioUnitDialog(wxWindow *parent, wxWindowID id,
       mGUIControl = NULL;
 
    wxBoxSizer *hSizer = new wxBoxSizer(wxHORIZONTAL);
-   
+
    wxButton *preview = new wxButton(this, PreviewID, _("Pre&view"));
    hSizer->Add(preview, 0, wxALL, 10);
 

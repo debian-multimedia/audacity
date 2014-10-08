@@ -133,17 +133,17 @@ wxString TitleText( const wxString & Key )
    if(Key ==wxT("inputdevice") )
    {
       /* i18n-hint: Title for a topic.*/
-      return _("Recording - Choosing the Input Device");
+      return _("Recording - Choosing the Recording Device");
    }
    if(Key ==wxT("inputsource") )
    {
       /* i18n-hint: Title for a topic.*/
-      return _("Recording - Choosing the Input Source");
+      return _("Recording - Choosing the Recording Source");
    }
    if(Key ==wxT("inputlevel") )
    {
       /* i18n-hint: Title for a topic.*/
-      return _("Recording - Setting the Input Level");
+      return _("Recording - Setting the Recording Level");
    }
    if((Key ==wxT("edit") ) || (Key==wxT("grey")))
    {
@@ -181,17 +181,19 @@ static wxString HelpTextBuiltIn( const wxString & Key )
 {
    if(Key==wxT("welcome"))
    {
+      /// TO-DO: Make the links to help here use the widgets/HelpSystem mechanism
+	  /// so that they are consistent
       /* i18n-hint: Preserve [[file:quick_help.html as it's the name of a file.*/
       return WrapText(
          wxString(wxT("")) +
          _("<center><h3>How to Get Help</h3></center>") +
          _("Welcome to Audacity ") + AUDACITY_VERSION_STRING + wxT("!<p>") +
-         _("These are our support methods:") + wxT("</p>") + wxT("<ul><li>") + 
+         _("These are our support methods:") + wxT("</p>") + wxT("<ul><li>") +
          _(" [[file:quick_help.html|Quick Help]] (should be installed locally, <a href=\"http://manual.audacityteam.org/o/quick_help.html\">Internet version if it isn't</a>)") + wxT("</li><li>") +
          _(" [[file:index.html|Manual]] (should be installed locally, <a href=\"http://manual.audacityteam.org/o/\">Internet version if it isn't</a>)") + wxT("</li><li>") +
          _(" [[http://wiki.audacityteam.org/index.php|Wiki]] (the latest tips, tricks and tutorials, on the Internet)") + wxT("</li><li>") +
          _(" <a href=\"http://forum.audacityteam.org/\">Forum</a> (ask your question directly, on the Internet)") + wxT("</li></ul></p><p>") +
-         _(" For even quicker answers, all the online resources above are <b>searchable</b>.")  + wxT("</p>") 
+         _(" For even quicker answers, all the online resources above are <b>searchable</b>.")  + wxT("</p>")
       );
    }
    if(Key==wxT("wma-proprietary"))

@@ -9,7 +9,7 @@
 ******************************************************************//**
 
 \class EffectNyquist
-\brief An Effect that calls up a Nyquist (XLISP) plug in, i.e. many possible 
+\brief An Effect that calls up a Nyquist (XLISP) plug in, i.e. many possible
 effects from this one class.
 
 *//****************************************************************//**
@@ -53,6 +53,7 @@ effects from this one class.
 #include "../../LabelTrack.h"
 #include "../../Internat.h"
 #include "../../ShuttleGui.h"
+#include "../../widgets/valnum.h"
 
 #include "Nyquist.h"
 
@@ -64,6 +65,7 @@ effects from this one class.
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <float.h>
 
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(NyqControlArray);
@@ -144,7 +146,7 @@ wxString EffectNyquist::UnQuote(wxString s)
 {
    wxString out;
    int len = s.Length();
-   
+
    if (len >= 2 && s[0] == wxT('\"') && s[len - 1] == wxT('\"')) {
       return s.Mid(1, len - 2);
    }
@@ -192,7 +194,7 @@ void EffectNyquist::Parse(wxString line)
          else {
             tok += c;
          }
-         
+
          sl = false;
       }
    }
@@ -237,7 +239,7 @@ void EffectNyquist::Parse(wxString line)
    if (len >= 2 && tokens[0] == wxT("debugflags")) {
       for (int i = 1; i < len; i++) {
          // Note: "trace" and "notrace" are overridden by "Debug" and "OK"
-         // buttons if the plug-in generates a dialog box by using controls 
+         // buttons if the plug-in generates a dialog box by using controls
          if (tokens[i] == wxT("trace")) {
             mDebug = true;
          }
@@ -282,12 +284,12 @@ void EffectNyquist::Parse(wxString line)
 
    if (len >= 6 && tokens[0] == wxT("control")) {
       NyqControl ctrl;
-  
+
       ctrl.var = tokens[1];
       ctrl.name = tokens[2];
       ctrl.label = tokens[4];
       ctrl.valStr = tokens[5];
- 
+
       if (tokens[3] == wxT("string")) {
          ctrl.type = NYQ_CTRL_STRING;
       }
@@ -298,27 +300,27 @@ void EffectNyquist::Parse(wxString line)
          if (len < 8) {
             return;
          }
-          
-         if ((tokens[3] == wxT("real")) || 
+
+         if ((tokens[3] == wxT("real")) ||
                (tokens[3] == wxT("float"))) // undocumented, but useful, alternative
             ctrl.type = NYQ_CTRL_REAL;
          else if (tokens[3] == wxT("int"))
             ctrl.type = NYQ_CTRL_INT;
-         else 
+         else
          {
             wxString str;
-            str.Printf(_("Bad Nyquist 'control' type specification: '%s' in plugin file '%s'.\nControl not created."), 
+            str.Printf(_("Bad Nyquist 'control' type specification: '%s' in plugin file '%s'.\nControl not created."),
                        tokens[3].c_str(), mFileName.GetFullPath().c_str());
 
             // Too disturbing to show alert before Audacity frame is up.
             //    wxMessageBox(str, wxT("Nyquist Warning"), wxOK | wxICON_EXCLAMATION);
 
-            // Note that the AudacityApp's mLogger has not yet been created, 
+            // Note that the AudacityApp's mLogger has not yet been created,
             // so this brings up an alert box, but after the Audacity frame is up.
             wxLogWarning(str);
             return;
          }
-          
+
          ctrl.lowStr = tokens[6];
          ctrl.highStr = tokens[7];
       }
@@ -327,7 +329,7 @@ void EffectNyquist::Parse(wxString line)
 
       mControls.Add(ctrl);
    }
-   
+
    if (len >= 2 && tokens[0] == wxT("categories")) {
       for (size_t i = 1; i < tokens.GetCount(); ++i) {
          mCategories.Add(tokens[i]);
@@ -374,7 +376,7 @@ void EffectNyquist::SetCommand(wxString cmd)
    wxStringTokenizer lines(cmd, wxT("\n"));
    while (lines.HasMoreTokens()) {
       wxString line = lines.GetNextToken();
-      
+
       if (line.Length() > 1 && line[0] == wxT(';')) {
          Parse(line);
       }
@@ -451,7 +453,7 @@ bool EffectNyquist::TransferParameters( Shuttle & shuttle )
          //str is coma separated labels for each choice
          wxString str = ctrl->label;
          wxArrayString choices;
-         
+
          while (1) {
             int ci = str.Find( ',' ); //coma index
 
@@ -462,7 +464,7 @@ bool EffectNyquist::TransferParameters( Shuttle & shuttle )
             else {
                choices.Add(str.Left(ci));
             }
-            
+
             str = str.Right(str.length() - ci - 1);
          }
 
@@ -521,7 +523,7 @@ bool EffectNyquist::PromptUser()
 
       // Is this LISP or SAL? Both allow comments. After comments, LISP
       // must begin with "(". Technically, a LISP expression could be a
-      // symbol or number or string, etc., but these are not really 
+      // symbol or number or string, etc., but these are not really
       // useful expressions. If the input begins with a symbol, number,
       // or string, etc., it is more likely an erroneous attempt to type
       // a SAL expression (which should probably begin with "return"),
@@ -539,17 +541,17 @@ bool EffectNyquist::PromptUser()
             inComment = (mCmd[i] != wxT('\n'));
          } else if (mCmd[i] == wxT(';')) {
             inComment = true;
-         } else if (!wxIsspace(mCmd[i])) { 
+         } else if (!wxIsspace(mCmd[i])) {
             break; // found the first non-comment, non-space character
          }
          i++;
       }
 
-      // invariant: i == mCmd.Len() | 
+      // invariant: i == mCmd.Len() |
       //            mCmd[i] is first non-comment, non-space character
-      
+
       mIsSal = false;
-      if (mCmd.Len() > i && mCmd[i] != wxT('(') && 
+      if (mCmd.Len() > i && mCmd[i] != wxT('(') &&
           (mCmd[i] != wxT('#') || mCmd.Len() <= i + 1 ||
            mCmd[i + 1] != wxT('|'))) {
          mIsSal = true;
@@ -589,7 +591,7 @@ bool EffectNyquist::PromptUser()
       if (ctrl->type == NYQ_CTRL_CHOICE) {
          continue;
       }
-      
+
       ctrl->low = GetCtrlValue(ctrl->lowStr);
       ctrl->high = GetCtrlValue(ctrl->highStr);
 
@@ -619,7 +621,7 @@ bool EffectNyquist::PromptUser()
    if (result == wxID_CANCEL) {
       return false;
    }
-   
+
    /* if (result == eDebugID) {
       mDebug = true;
    } */
@@ -669,7 +671,7 @@ bool EffectNyquist::Process()
 
             mCurTrack[1] = (WaveTrack *)iter.Next();
             if (mCurTrack[1]->GetRate() != mCurTrack[0]->GetRate()) {
-               wxMessageBox(_("Sorry, cannot apply effect on stereo tracks where the tracks don't match."), 
+               wxMessageBox(_("Sorry, cannot apply effect on stereo tracks where the tracks don't match."),
                             wxT("Nyquist"),
                             wxOK | wxCENTRE, mParent);
                success = false;
@@ -698,7 +700,7 @@ bool EffectNyquist::Process()
          //
          // MB: setlocale is not thread-safe.  Should use uselocale()
          //     if available, or fix libnyquist to be locale-independent.
-         // See also http://bugzilla.audacityteam.org/show_bug.cgi?id=642#c9 
+         // See also http://bugzilla.audacityteam.org/show_bug.cgi?id=642#c9
          // for further info about this thread safety question.
          wxString prevlocale = wxSetlocale(LC_NUMERIC, NULL);
          wxSetlocale(LC_NUMERIC, wxT("C"));
@@ -770,6 +772,12 @@ bool EffectNyquist::ProcessOne()
       }
    }
 
+   // Restore the Nyquist sixteenth note symbol for Generate plugins.
+   // See http://bugzilla.audacityteam.org/show_bug.cgi?id=490.
+   if (GetEffectFlags() & INSERT_EFFECT) {
+      cmd += wxT("(setf s 0.25)\n");
+   }
+
    for (unsigned int j = 0; j < mControls.GetCount(); j++) {
       if (mControls[j].type == NYQ_CTRL_REAL) {
          // We use Internat::ToString() rather than "%f" here because we
@@ -778,9 +786,9 @@ bool EffectNyquist::ProcessOne()
          // decimal separator which may be a comma in some countries.
          cmd += wxString::Format(wxT("(setf %s %s)\n"),
                                  mControls[j].var.c_str(),
-                                 Internat::ToString(mControls[j].val).c_str());
+                                 Internat::ToString(mControls[j].val, 14).c_str());
       }
-      else if (mControls[j].type == NYQ_CTRL_INT || 
+      else if (mControls[j].type == NYQ_CTRL_INT ||
             mControls[j].type == NYQ_CTRL_CHOICE) {
          cmd += wxString::Format(wxT("(setf %s %d)\n"),
                                  mControls[j].var.c_str(),
@@ -846,7 +854,7 @@ bool EffectNyquist::ProcessOne()
    rval = nyx_eval_expression(cmd.mb_str(wxConvUTF8));
 
    if (rval == nyx_string) {
-       wxMessageBox(NyquistToWxString(nyx_get_string()), 
+       wxMessageBox(NyquistToWxString(nyx_get_string()),
                     wxT("Nyquist"),
                     wxOK | wxCENTRE, mParent);
       return true;
@@ -882,7 +890,7 @@ bool EffectNyquist::ProcessOne()
             break;
          }
       }
-      
+
       if (!ltrack) {
          ltrack = mFactory->NewLabelTrack();
          this->AddToOutputTracks((Track *)ltrack);
@@ -904,7 +912,7 @@ bool EffectNyquist::ProcessOne()
                    wxOK | wxCENTRE, mParent);
       return false;
    }
-   
+
    int outChannels;
 
    outChannels = nyx_get_audio_num_channels();
@@ -1121,7 +1129,19 @@ void EffectNyquist::OSCallback()
       nyx_continue();
    }
 
+   // LLL:  STF figured out that yielding while the effect is being applied
+   //       produces an EXTREME slowdown.  It appears that yielding is not
+   //       really necessary on Linux and Windows.
+   //
+   //       However, on the Mac, the spinning cursor appears during longer
+   //       Nyquist processing and that may cause the user to think Audacity
+   //       has crashed or hung.  In addition, yielding or not on the Mac
+   //       doesn't seem to make much of a difference in execution time.
+   //
+   //       So, yielding on the Mac only...
+#if defined(__WXMAC__)
    wxYieldIfNeeded();
+#endif
 }
 
 /**********************************************************/
@@ -1182,7 +1202,7 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
          //str is coma separated labels for each choice
          wxString str = ctrl->label;
          wxArrayString choices;
-         
+
          while (1) {
             int ci = str.Find( ',' ); //coma index
 
@@ -1193,19 +1213,19 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
             else {
                choices.Add(str.Left(ci));
             }
-            
+
             str = str.Right(str.length() - ci - 1);
          }
 
-         wxChoice *choice = new wxChoice(this, ID_NYQ_CHOICE + i, 
+         wxChoice *choice = new wxChoice(this, ID_NYQ_CHOICE + i,
                wxDefaultPosition, wxSize(150, -1), choices);
          choice->SetName(ctrl->name);
-         
+
          int val = (int)ctrl->val;
          if (val >= 0 && val < (int)choice->GetCount()) {
             choice->SetSelection(val);
          }
-        
+
          grid->Add(10, 10);
          grid->Add(choice, 0, wxALIGN_CENTRE | wxALIGN_CENTER_VERTICAL | wxALL, 5);
       }
@@ -1217,18 +1237,35 @@ NyquistDialog::NyquistDialog(wxWindow * parent, wxWindowID id,
          item = new wxTextCtrl(this, ID_NYQ_TEXT+i, wxT(""),
                                wxDefaultPosition, wxSize(60, -1));
          item->SetName(ctrl->name);
-         wxTextValidator vld(wxFILTER_NUMERIC);
-         item->SetValidator(vld);
+         if (ctrl->type == NYQ_CTRL_REAL) {
+            // > 12 decimal places can cause rounding errors in display.
+            wxFloatingPointValidator<double> vld(12, &ctrl->val);
+            vld.SetRange(-FLT_MAX, FLT_MAX);
+            // Set number of decimal places
+            if (ctrl->high - ctrl->low < 10) {
+               vld.SetStyle(wxNUM_VAL_THREE_TRAILING_ZEROES);
+            } else if (ctrl->high - ctrl->low < 100) {
+               vld.SetStyle(wxNUM_VAL_TWO_TRAILING_ZEROES);
+            } else {
+               vld.SetStyle(wxNUM_VAL_ONE_TRAILING_ZERO);
+            }
+            item->SetValidator(vld);
+         }
+         else {
+            wxIntegerValidator<double> vld(&ctrl->val);
+            vld.SetRange(INT_MIN, INT_MAX);
+            item->SetValidator(vld);
+         }
 
          grid->Add(item, 0, wxALIGN_CENTRE | wxALIGN_CENTER_VERTICAL | wxALL, 5);
-         
+
          item = new wxSlider(this, ID_NYQ_SLIDER+i, val, 0, ctrl->ticks,
                              wxDefaultPosition, wxSize(150, -1));
          item->SetName(ctrl->name);
 
          grid->Add(item, 0, wxALIGN_CENTRE | wxALIGN_CENTER_VERTICAL | wxALL, 5);
       }
-         
+
       if (ctrl->type == NYQ_CTRL_CHOICE) {
          grid->Add( 10, 10 );
       }
@@ -1273,7 +1310,7 @@ void NyquistDialog::OnSlider(wxCommandEvent & /* event */)
       wxSlider *slider = (wxSlider *)FindWindow(ID_NYQ_SLIDER + i);
       wxTextCtrl *text = (wxTextCtrl *)FindWindow(ID_NYQ_TEXT + i);
       wxASSERT(slider && text);
-      
+
       int val = slider->GetValue();
 
       double newVal = (val / (double)ctrl->ticks)*
@@ -1289,7 +1326,7 @@ void NyquistDialog::OnSlider(wxCommandEvent & /* event */)
       // change it (this prevents changes from manually entered values unless
       // the slider actually moved)
       if (fabs(newVal - ctrl->val) >= (1 / (double)ctrl->ticks) *
-                                      (ctrl->high - ctrl->low) && 
+                                      (ctrl->high - ctrl->low) &&
           fabs(newVal - ctrl->val) >= pow(0.1, precision) / 2 )
       {
          // First round to the appropriate precision
@@ -1298,33 +1335,8 @@ void NyquistDialog::OnSlider(wxCommandEvent & /* event */)
          newVal /= pow(10.0, precision);
 
          ctrl->val = newVal;
-      }
 
-      wxString valStr;
-      if (ctrl->type == NYQ_CTRL_REAL) {
-         // If this is a user-typed value, allow unlimited precision
-         if (ctrl->val != newVal)
-         {
-            valStr = Internat::ToDisplayString(ctrl->val);
-         }
-         else
-         {
-            if (precision == 0)
-            {
-               valStr.Printf(wxT("%d"), (int)floor(ctrl->val + 0.5));
-            }
-            else
-            {
-               valStr = Internat::ToDisplayString(ctrl->val, precision);
-            }
-         }
-      }
-      else if (ctrl->type == NYQ_CTRL_INT) {
-         valStr.Printf(wxT("%d"), (int)floor(ctrl->val + 0.5));
-      }
-
-      if (valStr != wxT("")) {
-         text->SetValue(valStr);
+         text->GetValidator()->TransferToWindow();
       }
    }
 
@@ -1340,14 +1352,14 @@ void NyquistDialog::OnChoice( wxCommandEvent &event )
 
    unsigned int ctrlId = event.GetId() - ID_NYQ_CHOICE;
    wxASSERT(ctrlId >= 0 && ctrlId < mControls->GetCount());
-   
+
    NyqControl *ctrl = &(mControls->Item(ctrlId));
    wxChoice *choice = (wxChoice *)FindWindow(ID_NYQ_CHOICE + ctrlId);
    wxASSERT(choice);
 
    ctrl->val = choice->GetSelection();
 
-   mInHandler = false;   
+   mInHandler = false;
 }
 
 void NyquistDialog::OnText(wxCommandEvent &event)
@@ -1365,27 +1377,26 @@ void NyquistDialog::OnText(wxCommandEvent &event)
    wxTextCtrl *text = (wxTextCtrl *)FindWindow(ID_NYQ_TEXT + ctrlId);
    wxASSERT(text);
 
-   ctrl->valStr = text->GetValue();
-
-   if (ctrl->type != NYQ_CTRL_STRING) {
+   if (ctrl->type == NYQ_CTRL_STRING) {
+      ctrl->valStr = text->GetValue();
+   } else {
+      text->GetValidator()->TransferFromWindow();
       wxSlider *slider = (wxSlider *)FindWindow(ID_NYQ_SLIDER + ctrlId);
       wxASSERT(slider);
 
-      if (ctrl->valStr.ToDouble(&ctrl->val)) {
-         int pos = (int)floor((ctrl->val - ctrl->low) /
-                              (ctrl->high - ctrl->low) * ctrl->ticks + 0.5);
-         if (pos < 0) {
-            pos = 0;
-         }
-         else if (pos > ctrl->ticks) {
-            pos = ctrl->ticks;
-         }
-
-         slider->SetValue(pos);
+      int pos = (int)floor((ctrl->val - ctrl->low) /
+                           (ctrl->high - ctrl->low) * ctrl->ticks + 0.5);
+      if (pos < 0) {
+         pos = 0;
       }
-   }   
+      else if (pos > ctrl->ticks) {
+         pos = ctrl->ticks;
+      }
 
-   mInHandler = false;   
+      slider->SetValue(pos);
+   }
+
+   mInHandler = false;
 }
 
 void NyquistDialog::OnOk(wxCommandEvent & /* event */)

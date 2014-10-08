@@ -2,54 +2,66 @@ dnl add license?
 dnl
 dnl Please increment the serial number below whenever you alter this macro
 dnl for the benefit of automatic macro update systems
-# audacity_checklib_libexpat.m4 serial 1
+# audacity_checklib_libexpat.m4 serial 2
 
-AC_DEFUN([AUDACITY_CHECKLIB_LIBEXPAT], [
+AC_DEFUN([AUDACITY_CHECKLIB_EXPAT], [
 
    AC_ARG_WITH(expat,
                [AS_HELP_STRING([--with-expat],
                                [which expat to use for XML file support: [system,local]])],
-               LIBEXPAT_ARGUMENT=$withval,
-               LIBEXPAT_ARGUMENT="unspecified")
+               EXPAT_ARGUMENT=$withval,
+               EXPAT_ARGUMENT="unspecified")
 
-   dnl see if libexpat is installed on the system
+   dnl see if expat is installed on the system
 
-   AC_CHECK_LIB(expat, XML_ParserCreate,
-                libexpat_found="yes",
-                libexpat_found="no")
+   PKG_CHECK_MODULES(EXPAT, expat,
+                     EXPAT_SYSTEM_AVAILABLE="yes",
+                     EXPAT_SYSTEM_AVAILABLE="no")
 
-   expat_h_found="no"
+   dnl Fall back to check for -lexpat when there is not pkg-config file.
+   if test "$EXPAT_SYSTEM_AVAILABLE" = "no"; then
+      AC_CHECK_LIB(expat, XML_ParserCreate,
+                   libexpat_found="yes",
+                   libexpat_found="no")
 
-   AC_CHECK_HEADER(expat.h,
-                   expat_h_found="yes",
-                   expat_h_found="no")
+      AC_CHECK_HEADER(expat.h,
+                      expat_h_found="yes",
+                      expat_h_found="no")
 
-   if test "x$libexpat_found" = "xyes" && test "x$expat_h_found" = "xyes" ; then
-      LIBEXPAT_SYSTEM_AVAILABLE="yes"
-      LIBEXPAT_SYSTEM_LIBS="-lexpat"
-      LIBEXPAT_SYSTEM_CPPSYMBOLS="USE_SYSTEM_EXPAT"
+      if test "$libexpat_found" = "yes" -a "$expat_h_found" = "yes"; then
+         EXPAT_SYSTEM_AVAILABLE="yes"
+         EXPAT_LIBS="-lexpat"
+      fi
+   fi
+
+   if test "$EXPAT_SYSTEM_AVAILABLE" = "yes"; then
       AC_MSG_NOTICE([Expat libraries are available as system libraries])
    else
-      LIBEXPAT_SYSTEM_AVAILABLE="no"
       AC_MSG_NOTICE([Expat libraries are NOT available as system libraries])
    fi
 
    dnl see if expat is available in the local tree
 
-   AC_CHECK_FILE(${srcdir}/lib-src/expat/xmlparse/xmlparse.h,
-                 xmlparse_h_found="yes",
-                 xmlparse_h_found="no")
+   AC_CHECK_FILE(${srcdir}/lib-src/expat/lib/expat.h,
+                 EXPAT_LOCAL_AVAILABLE="yes",
+                 EXPAT_LOCAL_AVAILABLE="no")
 
-   if test "x$xmlparse_h_found" = "xyes" ; then
-      LIBEXPAT_LOCAL_AVAILABLE="yes"
-      LIBEXPAT_LOCAL_LIBS="expat.a"
-      LIBEXPAT_LOCAL_CXXFLAGS='-I$(top_srcdir)/lib-src/expat'
-      LIBEXPAT_LOCAL_CPPSYMBOLS="USE_LOCAL_EXPAT"
-
+   if test "$EXPAT_LOCAL_AVAILABLE" = "yes"; then
       AC_MSG_NOTICE([Expat libraries are available in the local tree])
    else
-      LIBEXPAT_LOCAL_AVAILABLE="no"
       AC_MSG_NOTICE([Expat libraries are NOT available in the local tree])
    fi
 ])
 
+AC_DEFUN([AUDACITY_CONFIG_EXPAT], [
+   if test "$EXPAT_USE_LOCAL" = yes; then
+      EXPAT_CFLAGS='-I$(top_srcdir)/lib-src/expat'
+      EXPAT_LIBS='$(top_builddir)/lib-src/expat/libexpat.la'
+      AC_CONFIG_SUBDIRS([lib-src/expat])
+   fi
+
+   AC_SUBST([EXPAT_CFLAGS])
+   AC_SUBST([EXPAT_LIBS])
+
+   AM_CONDITIONAL([USE_LOCAL_EXPAT], [test "$EXPAT_USE_LOCAL" = yes])
+])

@@ -1,9 +1,9 @@
 /**********************************************************************
 
   Audacity: A Digital Audio Editor
-  
+
   FileIO.h
- 
+
   Leland Lucius
 
 **********************************************************************/
@@ -13,7 +13,6 @@
 
 #include <wx/object.h>
 #include <wx/wfstream.h>
-#include <wx/protocol/ftp.h>
 
 class FileIO
 {
@@ -29,7 +28,7 @@ class FileIO
    ~FileIO();
 
    bool IsOpened();
-   
+
    void Close();
 
    wxInputStream & Read(void *buffer, size_t size);
@@ -43,8 +42,6 @@ class FileIO
  private:
    wxString mName;
    FileIOMode mMode;
-   wxURI mUri;
-   wxFTP *mFtp;
    wxInputStream *mInputStream;
    wxOutputStream *mOutputStream;
    bool mOpen;

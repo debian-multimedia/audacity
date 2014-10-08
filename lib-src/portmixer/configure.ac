@@ -2,19 +2,23 @@
 # PortMixer 2.0
 #
 
-AC_INIT(PortMixer, 2.0, audacity.sourceforge.net, portmixer)
+AC_PREREQ([2.60])
+AC_INIT([PortMixer], [2.0], [audacity.sourceforge.net], [portmixer])
+AC_CONFIG_AUX_DIR([autotools])
+AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR(src)
-AC_CONFIG_FILES([Makefile])
+
+AM_INIT_AUTOMAKE([1.11 dist-xz foreign no-dist-gzip -Wall])
+AM_MAINTAINER_MODE([disable])
 
 #
 # Checks for programs.
 #
 AC_PROG_CC
-AC_PROG_RANLIB
-AC_PATH_PROG(AR, ar, no)
-if [[ $AR = "no" ]] ; then
-    AC_MSG_ERROR([Could not find ar - needed to create a library]);
-fi
+AM_PROG_CC_C_O
+AM_PROG_AR
+
+LT_INIT
 
 #
 # Checks for libraries.
@@ -31,26 +35,15 @@ AC_ARG_ENABLE([debug],
   [AC_SUBST( cflags, ["$cflags -g"] )  AC_MSG_RESULT(yes)],
   [AC_SUBST( cflags, ["$cflags -O2"] ) AC_MSG_RESULT(no)])
 
-#
-# Check for portaudio path
-#
-AC_ARG_WITH([pa-include],
-  AC_HELP_STRING([--with-pa-include],
-                 [specify path to portaudio v2.0 include directory]),
-  [with_portaudio=$withval],
-  [with_portaudio=""])
-
-#
-#
-#
-if test -n "$with_portaudio"; then
-   CPPFLAGS="$CPPFLAGS -I$withval"
-   AC_SUBST(cflags, ["$cflags -I$withval"] )
-fi
+PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19])
 
 #
 # Check which APIs are available
 #
+
+dnl The following tests need to have the header files of portaudio available.
+cppflags_save="$CPPFLAGS"
+CPPFLAGS="$CPPFLAGS $PORTAUDIO_CFLAGS"
 
 have_oss=no
 AC_CHECK_HEADERS([sys/soundcard.h linux/soundcard.h machine/soundcard.h], have_oss=yes)
@@ -115,35 +108,32 @@ if [[ $have_portaudio = "yes" ]] ; then
    fi
 fi
 
-#
-#
-#
-AC_SUBST( include, [-Iinclude] )
-AC_SUBST( objects, [px_mixer.o] )
+dnl Restore pre-processor flags
+CPPFLAGS="$cppflags_save"
 
 #
 # Set up to use the identified ones
 #
 have_support=no
 AC_MSG_NOTICE([---------------------------------------])
+AM_CONDITIONAL([USE_UNIX_OSS], [test "$have_oss" = yes])
 if [[ $have_oss = "yes" ]] ; then
    AC_MSG_NOTICE([Including support for OSS]);
    AC_DEFINE(PX_USE_UNIX_OSS)
-   objects="$objects px_unix_oss.o"
    have_support=yes
 fi
 
+AM_CONDITIONAL([USE_LINUX_ALSA], [test "$have_alsa" = yes])
 if [[ $have_alsa = "yes" ]] ; then
    AC_MSG_NOTICE([Including support for ALSA])
    AC_DEFINE(PX_USE_LINUX_ALSA)
-   objects="$objects px_linux_alsa.o"
    have_support=yes
 fi
 
+AM_CONDITIONAL([USE_MAC_COREAUDIO], [test "$have_coreaudio" = yes])
 if [[ $have_coreaudio = "yes" ]] ; then
    AC_MSG_NOTICE([Including support for Coreaudio])
    AC_DEFINE(PX_USE_MAC_COREAUDIO)
-   objects="$objects px_mac_coreaudio.o"
    have_support=yes
 fi
 
@@ -151,6 +141,8 @@ if [[ $have_support = "no" ]] ; then
    AC_MSG_ERROR([No supported mixer interfaces detected])
 fi
 AC_MSG_NOTICE([---------------------------------------])
+
+AC_CONFIG_FILES([Makefile px_tests/Makefile src/Makefile])
 
 #
 # Write it all out

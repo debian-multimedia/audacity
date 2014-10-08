@@ -50,7 +50,7 @@ static const wxChar *exts[] =
 
 #ifndef USE_LIBVORBIS
 /* BPF There is no real reason to compile without LIBVORBIS, but if you do, you will needs this header */
-#include "ImportPlugin.h"  
+#include "ImportPlugin.h"
 
 void GetOGGImportPlugin(ImportPluginList *importPluginList,
                         UnusableImportPluginList *unusableImportPluginList)
@@ -63,6 +63,7 @@ void GetOGGImportPlugin(ImportPluginList *importPluginList,
 
 #else /* USE_LIBVORBIS */
 
+#include <wx/log.h>
 #include <wx/string.h>
 #include <wx/utils.h>
 #include <wx/intl.h>
@@ -112,7 +113,7 @@ public:
          mStreamInfo->Add(strinfo);
          mStreamUsage[i] = 0;
       }
-      
+
    }
    ~OggImportFileHandle();
 
@@ -296,7 +297,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    // causes them to be read correctly.  Otherwise they have lots of
    // zeros inserted at the beginning
    ov_pcm_seek(mVorbisFile, 0);
-   
+
    do {
       /* get data from the decoder */
       bytesRead = ov_read(mVorbisFile, (char *) mainBuffer,
@@ -306,9 +307,20 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
                           1,    // signed
                           &bitstream);
 
-      if (bytesRead < 0) {
+      if (bytesRead == OV_HOLE) {
+         wxFileName f(mFilename);
+         wxLogError(wxT("Ogg Vorbis importer: file %s is malformed, ov_read() reported a hole"),
+                    f.GetFullName().c_str());
+         /* http://lists.xiph.org/pipermail/vorbis-dev/2001-February/003223.html
+          * is the justification for doing this - best effort for malformed file,
+          * hence the message.
+          */
+         continue;
+      } else if (bytesRead < 0) {
          /* Malformed Ogg Vorbis file. */
          /* TODO: Return some sort of meaningful error. */
+         wxLogError(wxT("Ogg Vorbis importer: ov_read() returned error %i"),
+                    bytesRead);
          break;
       }
 
@@ -363,7 +375,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
    }
 
    *outTracks = new Track *[*outNumTracks];
-   
+
    int trackindex = 0;
    for (i = 0; i < mVorbisFile->links; i++)
    {
@@ -374,7 +386,7 @@ int OggImportFileHandle::Import(TrackFactory *trackFactory, Track ***outTracks,
             (*outTracks)[trackindex++] = mChannels[i][c];
          }
          delete[] mChannels[i];
-      }      
+      }
    }
    delete[] mChannels;
 

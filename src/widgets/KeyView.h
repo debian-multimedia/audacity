@@ -141,6 +141,7 @@ private:
    bool IsExpanded(int line);
    wxCoord GetLineHeight(int line);
    wxString GetValue(int line);
+   ViewByType GetViewType();
 #endif
 
 private:
@@ -155,7 +156,7 @@ private:
 
    wxCoord mScrollX;
    wxCoord mWidth;
-   
+
    size_t mLineCount;
    wxCoord mLineHeight;
    wxCoord mKeyX;
@@ -188,6 +189,10 @@ public:
    void ListUpdated();
    bool LineToId(int line, int & childId);
    bool IdToLine(int childId, int & line);
+
+   // Can return either a child object, or an integer
+   // representing the child element, starting from 1.
+   virtual wxAccStatus HitTest(const wxPoint & pt, int *childId, wxAccessible **childObject);
 
    // Retrieves the address of an IDispatch interface for the specified child.
    // All objects must support this property.
@@ -223,6 +228,10 @@ public:
    // Returns the rectangle for this object (id = 0) or a child element (id > 0).
    // rect is in screen coordinates.
    virtual wxAccStatus GetLocation(wxRect & rect, int elementId);
+
+   // Navigates from fromId to toId/toObject.
+   virtual wxAccStatus Navigate(wxNavDir navDir, int fromId,
+                                int *toId, wxAccessible **toObject);
 
    // Gets the name of the specified object.
    virtual wxAccStatus GetName(int childId, wxString *name);

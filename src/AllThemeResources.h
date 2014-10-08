@@ -19,22 +19,22 @@ and grids used by Audacity.
 This will be split up into separate include files to reduce the amount
 of recompilation on a change.
 
-Meantime, do NOT delete any of these declarations, even if they're 
+Meantime, do NOT delete any of these declarations, even if they're
 unused, as they're all offset by prior declarations.
 
 To add an image, you give its size and name like so:
 
 \code
    DEFINE_IMAGE( bmpPause, wxImage( 16, 16 ), wxT("Pause"));
-\endcode 
+\endcode
 
-If you do this and run the program the image will be black to start 
-with, but you can go into ThemePrefs and load it (load components) 
-from there.  Audacity will look for a file called "Pause.png".  
+If you do this and run the program the image will be black to start
+with, but you can go into ThemePrefs and load it (load components)
+from there.  Audacity will look for a file called "Pause.png".
 
  - Now save into ImageCache.
  - From here on you can get the image by loading ImageCache.
- - To burn it into the program defaults, use the 
+ - To burn it into the program defaults, use the
  'Output Sourcery' button.
 
 \see \ref Themability in DOxygen documentation for more details.
@@ -143,7 +143,6 @@ from there.  Audacity will look for a file called "Pause.png".
    DEFINE_IMAGE( bmpSyncLockTracksUp, wxImage( 20, 20 ), wxT("SyncLockTracksUp"));
    DEFINE_IMAGE( bmpSyncLockTracksDisabled, wxImage( 20, 20 ), wxT("SyncLockTracksDisabled"));
 
-
    SET_THEME_FLAGS(  resFlagPaired | resFlagNewLine  );
    DEFINE_IMAGE( bmpTnStartOn, wxImage( 27, 27 ), wxT("TnStartOn"));
    DEFINE_IMAGE( bmpTnStartOnDisabled, wxImage( 27, 27 ), wxT("TnStartOnDisabled"));
@@ -209,63 +208,68 @@ from there.  Audacity will look for a file called "Pause.png".
 #define LOGOWITHNAME_WIDTH 506
 #define LOGOWITHNAME_HEIGHT 200
 
-   DEFINE_IMAGE( bmpAudacityLogo, wxImage( 215, 190 ), wxT("AudacityLogo")); 
+   DEFINE_IMAGE( bmpAudacityLogo, wxImage( 215, 190 ), wxT("AudacityLogo"));
    DEFINE_IMAGE( bmpAudacityLogo48x48, wxImage( 48, 48 ), wxT("AudacityLogo48x48"));
 
    DEFINE_IMAGE( bmpSyncLockSelTile, wxImage(20, 22), wxT("SyncLockSelTile"));
    DEFINE_IMAGE( bmpSyncLockIcon, wxImage(12, 12), wxT("SyncLockIcon"));
 
-#ifdef OLD_COLOURS
-   DEFINE_COLOUR( clrBlank,      wxColour(214, 214, 214), wxT("Blank"));
-   DEFINE_COLOUR( clrUnselected, wxColour(192, 192, 192), wxT("Unselected"));
-   DEFINE_COLOUR( clrSelected,   wxColour(148, 148, 170), wxT("Selected"));
-   DEFINE_COLOUR( clrSample,     wxColour( 50,  50, 200), wxT("Sample"));
-   DEFINE_COLOUR( clrSelSample,  wxColour( 50,  50, 200), wxT("SelSample"));
-   DEFINE_COLOUR( clrDragSample, wxColour(  0,   0,   0), wxT("DragSample"));
-                                                                
-   DEFINE_COLOUR( clrMuteSample, wxColour(136, 136, 144), wxT("MuteSample"));
-   DEFINE_COLOUR( clrRms,        wxColour(100, 100, 220), wxT("Rms"));
-   DEFINE_COLOUR( clrMuteRms,    wxColour(136, 136, 144), wxT("MuteRms"));
-   DEFINE_COLOUR( clrShadow,     wxColour(148, 148, 148), wxT("Shadow"));
-#endif
+#if defined(EXPERIMENTAL_THEMING)
    DEFINE_COLOUR( clrBlank,      wxColour( 64,  64,  64), wxT("Blank"));
    DEFINE_COLOUR( clrUnselected, wxColour( 30,  30,  30), wxT("Unselected"));
    DEFINE_COLOUR( clrSelected,   wxColour( 93,  65,  93), wxT("Selected"));
    DEFINE_COLOUR( clrSample,     wxColour( 63,  77, 155), wxT("Sample"));
    DEFINE_COLOUR( clrSelSample,  wxColour( 50,  50, 200), wxT("SelSample"));
    DEFINE_COLOUR( clrDragSample, wxColour(  0, 100,   0), wxT("DragSample"));
-                                                                
-   DEFINE_COLOUR( clrMuteSample,       wxColour(136, 136, 144),      wxT("MuteSample"));
-   DEFINE_COLOUR( clrRms,              wxColour(107, 154, 247),      wxT("Rms"));
-   DEFINE_COLOUR( clrMuteRms,          wxColour(136, 136, 144),      wxT("MuteRms"));
-   DEFINE_COLOUR( clrShadow,           wxColour(148, 148, 148),      wxT("Shadow"));
 
+   DEFINE_COLOUR( clrMuteSample, wxColour(136, 136, 144), wxT("MuteSample"));
+   DEFINE_COLOUR( clrRms,        wxColour(107, 154, 247), wxT("Rms"));
+   DEFINE_COLOUR( clrMuteRms,    wxColour(136, 136, 144), wxT("MuteRms"));
+   DEFINE_COLOUR( clrShadow,     wxColour(148, 148, 148), wxT("Shadow"));
+#else
+   DEFINE_COLOUR( clrBlank,      wxColour(214, 214, 214), wxT("Blank"));
+   DEFINE_COLOUR( clrUnselected, wxColour(192, 192, 192), wxT("Unselected"));
+   DEFINE_COLOUR( clrSelected,   wxColour(148, 148, 170), wxT("Selected"));
+   DEFINE_COLOUR( clrSample,     wxColour( 50,  50, 200), wxT("Sample"));
+   DEFINE_COLOUR( clrSelSample,  wxColour( 50,  50, 200), wxT("SelSample"));
+   DEFINE_COLOUR( clrDragSample, wxColour(  0,   0,   0), wxT("DragSample"));
 
+   DEFINE_COLOUR( clrMuteSample, wxColour(136, 136, 144), wxT("MuteSample"));
+   DEFINE_COLOUR( clrRms,        wxColour(100, 100, 220), wxT("Rms"));
+   DEFINE_COLOUR( clrMuteRms,    wxColour(136, 136, 144), wxT("MuteRms"));
+   DEFINE_COLOUR( clrShadow,     wxColour(148, 148, 148), wxT("Shadow"));
+#endif
 
    DEFINE_COLOUR( clrAboutBoxBackground,  wxColour(255, 255, 255),  wxT("AboutBackground"));
+#if defined(EXPERIMENTAL_THEMING)
    DEFINE_COLOUR( clrTrackPanelText,      wxColour(153, 153, 153),  wxT("TrackPanelText"));
+#else
+   DEFINE_COLOUR( clrTrackPanelText,      wxColour(  0,   0,   0),  wxT("TrackPanelText"));
+#endif
    DEFINE_COLOUR( clrLabelTrackText,      wxColour(  0,   0,   0),  wxT("LabelTrackText"));
 
-   
    DEFINE_COLOUR( clrMeterPeak,            wxColour(102, 102, 255),  wxT("MeterPeak"));
    DEFINE_COLOUR( clrMeterDisabledPen,     wxColour(192, 192, 192),  wxT("MeterDisabledPen"));
    DEFINE_COLOUR( clrMeterDisabledBrush,   wxColour(160, 160, 160),  wxT("MeterDisabledBrush"));
 
-   DEFINE_COLOUR( clrMeterInputPen,        wxColour(204, 70, 70),     wxT("MeterInputPen") );       
-   DEFINE_COLOUR( clrMeterInputBrush,      wxColour(204, 70, 70),     wxT("MeterInputBrush") );     
-   DEFINE_COLOUR( clrMeterInputRMSBrush,   wxColour(255, 102, 102),   wxT("MeterInputRMSBrush") );  
+   DEFINE_COLOUR( clrMeterInputPen,        wxColour(204, 70, 70),     wxT("MeterInputPen") );
+   DEFINE_COLOUR( clrMeterInputBrush,      wxColour(204, 70, 70),     wxT("MeterInputBrush") );
+   DEFINE_COLOUR( clrMeterInputRMSBrush,   wxColour(255, 102, 102),   wxT("MeterInputRMSBrush") );
    DEFINE_COLOUR( clrMeterInputClipBrush,  wxColour(255, 53, 53),     wxT("MeterInputClipBrush") );
-   DEFINE_COLOUR( clrMeterInputLightPen,   wxColour(255, 153, 153),   wxT("MeterInputLightPen") );  
-   DEFINE_COLOUR( clrMeterInputDarkPen,    wxColour(153, 61, 61),     wxT("MeterInputDarkPen") );   
-                                                                 
-   DEFINE_COLOUR( clrMeterOutputPen,       wxColour(70, 204, 70),     wxT("MeterOutputPen") ); 
-   DEFINE_COLOUR( clrMeterOutputBrush,     wxColour(70, 204, 70),     wxT("MeterOutputBrush") );     
-   DEFINE_COLOUR( clrMeterOutputRMSBrush,  wxColour(102, 255, 102),   wxT("MeterOutputRMSBrush") );  
+   DEFINE_COLOUR( clrMeterInputLightPen,   wxColour(255, 153, 153),   wxT("MeterInputLightPen") );
+   DEFINE_COLOUR( clrMeterInputDarkPen,    wxColour(153, 61, 61),     wxT("MeterInputDarkPen") );
+
+   DEFINE_COLOUR( clrMeterOutputPen,       wxColour(70, 204, 70),     wxT("MeterOutputPen") );
+   DEFINE_COLOUR( clrMeterOutputBrush,     wxColour(70, 204, 70),     wxT("MeterOutputBrush") );
+   DEFINE_COLOUR( clrMeterOutputRMSBrush,  wxColour(102, 255, 102),   wxT("MeterOutputRMSBrush") );
    DEFINE_COLOUR( clrMeterOutputClipBrush, wxColour(255, 53, 53),     wxT("MeterOutputClipBrush") );
    DEFINE_COLOUR( clrMeterOutputLightPen,  wxColour(153, 255, 153),   wxT("MeterOutputLightPen") );
    DEFINE_COLOUR( clrMeterOutputDarkPen,   wxColour(61, 164, 61),     wxT("MeterOutputDarkPen") );
-
+#if defined(EXPERIMENTAL_THEMING)
    DEFINE_COLOUR( clrRulerBackground,      wxColour( 93,  65,  93),   wxT("RulerBackground") );
+#else
+   DEFINE_COLOUR( clrRulerBackground,      wxColour(148, 148, 170),   wxT("RulerBackground") );
+#endif
    DEFINE_COLOUR( clrAxisLines,            wxColour(0, 0, 255),       wxT("AxisLines") );
    DEFINE_COLOUR( clrGraphLines,           wxColour(110, 110, 220),   wxT("GraphLines") );
    DEFINE_COLOUR( clrResponseLines,        wxColour(0, 255, 0),       wxT("ResponseLines") );
@@ -276,20 +280,20 @@ from there.  Audacity will look for a file called "Pause.png".
 
    DEFINE_COLOUR( clrMuteButtonActive,     wxColour( 160, 170, 210),  wxT("MuteButtonActive") );
    DEFINE_COLOUR( clrMuteButtonVetoed,     wxColour( 180, 180, 185),  wxT("MuteButtonVetoed") );
-                                                     
+
    DEFINE_COLOUR( clrCursorPen,            wxColour(     0,  0,  0),  wxT("CursorPen") );
    DEFINE_COLOUR( clrRecordingPen,         wxColour(   176,  0, 28),  wxT("RecordingPen") );
    DEFINE_COLOUR( clrPlaybackPen,          wxColour(    36, 96, 46),  wxT("PlaybackPen") );
    DEFINE_COLOUR( clrRecordingBrush,       wxColour(   190,129,129),  wxT("RecordingBrush") );
    DEFINE_COLOUR( clrPlaybackBrush,        wxColour(    28,171, 51),  wxT("PlaybackBrush") );
-                                                     
+
    DEFINE_COLOUR( clrRulerRecordingBrush,  wxColour(   196,196,196),  wxT("RulerRecordingBrush") );
    DEFINE_COLOUR( clrRulerRecordingPen,    wxColour(   128,128,128),  wxT("RulerRecordingPen") );
    DEFINE_COLOUR( clrRulerPlaybackBrush,   wxColour(   190,129,129),  wxT("RulerPlaybackBrush") );
    DEFINE_COLOUR( clrRulerPlaybackPen,     wxColour(   176,  0, 28),  wxT("RulerPlaybackPen") );
 
-   DEFINE_COLOUR( clrTimeFont,             wxColour(     0,  0,180),  wxT("TimeFont") ); 
-   DEFINE_COLOUR( clrTimeBack,             wxColour(   160,160,160),  wxT("TimeBack") ); 
+   DEFINE_COLOUR( clrTimeFont,             wxColour(     0,  0,180),  wxT("TimeFont") );
+   DEFINE_COLOUR( clrTimeBack,             wxColour(   160,160,160),  wxT("TimeBack") );
    DEFINE_COLOUR( clrTimeFontFocus,        wxColour(     0,  0,  0),  wxT("TimeFontFocus") );
    DEFINE_COLOUR( clrTimeBackFocus,        wxColour(   242,242,255),  wxT("TimeBackFocus") );
 
@@ -330,10 +334,6 @@ from there.  Audacity will look for a file called "Pause.png".
    DEFINE_COLOUR( clrProgressNotYet,   wxColour(255, 255, 255,220), wxT("ProgressNotYet"));
    DEFINE_COLOUR( clrSyncLockSel,          wxColour(192, 192, 192),      wxT("SyncLockSel"));
 
-   // Vaughan, 2010-09-20: clrTrackInfoSyncLockSel is unused so this is cruft, but 
-   //    do NOT delete it as it's in the theme image, so offsets subsequent colors.
-   DEFINE_COLOUR( clrTrackInfoSyncLockSel, wxColour( 64,  64,  64),      wxT("TrackInfoSyncLockSel"));
-   
    DEFINE_COLOUR( clrSelTranslucent,   wxColour(104, 104, 148, 127), wxT("SelTranslucent"));
    // This is for waveform drawing, selected outside of clips
    DEFINE_COLOUR( clrBlankSelected, wxColour(170, 170, 192), wxT("BlankSelected"));

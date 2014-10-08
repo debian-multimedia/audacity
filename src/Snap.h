@@ -1,9 +1,9 @@
 /**********************************************************************
 
   Audacity: A Digital Audio Editor
-  
+
   Snap.h
- 
+
   Dominic Mazzoni
 
   Create one of these objects at the beginning of a click/drag.
@@ -19,10 +19,16 @@
 #include <wx/dynarray.h>
 
 #include "Track.h"
-#include "ViewInfo.h"
+#include "widgets/TimeTextCtrl.h"
 
 class TrackClipArray;
-class TimeTextCtrl;
+
+enum
+{
+   SNAP_OFF,
+   SNAP_NEAREST,
+   SNAP_PRIOR
+};
 
 class SnapPoint {
  public:
@@ -38,8 +44,6 @@ WX_DEFINE_SORTED_ARRAY(SnapPoint *, SnapPointArray);
 
 class SnapManager {
  public:
-   // Set gridCtrl to a TimeTextCtrl to use for snap-to-time; if NULL we won't
-   // snap to time
    SnapManager(TrackList *tracks, TrackClipArray *exclusions,
                double zoom, int pixelTolerance, bool noTimeSnap = false);
 
@@ -56,8 +60,13 @@ class SnapManager {
              bool *snappedPoint,
              bool *snappedTime);
 
+   static wxArrayString GetSnapLabels();
+   static wxArrayString GetSnapValues();
+   static const wxString & GetSnapValue(int index);
+   static int GetSnapIndex(const wxString & value);
+
  private:
-   void CondListAdd(double t, Track *tr, TimeTextCtrl *ttc);
+   void CondListAdd(double t, Track *tr);
    double Get(int index);
    double Diff(double t, int index);
    int Find(double t, int i0, int i1);
@@ -71,8 +80,8 @@ class SnapManager {
    SnapPointArray  *mSnapPoints;
 
    // Info for snap-to-time
+   TimeConverter    mConverter;
    bool             mSnapToTime;
-   wxString         mFormat;
 };
 
 #endif

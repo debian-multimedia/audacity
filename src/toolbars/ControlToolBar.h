@@ -2,13 +2,13 @@
 
   Audacity: A Digital Audio Editor
 
-  
+
   ControlToolbar.h
- 
+
   Dominic Mazzoni
   Shane T. Mueller
   Leland Lucius
- 
+
 **********************************************************************/
 
 #ifndef __AUDACITY_CONTROL_TOOLBAR__
@@ -60,7 +60,7 @@ class ControlToolBar:public ToolBar {
    void OnPause(wxCommandEvent & evt);
 
    //These allow buttons to be controlled externally:
-   void SetPlay(bool down);
+   void SetPlay(bool down, bool looped=false);
    void SetStop(bool down);
    void SetRecord(bool down);
 
@@ -75,7 +75,7 @@ class ControlToolBar:public ToolBar {
                        bool cutpreview = false,
                        TimeTrack *timetrack = NULL);
    void PlayDefault();
-   
+
    // Stop playing
    void StopPlaying(bool stopStream = true);
 
@@ -108,7 +108,7 @@ class ControlToolBar:public ToolBar {
       ID_STOP_BUTTON,
       ID_FF_BUTTON,
       ID_REW_BUTTON,
-      BUTTON_COUNT, 
+      BUTTON_COUNT,
    };
 
    AButton *mRewind;

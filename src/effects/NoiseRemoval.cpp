@@ -139,7 +139,7 @@ bool EffectNoiseRemoval::PromptUser()
    // We may want to twiddle the levels if we are setting
    // from an automation dialog, the only case in which we can
    // get here without any wavetracks.
-   bool bAllowTwiddleSettings = (GetNumWaveTracks() == 0); 
+   bool bAllowTwiddleSettings = (GetNumWaveTracks() == 0);
 
    if (mHasProfile || bAllowTwiddleSettings) {
       dlog.m_pButton_Preview->Enable(GetNumWaveTracks() != 0);
@@ -153,7 +153,7 @@ bool EffectNoiseRemoval::PromptUser()
    dlog.mKeepNoise->SetValue(dlog.mbLeaveNoise);
    dlog.CentreOnParent();
    dlog.ShowModal();
-   
+
    if (dlog.GetReturnCode() == 0) {
       return false;
    }
@@ -173,9 +173,9 @@ bool EffectNoiseRemoval::PromptUser()
    mDoProfile = (dlog.GetReturnCode() == 1);
    return gPrefs->Flush();
 }
-   
+
 bool EffectNoiseRemoval::TransferParameters( Shuttle & WXUNUSED(shuttle) )
-{  
+{
    //shuttle.TransferDouble(wxT("Gain"), mNoiseGain, 0.0);
    //shuttle.TransferDouble(wxT("Freq"), mFreqSmoothingHz, 0.0);
    //shuttle.TransferDouble(wxT("Time"), mAttackDecayTime, 0.0);
@@ -222,7 +222,7 @@ bool EffectNoiseRemoval::Process()
 
    if (bGoodResult)
       Cleanup();
-   this->ReplaceProcessedTracks(bGoodResult); 
+   this->ReplaceProcessedTracks(bGoodResult);
    return bGoodResult;
 }
 
@@ -255,8 +255,11 @@ void EffectNoiseRemoval::Initialize()
    mFreqSmoothingBins = (int)(mFreqSmoothingHz * mWindowSize / mSampleRate);
    mAttackDecayBlocks = 1 +
       (int)(mAttackDecayTime * mSampleRate / (mWindowSize / 2));
+   // Applies to amplitudes, divide by 20:
    mNoiseAttenFactor = pow(10.0, mNoiseGain/20.0);
-   mOneBlockAttackDecay = pow(10.0, (mNoiseGain / (10.0 * mAttackDecayBlocks)));
+   // Applies to gain factors which apply to amplitudes, divide by 20:
+   mOneBlockAttackDecay = pow(10.0, (mNoiseGain / (20.0 * mAttackDecayBlocks)));
+   // Applies to power, divide by 10:
    mSensitivityFactor = pow(10.0, mSensitivity/10.0);
    mMinSignalBlocks =
       (int)(mMinSignalTime * mSampleRate / (mWindowSize / 2));
@@ -284,7 +287,6 @@ void EffectNoiseRemoval::Initialize()
    mFFTBuffer = new float[mWindowSize];
    mInWaveBuffer = new float[mWindowSize];
    mWindow = new float[mWindowSize];
-   mOutImagBuffer = new float[mWindowSize];
    mOutOverlapBuffer = new float[mWindowSize];
 
    // Create a Hanning window function
@@ -321,7 +323,6 @@ void EffectNoiseRemoval::Cleanup()
    delete[] mFFTBuffer;
    delete[] mInWaveBuffer;
    delete[] mWindow;
-   delete[] mOutImagBuffer;
    delete[] mOutOverlapBuffer;
 }
 
@@ -630,7 +631,7 @@ enum {
    ID_TIME_TEXT,
 };
 
-#define SENSITIVITY_MIN 0      // Corresponds to -20 dB 
+#define SENSITIVITY_MIN 0      // Corresponds to -20 dB
 #define SENSITIVITY_MAX 4000    // Corresponds to 20 dB
 
 #define GAIN_MIN 0
@@ -660,12 +661,12 @@ BEGIN_EVENT_TABLE(NoiseRemovalDialog,wxDialog)
    EVT_TEXT(ID_TIME_TEXT, NoiseRemovalDialog::OnTimeText)
 END_EVENT_TABLE()
 
-NoiseRemovalDialog::NoiseRemovalDialog(EffectNoiseRemoval * effect, 
+NoiseRemovalDialog::NoiseRemovalDialog(EffectNoiseRemoval * effect,
                                        wxWindow *parent) :
    EffectDialog( parent, _("Noise Removal"), PROCESS_EFFECT)
 {
    m_pEffect = effect;
-   
+
    // NULL out the control members until the controls are created.
    m_pButton_GetProfile = NULL;
    m_pButton_Preview = NULL;
@@ -707,9 +708,9 @@ void NoiseRemovalDialog::OnPreview(wxCommandEvent & WXUNUSED(event))
    m_pEffect->mNoiseGain = -mGain;
    m_pEffect->mFreqSmoothingHz =  mFreq;
    m_pEffect->mAttackDecayTime =  mTime;
-   
+
    m_pEffect->Preview();
-   
+
    m_pEffect->mSensitivity = oldSensitivity;
    m_pEffect->mNoiseGain = oldGain;
    m_pEffect->mFreqSmoothingHz =  oldFreq;

@@ -42,7 +42,7 @@ void EffectsPrefs::Populate()
 {
    //------------------------- Main section --------------------
    // Now construct the GUI itself.
-   // Use 'eIsCreatingFromPrefs' so that the GUI is 
+   // Use 'eIsCreatingFromPrefs' so that the GUI is
    // initialised with values from gPrefs.
    ShuttleGui S(this, eIsCreatingFromPrefs);
    PopulateOrExchange(S);
@@ -62,13 +62,18 @@ void EffectsPrefs::PopulateOrExchange(ShuttleGui & S)
                     true);
 #endif
 
-      // JKC: LADSPA, Nyquist, VST, VAMP should not be translated.
+      // JKC: LADSPA, LV2, Nyquist, VST, VAMP should not be translated.
 #if USE_LADSPA
       S.TieCheckBox(wxT("&LADSPA"),
                     wxT("/Ladspa/Enable"),
                     true);
 #endif
 
+#if USE_LV2
+      S.TieCheckBox(wxT("LV&2"),
+                    wxT("/LV2/Enable"),
+                    true);
+#endif
 #if USE_NYQUIST
       S.TieCheckBox(wxT("N&yquist"),
                     wxT("/Nyquist/Enable"),
@@ -94,11 +99,11 @@ void EffectsPrefs::PopulateOrExchange(ShuttleGui & S)
 #if USE_AUDIO_UNITS
    S.StartStatic(_("Audio Unit Effects"));
    {
-      S.TieCheckBox(_("Display Audio Unit effects in graphical mode"), 
+      S.TieCheckBox(_("Display Audio Unit effects in Graphical Mode"),
                     wxT("/AudioUnits/GUI"),
                     true);
 #if 0
-      S.TieCheckBox(_("Rescan VST effects next time Audacity is started"), 
+      S.TieCheckBox(_("Rescan VST effects next time Audacity is started"),
                     wxT("/VST/Rescan"),
                     false);
 #endif
@@ -109,15 +114,26 @@ void EffectsPrefs::PopulateOrExchange(ShuttleGui & S)
 #if USE_VST
    S.StartStatic(_("VST Effects"));
    {
-      S.TieCheckBox(_("&Display VST effects in graphical mode"), 
+      S.TieCheckBox(_("&Display VST effects in Graphical Mode"),
                     wxT("/VST/GUI"),
                     true);
-      S.TieCheckBox(_("&Rescan VST effects next time Audacity is started"), 
+      S.TieCheckBox(_("&Rescan VST effects next time Audacity is started"),
                     wxT("/VST/Rescan"),
                     false);
    }
    S.EndStatic();
 #endif
+
+#ifdef EXPERIMENTAL_EQ_SSE_THREADED
+   S.StartStatic(_("Instruction Set"));
+   {
+      S.TieCheckBox(_("&Use SSE/SSE2/.../AVX"),
+                    wxT("/SSE/GUI"),
+                    true);
+   }
+   S.EndStatic();
+#endif
+
 }
 
 bool EffectsPrefs::Apply()

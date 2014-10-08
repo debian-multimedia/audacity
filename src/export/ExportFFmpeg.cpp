@@ -12,8 +12,8 @@
 ******************************************************************//**
 
 \class ExportFFmpeg
-\brief Controlling class for FFmpeg exporting.  Creates the options 
-dialog of the appropriate type, adds tags and invokes the export 
+\brief Controlling class for FFmpeg exporting.  Creates the options
+dialog of the appropriate type, adds tags and invokes the export
 function.
 
 *//*******************************************************************/
@@ -48,6 +48,10 @@ function.
 #include "ExportFFmpeg.h"
 
 #include "ExportFFmpegDialogs.h"
+
+#if defined(WIN32)
+#define snprintf _snprintf
+#endif
 
 #if defined(USE_FFMPEG)
 
@@ -97,14 +101,14 @@ public:
 
    /// Format intialization
    bool Init(const char *shortname, AudacityProject *project, Tags *metadata, int subformat);
-   
+
    /// Codec intialization
    bool InitCodecs(AudacityProject *project);
 
    /// Writes metadata
    bool AddTags(Tags *metadata);
 
-  /// Sets individual metadata values
+   /// Sets individual metadata values
    void SetMetadata(Tags *tags, const char *name, const wxChar *tag);
 
    /// Encodes audio
@@ -145,19 +149,14 @@ public:
 
 private:
 
-   AVFormatContext *	mEncFormatCtx;			   // libavformat's context for our output file
-   AVOutputFormat  *	mEncFormatDesc;			// describes our output file to libavformat
-
-   AVStream        *	mEncAudioStream;			// the output audio stream (may remain NULL)
-   AVCodecContext  *	mEncAudioCodecCtx;		// the encoder for the output audio stream
-   uint8_t         *	mEncAudioEncodedBuf;		// buffer to hold frames encoded by the encoder
-   int			      mEncAudioEncodedBufSiz;		
-   AVFifoBuffer	 * mEncAudioFifo;				// FIFO to write incoming audio samples into
-   uint8_t         *	mEncAudioFifoOutBuf;		// buffer to read _out_ of the FIFO into
-
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50, 0, 0)
-   AVFifoBuffer      mEncAudioFifoBuffer;    // FIFO to write incoming audio samples into
-#endif
+   AVFormatContext *   mEncFormatCtx;        // libavformat's context for our output file
+   AVOutputFormat  *   mEncFormatDesc;       // describes our output file to libavformat
+   int               default_frame_size;
+   AVStream        *   mEncAudioStream;      // the output audio stream (may remain NULL)
+   AVCodecContext  *   mEncAudioCodecCtx;    // the encoder for the output audio stream
+   AVFifoBuffer    * mEncAudioFifo;          // FIFO to write incoming audio samples into
+   uint8_t         *   mEncAudioFifoOutBuf;  // buffer to read _out_ of the FIFO into
+   int               mEncAudioFifoOutBufSiz;
 
    wxString          mName;
 
@@ -171,18 +170,13 @@ private:
 ExportFFmpeg::ExportFFmpeg()
 :  ExportPlugin()
 {
-   mEncFormatCtx = NULL;			// libavformat's context for our output file
-   mEncFormatDesc = NULL;			// describes our output file to libavformat
-   mEncAudioStream = NULL;			// the output audio stream (may remain NULL)
-   mEncAudioCodecCtx = NULL;		// the encoder for the output audio stream
-   mEncAudioEncodedBuf = NULL;	// buffer to hold frames encoded by the encoder
+   mEncFormatCtx = NULL;       // libavformat's context for our output file
+   mEncFormatDesc = NULL;      // describes our output file to libavformat
+   mEncAudioStream = NULL;     // the output audio stream (may remain NULL)
+   mEncAudioCodecCtx = NULL;   // the encoder for the output audio stream
    #define MAX_AUDIO_PACKET_SIZE (128 * 1024)
-   mEncAudioEncodedBufSiz = 4*MAX_AUDIO_PACKET_SIZE;
-   mEncAudioFifoOutBuf = NULL;	// buffer to read _out_ of the FIFO into
-   
-#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(50, 0, 0)
-   mEncAudioFifo = &mEncAudioFifoBuffer;
-#endif
+   mEncAudioFifoOutBuf = NULL; // buffer to read _out_ of the FIFO into
+   mEncAudioFifoOutBufSiz = 0;
 
    mSampleRate = 0;
    mSupportsUTF8 = true;
@@ -265,8 +259,6 @@ bool ExportFFmpeg::Init(const char *shortname, AudacityProject *project, Tags *m
 
    av_log_set_callback(av_log_wx_callback);
 
-   AVFormatParameters	fpOutFile;
-
    // See if libavformat has modules that can write our output format. If so, mEncFormatDesc
    // will describe the functions used to write the format (used internally by libavformat)
    // and the default video/audio codecs that the format uses.
@@ -286,38 +278,25 @@ bool ExportFFmpeg::Init(const char *shortname, AudacityProject *project, Tags *m
    // Initialise the output format context.
    mEncFormatCtx->oformat = mEncFormatDesc;
    memcpy(mEncFormatCtx->filename, OSINPUT(mName), strlen(OSINPUT(mName))+1);
-   
+
    // At the moment Audacity can export only one audio stream
-   if ((mEncAudioStream = av_new_stream(mEncFormatCtx, 1)) == NULL)
+   if ((mEncAudioStream = avformat_new_stream(mEncFormatCtx, NULL)) == NULL)
    {
       wxLogError(wxT("FFmpeg : ERROR - Can't add audio stream to output file \"%s\"."), mName.c_str());
       return false;
    }
 
    mEncAudioStream->id = 0;
-   mEncFormatCtx->timestamp = 0;
 
    // Open the output file.
    if (!(mEncFormatDesc->flags & AVFMT_NOFILE))
    {
-      if ((err = ufile_fopen(&mEncFormatCtx->pb, mName, URL_WRONLY)) < 0)
+      if ((err = ufile_fopen(&mEncFormatCtx->pb, mName, AVIO_FLAG_WRITE)) < 0)
       {
          wxLogError(wxT("FFmpeg : ERROR - Can't open output file \"%s\" to write. Error code is %d."), mName.c_str(),err);
          return false;
       }
    }
-
-   // Set default parameters on the format context.
-   memset(&fpOutFile, 0, sizeof(AVFormatParameters));
-   if ((err = av_set_parameters(mEncFormatCtx, &fpOutFile)) < 0)
-   {
-      wxLogError(wxT("FFmpeg : ERROR - Can't set output parameters for output file \"%s\". Error code is %d."), mName.c_str(),err);
-      return false;
-   }
-
-   // I have no idea what is this
-   mEncFormatCtx->preload   = (int)(0.5 * AV_TIME_BASE);
-   mEncFormatCtx->max_delay = (int)(0.7 * AV_TIME_BASE);
 
    // Open the audio stream's codec and initialise any stream related data.
    if (!InitCodecs(project))
@@ -334,7 +313,7 @@ bool ExportFFmpeg::Init(const char *shortname, AudacityProject *project, Tags *m
    }
 
    // Write headers to the output file.
-   if ((err = av_write_header(mEncFormatCtx)) < 0)
+   if ((err = avformat_write_header(mEncFormatCtx, NULL)) < 0)
    {
       wxLogError(wxT("FFmpeg : ERROR - Can't write headers to output file \"%s\". Error code is %d."), mName.c_str(),err);
 
@@ -352,16 +331,23 @@ bool ExportFFmpeg::CheckSampleRate(int rate, int lowrate, int highrate, const in
    return false;
 }
 
+static int set_dict_int(AVDictionary **dict, const char *key, int val)
+{
+   char val_str[256];
+   snprintf(val_str, sizeof(val_str), "%d", val);
+   return av_dict_set(dict, key, val_str, 0);
+}
+
 bool ExportFFmpeg::InitCodecs(AudacityProject *project)
 {
-   AVCodec *	codec = NULL;
+   AVCodec *codec = NULL;
+   AVDictionary *options = NULL;
 
    // Configure the audio stream's codec context.
    mEncAudioCodecCtx = mEncAudioStream->codec;
-  
-   avcodec_get_context_defaults(mEncAudioCodecCtx);
+
    mEncAudioCodecCtx->codec_id = ExportFFmpegOptions::fmts[mSubFormat].codecid;
-   mEncAudioCodecCtx->codec_type = CODEC_TYPE_AUDIO;
+   mEncAudioCodecCtx->codec_type = AVMEDIA_TYPE_AUDIO;
    mEncAudioCodecCtx->codec_tag = av_codec_get_tag((const AVCodecTag **)mEncFormatCtx->oformat->codec_tag,mEncAudioCodecCtx->codec_id);
    mSampleRate = (int)project->GetRate();
    mEncAudioCodecCtx->global_quality = -99999; //quality mode is off by default;
@@ -399,10 +385,9 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
       mEncAudioCodecCtx->bit_rate = gPrefs->Read(wxT("/FileFormats/WMABitRate"), 198000);
       if (!CheckSampleRate(mSampleRate,ExportFFmpegWMAOptions::iWMASampleRates[0], ExportFFmpegWMAOptions::iWMASampleRates[4], &ExportFFmpegWMAOptions::iWMASampleRates[0]))
          mSampleRate = AskResample(mEncAudioCodecCtx->bit_rate,mSampleRate, ExportFFmpegWMAOptions::iWMASampleRates[0], ExportFFmpegWMAOptions::iWMASampleRates[4], &ExportFFmpegWMAOptions::iWMASampleRates[0]);
-      mEncAudioCodecCtx->flags2 |= CODEC_FLAG2_BIT_RESERVOIR | 0x0004;
       break;
    case FMT_OTHER:
-      av_metadata_set2(&mEncAudioStream->metadata, "language", gPrefs->Read(wxT("/FileFormats/FFmpegLanguage"),wxT("")).ToUTF8(), 0);
+      av_dict_set(&mEncAudioStream->metadata, "language", gPrefs->Read(wxT("/FileFormats/FFmpegLanguage"),wxT("")).ToUTF8(), 0);
       mEncAudioCodecCtx->sample_rate = gPrefs->Read(wxT("/FileFormats/FFmpegSampleRate"),(long)0);
       if (mEncAudioCodecCtx->sample_rate != 0) mSampleRate = mEncAudioCodecCtx->sample_rate;
       mEncAudioCodecCtx->bit_rate = gPrefs->Read(wxT("/FileFormats/FFmpegBitRate"), (long)0);
@@ -410,22 +395,24 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
       mEncAudioCodecCtx->global_quality = gPrefs->Read(wxT("/FileFormats/FFmpegQuality"),(long)-99999);
       mEncAudioCodecCtx->cutoff = gPrefs->Read(wxT("/FileFormats/FFmpegCutOff"),(long)0);
       mEncAudioCodecCtx->flags2 = 0;
-      if (gPrefs->Read(wxT("/FileFormats/FFmpegBitReservoir"),true)) mEncAudioCodecCtx->flags2 |= CODEC_FLAG2_BIT_RESERVOIR;
+      if (gPrefs->Read(wxT("/FileFormats/FFmpegBitReservoir"),true))
+         av_dict_set(&options, "reservoir", "1", 0);
       if (gPrefs->Read(wxT("/FileFormats/FFmpegVariableBlockLen"),true)) mEncAudioCodecCtx->flags2 |= 0x0004; //WMA only?
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
-      mEncAudioCodecCtx->use_lpc = gPrefs->Read(wxT("/FileFormats/FFmpegUseLPC"),true);
-#endif
       mEncAudioCodecCtx->compression_level = gPrefs->Read(wxT("/FileFormats/FFmpegCompLevel"),-1);
       mEncAudioCodecCtx->frame_size = gPrefs->Read(wxT("/FileFormats/FFmpegFrameSize"),(long)0);
-      mEncAudioCodecCtx->lpc_coeff_precision = gPrefs->Read(wxT("/FileFormats/FFmpegLPCCoefPrec"),(long)0);
-      mEncAudioCodecCtx->min_prediction_order = gPrefs->Read(wxT("/FileFormats/FFmpegMinPredOrder"),(long)-1);
-      mEncAudioCodecCtx->max_prediction_order = gPrefs->Read(wxT("/FileFormats/FFmpegMaxPredOrder"),(long)-1);
-      mEncAudioCodecCtx->min_partition_order = gPrefs->Read(wxT("/FileFormats/FFmpegMinPartOrder"),(long)-1);
-      mEncAudioCodecCtx->max_partition_order = gPrefs->Read(wxT("/FileFormats/FFmpegMaxPartOrder"),(long)-1);
-      mEncAudioCodecCtx->prediction_order_method = gPrefs->Read(wxT("/FileFormats/FFmpegPredOrderMethod"),(long)0);
-      mEncFormatCtx->mux_rate = gPrefs->Read(wxT("/FileFormats/FFmpegMuxRate"),(long)0);
+
+//FIXME The list of supported options for the seleced encoder should be extracted instead of a few hardcoded
+      set_dict_int(&options, "lpc_coeff_precision",     gPrefs->Read(wxT("/FileFormats/FFmpegLPCCoefPrec"),(long)0));
+      set_dict_int(&options, "min_prediction_order",    gPrefs->Read(wxT("/FileFormats/FFmpegMinPredOrder"),(long)-1));
+      set_dict_int(&options, "max_prediction_order",    gPrefs->Read(wxT("/FileFormats/FFmpegMaxPredOrder"),(long)-1));
+      set_dict_int(&options, "min_partition_order",     gPrefs->Read(wxT("/FileFormats/FFmpegMinPartOrder"),(long)-1));
+      set_dict_int(&options, "max_partition_order",     gPrefs->Read(wxT("/FileFormats/FFmpegMaxPartOrder"),(long)-1));
+      set_dict_int(&options, "prediction_order_method", gPrefs->Read(wxT("/FileFormats/FFmpegPredOrderMethod"),(long)0));
+      set_dict_int(&options, "muxrate",                 gPrefs->Read(wxT("/FileFormats/FFmpegMuxRate"),(long)0));
       mEncFormatCtx->packet_size = gPrefs->Read(wxT("/FileFormats/FFmpegPacketSize"),(long)0);
-      mEncAudioCodecCtx->codec_id = (CodecID)gPrefs->Read(wxT("/FileFormats/FFmpegCodec"), mEncFormatDesc->audio_codec);
+      codec = avcodec_find_encoder_by_name(gPrefs->Read(wxT("/FileFormats/FFmpegCodec")).ToUTF8());
+      if (!codec)
+         mEncAudioCodecCtx->codec_id = mEncFormatDesc->audio_codec;
       break;
    default:
       return false;
@@ -438,16 +425,16 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
    {
       mEncAudioCodecCtx->flags |= CODEC_FLAG_QSCALE;
    }
-   else mEncAudioCodecCtx->global_quality = -99999;
-   this->mEncAudioStream->quality = mEncAudioCodecCtx->global_quality = mEncAudioCodecCtx->global_quality * FF_QP2LAMBDA;
+   else mEncAudioCodecCtx->global_quality = 0;
+   mEncAudioCodecCtx->global_quality = mEncAudioCodecCtx->global_quality * FF_QP2LAMBDA;
    mEncAudioCodecCtx->sample_rate = mSampleRate;
    mEncAudioCodecCtx->channels = mChannels;
    mEncAudioCodecCtx->time_base.num = 1;
    mEncAudioCodecCtx->time_base.den = mEncAudioCodecCtx->sample_rate;
-   mEncAudioCodecCtx->sample_fmt = SAMPLE_FMT_S16;
-   //mEncAudioCodecCtx->strict_std_compliance = FF_COMPLIANCE_STRICT;
+   mEncAudioCodecCtx->sample_fmt = AV_SAMPLE_FMT_S16;
+   mEncAudioCodecCtx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 
-   if (mEncAudioCodecCtx->codec_id == CODEC_ID_AC3)
+   if (mEncAudioCodecCtx->codec_id == AV_CODEC_ID_AC3)
    {
       // As of Jan 4, 2011, the default AC3 encoder only accept SAMPLE_FMT_FLT samples.
       // But, currently, Audacity only supports SAMPLE_FMT_S16.  So, for now, look for the
@@ -469,6 +456,25 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
       return false;
    }
 
+   if (codec->sample_fmts) {
+      for (int i=0; codec->sample_fmts[i] != AV_SAMPLE_FMT_NONE; i++) {
+         enum AVSampleFormat fmt = codec->sample_fmts[i];
+         if (   fmt == AV_SAMPLE_FMT_U8
+             || fmt == AV_SAMPLE_FMT_U8P
+             || fmt == AV_SAMPLE_FMT_S16
+             || fmt == AV_SAMPLE_FMT_S16P
+             || fmt == AV_SAMPLE_FMT_S32
+             || fmt == AV_SAMPLE_FMT_S32P
+             || fmt == AV_SAMPLE_FMT_FLT
+             || fmt == AV_SAMPLE_FMT_FLTP) {
+            mEncAudioCodecCtx->sample_fmt = fmt;
+         }
+         if (   fmt == AV_SAMPLE_FMT_S16
+             || fmt == AV_SAMPLE_FMT_S16P)
+            break;
+      }
+   }
+
    if (mEncFormatCtx->oformat->flags & AVFMT_GLOBALHEADER)
    {
       mEncAudioCodecCtx->flags |= CODEC_FLAG_GLOBAL_HEADER;
@@ -476,36 +482,26 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
    }
 
    // Open the codec.
-   if (avcodec_open(mEncAudioCodecCtx, codec) < 0 || mEncAudioCodecCtx->frame_size == 0) 
+   if (avcodec_open2(mEncAudioCodecCtx, codec, &options) < 0)
    {
       wxLogError(wxT("FFmpeg : ERROR - Can't open audio codec 0x%x."),mEncAudioCodecCtx->codec_id);
       return false;
    }
- 
+
+   default_frame_size = mEncAudioCodecCtx->frame_size;
+   if (default_frame_size == 0)
+      default_frame_size = 1024; // arbitrary non zero value;
+
    wxLogDebug(wxT("FFmpeg : Audio Output Codec Frame Size: %d samples."), mEncAudioCodecCtx->frame_size);
 
-   if ((mEncAudioCodecCtx->codec_id >= CODEC_ID_PCM_S16LE) && (mEncAudioCodecCtx->codec_id <= CODEC_ID_PCM_DVD))
-   {
-      mEncAudioEncodedBufSiz = FF_MIN_BUFFER_SIZE;
-   }
-   // Allocate a buffer for the encoder to store encoded audio frames into.
-   if ((mEncAudioEncodedBuf = (uint8_t*)av_malloc(mEncAudioEncodedBufSiz)) == NULL)
-   {
-      wxLogError(wxT("FFmpeg : ERROR - Can't allocate buffer to hold encoded audio."));
-      return false;
-   }
-
    // The encoder may require a minimum number of raw audio samples for each encoding but we can't
-   // guarantee we'll get this minimum each time an audio frame is decoded from the input file so 
+   // guarantee we'll get this minimum each time an audio frame is decoded from the input file so
    // we use a FIFO to store up incoming raw samples until we have enough for one call to the codec.
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
    mEncAudioFifo = av_fifo_alloc(1024);
-#else
-   av_fifo_init(mEncAudioFifo, 1024);
-#endif
 
+   mEncAudioFifoOutBufSiz = 2*MAX_AUDIO_PACKET_SIZE;
    // Allocate a buffer to read OUT of the FIFO into. The FIFO maintains its own buffer internally.
-   if ((mEncAudioFifoOutBuf = (uint8_t*)av_malloc(2*MAX_AUDIO_PACKET_SIZE)) == NULL)
+   if ((mEncAudioFifoOutBuf = (uint8_t*)av_malloc(mEncAudioFifoOutBufSiz)) == NULL)
    {
       wxLogError(wxT("FFmpeg : ERROR - Can't allocate buffer to read into from audio FIFO."));
       return false;
@@ -514,6 +510,92 @@ bool ExportFFmpeg::InitCodecs(AudacityProject *project)
    return true;
 }
 
+static int encode_audio(AVCodecContext *avctx, AVPacket *pkt, int16_t *audio_samples, int nb_samples)
+{
+   int i, ch, buffer_size, ret, got_output = 0;
+   void *samples = NULL;
+   AVFrame *frame = NULL;
+
+   if (audio_samples) {
+      frame = av_frame_alloc();
+      if (!frame)
+         return AVERROR(ENOMEM);
+
+      frame->nb_samples     = nb_samples;
+      frame->format         = avctx->sample_fmt;
+#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG) || (LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54, 13, 0))
+      frame->channel_layout = avctx->channel_layout;
+#endif
+
+      buffer_size = av_samples_get_buffer_size(NULL, avctx->channels, frame->nb_samples,
+                                              avctx->sample_fmt, 0);
+      if (buffer_size < 0) {
+         wxLogError(wxT("FFmpeg : ERROR - Could not get sample buffer siz"));
+         return buffer_size;
+      }
+      samples = av_malloc(buffer_size);
+      if (!samples) {
+         wxLogError(wxT("FFmpeg : ERROR - Could not allocate bytes for samples buffer"));
+         return AVERROR(ENOMEM);
+      }
+      /* setup the data pointers in the AVFrame */
+      ret = avcodec_fill_audio_frame(frame, avctx->channels, avctx->sample_fmt,
+                                  (const uint8_t*)samples, buffer_size, 0);
+      if (ret < 0) {
+         wxLogError(wxT("FFmpeg : ERROR - Could not setup audio frame"));
+         return ret;
+      }
+
+      for (ch = 0; ch < avctx->channels; ch++) {
+         for (i = 0; i < frame->nb_samples; i++) {
+            switch(avctx->sample_fmt) {
+            case AV_SAMPLE_FMT_U8:
+               ((uint8_t*)(frame->data[0]))[ch + i*avctx->channels] = audio_samples[ch + i*avctx->channels]/258 + 128;
+               break;
+            case AV_SAMPLE_FMT_U8P:
+               ((uint8_t*)(frame->data[ch]))[i] = audio_samples[ch + i*avctx->channels]/258 + 128;
+               break;
+            case AV_SAMPLE_FMT_S16:
+               ((int16_t*)(frame->data[0]))[ch + i*avctx->channels] = audio_samples[ch + i*avctx->channels];
+               break;
+            case AV_SAMPLE_FMT_S16P:
+               ((int16_t*)(frame->data[ch]))[i] = audio_samples[ch + i*avctx->channels];
+               break;
+            case AV_SAMPLE_FMT_S32:
+               ((int32_t*)(frame->data[0]))[ch + i*avctx->channels] = audio_samples[ch + i*avctx->channels]<<16;
+               break;
+            case AV_SAMPLE_FMT_S32P:
+               ((int32_t*)(frame->data[ch]))[i] = audio_samples[ch + i*avctx->channels]<<16;
+               break;
+            case AV_SAMPLE_FMT_FLT:
+               ((float*)(frame->data[0]))[ch + i*avctx->channels] = audio_samples[ch + i*avctx->channels] / 32767.0;
+               break;
+            case AV_SAMPLE_FMT_FLTP:
+               ((float*)(frame->data[ch]))[i] = audio_samples[ch + i*avctx->channels] / 32767.;
+               break;
+            }
+         }
+      }
+   }
+   av_init_packet(pkt);
+   pkt->data = NULL; // packet data will be allocated by the encoder
+   pkt->size = 0;
+
+   ret = avcodec_encode_audio2(avctx, pkt, frame, &got_output);
+   if (ret < 0) {
+      wxLogError(wxT("FFmpeg : ERROR - encoding frame failed"));
+      return ret;
+   }
+
+   pkt->dts = pkt->pts = AV_NOPTS_VALUE; // we dont set frame.pts thus dont trust the AVPacket ts
+
+   av_frame_free(&frame);
+   av_freep(&samples);
+
+   return got_output;
+}
+
+
 bool ExportFFmpeg::Finalize()
 {
    int i, nEncodedBytes;
@@ -521,85 +603,78 @@ bool ExportFFmpeg::Finalize()
    // Flush the audio FIFO and encoder.
    for (;;)
    {
-      AVPacket	pkt;
-      int		nFifoBytes = av_fifo_size(mEncAudioFifo);	// any bytes left in audio FIFO?
+      AVPacket pkt;
+      int nFifoBytes = av_fifo_size(mEncAudioFifo); // any bytes left in audio FIFO?
+
+      av_init_packet(&pkt);
 
       nEncodedBytes = 0;
-      int		nAudioFrameSizeOut = mEncAudioCodecCtx->frame_size * mEncAudioCodecCtx->channels * sizeof(int16_t);
-      if (mEncAudioCodecCtx->frame_size == 1) nAudioFrameSizeOut = mEncAudioEncodedBufSiz;
+      int nAudioFrameSizeOut = default_frame_size * mEncAudioCodecCtx->channels * sizeof(int16_t);
+
+      if (nAudioFrameSizeOut > mEncAudioFifoOutBufSiz || nFifoBytes > mEncAudioFifoOutBufSiz) {
+         wxLogError(wxT("FFmpeg : ERROR - Too much remaining data."));
+         return false;
+      }
 
       // Flush the audio FIFO first if necessary. It won't contain a _full_ audio frame because
-      // if it did we'd have pulled it from the FIFO during the last encodeAudioFrame() call - 
+      // if it did we'd have pulled it from the FIFO during the last encodeAudioFrame() call -
       // the encoder must support short/incomplete frames for this to work.
       if (nFifoBytes > 0)
       {
          // Fill audio buffer with zeroes. If codec tries to read the whole buffer,
          // it will just read silence. If not - who cares?
-         memset(mEncAudioFifoOutBuf,0,nAudioFrameSizeOut);
-         AVCodec *codec = mEncAudioCodecCtx->codec;
+         memset(mEncAudioFifoOutBuf,0,mEncAudioFifoOutBufSiz);
+         const AVCodec *codec = mEncAudioCodecCtx->codec;
 
          // We have an incomplete buffer of samples left.  Is it OK to encode it?
          // If codec supports CODEC_CAP_SMALL_LAST_FRAME, we can feed it with smaller frame
          // Or if codec is FLAC, feed it anyway (it doesn't have CODEC_CAP_SMALL_LAST_FRAME, but it works)
          // Or if frame_size is 1, then it's some kind of PCM codec, they don't have frames and will be fine with the samples
          // Or if user configured the exporter to pad with silence, then we'll send audio + silence as a frame.
-         if ((codec->capabilities & CODEC_CAP_SMALL_LAST_FRAME)
-            || codec->id == CODEC_ID_FLAC
-            || mEncAudioCodecCtx->frame_size == 1
+         if ((codec->capabilities & (CODEC_CAP_SMALL_LAST_FRAME|CODEC_CAP_VARIABLE_FRAME_SIZE))
+            || mEncAudioCodecCtx->frame_size <= 1
             || gPrefs->Read(wxT("/FileFormats/OverrideSmallLastFrame"), true)
             )
          {
-            int nFrameSizeTmp = mEncAudioCodecCtx->frame_size;
+            int frame_size = default_frame_size;
 
             // The last frame is going to contain a smaller than usual number of samples.
             // For codecs without CODEC_CAP_SMALL_LAST_FRAME use normal frame size
-            if (mEncAudioCodecCtx->frame_size != 1 && codec->capabilities & CODEC_CAP_SMALL_LAST_FRAME)
-               mEncAudioCodecCtx->frame_size = nFifoBytes / (mEncAudioCodecCtx->channels * sizeof(int16_t));
+            if (codec->capabilities & (CODEC_CAP_SMALL_LAST_FRAME|CODEC_CAP_VARIABLE_FRAME_SIZE))
+               frame_size = nFifoBytes / (mEncAudioCodecCtx->channels * sizeof(int16_t));
 
-            wxLogDebug(wxT("FFmpeg : Audio FIFO still contains %d bytes, writing %d sample frame ..."), 
-               nFifoBytes, mEncAudioCodecCtx->frame_size);
+            wxLogDebug(wxT("FFmpeg : Audio FIFO still contains %d bytes, writing %d sample frame ..."),
+               nFifoBytes, frame_size);
 
             // Pull the bytes out from the FIFO and feed them to the encoder.
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
             if (av_fifo_generic_read(mEncAudioFifo, mEncAudioFifoOutBuf, nFifoBytes, NULL) == 0)
-#else
-            if (av_fifo_generic_read(mEncAudioFifo, nFifoBytes, NULL, mEncAudioFifoOutBuf) == 0)
-#endif
             {
-               if (mEncAudioCodecCtx->frame_size != 1)
-                  nEncodedBytes = avcodec_encode_audio(mEncAudioCodecCtx, mEncAudioEncodedBuf, mEncAudioEncodedBufSiz, (int16_t*)mEncAudioFifoOutBuf);
-               else
-                  nEncodedBytes = avcodec_encode_audio(mEncAudioCodecCtx, mEncAudioEncodedBuf, nFifoBytes, (int16_t*)mEncAudioFifoOutBuf);
+               nEncodedBytes = encode_audio(mEncAudioCodecCtx, &pkt, (int16_t*)mEncAudioFifoOutBuf, frame_size);
             }
-
-            mEncAudioCodecCtx->frame_size = nFrameSizeTmp;		// restore the native frame size
          }
       }
 
       // Now flush the encoder.
       if (nEncodedBytes <= 0)
-         nEncodedBytes = avcodec_encode_audio(mEncAudioCodecCtx, mEncAudioEncodedBuf, mEncAudioEncodedBufSiz, NULL);
+         nEncodedBytes = encode_audio(mEncAudioCodecCtx, &pkt, NULL, 0);
 
-      if (nEncodedBytes <= 0)			
+      if (nEncodedBytes <= 0)
          break;
 
-      // Okay, we got a final encoded frame we can write to the output file.
-      av_init_packet(&pkt);
-
       pkt.stream_index = mEncAudioStream->index;
-      pkt.data = mEncAudioEncodedBuf;
-      pkt.size = nEncodedBytes;
-      pkt.flags |= PKT_FLAG_KEY;
 
       // Set presentation time of frame (currently in the codec's timebase) in the stream timebase.
-      if(mEncAudioCodecCtx->coded_frame && mEncAudioCodecCtx->coded_frame->pts != int64_t(AV_NOPTS_VALUE))
-         pkt.pts = av_rescale_q(mEncAudioCodecCtx->coded_frame->pts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
+      if(pkt.pts != int64_t(AV_NOPTS_VALUE))
+         pkt.pts = av_rescale_q(pkt.pts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
+      if(pkt.dts != int64_t(AV_NOPTS_VALUE))
+         pkt.dts = av_rescale_q(pkt.dts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
 
       if (av_interleaved_write_frame(mEncFormatCtx, &pkt) != 0)
       {
          wxLogError(wxT("FFmpeg : ERROR - Couldn't write last audio frame to output file."));
          break;
       }
+      av_free_packet(&pkt);
    }
 
    // Write any file trailers.
@@ -617,34 +692,28 @@ bool ExportFFmpeg::Finalize()
 
    // Close the output file if we created it.
    if (!(mEncFormatDesc->flags & AVFMT_NOFILE))
-      avio_close(mEncFormatCtx->pb);
+      ufile_close(mEncFormatCtx->pb);
 
    // Free any buffers or structures we allocated.
    av_free(mEncFormatCtx);
 
-   if (mEncAudioEncodedBuf != NULL)
-      av_free(mEncAudioEncodedBuf);
-
-   if (mEncAudioFifoOutBuf != NULL)
-      av_free(mEncAudioFifoOutBuf);
+   av_freep(&mEncAudioFifoOutBuf);
+   mEncAudioFifoOutBufSiz = 0;
 
    av_fifo_free(mEncAudioFifo);
 
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
    mEncAudioFifo = NULL;
-#endif
 
    return true;
 }
 
 bool ExportFFmpeg::EncodeAudioFrame(int16_t *pFrame, int frameSize)
 {
-   AVPacket	pkt;
-   int		nBytesToWrite = 0;
-   uint8_t *	pRawSamples = NULL;
-   int		nAudioFrameSizeOut = mEncAudioCodecCtx->frame_size * mEncAudioCodecCtx->channels * sizeof(int16_t);
-   if (mEncAudioCodecCtx->frame_size == 1) nAudioFrameSizeOut = mEncAudioEncodedBufSiz;
-   int      ret;
+   AVPacket pkt;
+   int nBytesToWrite = 0;
+   uint8_t *pRawSamples = NULL;
+   int nAudioFrameSizeOut = default_frame_size * mEncAudioCodecCtx->channels * sizeof(int16_t);
+   int ret;
 
    nBytesToWrite = frameSize;
    pRawSamples  = (uint8_t*)pFrame;
@@ -655,42 +724,46 @@ bool ExportFFmpeg::EncodeAudioFrame(int16_t *pFrame, int frameSize)
 
    wxASSERT(ret == nBytesToWrite);
 
+   if (nAudioFrameSizeOut > mEncAudioFifoOutBufSiz) {
+      wxLogError(wxT("FFmpeg : ERROR - nAudioFrameSizeOut too large."));
+      return false;
+   }
+
    // Read raw audio samples out of the FIFO in nAudioFrameSizeOut byte-sized groups to encode.
    while ((ret = av_fifo_size(mEncAudioFifo)) >= nAudioFrameSizeOut)
    {
-#if LIBAVUTIL_VERSION_INT > AV_VERSION_INT(49, 15, 0)
       ret = av_fifo_generic_read(mEncAudioFifo, mEncAudioFifoOutBuf, nAudioFrameSizeOut, NULL);
-#else
-      ret = av_fifo_generic_read(mEncAudioFifo, nAudioFrameSizeOut, NULL, mEncAudioFifoOutBuf);
-#endif
 
       av_init_packet(&pkt);
 
-      pkt.size = avcodec_encode_audio(mEncAudioCodecCtx, 
-         mEncAudioEncodedBuf, mEncAudioEncodedBufSiz,		// out
-         (int16_t*)mEncAudioFifoOutBuf);				// in
-      if (mEncAudioCodecCtx->frame_size == 1) { wxASSERT(pkt.size == mEncAudioEncodedBufSiz); }
-      if (pkt.size < 0)
+      int ret= encode_audio(mEncAudioCodecCtx,
+         &pkt,                          // out
+         (int16_t*)mEncAudioFifoOutBuf, // in
+         default_frame_size);
+      if (ret < 0)
       {
          wxLogError(wxT("FFmpeg : ERROR - Can't encode audio frame."));
          return false;
       }
+      if (ret == 0)
+         continue;
 
       // Rescale from the codec time_base to the AVStream time_base.
-      if (mEncAudioCodecCtx->coded_frame && mEncAudioCodecCtx->coded_frame->pts != int64_t(AV_NOPTS_VALUE))
-         pkt.pts = av_rescale_q(mEncAudioCodecCtx->coded_frame->pts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
+      if (pkt.pts != int64_t(AV_NOPTS_VALUE))
+         pkt.pts = av_rescale_q(pkt.pts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
+      if (pkt.dts != int64_t(AV_NOPTS_VALUE))
+         pkt.dts = av_rescale_q(pkt.dts, mEncAudioCodecCtx->time_base, mEncAudioStream->time_base);
       //wxLogDebug(wxT("FFmpeg : (%d) Writing audio frame with PTS: %lld."), mEncAudioCodecCtx->frame_number, pkt.pts);
 
       pkt.stream_index = mEncAudioStream->index;
-      pkt.data = mEncAudioEncodedBuf;
-      pkt.flags |= PKT_FLAG_KEY;
 
       // Write the encoded audio frame to the output file.
-      if ((ret = av_interleaved_write_frame(mEncFormatCtx, &pkt)) != 0)
+      if ((ret = av_interleaved_write_frame(mEncFormatCtx, &pkt)) < 0)
       {
          wxLogError(wxT("FFmpeg : ERROR - Failed to write audio frame to file."));
          return false;
       }
+      av_free_packet(&pkt);
    }
    return true;
 }
@@ -710,9 +783,9 @@ int ExportFFmpeg::Export(AudacityProject *project,
       wxLogError(wxT("Attempted to export %d channels, but max. channels = %d"),channels,ExportFFmpegOptions::fmts[mSubFormat].maxchannels);
       wxMessageBox(
          wxString::Format(
-               _("Attempted to export %d channels, but maximum number of channels for selected output format is %d"), 
-               channels, 
-               ExportFFmpegOptions::fmts[mSubFormat].maxchannels), 
+               _("Attempted to export %d channels, but maximum number of channels for selected output format is %d"),
+               channels,
+               ExportFFmpegOptions::fmts[mSubFormat].maxchannels),
             _("Error"));
       return false;
    }
@@ -721,7 +794,7 @@ int ExportFFmpeg::Export(AudacityProject *project,
    bool ret = true;
 
    if (mSubFormat >= FMT_LAST) return false;
-   
+
    wxString shortname(ExportFFmpegOptions::fmts[mSubFormat].shortname);
    if (mSubFormat == FMT_OTHER)
       shortname = gPrefs->Read(wxT("/FileFormats/FFmpegFormat"),wxT("matroska"));
@@ -805,7 +878,7 @@ void ExportFFmpeg::SetMetadata(Tags *tags, const char *name, const wxChar *tag)
    {
       wxString value = tags->GetTag(tag);
 
-      av_metadata_set2(&mEncFormatCtx->metadata, name, mSupportsUTF8 ? value.ToUTF8() : value.mb_str(), 0);
+      av_dict_set(&mEncFormatCtx->metadata, name, mSupportsUTF8 ? value.ToUTF8() : value.mb_str(), 0);
    }
 }
 
