@@ -1,4 +1,4 @@
-audacity (2.0.6-1) UNRELEASED; urgency=medium
+audacity (2.0.6-1) unstable; urgency=medium
 
   * New upstream release.
   * Update debian/watch to point to FossHub.
@@ -7,9 +7,11 @@ audacity (2.0.6-1) UNRELEASED; urgency=medium
     libnyquist autoreconf workaround
   * Disable tests (they fail to build, because they are bitrotten)
   * Fix autoreconf for the minimal audacity source tarball.
-  * Backport upstream preliminary changes for wxWidgets 3.0.1
+  * Compile audacity against wxWidgets 3.0. Thanks to Martin Steghöfer for
+    this enormous patch (Closes: #749659)
+  * Fix FTBFS with clang. Thanks to Arthur Marble. (Closes: #757531)
 
- -- Benjamin Drung <bdrung@debian.org>  Wed, 08 Oct 2014 21:52:35 +0200
+ -- Benjamin Drung <bdrung@debian.org>  Tue, 14 Oct 2014 01:28:54 +0200
 
 audacity (2.0.5-2) unstable; urgency=medium
 
