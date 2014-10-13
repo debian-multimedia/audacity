@@ -1,2 +1,2 @@
 fix-minsrc-autoreconf.patch
-backport-wx30-r13403.patch
+wxWidgets-3.0.patch
