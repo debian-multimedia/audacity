@@ -1,2 +1,3 @@
 fix-minsrc-autoreconf.patch
 wxWidgets-3.0.patch
+clang-ftbfs.patch
