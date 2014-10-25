@@ -1,3 +1,7 @@
 fix-minsrc-autoreconf.patch
 wxWidgets-3.0.patch
 clang-ftbfs.patch
+fix-cursor-recapturing-sliders.patch
+workaround-wxwidgets-fit-recovery.patch
+wxwidgets-clipboard-reentry-workaround.patch
+wxwidgets-effect-dialogs-segfault.patch

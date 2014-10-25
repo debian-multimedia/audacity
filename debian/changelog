@@ -1,3 +1,13 @@
+audacity (2.0.6-2) unstable; urgency=medium
+
+  [ Martin Steghöfer ]
+  * Workaround for wx bug causing layout problems in recovery dialog.
+  * Fix effect dialog segfault due to events before initialization and
+    add workaround for wxWidgets bug "Reentry in clipboard". (Closes: #765341)
+  * Fix cursor recapturing in track panel sliders. (Closes: #765779)
+
+ -- Benjamin Drung <bdrung@debian.org>  Sat, 25 Oct 2014 23:42:05 +0200
+
 audacity (2.0.6-1) unstable; urgency=medium
 
   * New upstream release.
