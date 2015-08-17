@@ -209,7 +209,7 @@ FileDialogHookFunction(HWND      hDlg,
             {
                CommDlg_OpenSave_SetControlText( hwndDialog,
                                                pshHelp,
-                                               (LPTSTR)me->m_buttonlabel.c_str());
+                                               (LPCTSTR)me->m_buttonlabel.c_str());
             }
          }
          else if (CDN_HELP == (pNotifyCode->hdr).code)
@@ -515,7 +515,7 @@ void FileDialog::GetFilenames(wxArrayString& files) const
 void FileDialog::SetPath(const wxString& path)
 {
    wxString ext;
-   wxSplitPath(path, &m_dir, &m_fileName, &ext);
+   wxFileName::SplitPath(path, &m_dir, &m_fileName, &ext);
    if ( !ext.empty() )
       m_fileName << wxT('.') << ext;
 }
@@ -717,7 +717,7 @@ int FileDialog::ShowModal()
       }
    }
    
-   of.lpstrFilter  = (LPTSTR)filterBuffer.c_str();
+   of.lpstrFilter  = (LPCTSTR)filterBuffer.c_str();
    of.nFilterIndex = m_filterIndex + 1;
    
    ParseFilter(of.nFilterIndex);
@@ -844,26 +844,25 @@ int FileDialog::ShowModal()
       {
          //=== Adding the correct extension >>=================================
          m_filterIndex = (int)of.nFilterIndex - 1;
-         
-#if 0
-         // LLL:  Removed to prevent adding extension during Export
-         //       processing.
-         
-         if ( !of.nFileExtension ||
-             (of.nFileExtension && fileNameBuffer[of.nFileExtension] == wxT('\0')) )
+
+         if (!(m_dialogStyle & FD_NO_ADD_EXTENSION))
          {
-            // User has typed a filename without an extension:
-            const wxChar* extension = filterBuffer;
-            int   maxFilter = (int)(of.nFilterIndex*2L) - 1;
+            if ( !of.nFileExtension ||
+                  (of.nFileExtension && fileNameBuffer[of.nFileExtension] == wxT('\0')) )
+            {
+               // User has typed a filename without an extension:
+               const wxChar* extension = filterBuffer;
+               int   maxFilter = (int)(of.nFilterIndex*2L) - 1;
             
-            for( int i = 0; i < maxFilter; i++ )           // get extension
-               extension = extension + wxStrlen( extension ) + 1;
+               for( int i = 0; i < maxFilter; i++ )           // get extension
+                  extension = extension + wxStrlen( extension ) + 1;
             
-            m_fileName = AppendExtension(fileNameBuffer, extension);
-            wxStrncpy(fileNameBuffer, m_fileName.c_str(), wxMin(m_fileName.Len(), wxMAXPATH-1));
-            fileNameBuffer[wxMin(m_fileName.Len(), wxMAXPATH-1)] = wxT('\0');
+               m_fileName = AppendExtension(fileNameBuffer, extension);
+               wxStrncpy(fileNameBuffer, m_fileName.c_str(), wxMin(m_fileName.Len(), wxMAXPATH-1));
+               fileNameBuffer[wxMin(m_fileName.Len(), wxMAXPATH-1)] = wxT('\0');
+            }
          }
-#endif
+
          m_path = fileNameBuffer;
          m_fileName = wxFileNameFromPath(fileNameBuffer);
          m_fileNames.Add(m_fileName);

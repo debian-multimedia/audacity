@@ -22,8 +22,9 @@
 #include <wx/toolbar.h>
 
 #include "AudacityApp.h"
+#include "AudioIO.h"
 #include "LabelTrack.h"
-#include "LoadModules.h"
+#include "ModuleManager.h"
 #include "Prefs.h"
 #include "Project.h"
 #include "ShuttleGui.h"
@@ -688,10 +689,6 @@ NyqBench::NyqBench(wxWindow * parent)
    mScript = NULL;
    mOutput = NULL;
 
-   // No need to delete...EffectManager will do it
-   mEffect = new EffectNyquist(wxT("///nyquist worker///"));
-   EffectManager::Get().RegisterEffect(mEffect, HIDDEN_EFFECT);
-
    mPath = gPrefs->Read(wxT("NyqBench/Path"), wxEmptyString);
    mAutoLoad = (gPrefs->Read(wxT("NyqBench/AutoLoad"), 0L) != 0);
    mAutoWrap = (gPrefs->Read(wxT("NyqBench/AutoWrap"), true) != 0);
@@ -1029,7 +1026,7 @@ void NyqBench::OnOpen(wxCommandEvent & e)
                      _("Load Nyquist script"),
                      mPath.GetPath(),
                      wxEmptyString,
-                     _("Nyquist scripts (*.ny)|*.ny|Lisp scripts (*.lsp)|*.lsp|All files|*.*"),
+                     _("Nyquist scripts (*.ny)|*.ny|Lisp scripts (*.lsp)|*.lsp|All files|*"),
                      wxFD_OPEN | wxRESIZE_BORDER);
  
    if (dlog.ShowModal() != wxID_OK) {
@@ -1075,7 +1072,7 @@ void NyqBench::OnSaveAs(wxCommandEvent & e)
                      _("Save Nyquist script"),
                      mPath.GetFullPath(),
                      wxEmptyString,
-                     _("Nyquist scripts (*.ny)|*.ny|Lisp scripts (*.lsp)|*.lsp|All files|*.*"),
+                     _("Nyquist scripts (*.ny)|*.ny|Lisp scripts (*.lsp)|*.lsp|All files|*"),
                      wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER);
  
    if (dlog.ShowModal() != wxID_OK) {
@@ -1352,7 +1349,12 @@ void NyqBench::OnLargeIcons(wxCommandEvent & e)
 
 void NyqBench::OnGo(wxCommandEvent & e)
 {
+   // No need to delete...EffectManager will do it
+   mEffect = new NyquistEffect(wxT("Nyquist Effect Workbench"));
+   const PluginID & ID = EffectManager::Get().RegisterEffect(mEffect);
+
    mEffect->SetCommand(mScript->GetValue());
+   mEffect->RedirectOutput();
 
    AudacityProject *p = GetActiveProject();
    wxASSERT(p != NULL);
@@ -1364,13 +1366,15 @@ void NyqBench::OnGo(wxCommandEvent & e)
       mRunning = true;
       UpdateWindowUI();
 
-      p->OnEffect(ALL_EFFECTS, mEffect);
+      p->OnEffect(ID);
 
       mRunning = false;
       UpdateWindowUI();
    }
 
    Raise();
+
+   EffectManager::Get().UnregisterEffect(ID);
 }
 
 void NyqBench::OnStop(wxCommandEvent & e)

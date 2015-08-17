@@ -101,6 +101,8 @@ SimpleBlockFile::SimpleBlockFile(wxFileName baseFileName,
                                  bool bypassCache /* = false */):
    BlockFile(wxFileName(baseFileName.GetFullPath() + wxT(".au")), sampleLen)
 {
+   mFormat = format;
+
    mCache.active = false;
 
    bool useCache = GetCache() && (!bypassCache);
@@ -135,6 +137,9 @@ SimpleBlockFile::SimpleBlockFile(wxFileName existingFile, sampleCount len,
                                  float min, float max, float rms):
    BlockFile(existingFile, len)
 {
+   // Set an invalid format to force GetSpaceUsage() to read it from the file.
+   mFormat = (sampleFormat) 0;
+
    mMin = min;
    mMax = max;
    mRMS = rms;
@@ -207,7 +212,7 @@ bool SimpleBlockFile::WriteSimpleBlockFile(
    size_t nBytesWritten = file.Write(&header, nBytesToWrite);
    if (nBytesWritten != nBytesToWrite)
    {
-      wxLogDebug(wxT("Wrote %d bytes, expected %d."), nBytesWritten, nBytesToWrite);
+      wxLogDebug(wxT("Wrote %lld bytes, expected %lld."), (long long) nBytesWritten, (long long) nBytesToWrite);
       return false;
    }
 
@@ -215,7 +220,7 @@ bool SimpleBlockFile::WriteSimpleBlockFile(
    nBytesWritten = file.Write(summaryData, nBytesToWrite);
    if (nBytesWritten != nBytesToWrite)
    {
-      wxLogDebug(wxT("Wrote %d bytes, expected %d."), nBytesWritten, nBytesToWrite);
+      wxLogDebug(wxT("Wrote %lld bytes, expected %lld."), (long long) nBytesWritten, (long long) nBytesToWrite);
       return false;
    }
 
@@ -237,7 +242,7 @@ bool SimpleBlockFile::WriteSimpleBlockFile(
             #endif
          if (nBytesWritten != nBytesToWrite)
          {
-            wxLogDebug(wxT("Wrote %d bytes, expected %d."), nBytesWritten, nBytesToWrite);
+            wxLogDebug(wxT("Wrote %lld bytes, expected %lld."), (long long) nBytesWritten, (long long) nBytesToWrite);
             return false;
          }
       }
@@ -250,7 +255,7 @@ bool SimpleBlockFile::WriteSimpleBlockFile(
       nBytesWritten = file.Write(sampleData, nBytesToWrite);
       if (nBytesWritten != nBytesToWrite)
       {
-         wxLogDebug(wxT("Wrote %d bytes, expected %d."), nBytesWritten, nBytesToWrite);
+         wxLogDebug(wxT("Wrote %lld bytes, expected %lld."), (long long) nBytesWritten, (long long) nBytesToWrite);
          return false;
       }
    }
@@ -541,11 +546,54 @@ wxLongLong SimpleBlockFile::GetSpaceUsage()
    {
       // We don't know space usage yet
       return 0;
-   } else
-   {
-      wxFFile dataFile(mFileName.GetFullPath());
-      return dataFile.Length();
    }
+
+   // Don't know the format, so it must be read from the file
+   if (mFormat == (sampleFormat) 0)
+   {
+      // Check sample format
+      wxFFile file(mFileName.GetFullPath(), wxT("rb"));
+      if (!file.IsOpened())
+      {
+         // Don't read into cache if file not available
+         return 0;
+      }
+   
+      auHeader header;
+   
+      if (file.Read(&header, sizeof(header)) != sizeof(header))
+      {
+         // Corrupt file
+         return 0;
+      }
+   
+      wxUint32 encoding;
+   
+      if (header.magic == 0x2e736e64)
+         encoding = header.encoding; // correct endianness
+      else
+         encoding = SwapUintEndianess(header.encoding);
+   
+      switch (encoding)
+      {
+      case AU_SAMPLE_FORMAT_16:
+         mFormat = int16Sample;
+         break;
+      case AU_SAMPLE_FORMAT_24:
+         mFormat = int24Sample;
+         break;
+      default:
+         // floatSample is a safe default (we will never loose data)
+         mFormat = floatSample;
+         break;
+      }
+   
+      file.Close();
+   }
+
+   return sizeof(auHeader) + 
+          mSummaryInfo.totalSummaryBytes +
+          (GetLength() * SAMPLE_SIZE_DISK(mFormat));
 }
 
 void SimpleBlockFile::Recover(){

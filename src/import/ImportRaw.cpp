@@ -311,6 +311,8 @@ ImportRawDialog::ImportRawDialog(wxWindow * parent,
     mOffset(offset),
     mRate(rate)
 {
+   SetName(GetTitle());
+
    ShuttleGui S(this, eIsCreating);
    wxArrayString encodings;
    wxArrayString endians;
@@ -337,7 +339,7 @@ ImportRawDialog::ImportRawDialog(wxWindow * parent,
 
       if (sf_format_check(&info)) {
          mEncodingSubtype[mNumEncodings] = subtype;
-         encodings.Add(LAT1CTOWX(sf_encoding_index_name(i)));
+         encodings.Add(sf_encoding_index_name(i));
 
          if ((mEncoding & SF_FORMAT_SUBMASK) == subtype)
             selection = mNumEncodings;

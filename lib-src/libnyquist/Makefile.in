@@ -161,17 +161,20 @@ am_libnyquist_a_OBJECTS = nyquist/cmt/cext.$(OBJEXT) \
 	nyquist/nyqsrc/local.$(OBJEXT) nyquist/nyqsrc/lpanal.$(OBJEXT) \
 	nyquist/nyqsrc/multiread.$(OBJEXT) \
 	nyquist/nyqsrc/multiseq.$(OBJEXT) \
+	nyquist/nyqsrc/phasevocoder.$(OBJEXT) \
+	nyquist/nyqsrc/pvshell.$(OBJEXT) \
 	nyquist/nyqsrc/resamp.$(OBJEXT) \
 	nyquist/nyqsrc/resampv.$(OBJEXT) \
 	nyquist/nyqsrc/samples.$(OBJEXT) \
 	nyquist/nyqsrc/seqext.$(OBJEXT) \
 	nyquist/nyqsrc/seqfnint.$(OBJEXT) \
 	nyquist/nyqsrc/seqinterf.$(OBJEXT) \
-	nyquist/nyqsrc/sliders.$(OBJEXT) \
+	nyquist/nyqsrc/sliderdata.$(OBJEXT) \
 	nyquist/nyqsrc/sndfnint.$(OBJEXT) \
 	nyquist/nyqsrc/sndmax.$(OBJEXT) \
 	nyquist/nyqsrc/sndread.$(OBJEXT) \
 	nyquist/nyqsrc/sndseq.$(OBJEXT) \
+	nyquist/nyqsrc/sndsliders.$(OBJEXT) \
 	nyquist/nyqsrc/sndwritepa.$(OBJEXT) \
 	nyquist/nyqsrc/sound.$(OBJEXT) nyquist/nyqsrc/stats.$(OBJEXT) \
 	nyquist/nyqsrc/trigger.$(OBJEXT) nyquist/nyqsrc/yin.$(OBJEXT) \
@@ -267,19 +270,19 @@ am_libnyquist_a_OBJECTS = nyquist/cmt/cext.$(OBJEXT) \
 	nyquist/tran/tapv.$(OBJEXT) nyquist/tran/tone.$(OBJEXT) \
 	nyquist/tran/tonev.$(OBJEXT) nyquist/tran/upsample.$(OBJEXT) \
 	nyquist/tran/white.$(OBJEXT) nyquist/xlisp/extern.$(OBJEXT) \
-	nyquist/xlisp/path.$(OBJEXT) nyquist/xlisp/xlbfun.$(OBJEXT) \
-	nyquist/xlisp/xlcont.$(OBJEXT) nyquist/xlisp/xldbug.$(OBJEXT) \
-	nyquist/xlisp/xldmem.$(OBJEXT) nyquist/xlisp/xleval.$(OBJEXT) \
-	nyquist/xlisp/xlfio.$(OBJEXT) nyquist/xlisp/xlftab.$(OBJEXT) \
-	nyquist/xlisp/xlglob.$(OBJEXT) nyquist/xlisp/xlimage.$(OBJEXT) \
-	nyquist/xlisp/xlinit.$(OBJEXT) nyquist/xlisp/xlio.$(OBJEXT) \
-	nyquist/xlisp/xlisp.$(OBJEXT) nyquist/xlisp/xljump.$(OBJEXT) \
-	nyquist/xlisp/xllist.$(OBJEXT) nyquist/xlisp/xlmath.$(OBJEXT) \
-	nyquist/xlisp/xlobj.$(OBJEXT) nyquist/xlisp/xlpp.$(OBJEXT) \
-	nyquist/xlisp/xlprin.$(OBJEXT) nyquist/xlisp/xlread.$(OBJEXT) \
-	nyquist/xlisp/xlstr.$(OBJEXT) nyquist/xlisp/xlsubr.$(OBJEXT) \
-	nyquist/xlisp/xlsym.$(OBJEXT) nyquist/xlisp/xlsys.$(OBJEXT) \
-	nyx.$(OBJEXT)
+	nyquist/xlisp/path.$(OBJEXT) nyquist/xlisp/security.$(OBJEXT) \
+	nyquist/xlisp/xlbfun.$(OBJEXT) nyquist/xlisp/xlcont.$(OBJEXT) \
+	nyquist/xlisp/xldbug.$(OBJEXT) nyquist/xlisp/xldmem.$(OBJEXT) \
+	nyquist/xlisp/xleval.$(OBJEXT) nyquist/xlisp/xlfio.$(OBJEXT) \
+	nyquist/xlisp/xlftab.$(OBJEXT) nyquist/xlisp/xlglob.$(OBJEXT) \
+	nyquist/xlisp/xlimage.$(OBJEXT) nyquist/xlisp/xlinit.$(OBJEXT) \
+	nyquist/xlisp/xlio.$(OBJEXT) nyquist/xlisp/xlisp.$(OBJEXT) \
+	nyquist/xlisp/xljump.$(OBJEXT) nyquist/xlisp/xllist.$(OBJEXT) \
+	nyquist/xlisp/xlmath.$(OBJEXT) nyquist/xlisp/xlobj.$(OBJEXT) \
+	nyquist/xlisp/xlpp.$(OBJEXT) nyquist/xlisp/xlprin.$(OBJEXT) \
+	nyquist/xlisp/xlread.$(OBJEXT) nyquist/xlisp/xlstr.$(OBJEXT) \
+	nyquist/xlisp/xlsubr.$(OBJEXT) nyquist/xlisp/xlsym.$(OBJEXT) \
+	nyquist/xlisp/xlsys.$(OBJEXT) nyx.$(OBJEXT)
 libnyquist_a_OBJECTS = $(am_libnyquist_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -463,21 +466,22 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-PORTAUDIO_CFLAGS = -I../portaudio-v19/include
-SNDFILE_CFLAGS = -I../libsndfile/src
+PORTAUDIO_CFLAGS = -I${srcdir}/../portaudio-v19/include
+SNDFILE_CFLAGS = -I${builddir}/../libsndfile/src
 
 # tell aclocal that extra macros can be found in autotools/m4/
 ACLOCAL_AMFLAGS = -I autotools/m4
 INC = \
    -I. \
-   -Inyquist/nyqsrc \
-   -Inyquist/tran \
-   -Inyquist/xlisp \
-   -Inyquist/sys/unix \
-   -Inyquist/cmt \
-   -Inyquist/ffts/src \
-   -Inyquist/nyqstk/include \
-   -Inyquist/nyqstk
+   -I${srcdir} \
+   -I${srcdir}/nyquist/nyqsrc \
+   -I${srcdir}/nyquist/tran \
+   -I${srcdir}/nyquist/xlisp \
+   -I${srcdir}/nyquist/sys/unix \
+   -I${srcdir}/nyquist/cmt \
+   -I${srcdir}/nyquist/ffts/src \
+   -I${srcdir}/nyquist/nyqstk/include \
+   -I${srcdir}/nyquist/nyqstk
 
 AM_CFLAGS = $(INC) $(PORTAUDIO_CFLAGS) $(SNDFILE_CFLAGS) \
    -DCMTSTUFF -DEXT
@@ -576,6 +580,10 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/multiread.h \
    nyquist/nyqsrc/multiseq.c \
    nyquist/nyqsrc/multiseq.h \
+   nyquist/nyqsrc/phasevocoder.c \
+   nyquist/nyqsrc/phasevocoder.h \
+   nyquist/nyqsrc/pvshell.c \
+   nyquist/nyqsrc/pvshell.h \
    nyquist/nyqsrc/resamp.c \
    nyquist/nyqsrc/resamp.h \
    nyquist/nyqsrc/resampv.c \
@@ -590,8 +598,8 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/seqfnintptrs.h \
    nyquist/nyqsrc/seqinterf.c \
    nyquist/nyqsrc/seqinterf.h \
-   nyquist/nyqsrc/sliders.c \
-   nyquist/nyqsrc/sliders.h \
+   nyquist/nyqsrc/sliderdata.c \
+   nyquist/nyqsrc/sliderdata.h \
    nyquist/nyqsrc/sndfnint.c \
    nyquist/nyqsrc/sndfnintdefs.h \
    nyquist/nyqsrc/sndfnintptrs.h \
@@ -601,6 +609,7 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/sndread.h \
    nyquist/nyqsrc/sndseq.c \
    nyquist/nyqsrc/sndseq.h \
+   nyquist/nyqsrc/sndsliders.c \
    nyquist/nyqsrc/sndsliders.h \
    nyquist/nyqsrc/sndwrite.h \
    nyquist/nyqsrc/sndwritepa.c \
@@ -859,6 +868,7 @@ libnyquist_a_SOURCES = \
    nyquist/xlisp/osdefs.h \
    nyquist/xlisp/osptrs.h \
    nyquist/xlisp/path.c \
+   nyquist/xlisp/security.c \
    nyquist/xlisp/xlbfun.c \
    nyquist/xlisp/xlcont.c \
    nyquist/xlisp/xldbug.c \
@@ -1210,6 +1220,10 @@ nyquist/nyqsrc/multiread.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/multiseq.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
+nyquist/nyqsrc/phasevocoder.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
+	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
+nyquist/nyqsrc/pvshell.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
+	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/resamp.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/resampv.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
@@ -1222,7 +1236,7 @@ nyquist/nyqsrc/seqfnint.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/seqinterf.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
-nyquist/nyqsrc/sliders.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
+nyquist/nyqsrc/sliderdata.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/sndfnint.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
@@ -1231,6 +1245,8 @@ nyquist/nyqsrc/sndmax.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 nyquist/nyqsrc/sndread.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/sndseq.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
+	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
+nyquist/nyqsrc/sndsliders.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
 nyquist/nyqsrc/sndwritepa.$(OBJEXT): nyquist/nyqsrc/$(am__dirstamp) \
 	nyquist/nyqsrc/$(DEPDIR)/$(am__dirstamp)
@@ -1547,6 +1563,8 @@ nyquist/xlisp/extern.$(OBJEXT): nyquist/xlisp/$(am__dirstamp) \
 	nyquist/xlisp/$(DEPDIR)/$(am__dirstamp)
 nyquist/xlisp/path.$(OBJEXT): nyquist/xlisp/$(am__dirstamp) \
 	nyquist/xlisp/$(DEPDIR)/$(am__dirstamp)
+nyquist/xlisp/security.$(OBJEXT): nyquist/xlisp/$(am__dirstamp) \
+	nyquist/xlisp/$(DEPDIR)/$(am__dirstamp)
 nyquist/xlisp/xlbfun.$(OBJEXT): nyquist/xlisp/$(am__dirstamp) \
 	nyquist/xlisp/$(DEPDIR)/$(am__dirstamp)
 nyquist/xlisp/xlcont.$(OBJEXT): nyquist/xlisp/$(am__dirstamp) \
@@ -1648,17 +1666,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/lpanal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/multiread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/multiseq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/phasevocoder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/pvshell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/resamp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/resampv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/samples.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/seqext.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/seqfnint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/seqinterf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sliders.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sliderdata.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndfnint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndmax.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndseq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndsliders.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sndwritepa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/sound.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/nyqsrc/$(DEPDIR)/stats.Po@am__quote@
@@ -1787,6 +1808,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/tran/$(DEPDIR)/white.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/extern.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/security.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/xlbfun.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/xlcont.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@nyquist/xlisp/$(DEPDIR)/xldbug.Po@am__quote@

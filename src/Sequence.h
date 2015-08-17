@@ -19,8 +19,13 @@
 #include "xml/XMLWriter.h"
 #include "ondemand/ODTaskThread.h"
 
+#include "audacity/Types.h"
+
+#if 0
+// Moved to "audacity/types.h"
 typedef wxLongLong_t sampleCount; /** < A native 64-bit integer type, because
                                     32-bit integers may not be enough */
+#endif
 
 class BlockFile;
 class DirManager;
@@ -74,9 +79,15 @@ class Sequence: public XMLTagHandler {
    bool Set(samplePtr buffer, sampleFormat format,
             sampleCount start, sampleCount len);
 
+   // where is input, assumed to be nondecreasing, and its size is len + 1.
+   // min, max, rms, bl are outputs, and their lengths are len.
+   // Each position in the output arrays corresponds to one column of pixels.
+   // The column for pixel p covers samples from
+   // where[p] up to (but excluding) where[p + 1].
+   // bl is negative wherever data are not yet available.
+   // Return true if successful.
    bool GetWaveDisplay(float *min, float *max, float *rms,int* bl,
-                       int len, sampleCount *where,
-                       double samplesPerPixel);
+                       int len, const sampleCount *where);
 
    bool Copy(sampleCount s0, sampleCount s1, Sequence **dest);
    bool Paste(sampleCount s0, const Sequence *src);
@@ -148,9 +159,10 @@ class Sequence: public XMLTagHandler {
                   float * outRMS) const;
 
    //
-   // Getting block size information
+   // Getting block size and alignment information
    //
 
+   sampleCount GetBlockStart(sampleCount position) const;
    sampleCount GetBestBlockSize(sampleCount start) const;
    sampleCount GetMaxBlockSize() const;
    sampleCount GetIdealBlockSize() const;

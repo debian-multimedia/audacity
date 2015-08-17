@@ -13,120 +13,72 @@
 #ifndef __AUDACITY_EFFECT_TONEGEN__
 #define __AUDACITY_EFFECT_TONEGEN__
 
-#include "Generator.h"
-#include "../widgets/TimeTextCtrl.h"
-#include "../Experimental.h"
+#include <wx/arrstr.h>
+#include <wx/string.h>
 
-#include <wx/dialog.h>
+#include "../ShuttleGui.h"
+#include "../widgets/NumericTextCtrl.h"
 
-class wxString;
-class wxChoice;
-class wxTextCtrl;
-class ShuttleGui;
+#include "Effect.h"
 
-#define __UNINITIALIZED__ (-1)
+#define CHIRP_PLUGIN_SYMBOL XO("Chirp")
+#define TONE_PLUGIN_SYMBOL XO("Tone")
 
-class WaveTrack;
+class EffectToneGen : public Effect
+{
+public:
+   EffectToneGen(bool isChirp);
+   virtual ~EffectToneGen();
 
+   // IdentInterface implementation
 
-class EffectToneGen : public BlockGenerator {
+   virtual wxString GetSymbol();
+   virtual wxString GetDescription();
 
- public:
-   EffectToneGen();
-   // A 'Chirp' is a tone that changes in frequency.
-   EffectToneGen & EnableForChirps(){mbChirp=true;return *this;};
+   // EffectIdentInterface implementation
 
-   virtual wxString GetEffectName() {
-      return wxString(mbChirp? _("Chirp..."):_("Tone..."));
-   }
+   virtual EffectType GetType();
 
-   virtual std::set<wxString> GetEffectCategories() {
-      std::set<wxString> result;
-      result.insert(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
-      return result;
-   }
+   // EffectClientInterface implementation
 
-   virtual wxString GetEffectIdentifier() {
-      return wxString(mbChirp ? wxT("Chirp") : wxT("Tone"));
-   }
+   virtual int GetAudioOutCount();
+   virtual bool ProcessInitialize(sampleCount totalLen, ChannelNames chanMap = NULL);
+   virtual sampleCount ProcessBlock(float **inBlock, float **outBlock, sampleCount blockLen);
+   virtual bool GetAutomationParameters(EffectAutomationParameters & parms);
+   virtual bool SetAutomationParameters(EffectAutomationParameters & parms);
 
-   virtual wxString GetEffectAction() {
-      return wxString(mbChirp? _("Generating Chirp") : _("Generating Tone"));
-   }
+   // Effect implementation
 
-   // Useful only after PromptUser values have been set.
-   virtual wxString GetEffectDescription();
+   void PopulateOrExchange(ShuttleGui & S);
+   bool TransferDataFromWindow();
+   bool TransferDataToWindow();
 
-   virtual bool PromptUser();
-   virtual bool TransferParameters( Shuttle & shuttle );
+private:
+   // EffectToneGen implementation
 
-   void GenerateBlock(float *data, const WaveTrack &track, sampleCount block);
-   void BeforeGenerate();
-   void BeforeTrack(const WaveTrack &track);
+   void OnControlUpdate(wxCommandEvent & evt);
 
- protected:
-   virtual bool MakeTone(float *buffer, sampleCount len);
-
- private:
-
-   bool mbChirp;
-   bool mbLogInterpolation;
-
-   double mPositionInCycles;
-
-   // If we made these static variables,
-   // Tone and Chirp would share the same parameters.
-   int waveform;
-   float frequency[2];
-   float amplitude[2];
-   float logFrequency[2];
-   double mCurRate;
-   int interpolation;
+private:
+   bool mChirp;
 
    // mSample is an external placeholder to remember the last "buffer"
    // position so we use it to reinitialize from where we left
    sampleCount mSample;
- // friendship ...
- friend class ToneGenDialog;
+   double mPositionInCycles;
 
-};
+   // If we made these static variables,
+   // Tone and Chirp would share the same parameters.
+   int mWaveform;
+   int mInterpolation;
+   double mFrequency[2];
+   double mAmplitude[2];
+   double mLogFrequency[2];
 
-// WDR: class declarations
+   wxArrayString mWaveforms;
+   wxArrayString mInterpolations;
+   NumericTextCtrl *mToneDurationT;
 
-//----------------------------------------------------------------------------
-// ToneGenDialog
-//----------------------------------------------------------------------------
-
-class ToneGenDialog:public EffectDialog {
- public:
-   // constructors and destructors
-   ToneGenDialog(EffectToneGen * effect, wxWindow * parent, const wxString & title);
-
-   // WDR: method declarations
-   void PopulateOrExchange(ShuttleGui & S);
-   bool TransferDataToWindow();
-   bool TransferDataFromWindow();
-
- private:
-   void PopulateOrExchangeStandard(ShuttleGui & S);
-   void PopulateOrExchangeExtended(ShuttleGui & S);
-   void OnTimeCtrlUpdate(wxCommandEvent & event);
-   DECLARE_EVENT_TABLE()
-
- public:
-   EffectToneGen *mEffect;
-   bool mbChirp;
-   wxArrayString *waveforms;
-   int waveform;
-   double frequency[2];
-   double amplitude[2];
-   double mDuration;
-   bool isSelection;
-   int interpolation;
-   wxArrayString *interpolations;
-
- private:
-   TimeTextCtrl *mToneDurationT;
+   DECLARE_EVENT_TABLE();
 };
 
 #endif

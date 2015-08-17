@@ -110,7 +110,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("bn")] = wxT("Bengali");
    localLanguageName[wxT("bs")] = wxT("Bosnian");
    localLanguageName[wxT("ca")] = wxT("Catalan");
-   localLanguageName[wxT("ca@valencia")] = wxT("Valencian (southern Catalan)");
+   localLanguageName[wxT("ca_ES@valencia")] = wxT("Valencian (southern Catalan)");
    localLanguageName[wxT("cs")] = wxT("Czech");
    localLanguageName[wxT("cy")] = wxT("Welsh");
    localLanguageName[wxT("da")] = wxT("Dansk");
@@ -128,6 +128,7 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("hi")] = wxT("Hindi");
    localLanguageName[wxT("hr")] = wxT("Croatian");
    localLanguageName[wxT("hu")] = wxT("Magyar");
+   localLanguageName[wxT("hy")] = wxT("Armenian");
    localLanguageName[wxT("id")] = wxT("Bahasa Indonesia"); // aka Indonesian
    localLanguageName[wxT("it")] = wxT("Italiano");
    localLanguageName[wxT("ja")] = wxT("Nihongo");
@@ -155,19 +156,28 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
    localLanguageName[wxT("tr")] = wxT("Turkce");
    localLanguageName[wxT("uk")] = wxT("Ukrainska");
    localLanguageName[wxT("vi")] = wxT("Vietnamese");
-   localLanguageName[wxT("zh")] = wxT("Chinese (Simplified)");
+   // If we look up zh in wxLocale we get zh_TW hence we MUST look
+   // for zh_CN.
+   localLanguageName[wxT("zh_CN")] = wxT("Chinese (Simplified)");
    localLanguageName[wxT("zh_TW")] = wxT("Chinese (Traditional)");
 
    wxArrayString audacityPathList = wxGetApp().audacityPathList;
    wxGetApp().AddUniquePathToPathList(wxString::Format(wxT("%s/share/locale"),
                                                        wxT(INSTALL_PREFIX)),
                                       audacityPathList);
-   int i;
-   for(i=wxLANGUAGE_UNKNOWN; i<wxLANGUAGE_USER_DEFINED;i++) {
-      const wxLanguageInfo *info = wxLocale::GetLanguageInfo(i);
 
-      if (!info)
+   // For each language in our list we look for a corresponding entry in
+   // wxLocale.  
+   for (LangHash::iterator i = localLanguageName.begin();
+        i != localLanguageName.end();
+        i++)
+   {
+      const wxLanguageInfo *info = wxLocale::FindLanguageInfo(i->first);
+
+      if (!info) {
+         wxASSERT(info != NULL);
          continue;
+      }
 
       wxString fullCode = info->CanonicalName;
       wxString code = fullCode.Left(2);
@@ -213,7 +223,6 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
       }
    }
 
-
    // JKC: Adding language for simplified audacity.
    {
       wxString code;
@@ -229,10 +238,10 @@ void GetLanguages(wxArrayString &langCodes, wxArrayString &langNames)
 
 
    // Sort
-
    unsigned int j;
-   for(j=0; j<tempNames.GetCount(); j++)
+   for(j=0; j<tempNames.GetCount(); j++){
       reverseHash[tempNames[j]] = tempCodes[j];
+   }
 
    tempNames.Sort();
 

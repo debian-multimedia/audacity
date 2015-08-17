@@ -10,8 +10,9 @@
 #ifndef __AUDACITY_XML_XML_FILE_WRITER__
 #define __AUDACITY_XML_XML_FILE_WRITER__
 
-#include <wx/ffile.h>
+#include <wx/arrstr.h>
 #include <wx/dynarray.h>
+#include <wx/ffile.h>
 
 ///
 /// XMLWriter
@@ -23,36 +24,23 @@ class AUDACITY_DLL_API XMLWriter {
    XMLWriter();
    virtual ~XMLWriter();
 
-   void StartTag(const wxString &name);
-   void EndTag(const wxString &name);
+   virtual void StartTag(const wxString &name);
+   virtual void EndTag(const wxString &name);
 
-   void WriteAttr(const wxString &name, const wxString &value);
-   void WriteAttr(const wxChar *name, const wxChar *value);
-   void WriteAttr(const wxString &name, const wxChar *value);
-   void WriteAttr(const wxChar *name, const wxString &value);
+   virtual void WriteAttr(const wxString &name, const wxString &value);
+   virtual void WriteAttr(const wxString &name, const wxChar *value);
 
-   void WriteAttr(const wxString &name, int value);
-   void WriteAttr(const wxChar *name, int value);
-   void WriteAttr(const wxString &name, bool value);
-   void WriteAttr(const wxChar *name, bool value);
-   void WriteAttr(const wxString &name, long value);
-   void WriteAttr(const wxChar *name, long value);
-   void WriteAttr(const wxString &name, long long value);
-   void WriteAttr(const wxChar *name, long long value);
-   void WriteAttr(const wxString &name, size_t value);
-   void WriteAttr(const wxChar *name, size_t value);
-   void WriteAttr(const wxString &name, float value, int digits = -1);
-   void WriteAttr(const wxChar *name, float value, int digits = -1);
-   void WriteAttr(const wxString &name, double value, int digits = -1);
-   void WriteAttr(const wxChar *name, double value, int digits = -1);
+   virtual void WriteAttr(const wxString &name, int value);
+   virtual void WriteAttr(const wxString &name, bool value);
+   virtual void WriteAttr(const wxString &name, long value);
+   virtual void WriteAttr(const wxString &name, long long value);
+   virtual void WriteAttr(const wxString &name, size_t value);
+   virtual void WriteAttr(const wxString &name, float value, int digits = -1);
+   virtual void WriteAttr(const wxString &name, double value, int digits = -1);
 
-   void WriteData(const wxString &value);
-   void WriteData(const wxChar *value);
+   virtual void WriteData(const wxString &value);
 
-   void WriteSubTree(const wxString &value);
-   void WriteSubTree(const wxChar *value);
-
-   void Write(const wxChar *data);
+   virtual void WriteSubTree(const wxString &value);
 
    virtual void Write(const wxString &data) = 0;
 
@@ -116,7 +104,7 @@ class XMLStringWriter:public wxString, public XMLWriter {
 
  public:
 
-   XMLStringWriter();
+   XMLStringWriter(size_t initialSize = 0);
    virtual ~XMLStringWriter();
 
    void Write(const wxString &data);

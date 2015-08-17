@@ -53,6 +53,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the <libudev.h> header file. */
+#undef HAVE_LIBUDEV_H
+
 /* Define if you have C99's lrint function. */
 #undef HAVE_LRINT
 
@@ -142,15 +145,6 @@
 
 /* Define if mp3 support is implemented with the libmad library */
 #undef USE_LIBMAD
-
-/* Define if libresample support should be enabled */
-#undef USE_LIBRESAMPLE
-
-/* Define if libsamplerate support should be enabled */
-#undef USE_LIBSAMPLERATE
-
-/* Define if libsoxr support should be enabled */
-#undef USE_LIBSOXR
 
 /* Define if libtwolame (MP2 export) support should be enabled */
 #undef USE_LIBTWOLAME

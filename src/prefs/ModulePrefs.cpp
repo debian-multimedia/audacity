@@ -4,16 +4,14 @@
 
   ModulePrefs.cpp
 
-  Brian Gunlogson
-  Joshua Haberman
-  Dominic Mazzoni
   James Crook
-
 
 *******************************************************************//**
 
 \class ModulePrefs
-\brief A PrefsPanel to enable/disable certain modules.
+\brief A PrefsPanel to enable/disable certain modules.  'Modules' are 
+dynamically linked libraries that modify Audacity.  They are plug-ins 
+with names like mnod-script-pipe that add new features.
 
 *//*******************************************************************/
 
@@ -29,6 +27,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/* i18n-hint: Modules are optional extensions to Audacity that add new features.*/
 ModulePrefs::ModulePrefs(wxWindow * parent)
 :  PrefsPanel(parent, _("Modules"))
 {
@@ -47,9 +46,14 @@ void ModulePrefs::GetAllModuleStatuses(){
    //    mod-script-pipe
    //    mod-nyq-bench
    //    mod-track-panel
+   //    mod-menu-munger
+   //    mod-theming
 
+   // TODO: On an Audacity upgrade we should (?) actually untick modules.
+   // The old modules might be still around, and we do not want to use them.
    mModules.Clear();
    mStatuses.Clear();
+   mPaths.Clear();
 
 
    // Iterate through all Modules listed in prefs.
@@ -59,13 +63,18 @@ void ModulePrefs::GetAllModuleStatuses(){
    while ( bCont ) {
       int iStatus;
       gPrefs->Read( str, &iStatus, kModuleDisabled );
-      if( iStatus > kModuleNew ){
-         iStatus = kModuleNew;
-         gPrefs->Write( str, iStatus );
+      wxString fname;
+      gPrefs->Read( wxString( wxT("/ModulePath/") ) + str, &fname, wxEmptyString );
+      if( fname != wxEmptyString && wxFileExists( fname ) ){
+         if( iStatus > kModuleNew ){
+            iStatus = kModuleNew;
+            gPrefs->Write( str, iStatus );
+         }
+         //wxLogDebug( wxT("Entry: %s Value: %i"), str.c_str(), iStatus );
+         mModules.Add( str );
+         mStatuses.Add( iStatus );
+         mPaths.Add( fname );
       }
-      //wxLogDebug( wxT("Entry: %s Value: %i"), str.c_str(), iStatus );
-      mModules.Add( str );
-      mStatuses.Add( iStatus );
       bCont = gPrefs->GetNextEntry(str, dummy);
    }
    gPrefs->SetPath( wxT("") );
@@ -93,18 +102,26 @@ void ModulePrefs::PopulateOrExchange(ShuttleGui & S)
    StatusChoices.Add( _("New" ) );
    S.SetBorder(2);
 
-   S.StartStatic(_(""));
+   S.StartStatic(wxT(""));
    {
-      S.AddFixedText(_("These are experimental Modules. Enable them only if you've read the manual\nand know what you are doing.") );
-      S.AddFixedText(wxString(wxT("  ")) + _("'Ask' means Audacity will ask if you want to load the plug-each time it starts.") );
-      S.AddFixedText(wxString(wxT("  ")) + _("'Failed' means Audacity thinks the plug-in is broken and won't run it.") );
-      S.AddFixedText(wxString(wxT("  ")) + _("'New' is like 'Ask', but asks just once.") );
-      S.StartMultiColumn( 2 );
-      int i;
-      for(i=0;i<(int)mModules.GetCount();i++)
-         S.TieChoice( mModules[i], mStatuses[i], &StatusChoices );
-      S.EndMultiColumn();
-
+      S.AddFixedText(_("These are experimental modules. Enable them only if you've read the Audacity Manual\nand know what you are doing.") );
+      S.AddFixedText(wxString(wxT("  ")) + _("'Ask' means Audacity will ask if you want to load the module each time it starts.") );
+      S.AddFixedText(wxString(wxT("  ")) + _("'Failed' means Audacity thinks the module is broken and won't run it.") );
+      S.AddFixedText(wxString(wxT("  ")) + _("'New' means no choice has been made yet.") );
+      S.AddFixedText(_("Changes to these settings only take effect when Audacity starts up."));
+      S.StartScroller();
+      {
+        S.StartMultiColumn( 2 );
+        int i;
+        for(i=0;i<(int)mModules.GetCount();i++)
+           S.TieChoice( mModules[i], mStatuses[i], &StatusChoices );
+        S.EndMultiColumn();
+      }
+      if( mModules.GetCount() < 1 )
+      {
+        S.AddFixedText( _("No modules were found") );
+      }
+      S.EndScroller();
    }
    S.EndStatic();
 }
@@ -114,8 +131,8 @@ bool ModulePrefs::Apply()
    ShuttleGui S(this, eIsSavingToPrefs);
    PopulateOrExchange(S);
    int i;
-   for(i=0;i<(int)mModules.GetCount();i++)
-      SetModuleStatus( mModules[i], mStatuses[i] );
+   for(i=0;i<(int)mPaths.GetCount();i++)
+      SetModuleStatus( mPaths[i], mStatuses[i] );
    return true;
 }
 
@@ -139,6 +156,9 @@ void ModulePrefs::SetModuleStatus( wxString fname, int iStatus ){
    wxString ShortName = wxFileName( fname ).GetName();
    wxString PrefName = wxString( wxT("/Module/") ) + ShortName.Lower();
    gPrefs->Write( PrefName, iStatus );
+   PrefName = wxString( wxT("/ModulePath/") ) + ShortName.Lower();
+   gPrefs->Write( PrefName, fname );
+   gPrefs->Flush();
 }
 
 

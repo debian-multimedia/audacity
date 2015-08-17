@@ -2,22 +2,23 @@
 # Makefile(.in) for libnyquist using Autotools (but not libtool).
 # Written by Richard Ash following Gary Vaughan's Autobook
 
-PORTAUDIO_CFLAGS = -I../portaudio-v19/include
-SNDFILE_CFLAGS = -I../libsndfile/src
+PORTAUDIO_CFLAGS = -I${srcdir}/../portaudio-v19/include
+SNDFILE_CFLAGS = -I${builddir}/../libsndfile/src
 
 # tell aclocal that extra macros can be found in autotools/m4/
 ACLOCAL_AMFLAGS = -I autotools/m4
 
 INC = \
    -I. \
-   -Inyquist/nyqsrc \
-   -Inyquist/tran \
-   -Inyquist/xlisp \
-   -Inyquist/sys/unix \
-   -Inyquist/cmt \
-   -Inyquist/ffts/src \
-   -Inyquist/nyqstk/include \
-   -Inyquist/nyqstk
+   -I${srcdir} \
+   -I${srcdir}/nyquist/nyqsrc \
+   -I${srcdir}/nyquist/tran \
+   -I${srcdir}/nyquist/xlisp \
+   -I${srcdir}/nyquist/sys/unix \
+   -I${srcdir}/nyquist/cmt \
+   -I${srcdir}/nyquist/ffts/src \
+   -I${srcdir}/nyquist/nyqstk/include \
+   -I${srcdir}/nyquist/nyqstk
 
 AM_CFLAGS = $(INC) $(PORTAUDIO_CFLAGS) $(SNDFILE_CFLAGS) \
    -DCMTSTUFF -DEXT
@@ -115,6 +116,10 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/multiread.h \
    nyquist/nyqsrc/multiseq.c \
    nyquist/nyqsrc/multiseq.h \
+   nyquist/nyqsrc/phasevocoder.c \
+   nyquist/nyqsrc/phasevocoder.h \
+   nyquist/nyqsrc/pvshell.c \
+   nyquist/nyqsrc/pvshell.h \
    nyquist/nyqsrc/resamp.c \
    nyquist/nyqsrc/resamp.h \
    nyquist/nyqsrc/resampv.c \
@@ -129,8 +134,8 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/seqfnintptrs.h \
    nyquist/nyqsrc/seqinterf.c \
    nyquist/nyqsrc/seqinterf.h \
-   nyquist/nyqsrc/sliders.c \
-   nyquist/nyqsrc/sliders.h \
+   nyquist/nyqsrc/sliderdata.c \
+   nyquist/nyqsrc/sliderdata.h \
    nyquist/nyqsrc/sndfnint.c \
    nyquist/nyqsrc/sndfnintdefs.h \
    nyquist/nyqsrc/sndfnintptrs.h \
@@ -140,6 +145,7 @@ libnyquist_a_SOURCES = \
    nyquist/nyqsrc/sndread.h \
    nyquist/nyqsrc/sndseq.c \
    nyquist/nyqsrc/sndseq.h \
+   nyquist/nyqsrc/sndsliders.c \
    nyquist/nyqsrc/sndsliders.h \
    nyquist/nyqsrc/sndwrite.h \
    nyquist/nyqsrc/sndwritepa.c \
@@ -398,6 +404,7 @@ libnyquist_a_SOURCES = \
    nyquist/xlisp/osdefs.h \
    nyquist/xlisp/osptrs.h \
    nyquist/xlisp/path.c \
+   nyquist/xlisp/security.c \
    nyquist/xlisp/xlbfun.c \
    nyquist/xlisp/xlcont.c \
    nyquist/xlisp/xldbug.c \

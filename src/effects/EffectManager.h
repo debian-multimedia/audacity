@@ -18,108 +18,125 @@ effects.
 
 *//*******************************************************************/
 
-
 #ifndef __AUDACITY_EFFECTMANAGER__
 #define __AUDACITY_EFFECTMANAGER__
 
-#include <map>
+#include <wx/choice.h>
+#include <wx/dialog.h>
+#include <wx/event.h>
+#include <wx/listbox.h>
+#include <wx/string.h>
 
+#include "audacity/EffectInterface.h"
+#include "../PluginManager.h"
 #include "Effect.h"
 
-#ifdef EFFECT_CATEGORIES
-#include "EffectCategory.h"
+WX_DEFINE_USER_EXPORTED_ARRAY(Effect *, EffectArray, class AUDACITY_DLL_API);
+WX_DECLARE_STRING_HASH_MAP_WITH_DECL(Effect *, EffectMap, class AUDACITY_DLL_API);
+
+#if defined(EXPERIMENTAL_EFFECTS_RACK)
+class EffectRack;
 #endif
 
-WX_DEFINE_USER_EXPORTED_ARRAY(Effect *, EffectArray, class AUDACITY_DLL_API);
-
-
-class AUDACITY_DLL_API EffectManager {
-
- public:
+class AUDACITY_DLL_API EffectManager
+{
+public:
 
    /** Get the singleton instance of the EffectManager. Probably not safe
        for multi-thread use. */
-   static EffectManager& Get();
+   static EffectManager & Get();
 
- //
- // public methods
- //
- // Used by the outside program to register the list of effects and retrieve
- // them by index number, usually when the user selects one from a menu.
- //
- public:
-
+//
+// public methods
+//
+// Used by the outside program to register the list of effects and retrieve
+// them by index number, usually when the user selects one from a menu.
+//
+public:
    EffectManager();
+   virtual ~EffectManager();
 
-   /** A destructor is needed so we can delete all categories. */
-   ~EffectManager();
+   /** (Un)Register an effect so it can be executed. */
+   // Here solely for the purpose of Nyquist Workbench until
+   // a better solution is devised.
+   const PluginID & RegisterEffect(Effect *f);
+   void UnregisterEffect(const PluginID & ID);
 
-   /** Register an effect so it will appear in the menu. */
-   void RegisterEffect(Effect *f, int AdditionalFlags=0);
+   /** Run an effect given the plugin ID */
+   // Returns true on success.  Will only operate on tracks that
+   // have the "selected" flag set to true, which is consistent with
+   // Audacity's standard UI.
+   bool DoEffect(const PluginID & ID,
+                 wxWindow *parent,
+                 double projectRate,
+                 TrackList *list,
+                 TrackFactory *factory,
+                 SelectedRegion *selectedRegion,
+                 bool shouldPrompt = true);
 
-   /** Unregister all effects. */
-   void UnregisterEffects();
+   wxString GetEffectName(const PluginID & ID);
+   wxString GetEffectIdentifier(const PluginID & ID);
+   wxString GetEffectDescription(const PluginID & ID);
+   bool IsHidden(const PluginID & ID);
 
-   /** Return an effect by its numerical ID. */
-   Effect *GetEffect(int ID);
+   /** Support for batch commands */
+   bool SupportsAutomation(const PluginID & ID);
+   wxString GetEffectParameters(const PluginID & ID);
+   bool SetEffectParameters(const PluginID & ID, const wxString & params);
+   bool PromptUser(const PluginID & ID, wxWindow *parent);
+   bool HasPresets(const PluginID & ID);
+   wxString GetPreset(const PluginID & ID, const wxString & params, wxWindow * parent);
+   wxString GetDefaultPreset(const PluginID & ID);
+   void SetBatchProcessing(const PluginID & ID, bool start);
 
-   Effect* GetEffectByIdentifier(const wxString strTarget, const int kFlags = ALL_EFFECTS);
+      // Realtime effect processing
+   bool RealtimeIsActive();
+   bool RealtimeIsSuspended();
+   void RealtimeAddEffect(Effect *effect);
+   void RealtimeRemoveEffect(Effect *effect);
+   void RealtimeSetEffects(const EffectArray & mActive);
+   void RealtimeInitialize();
+   void RealtimeAddProcessor(int group, int chans, float rate);
+   void RealtimeFinalize();
+   void RealtimeSuspend();
+   void RealtimeResume();
+   void RealtimeProcessStart();
+   sampleCount RealtimeProcess(int group, int chans, float **buffers, sampleCount numSamples);
+   void RealtimeProcessEnd();
+   int GetRealtimeLatency();
 
-   /** Return the number of registered effects. */
-   int GetNumEffects();
-
-   /** Returns a sorted array of effects, which may be filtered
-       using the flags parameter.  The caller should dispose
-       of the array when done. */
-   EffectArray *GetEffects(int flags = ALL_EFFECTS);
-
-#ifdef EFFECT_CATEGORIES
-
-   /** Add a new effect category with the given URI and name and
-       return a pointer to it. If a category with this URI already
-       exists, return that instead. */
-   EffectCategory* AddCategory(const wxString& URI,
-                               const wxString& name);
-
-   /** Return a pointer to the effect category with the given URI
-       or 0 if no such category has been added. */
-   EffectCategory* LookupCategory(const wxString& URI);
-
-   /** Make one category the parent of another category. Both categories
-       must have been returned from AddCategory() or LookupCategory().
-       If the new parent-child relationship would create any loops
-       in the graph of categories false will be returned and the graph
-       will not be modified, otherwise the function will return true. */
-   bool AddCategoryParent(EffectCategory* child, EffectCategory* parent);
-
-   /** Freeze the subcategory relations between all categories added so far. */
-   void FreezeCategories();
-
-   /** Return the set of all root categories, i.e. the ones without parents. */
-   const CategorySet& GetRootCategories() const;
-
-   /** Return the set of all uncategorised effects. */
-   EffectSet GetUnsortedEffects(int flags = ALL_EFFECTS) const;
-
+#if defined(EXPERIMENTAL_EFFECTS_RACK)
+   void ShowRack();
 #endif
 
- private:
+   const PluginID & GetEffectByIdentifier(const wxString & strTarget);
 
-   EffectArray mEffects;
+private:
+   /** Return an effect by its ID. */
+   Effect *GetEffect(const PluginID & ID);
+
+#if defined(EXPERIMENTAL_EFFECTS_RACK)
+   EffectRack *GetRack();
+#endif
+
+private:
+   EffectMap mEffects;
+   EffectMap mHostEffects;
+
    int mNumEffects;
 
-#ifdef EFFECT_CATEGORIES
-   // This maps URIs to EffectCategory pointers for all added categories.
-   // It is needed for fast lookup and easy deletion.
-   typedef std::map<wxString, EffectCategory*> CategoryMap;
-   CategoryMap *mCategories;
+   wxCriticalSection mRealtimeLock;
+   EffectArray mRealtimeEffects;
+   int mRealtimeLatency;
+   bool mRealtimeSuspended;
+   bool mRealtimeActive;
+   wxArrayInt mRealtimeChans;
+   wxArrayDouble mRealtimeRates;
 
-   // These are the root categories, i.e. the ones without parents.
-   CategorySet *mRootCategories;
+#if defined(EXPERIMENTAL_EFFECTS_RACK)
+   EffectRack *mRack;
 
-   // Special category that all effects with unknown category URIs
-   // are placed in.
-   EffectSet *mUnsorted;
+   friend class EffectRack;
 #endif
 
 };

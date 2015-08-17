@@ -11,70 +11,41 @@
 #ifndef __AUDACITY_EFFECT_FADE__
 #define __AUDACITY_EFFECT_FADE__
 
-#include "SimpleMono.h"
+#include <wx/string.h>
 
-#include <wx/intl.h>
+#include "Effect.h"
 
-class wxString;
+#define FADEIN_PLUGIN_SYMBOL XO("Fade In")
+#define FADEOUT_PLUGIN_SYMBOL XO("Fade Out")
 
-class EffectFadeIn: public EffectSimpleMono {
+class EffectFade : public Effect
+{
+public:
+   EffectFade(bool fadeIn = false);
+   virtual ~EffectFade();
 
- public:
-   virtual wxString GetEffectName() {
-      return wxString(_("Fade In"));
-   }
+   // IdentInterface implementation
 
-   virtual std::set<wxString> GetEffectCategories() {
-      std::set<wxString> result;
-      result.insert(wxT("http://lv2plug.in/ns/lv2core#UtilityPlugin"));
-      return result;
-   }
+   virtual wxString GetSymbol();
+   virtual wxString GetDescription();
 
-   virtual wxString GetEffectIdentifier() {
-      return wxString(wxT("FadeIn"));
-   }
+   // EffectIdentInterface implementation
 
-   virtual wxString GetEffectAction() {
-      return wxString(_("Fading In"));
-   }
+   virtual EffectType GetType();
+   virtual bool IsInteractive();
 
- protected:
+   // EffectClientInterface implementation
+
+   virtual int GetAudioInCount();
+   virtual int GetAudioOutCount();
+   virtual bool ProcessInitialize(sampleCount totalLen, ChannelNames chanMap = NULL);
+   virtual sampleCount ProcessBlock(float **inBlock, float **outBlock, sampleCount blockLen);
+
+private:
+   // EffectFadeIn implementation
+
+   bool mFadeIn;
    sampleCount mSample;
-   sampleCount mLen;
-
-   virtual bool NewTrackSimpleMono();
-
-   virtual bool ProcessSimpleMono(float *buffer, sampleCount len);
-};
-
-class EffectFadeOut:public EffectSimpleMono {
-
- public:
-   virtual wxString GetEffectName() {
-      return wxString(_("Fade Out"));
-   }
-
-   virtual std::set<wxString> GetEffectCategories() {
-      std::set<wxString> result;
-      result.insert(wxT("http://lv2plug.in/ns/lv2core#UtilityPlugin"));
-      return result;
-   }
-
-   virtual wxString GetEffectIdentifier() {
-      return wxString(wxT("FadeOut"));
-   }
-
-   virtual wxString GetEffectAction() {
-      return wxString(_("Fading Out"));
-   }
-
- protected:
-   sampleCount mSample;
-   sampleCount mLen;
-
-   virtual bool NewTrackSimpleMono();
-
-   virtual bool ProcessSimpleMono(float *buffer, sampleCount len);
 };
 
 #endif

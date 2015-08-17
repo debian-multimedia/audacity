@@ -18,22 +18,17 @@ The customised file saving dialogs for wxwidgets to provide the options
 button for format preferences. This is written and maintained by us so doesn't
 have an upstream at the moment.
 
-id3lib
-------
-disused?
-
 libflac
 -------
 http://flac.sourceforge.net/
 Free Lossless Audio Codec encoding and decoding library
-Version in Audacity SVN: 1.3.0
+Version in Audacity SVN: 1.3.1
 Patches: mac-asm-fixes.patch. Fixes build on OS X Intel 10.4 by creating and
             object format for Mach-O. Needs to go upstream
-        flac-lite.diff. Remove all the things not included in Audacity SVN from
-            the build system so it will build with 50% less stuff
-        libflac++-static.patch.  Adds static build of libFLAC++.
-AM_MAINTAINER_MODE([disable]) has been added to configure.ac to disable autotools rebuilds
-Upstream version: 1.3.0
+         add-maintainer-mode.patch. Disable autotools rebuilds
+         bypass-constraint-problem.patch. Gets around problem with older
+            gcc (4.0)...not need after we upgrade past Xcode 3.2.6.
+Upstream version: 1.3.1
 
 libid3tag
 ---------
@@ -42,6 +37,7 @@ arguments ([-Wall foreign]) added to AM_INIT_AUTOMAKE to avoid autoreconf
 failures
 arguments (--no-verify) removed from ltconfig execution to prevent configure
 failures
+Patches: libid3tag-srcdir.patch  Adds srcdir handling
 
 libmad
 ------
@@ -59,10 +55,11 @@ Upstream version: 0.15.1 (beta)
 libnyquist
 ----------
 Digital Audio scripting language, with our own library interface added to it
-kFreeBSD-nyquist.patch	Patch from Benjamin Drung to build nyquist on
-						kFreeBSD. Asked him to send it upstream 2009/08/22
-hurd-nyquist.patch      Patch from Benjamin Drung to build nyquist on HURD.
-                        Asked him to send it upstream 2009/12/05.
+Version in Audacity SVN: 3.09
+nyquist.patch  Fix for a couple of memory leaks
+xlisp.patch    Fix build in Windows
+sound.patch    Fix build when using VS2013 (log2 is included in VS2013)
+revert-convolve.patch  Replaces broken convolve with previous version
 
 libogg
 ------
@@ -73,26 +70,6 @@ Patches: autotools.patch: Fix all autotools warnings. configure.in was renamed
 AM_MAINTAINER_MODE has been called with "disable" in configure.ac to disable
 autotools rebuilds by default.
 Upstream Version: 1.3.1
-
-libresample
------------
-Audio sample rate conversion library. Maintained by Audacity project. 
-(Depreciated in favour of libsoxr)
-
-libsamplerate
--------------
-Erik de Castro Lopo's high quality sample rate conversion library. Not used
-in release builds, could probably be removed altogther except for comparision
-purposes.
-Version in Audacity SVN: 0.1.7
-Patches: endian.m4, lrint.m4, llrint.m4, lrintf.m4, clip_mode.m4 copied from
-			libsndfile's M4/.
-		 signal.m4 created out of the tail of acinclude.m4 with the remaining
-		 	necessary macro
-         autotools.patch: Fix autotools warnings.
-AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
-by default
-Upstream Version: 0.1.8
 
 libsndfile
 ----------
@@ -121,6 +98,7 @@ Version in Audacity SVN: 0.1.1
 Patches: 
    * "libsoxr/configure" file: modified cmake params
    * add-make-check-support.patch: Add a check target for GNU Autotools integration.
+   * libsoxr-srcdir.patch: Adds srcdir handling
 Upstream Version: 0.1.1
 
 libvamp
@@ -129,6 +107,7 @@ Library to load and use VAMP plug-ins. http://www.vamp-plugins.org/
 Version in Audacity SVN: 2.5
 Patches: fix-linkage-against-dl.patch: Fix linkage against dl for hostsdk library.
          fix-all-target.patch: Fix all target to not build disabled targets.
+         libvamp-srcdir.patch: Adds srcdir handling
 Upstream Version: 2.5
 
 libvorbis
@@ -145,15 +124,16 @@ lib-widget-extra
 
 lv2
 ---------
-A merging of the lilv, lv2, msinttypes, serd, sord, and sratom libraries to support
+A merging of the lilv, lv2, msinttypes, serd, sord, sratom, and suil libraries to support
 LV2 plug-ins.
 Versions in Audacity SVN:
-    lilv-0.16.0
-    lv2-1.6.0
+    lilv-0.20.0
+    lv2-1.10.0
     msinttypes-r29
-    serd-0.18.2
-    sord-0.12.0
-    sratom-0.4.2 
+    serd-0.20.0
+    sord-0.12.2
+    sratom-0.4.6
+    suil-0.8.2
 Patches:
     usegetprocaddress.patch - ticket #923 opened upstream on 10/23/2013
                               fix commited (r5164) upstream on 10/30/2013
@@ -164,12 +144,12 @@ Modifications:
     Run lib-src/lv2/unpack-waf to unpack the waf scripts.
     See http://lintian.debian.org/tags/source-contains-waf-binary.html for details.
 Upstream Versions:
-    lilv-0.16.0
-    lv2-1.6.0
+    lilv-0.20.0
+    lv2-1.10.0
     msinttypes-r29
-    serd-0.18.2
-    sord-0.12.0
-    sratom-0.4.2 
+    serd-0.20.0
+    sord-0.12.2
+    sratom-0.8.2
 
 
 mod-script-pipe
@@ -184,7 +164,7 @@ Patches:
 ../portmixer/portaudio.patch	add features needed to make portmixer work
 		Integration by upstream in progress. Will need updating as upstream
 		portaudio moves
-
+portaudio-srcdir.patch  Adds srcdir handling
 portaudio-v19/wasapi-fix.patch  Patch to WASAPI hostapi that corrects incorrect
 reporting of stream open/running/closed state.
 
@@ -217,10 +197,6 @@ Patches: autotools.patch: Fix all autotools warnings.
 autotools-fix-make-dist.patch: Correct file lists to make dist target work.
 Upstream Version: SVN revision 227
 
-portburn
---------
-Doesn't do anything yet
-
 portmixer
 ---------
 cross-platform audio mixer control library, hooked onto portaudio. Maintained
@@ -244,6 +220,7 @@ https://sourceforge.net/tracker/index.php?func=detail&aid=2561247&group_id=17779
 because attachements there don't seem to work.
 autotools.patch: Fix all autotools warnings.
 autotools-fix-make-dist.patch: Correct file lists to make dist target work.
+sbsms-srcdir.patch: Adds srcdir handling
 
 soundtouch
 ----------
@@ -254,14 +231,6 @@ Patches: autotools.patch: Fix all autotools warnings.
 AM_MAINTAINER_MODE([disable]) has been added to configure.ac to disable autotools rebuilds.
 Upstream Version: 1.7.1
 
-taglib
-------
-http://taglib.github.io/
-Audio Meta-Data Library
-Version in Audacity SVN: 1.9.1
-Patches: none
-Upstream Version: 1.9.1
-
 twolame
 -------
 http://www.twolame.org/
@@ -271,11 +240,6 @@ Patches: fix-tests.patch: Terminate AM_TESTS_ENVIRONMENT by a semicolon.
 AM_MAINTAINER_MODE has been added to configure.ac to disable autotools rebuilds
 by default
 Upstream Version: 0.3.13
-
-wave++
-------
-http://www.scs.ryerson.ca/~lkolasa/CppWavelets.html
-disused?
 
 Crib notes on upgrading lib-src trees
 =====================================

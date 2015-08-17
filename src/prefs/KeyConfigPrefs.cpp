@@ -151,6 +151,7 @@ void KeyConfigPrefs::Populate()
    else if (mViewByKey->GetValue()) {
       mViewType = ViewByKey;
       mFilterLabel->SetLabel(_("&Hotkey:"));
+      mFilter->SetName(wxStripMenuCodes(mFilterLabel->GetLabel()));
    }
 
    mView->SetView(mViewType);
@@ -207,7 +208,7 @@ void KeyConfigPrefs::PopulateOrExchange(ShuttleGui & S)
                                         wxSize(210, -1),
 #endif
                                         wxTE_PROCESS_ENTER);
-               mFilter->SetName(_("Filter"));
+               mFilter->SetName(wxStripMenuCodes(mFilterLabel->GetLabel()));
                mFilter->Connect(wxEVT_KEY_DOWN,
                                 wxKeyEventHandler(KeyConfigPrefs::OnFilterKeyDown),
                                 NULL,
@@ -329,7 +330,7 @@ void KeyConfigPrefs::OnImport(wxCommandEvent & WXUNUSED(event))
                        path,
                        file,
                        wxT(""),
-                       _("XML files (*.xml)|*.xml|All files (*.*)|*.*"),
+                       _("XML files (*.xml)|*.xml|All files|*"),
                        wxRESIZE_BORDER,
                        this);
 
@@ -361,7 +362,7 @@ void KeyConfigPrefs::OnExport(wxCommandEvent & WXUNUSED(event))
                        path,
                        file,
                        wxT("xml"),
-                       _("XML files (*.xml)|*.xml|All files (*.*)|*.*"),
+                       _("XML files (*.xml)|*.xml|All files|*"),
                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
                        this);
 
@@ -420,7 +421,7 @@ void KeyConfigPrefs::OnHotkeyKeyDown(wxKeyEvent & e)
       nevent.SetDirection(!e.ShiftDown());
       nevent.SetEventObject(t);
       nevent.SetCurrentFocus(t);
-      t->GetParent()->ProcessEvent(nevent);
+      t->GetParent()->GetEventHandler()->ProcessEvent(nevent);
       return;
    }
 
@@ -465,7 +466,7 @@ void KeyConfigPrefs::OnFilterKeyDown(wxKeyEvent & e)
       nevent.SetDirection(!e.ShiftDown());
       nevent.SetEventObject(t);
       nevent.SetCurrentFocus(t);
-      t->GetParent()->ProcessEvent(nevent);
+      t->GetParent()->GetEventHandler()->ProcessEvent(nevent);
 
       return;
    }
@@ -617,6 +618,7 @@ void KeyConfigPrefs::OnViewBy(wxCommandEvent & e)
    }
 
    mView->SetView(mViewType);
+   mFilter->SetName(wxStripMenuCodes(mFilterLabel->GetLabel()));
 }
 
 bool KeyConfigPrefs::Apply()
@@ -914,7 +916,7 @@ void KeyConfigPrefs::OnImport(wxCommandEvent & WXUNUSED(event))
                        path,
                        file,
                        wxT(""),
-                       _("XML files (*.xml)|*.xml|All files (*.*)|*.*"),
+                       _("XML files (*.xml)|*.xml|All files|*"),
                        wxRESIZE_BORDER,
                        this);
 
@@ -946,7 +948,7 @@ void KeyConfigPrefs::OnExport(wxCommandEvent & WXUNUSED(event))
                        path,
                        file,
                        wxT("xml"),
-                       _("XML files (*.xml)|*.xml|All files (*.*)|*.*"),
+                       _("XML files (*.xml)|*.xml|All files|*"),
                        wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxRESIZE_BORDER,
                        this);
 

@@ -38,6 +38,62 @@ project window.
 #include "../toolbars/TranscriptionToolBar.h"
 #include "../widgets/Ruler.h"
 
+#if defined(__WXMAC__) && !wxCHECK_VERSION(3, 0, 0)
+//
+// This is a temporary solution for capturing screenshots on
+// OS X 10.6 or greater.  This needs to go away once we move
+// to wx3.
+//
+// (This was copied from wx3.1.0 source and hacked up a bit.)
+//
+#include <wx/mac/private.h>
+#include <dlfcn.h>
+
+typedef CGImageRef (*CGDisplayCreateImageFunc)(CGDirectDisplayID displayID);
+
+static wxBitmap DoGetAsBitmap(const wxRect *subrect)
+{
+    CGRect cgbounds = CGDisplayBounds(CGMainDisplayID());
+
+    wxRect rect = subrect ? *subrect : wxRect(0, 0, cgbounds.size.width, cgbounds.size.height);
+
+    wxBitmap bmp(rect.GetSize().GetWidth(), rect.GetSize().GetHeight(), 32);
+
+    CGDisplayCreateImageFunc createImage =
+        (CGDisplayCreateImageFunc) dlsym(RTLD_NEXT, "CGDisplayCreateImage");
+    if (createImage == NULL)
+    {
+        return bmp;
+    }
+
+    CGRect srcRect = CGRectMake(rect.x, rect.y, rect.width, rect.height);
+
+    CGContextRef context = (CGContextRef)bmp.GetHBITMAP();
+
+    CGContextSaveGState(context);
+
+    CGContextTranslateCTM( context, 0,  cgbounds.size.height );
+    CGContextScaleCTM( context, 1, -1 );
+
+    if ( subrect )
+        srcRect = CGRectOffset( srcRect, -subrect->x, -subrect->y ) ;
+
+    CGImageRef image = NULL;
+
+    image = createImage(kCGDirectMainDisplay);
+
+    wxASSERT_MSG(image, wxT("wxScreenDC::GetAsBitmap - unable to get screenshot."));
+
+    CGContextDrawImage(context, srcRect, image);
+
+    CGImageRelease(image);
+
+    CGContextRestoreGState(context);
+
+    return bmp;
+}
+#endif
+
 wxTopLevelWindow *ScreenshotCommand::GetFrontWindow(AudacityProject *project)
 {
    wxWindow *front = NULL;
@@ -118,11 +174,15 @@ void ScreenshotCommand::Capture(wxString filename,
    wxScreenDC screenDC;
    wxMemoryDC fullDC;
 
+#if defined(__WXMAC__) && !wxCHECK_VERSION(3, 0, 0)
+   full = DoGetAsBitmap(NULL);
+#else
    // We grab the whole screen image since there seems to be a problem with
    // using non-zero source coordinates on OSX.  (as of wx2.8.9)
    fullDC.SelectObject(full);
    fullDC.Blit(0, 0, screenW, screenH, &screenDC, 0, 0);
    fullDC.SelectObject(wxNullBitmap);
+#endif
 
    wxRect r(x, y, width, height);
 
@@ -294,9 +354,9 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
 
    // Reset the toolbars to a known state
-   context.proj->mToolManager->Reset();
+   context.GetProject()->mToolManager->Reset();
 
-   wxTopLevelWindow *w = GetFrontWindow(context.proj);
+   wxTopLevelWindow *w = GetFrontWindow(context.GetProject());
    if (!w)
    {
       return false;
@@ -310,7 +370,7 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
       w->ClientToScreen(&x, &y);
       w->GetClientSize(&width, &height);
 
-      if (w != context.proj && w->GetTitle() != wxT("")) {
+      if (w != context.GetProject() && w->GetTitle() != wxT("")) {
          fileName = MakeFileName(filePath,
                captureMode + (wxT("-") + w->GetTitle() + wxT("-")));
       }
@@ -325,7 +385,7 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
       r.SetPosition(w->GetScreenPosition());
       r = w->GetScreenRect();
 
-      if (w != context.proj && w->GetTitle() != wxT("")) {
+      if (w != context.GetProject() && w->GetTitle() != wxT("")) {
          fileName = MakeFileName(filePath,
                captureMode + (wxT("-") + w->GetTitle() + wxT("-")));
       }
@@ -357,46 +417,46 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
    else if (captureMode.IsSameAs(wxT("toolbars")))
    {
-      CaptureDock(context.proj->mToolManager->GetTopDock(), fileName);
+      CaptureDock(context.GetProject()->mToolManager->GetTopDock(), fileName);
    }
    else if (captureMode.IsSameAs(wxT("selectionbar")))
    {
-      CaptureDock(context.proj->mToolManager->GetBotDock(), fileName);
+      CaptureDock(context.GetProject()->mToolManager->GetBotDock(), fileName);
    }
    else if (captureMode.IsSameAs(wxT("tools")))
    {
-      CaptureToolbar(context.proj->mToolManager, ToolsBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, ToolsBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("transport")))
    {
-      CaptureToolbar(context.proj->mToolManager, TransportBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, TransportBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("mixer")))
    {
-      CaptureToolbar(context.proj->mToolManager, MixerBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, MixerBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("meter")))
    {
-      CaptureToolbar(context.proj->mToolManager, MeterBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, MeterBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("edit")))
    {
-      CaptureToolbar(context.proj->mToolManager, EditBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, EditBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("device")))
    {
-      CaptureToolbar(context.proj->mToolManager, DeviceBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, DeviceBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("transcription")))
    {
-      CaptureToolbar(context.proj->mToolManager, TranscriptionBarID, fileName);
+      CaptureToolbar(context.GetProject()->mToolManager, TranscriptionBarID, fileName);
    }
    else if (captureMode.IsSameAs(wxT("trackpanel")))
    {
-      TrackPanel *panel = context.proj->mTrackPanel;
-      AdornedRulerPanel *ruler = panel->mRuler;
+      TrackPanel *panel = context.GetProject()->mTrackPanel;
+      //AdornedRulerPanel *ruler = panel->mRuler;
 
-      int h = ruler->GetRulerHeight();
+      int h = panel->mRuler->GetRulerHeight();
       int x = 0, y = -h;
       int width, height;
 
@@ -408,7 +468,7 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
    else if (captureMode.IsSameAs(wxT("ruler")))
    {
-      TrackPanel *panel = context.proj->mTrackPanel;
+      TrackPanel *panel = context.GetProject()->mTrackPanel;
       AdornedRulerPanel *ruler = panel->mRuler;
 
       int x = 0, y = 0;
@@ -423,7 +483,7 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
    else if (captureMode.IsSameAs(wxT("tracks")))
    {
-      TrackPanel *panel = context.proj->mTrackPanel;
+      TrackPanel *panel = context.GetProject()->mTrackPanel;
 
       int x = 0, y = 0;
       int width, height;
@@ -436,8 +496,8 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
    else if (captureMode.IsSameAs(wxT("firsttrack")))
    {
-      TrackPanel *panel = context.proj->mTrackPanel;
-      TrackListIterator iter(context.proj->GetTracks());
+      TrackPanel *panel = context.GetProject()->mTrackPanel;
+      TrackListIterator iter(context.GetProject()->GetTracks());
       Track * t = iter.First();
       if (!t) {
          return false;
@@ -456,8 +516,8 @@ bool ScreenshotCommand::Apply(CommandExecutionContext context)
    }
    else if (captureMode.IsSameAs(wxT("secondtrack")))
    {
-      TrackPanel *panel = context.proj->mTrackPanel;
-      TrackListIterator iter(context.proj->GetTracks());
+      TrackPanel *panel = context.GetProject()->mTrackPanel;
+      TrackListIterator iter(context.GetProject()->GetTracks());
       Track * t = iter.First();
       if (!t) {
          return false;

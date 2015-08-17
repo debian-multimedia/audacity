@@ -82,9 +82,14 @@ EXTRA_DIST += \
 	sbsms/dont-mangle-cflags.patch \
 	$(NULL)
 
+# Distribute library schedule
+EXTRA_DIST += audacity-patches.txt \
+	$(NULL)
+
 DIST_SUBDIRS = \
 	FileDialog \
 	libnyquist \
+	libsoxr \
 	lib-widget-extra \
 	lv2 \
 	portmixer \
@@ -118,24 +123,16 @@ if USE_LOCAL_LIBNYQUIST
 SUBDIRS += libnyquist
 endif
 
-if USE_LOCAL_LIBRESAMPLE
-OPTIONAL_SUBDIRS += libresample
-endif
-
-if USE_LOCAL_LIBSAMPLERATE
-OPTIONAL_SUBDIRS += libsamplerate
-endif
-
 if USE_LOCAL_LIBSNDFILE
 OPTIONAL_SUBDIRS += libsndfile
 endif
 
-if USE_LOCAL_LIBSOUNDTOUCH
-OPTIONAL_SUBDIRS += soundtouch
+if USE_LOCAL_LIBSOXR
+OPTIONAL_SUBDIRS += libsoxr
 endif
 
-if USE_LOCAL_LIBSOXR
-SUBDIRS += libsoxr
+if USE_LOCAL_LIBSOUNDTOUCH
+OPTIONAL_SUBDIRS += soundtouch
 endif
 
 if USE_LOCAL_LIBTWOLAME

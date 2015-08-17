@@ -39,6 +39,7 @@
 #include "commands/CommandManager.h"
 #include "effects/Effect.h"
 #include "../images/Arrow.xpm"
+#include "../images/Empty9x16.xpm"
 #include "BatchCommands.h"
 #include "UndoManager.h"
 
@@ -151,6 +152,7 @@ void BatchProcessDialog::OnApplyToProject(wxCommandEvent & WXUNUSED(event))
    wxString name = mChains->GetItemText(item);
 
    wxDialog d(this, wxID_ANY, GetTitle());
+   d.SetName(d.GetTitle());
    ShuttleGui S(&d, eIsCreating);
 
    S.StartHorizontalLay(wxCENTER, false);
@@ -211,12 +213,12 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent & WXUNUSED(event))
    wxString all;
 
    l.DeleteContents(true);
-   wxGetApp().mImporter->GetSupportedImportFormats(&l);
+   Importer::Get().GetSupportedImportFormats(&l);
    for (FormatList::compatibility_iterator n = l.GetFirst(); n; n = n->GetNext()) {
       Format *f = n->GetData();
 
       wxString newfilter = f->formatName + wxT("|");
-      for (size_t i = 0; i < f->formatExtensions.GetCount(); i++) {
+      for (size_t i = 0; i < f->formatExtensions.size(); i++) {
          if (!newfilter.Contains(wxT("*.") + f->formatExtensions[i] + wxT(";")))
             newfilter += wxT("*.") + f->formatExtensions[i] + wxT(";");
          if (!all.Contains(wxT("*.") + f->formatExtensions[i] + wxT(";")))
@@ -264,6 +266,7 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent & WXUNUSED(event))
    files.Sort();
 
    wxDialog d(this, wxID_ANY, GetTitle());
+   d.SetName(d.GetTitle());
    ShuttleGui S(&d, eIsCreating);
 
    S.StartVerticalLay(false);
@@ -271,7 +274,7 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent & WXUNUSED(event))
       S.StartStatic(_("Applying..."), 1);
       {
          wxImageList *imageList = new wxImageList(9, 16);
-         imageList->Add(wxIcon(empty_9x16_xpm));
+         imageList->Add(wxIcon(empty9x16_xpm));
          imageList->Add(wxIcon(arrow_xpm));
 
          S.SetStyle(wxSUNKEN_BORDER | wxLC_REPORT | wxLC_HRULES | wxLC_VRULES |
@@ -323,7 +326,6 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent & WXUNUSED(event))
       mList->SetItemImage(i, 1, 1);
       mList->EnsureVisible(i);
 
-      project->OnRemoveTracks();
       project->Import(files[i]);
       project->OnSelectAll();
       if (!mBatchCommands.ApplyChain()) {
@@ -335,6 +337,8 @@ void BatchProcessDialog::OnApplyToFiles(wxCommandEvent & WXUNUSED(event))
       }
       UndoManager *um = project->GetUndoManager();
       um->ClearStates();
+      project->OnSelectAll();
+      project->OnRemoveTracks();
    }
    project->OnRemoveTracks();
 }
@@ -709,7 +713,8 @@ void EditChainsDialog::OnAdd(wxCommandEvent & WXUNUSED(event))
    while (true) {
       wxTextEntryDialog d(this,
                           _("Enter name of new chain"),
-                          GetTitle());
+                          _("Name of new chain"));
+      d.SetName(d.GetTitle());
       wxString name;
 
       if (d.ShowModal() == wxID_CANCEL) {

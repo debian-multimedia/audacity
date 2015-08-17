@@ -463,7 +463,7 @@ bool DirManager::SetProject(wxString& newProjPath, wxString& newProjName, const 
 
       progress->Update(count, total);
 
-      iter++;
+      ++iter;
       count++;
    }
 
@@ -485,7 +485,7 @@ bool DirManager::SetProject(wxString& newProjPath, wxString& newProjName, const 
          if (count>=0)
             progress->Update(count, total);
 
-         iter++;
+         ++iter;
          count--;
       }
 
@@ -537,14 +537,21 @@ wxString DirManager::GetProjectName()
 wxLongLong DirManager::GetFreeDiskSpace()
 {
    wxLongLong freeSpace = -1;
-   wxString path = projPath;
+   wxFileName path;
 
-   if (projPath == wxT(""))
-      path = mytemp;
+   path.SetPath(projPath.IsEmpty() ? mytemp : projPath);
+
+   // Use the parent directory if the project directory hasn't yet been created
+   if (!path.DirExists())
    {
-      if (!wxGetDiskSpace(path, NULL, &freeSpace))
-         freeSpace = -1;
+      path.RemoveLastDir();
    }
+
+   if (!wxGetDiskSpace(path.GetFullPath(), NULL, &freeSpace))
+   {
+      freeSpace = -1;
+   }
+
    return freeSpace;
 }
 
@@ -927,15 +934,19 @@ BlockFile *DirManager::NewODDecodeBlockFile(
    return newBlockFile;
 }
 
-bool DirManager::ContainsBlockFile(BlockFile *b)
+bool DirManager::ContainsBlockFile(BlockFile *b) const
 {
-   return b ? mBlockFileHash[b->GetFileName().GetName()] == b : false;
+   if (!b)
+      return false;
+   BlockHash::const_iterator it = mBlockFileHash.find(b->GetFileName().GetName());
+   return it != mBlockFileHash.end() && it->second == b;
 }
 
-bool DirManager::ContainsBlockFile(wxString filepath)
+bool DirManager::ContainsBlockFile(wxString filepath) const
 {
    // check what the hash returns in case the blockfile is from a different project
-   return mBlockFileHash[filepath] != NULL;
+   BlockHash::const_iterator it = mBlockFileHash.find(filepath);
+   return it != mBlockFileHash.end();
 }
 
 // Adds one to the reference count of the block file,
@@ -1260,7 +1271,7 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
          db->LockRead();
       }
 
-      iter++;
+      ++iter;
    }
 
    if (needToRename) {
@@ -1286,7 +1297,7 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
             if (!b->IsDataAvailable() && (db->GetEncodedAudioFilename() == fName))
                db->UnlockRead();
 
-            iter++;
+            ++iter;
          }
 
          // Print error message and cancel the export
@@ -1316,7 +1327,7 @@ bool DirManager::EnsureSafeFilename(wxFileName fName)
                db->ChangeAudioFile(renamedFileName);
                db->UnlockRead();
             }
-            iter++;
+            ++iter;
          }
 
       }
@@ -1417,7 +1428,7 @@ int DirManager::ProjectFSCK(const bool bForceError, const bool bAutoRecoverMode)
       {
          wxString msgA =
 _("Project check of \"%s\" folder \
-\ndetected %d missing external audio file(s) \
+\ndetected %lld missing external audio file(s) \
 \n('aliased files'). There is no way for Audacity \
 \nto recover these files automatically. \
 \n\nIf you choose the first or second option below, \
@@ -1429,7 +1440,7 @@ _("Project check of \"%s\" folder \
 \nproject in its current state, unless you \"Close \
 \nproject immediately\" on further error alerts.");
          wxString msg;
-         msg.Printf(msgA, this->projName.c_str(), missingAliasedFilePathHash.size());
+         msg.Printf(msgA, this->projName.c_str(), (long long) missingAliasedFilePathHash.size());
          const wxChar *buttons[] =
             {_("Close project immediately with no changes"),
                _("Treat missing audio as silence (this session only)"),
@@ -1463,7 +1474,7 @@ _("Project check of \"%s\" folder \
                b->Recover();
                nResult = FSCKstatus_CHANGED | FSCKstatus_SAVE_AUP;
             }
-            iter++;
+            ++iter;
          }
          if ((action == 2) && bAutoRecoverMode)
             wxLogWarning(_("   Project check replaced missing aliased file(s) with silence."));
@@ -1487,11 +1498,11 @@ _("Project check of \"%s\" folder \
       {
          wxString msgA =
 _("Project check of \"%s\" folder \
-\ndetected %d missing alias (.auf) blockfile(s). \
+\ndetected %lld missing alias (.auf) blockfile(s). \
 \nAudacity can fully regenerate these files \
 \nfrom the current audio in the project.");
          wxString msg;
-         msg.Printf(msgA, this->projName.c_str(), missingAUFHash.size());
+         msg.Printf(msgA, this->projName.c_str(), (long long) missingAUFHash.size());
          const wxChar *buttons[] = {_("Regenerate alias summary files (safe and recommended)"),
                                     _("Fill in silence for missing display data (this session only)"),
                                     _("Close project immediately with no further changes"),
@@ -1516,7 +1527,7 @@ _("Project check of \"%s\" folder \
                // Silence error logging for this block in this session.
                b->SilenceLog();
             }
-            iter++;
+            ++iter;
          }
          if ((action == 0) && bAutoRecoverMode)
             wxLogWarning(_("   Project check regenerated missing alias summary file(s)."));
@@ -1538,7 +1549,7 @@ _("Project check of \"%s\" folder \
       {
          wxString msgA =
 _("Project check of \"%s\" folder \
-\ndetected %d missing audio data (.au) blockfile(s), \
+\ndetected %lld missing audio data (.au) blockfile(s), \
 \nprobably due to a bug, system crash, or accidental \
 \ndeletion. There is no way for Audacity to recover \
 \nthese missing files automatically. \
@@ -1548,7 +1559,7 @@ _("Project check of \"%s\" folder \
 \n\nNote that for the second option, the waveform \
 \nmay not show silence.");
          wxString msg;
-         msg.Printf(msgA, this->projName.c_str(), missingAUHash.size());
+         msg.Printf(msgA, this->projName.c_str(), (long long) missingAUHash.size());
          const wxChar *buttons[] =
             {_("Close project immediately with no further changes"),
                _("Treat missing audio as silence (this session only)"),
@@ -1574,7 +1585,7 @@ _("Project check of \"%s\" folder \
             }
             else if (action == 1)
                b->SilenceLog();
-            iter++;
+            ++iter;
          }
          if ((action == 2) && bAutoRecoverMode)
             wxLogWarning(_("   Project check replaced missing audio data block file(s) with silence."));
@@ -1690,14 +1701,14 @@ void DirManager::FindMissingAliasedFiles(
                missingAliasedFilePathHash[aliasedFileFullPath] = NULL;
          }
       }
-      iter++;
+      ++iter;
    }
 
    iter = missingAliasedFilePathHash.begin();
    while (iter != missingAliasedFilePathHash.end())
    {
       wxLogWarning(_("Missing aliased audio file: '%s'"), iter->first.c_str());
-      iter++;
+      ++iter;
    }
 }
 
@@ -1723,7 +1734,7 @@ void DirManager::FindMissingAUFs(
                            fileName.GetFullPath().c_str());
          }
       }
-      iter++;
+      ++iter;
    }
 }
 
@@ -1747,7 +1758,7 @@ void DirManager::FindMissingAUs(
                            fileName.GetFullPath().c_str());
          }
       }
-      iter++;
+      ++iter;
    }
 }
 
@@ -1836,7 +1847,7 @@ void DirManager::FillBlockfilesCache()
       BlockFile *b = iter->second;
       if (b->GetNeedFillCache())
          numNeed++;
-      iter++;
+      ++iter;
    }
 
    if (numNeed == 0)
@@ -1856,7 +1867,7 @@ void DirManager::FillBlockfilesCache()
 
       if (!progress.Update(current, numNeed))
          break; // user cancelled progress dialog, stop caching
-      iter++;
+      ++iter;
       current++;
    }
 #endif // DEPRECATED_AUDIO_CACHE
@@ -1873,7 +1884,7 @@ void DirManager::WriteCacheToDisk()
       BlockFile *b = iter->second;
       if (b->GetNeedWriteCacheToDisk())
          numNeed++;
-      iter++;
+      ++iter;
    }
 
    if (numNeed == 0)
@@ -1892,7 +1903,7 @@ void DirManager::WriteCacheToDisk()
          b->WriteCacheToDisk();
          progress.Update(current, numNeed);
       }
-      iter++;
+      ++iter;
       current++;
    }
 }

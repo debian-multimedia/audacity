@@ -14,8 +14,6 @@
 #ifndef __AUDACITY_CONTROL_TOOLBAR__
 #define __AUDACITY_CONTROL_TOOLBAR__
 
-#include <wx/timer.h>
-
 #include "ToolBar.h"
 #include "../Theme.h"
 
@@ -26,11 +24,15 @@ class wxKeyEvent;
 class wxTimer;
 class wxTimerEvent;
 class wxWindow;
+class wxStatusBar;
 
 class AButton;
 class AudacityProject;
 class TrackList;
 class TimeTrack;
+
+struct AudioIOStartStreamOptions;
+class SelectedRegion;
 
 // In the GUI, ControlToolBar appears as the "Transport Toolbar". "Control Toolbar" is historic.
 class ControlToolBar:public ToolBar {
@@ -44,10 +46,6 @@ class ControlToolBar:public ToolBar {
 
    void UpdatePrefs();
    virtual void OnKeyEvent(wxKeyEvent & event);
-   void OnKeyDown(wxKeyEvent & event);
-   void OnKeyUp(wxKeyEvent & event);
-
-   void OnTimer(wxTimerEvent & event);
 
    // msmeyer: These are public, but it's far better to
    // call the "real" interface functions like PlayCurrentRegion() and
@@ -60,9 +58,9 @@ class ControlToolBar:public ToolBar {
    void OnPause(wxCommandEvent & evt);
 
    //These allow buttons to be controlled externally:
-   void SetPlay(bool down, bool looped=false);
+   void SetPlay(bool down, bool looped=false, bool cutPreview = false);
    void SetStop(bool down);
-   void SetRecord(bool down);
+   void SetRecord(bool down, bool append=false);
 
    bool IsRecordDown();
 
@@ -70,10 +68,12 @@ class ControlToolBar:public ToolBar {
    // play from current cursor.
    void PlayCurrentRegion(bool looped = false, bool cutpreview = false);
    // Play the region [t0,t1]
-   void PlayPlayRegion(double t0, double t1,
-                       bool looped = false,
-                       bool cutpreview = false,
-                       TimeTrack *timetrack = NULL);
+   // Return the Audio IO token or -1 for failure
+   int PlayPlayRegion(const SelectedRegion &selectedRegion,
+                      const AudioIOStartStreamOptions &options,
+                      bool cutpreview = false, bool backwards = false,
+                      // Allow t0 and t1 to be beyond end of tracks
+                      bool playWhiteSpace = false);
    void PlayDefault();
 
    // Stop playing
@@ -83,10 +83,11 @@ class ControlToolBar:public ToolBar {
    virtual void Repaint(wxDC *dc);
    virtual void EnableDisableButtons();
 
-   void SetVUMeters(AudacityProject *p);
-
    virtual void ReCreateButtons();
    void RegenerateToolsTooltips();
+
+   int WidthForStatusBar(wxStatusBar* const);
+   wxString StateForStatusBar();
 
  private:
 
@@ -94,11 +95,18 @@ class ControlToolBar:public ToolBar {
       int id,
       bool processdownevents,
       const wxChar *label);
-   void MakeLoopImage();
+
+   static
+   void MakeAlternateImages(AButton &button, int idx,
+                            teBmps eEnabledUp,
+                            teBmps eEnabledDown,
+                            teBmps eDisabled);
+
    void ArrangeButtons();
    void SetupCutPreviewTracks(double playStart, double cutStart,
                              double cutEnd, double playEnd);
    void ClearCutPreviewTracks();
+   void UpdateStatusBar();
 
    enum
    {
@@ -118,8 +126,6 @@ class ControlToolBar:public ToolBar {
    AButton *mStop;
    AButton *mFF;
 
-   wxTimer mShiftKeyTimer;
-
    static AudacityProject *mBusyProject;
 
    // Maybe button state values shouldn't be duplicated in this toolbar?
@@ -133,6 +139,12 @@ class ControlToolBar:public ToolBar {
    wxBoxSizer *mSizer;
 
    TrackList* mCutPreviewTracks;
+
+   // strings for status bar
+   wxString mStatePlay;
+   wxString mStateStop;
+   wxString mStateRecord;
+   wxString mStatePause;
 
  public:
 

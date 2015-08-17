@@ -22,17 +22,20 @@ UndoManager
 
 #include "Audacity.h"
 
+#include <wx/hashset.h>
+
 #include "BlockFile.h"
+#include "Diags.h"
 #include "Internat.h"
 #include "Sequence.h"
 #include "Track.h"
 #include "WaveTrack.h"          // temp
 #include "NoteTrack.h"  // for Sonify* function declarations
-
-#include <map>
-#include <set>
+#include "Diags.h"
 
 #include "UndoManager.h"
+
+WX_DECLARE_HASH_SET(BlockFile *, wxPointerHash, wxPointerEqual, Set );
 
 UndoManager::UndoManager()
 {
@@ -47,77 +50,77 @@ UndoManager::~UndoManager()
    ClearStates();
 }
 
-// get the sum of the sizes of all blocks this track list
-// references.  However, if a block is referred to multiple
-// times it is only counted once.  Return value is in bytes.
-wxLongLong UndoManager::CalculateSpaceUsage(int index)
+void UndoManager::CalculateSpaceUsage()
 {
+   TIMER_START( "CalculateSpaceUsage", space_calc );
    TrackListOfKindIterator iter(Track::Wave);
-   WaveTrack *wt;
-   WaveClipList::compatibility_iterator it;
-   BlockArray *blocks;
-   unsigned int i;
 
-   // get a map of all blocks referenced in this TrackList
-   std::map<BlockFile*, wxLongLong> cur;
+   space.Clear();
+   space.Add(0, stack.GetCount());
 
-   wt = (WaveTrack *) iter.First(stack[index]->tracks);
-   while (wt) {
-      for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
-         blocks = it->GetData()->GetSequenceBlockArray();
-         for (i = 0; i < blocks->GetCount(); i++)
+   Set *prev = new Set;
+   Set *cur = new Set;
+
+   for (size_t i = 0, cnt = stack.GetCount(); i < cnt; i++)
+   {
+      // Swap map pointers
+      Set *swap = prev;
+      prev = cur;
+      cur = swap;
+
+      // And clean out the new current map
+      cur->clear();
+
+      // Scan all tracks at current level
+      WaveTrack *wt = (WaveTrack *) iter.First(stack[i]->tracks);
+      while (wt)
+      {
+         // Scan all clips within current track
+         WaveClipList::compatibility_iterator it = wt->GetClipIterator();
+         while (it)
          {
-            BlockFile* pBlockFile = blocks->Item(i)->f;
-            if (pBlockFile->GetFileName().FileExists())
-               cur[pBlockFile] = pBlockFile->GetSpaceUsage();
-         }
-      }
-      wt = (WaveTrack *) iter.Next();
-   }
+            // Scan all blockfiles within current clip
+            BlockArray *blocks = it->GetData()->GetSequenceBlockArray();
+            for (size_t b = 0, cnt = blocks->GetCount(); b < cnt; b++)
+            {
+               BlockFile *file = blocks->Item(b)->f;
 
-   if (index > 0) {
-      // get a set of all blocks referenced in all prev TrackList
-      std::set<BlockFile*> prev;
-      while (--index) {
-         wt = (WaveTrack *) iter.First(stack[index]->tracks);
-         while (wt) {
-            for (it = wt->GetClipIterator(); it; it = it->GetNext()) {
-               blocks = it->GetData()->GetSequenceBlockArray();
-               for (i = 0; i < blocks->GetCount(); i++) {
-                  prev.insert(blocks->Item(i)->f);
+               // Accumulate space used by the file if the file didn't exist
+               // in the previous level
+               if (prev->count(file) == 0 && cur->count(file) == 0)
+               {
+                  space[i] += file->GetSpaceUsage().GetValue();
                }
+               
+               // Add file to current set
+               cur->insert(file);
             }
-            wt = (WaveTrack *) iter.Next();
+            
+            it = it->GetNext();
          }
-      }
 
-      // remove all blocks in prevBlockFiles from curBlockFiles
-      std::set<BlockFile*>::const_iterator prevIter;
-      for (prevIter = prev.begin(); prevIter != prev.end(); prevIter++) {
-         cur.erase(*prevIter);
+         wt = (WaveTrack *) iter.Next();
       }
    }
 
-   // sum the sizes of the blocks remaining in curBlockFiles;
-   wxLongLong bytes = 0;
-   std::map<BlockFile*, wxLongLong>::const_iterator curIter;
-   for (curIter = cur.begin(); curIter != cur.end(); curIter++) {
-      bytes += curIter->second;
-   }
-
-   return bytes;
+   delete cur;
+   delete prev;
+   TIMER_STOP( space_calc );
 }
 
-void UndoManager::GetLongDescription(unsigned int n, wxString *desc,
-                                     wxString *size)
+wxLongLong_t UndoManager::GetLongDescription(unsigned int n, wxString *desc,
+                                             wxString *size)
 {
    n -= 1; // 1 based to zero based
 
    wxASSERT(n < stack.Count());
+   wxASSERT(space.Count() == stack.Count());
 
    *desc = stack[n]->description;
 
-   *size = Internat::FormatSize(stack[n]->spaceUsage);
+   *size = Internat::FormatSize(space[n]);
+
+   return space[n];
 }
 
 void UndoManager::GetShortDescription(unsigned int n, wxString *desc)
@@ -184,7 +187,8 @@ bool UndoManager::RedoAvailable()
    return (current < (int)stack.Count() - 1);
 }
 
-void UndoManager::ModifyState(TrackList * l, double sel0, double sel1)
+void UndoManager::ModifyState(TrackList * l,
+                              const SelectedRegion &selectedRegion)
 {
    if (current == wxNOT_FOUND) {
       return;
@@ -206,12 +210,12 @@ void UndoManager::ModifyState(TrackList * l, double sel0, double sel1)
 
    // Replace
    stack[current]->tracks = tracksCopy;
-   stack[current]->sel0 = sel0;
-   stack[current]->sel1 = sel1;
+   stack[current]->selectedRegion = selectedRegion;
    SonifyEndModifyState();
 }
 
-void UndoManager::PushState(TrackList * l, double sel0, double sel1,
+void UndoManager::PushState(TrackList * l,
+                            const SelectedRegion &selectedRegion,
                             wxString longDescription,
                             wxString shortDescription,
                             int flags)
@@ -222,7 +226,7 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
    if (((flags&PUSH_CONSOLIDATE)!=0) && lastAction == longDescription &&
        consolidationCount < 2) {
       consolidationCount++;
-      ModifyState(l, sel0, sel1);
+      ModifyState(l, selectedRegion);
       // MB: If the "saved" state was modified by ModifyState, reset
       //  it so that UnsavedChanges returns true.
       if (current == saved) {
@@ -248,16 +252,12 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
 
    UndoStackElem *push = new UndoStackElem();
    push->tracks = tracksCopy;
-   push->sel0 = sel0;
-   push->sel1 = sel1;
+   push->selectedRegion = selectedRegion;
    push->description = longDescription;
    push->shortDescription = shortDescription;
-   push->spaceUsage = 0; // Calculate actual value after it's on the stack.
 
    stack.Add(push);
    current++;
-   if( (flags&PUSH_CALC_SPACE)!=0)
-      push->spaceUsage = this->CalculateSpaceUsage(current);
 
    if (saved >= current) {
       saved = -1;
@@ -266,7 +266,8 @@ void UndoManager::PushState(TrackList * l, double sel0, double sel1,
    lastAction = longDescription;
 }
 
-TrackList *UndoManager::SetStateTo(unsigned int n, double *sel0, double *sel1)
+TrackList *UndoManager::SetStateTo(unsigned int n,
+                                   SelectedRegion *selectedRegion)
 {
    n -= 1;
 
@@ -275,14 +276,10 @@ TrackList *UndoManager::SetStateTo(unsigned int n, double *sel0, double *sel1)
    current = n;
 
    if (current == int(stack.Count()-1)) {
-      *sel0 = stack[current]->sel0;
-      *sel1 = stack[current]->sel1;
+      *selectedRegion = stack[current]->selectedRegion;
    }
    else {
-      current++;
-      *sel0 = stack[current]->sel0;
-      *sel1 = stack[current]->sel1;
-      current--;
+      *selectedRegion = stack[current + 1]->selectedRegion;
    }
 
    lastAction = wxT("");
@@ -291,14 +288,13 @@ TrackList *UndoManager::SetStateTo(unsigned int n, double *sel0, double *sel1)
    return stack[current]->tracks;
 }
 
-TrackList *UndoManager::Undo(double *sel0, double *sel1)
+TrackList *UndoManager::Undo(SelectedRegion *selectedRegion)
 {
    wxASSERT(UndoAvailable());
 
    current--;
 
-   *sel0 = stack[current]->sel0;
-   *sel1 = stack[current]->sel1;
+   *selectedRegion = stack[current]->selectedRegion;
 
    lastAction = wxT("");
    consolidationCount = 0;
@@ -306,14 +302,13 @@ TrackList *UndoManager::Undo(double *sel0, double *sel1)
    return stack[current]->tracks;
 }
 
-TrackList *UndoManager::Redo(double *sel0, double *sel1)
+TrackList *UndoManager::Redo(SelectedRegion *selectedRegion)
 {
    wxASSERT(RedoAvailable());
 
    current++;
 
-   *sel0 = stack[current]->sel0;
-   *sel1 = stack[current]->sel1;
+   *selectedRegion = stack[current]->selectedRegion;
 
    /*
    if (!RedoAvailable()) {

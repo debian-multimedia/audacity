@@ -189,17 +189,6 @@ double Envelope::toDB(double value)
    return sign * val;
 }
 
-double Envelope::fromDB(double value) const
-{
-   if (value == 0)
-      return 0;
-
-   double sign = (value >= 0 ? 1 : -1);
-   // TODO: Cache the gPrefs value.  Reading it every time is inefficient.
-   double dBRange = gPrefs->Read(wxT("/GUI/EnvdBRange"), ENV_DB_RANGE);
-   return pow(10.0, ((fabs(value) * dBRange) - dBRange) / 20.0)*sign;;
-}
-
 /// TODO: This should probably move to track artist.
 static void DrawPoint(wxDC & dc, const wxRect & r, int x, int y, bool top)
 {
@@ -342,19 +331,12 @@ void Envelope::WriteXML(XMLWriter &xmlFile)
 float Envelope::ValueOfPixel( int y, int height, bool upper, bool dB,
                               float zoomMin, float zoomMax)
 {
-   float v;
-
-   wxASSERT( height > 0 );
-   v = zoomMax - (y/(float)height) * (zoomMax - zoomMin);
-
-   if (mContourOffset) {
-     if( v > 0.0 )
-       v += .5;
-     else
-       v -= .5;
-   }
+   double dBRange = 0;
    if (dB)
-      v = fromDB(v);
+      // TODO: Cache the gPrefs value.  Reading it every time is inefficient.
+      dBRange = gPrefs->Read(wxT("/GUI/EnvdBRange"), ENV_DB_RANGE);
+
+   float v = ::ValueOfPixel(y, height, 0 != mContourOffset, dB, dBRange, zoomMin, zoomMax);
 
    // MB: this is mostly equivalent to what the old code did, I'm not sure
    // if anything special is needed for asymmetric ranges
@@ -656,14 +638,14 @@ void Envelope::CollapseRegion(double t0, double t1)
 // envelope point applies to the first sample, but the t=tracklen
 // envelope point applies one-past the last actual sample.
 // Rather than going to a .5-offset-index, we special case the framing.
-void Envelope::Paste(double t0, Envelope *e)
+void Envelope::Paste(double t0, const Envelope *e)
 {
-   bool pointsAdded = false;
+   const bool wasEmpty = (this->mEnv.Count() == 0);
 
-// JC: The old analysis of cases and the resulting code here is way more complex than needed.
-// TODO: simplify the analysis and simplify the code.
+   // JC: The old analysis of cases and the resulting code here is way more complex than needed.
+   // TODO: simplify the analysis and simplify the code.
 
-   if (e->mEnv.Count() == 0 && this->mEnv.Count() == 0 && e->mDefaultValue == this->mDefaultValue)
+   if (e->mEnv.Count() == 0 && wasEmpty && e->mDefaultValue == this->mDefaultValue)
    {
       // msmeyer: The envelope is empty and has the same default value, so
       // there is nothing that must be inserted, just return. This avoids
@@ -671,16 +653,6 @@ void Envelope::Paste(double t0, Envelope *e)
       // MJS: but the envelope does get longer
       mTrackLen += e->mTrackLen;
       return;
-   }
-   if (this->mEnv.Count() != 0)
-   {
-      // inserting a clip with a possibly empty envelope into one with an envelope
-      // so add end points to e, in case they are not there
-      double leftval  = e->GetValue(0+e->mOffset);
-      double rightval = e->GetValue(e->mTrackLen+e->mOffset);
-      e->Insert(0, leftval);
-      e->Insert(e->mTrackLen, rightval);
-      pointsAdded = true;  // we need to delete them later so's not to corrupt 'e' for later use
    }
 
    t0 = wxMin(t0 - mOffset, mTrackLen);   // t0 now has origin of zero
@@ -834,17 +806,24 @@ Old analysis of cases:
    }
 
    // Copy points from inside the selection
+
+   if (!wasEmpty) {
+      // Add end points in case they are not not in e.
+      // If they are in e, no harm, because the repeated Insert
+      // calls for the start and end times will have no effect.
+      const double leftval = e->GetValue(0 + e->mOffset);
+      const double rightval = e->GetValue(e->mTrackLen + e->mOffset);
+      Insert(t0, leftval);
+      Insert(t0 + e->mTrackLen, rightval);
+   }
+
    len = e->mEnv.Count();
    for (i = 0; i < len; i++)
-      pos=Insert(t0 + e->mEnv[i]->GetT(), e->mEnv[i]->GetVal());
+      Insert(t0 + e->mEnv[i]->GetT(), e->mEnv[i]->GetVal());
 
 /*   if(len != 0)
       for (i = 0; i < mEnv.Count(); i++)
          wxLogDebug(wxT("Fixed i %d when %.18f val %f"),i,mEnv[i]->GetT(),mEnv[i]->GetVal()); */
-
-   if(pointsAdded)
-      while(e->mEnv.Count() != 0)
-         e->Delete(0);  // they were not there when we entered this
 }
 
 // Deletes 'unneeded' points, starting from the left.
@@ -1295,14 +1274,14 @@ static double SolveIntegrateInverseInterpolated(double y1, double y2, double tim
       else if(1.0 + a * y1 * l <= 0.0)
          res = 1.0;
       else
-         res = log(1.0 + a * y1 * l) / l;
+         res = log1p(a * y1 * l) / l;
    }
    else
    {
       if(fabs(y2 - y1) < 1.0e-5) // fall back to average
          res = a * (y1 + y2) * 0.5;
       else
-         res = y1 * (exp(a * (y2 - y1)) - 1.0) / (y2 - y1);
+         res = y1 * expm1(a * (y2 - y1)) / (y2 - y1);
    }
    return std::max(0.0, std::min(1.0, res)) * time;
 }
@@ -1433,31 +1412,42 @@ double Envelope::SolveIntegralOfInverse( double t0, double area )
 {
    if(area == 0.0)
       return t0;
-   if(area < 0.0)
-   {
-      fprintf( stderr, "SolveIntegralOfInverse called with negative area, this is not supported!\n" );
-      return t0;
-   }
 
-   unsigned int count = mEnv.Count();
+   int count = mEnv.Count();
    if(count == 0) // 'empty' envelope
       return t0 + area * mDefaultValue;
 
    double lastT, lastVal;
-   unsigned int i; // this is the next point to check
+   int i; // this is the next point to check
    if(t0 < mEnv[0]->GetT()) // t0 preceding the first point
    {
-      i = 1;
-      lastT = mEnv[0]->GetT();
-      lastVal = mEnv[0]->GetVal();
-      double added = (lastT - t0) / lastVal;
-      if(added >= area)
+      if (area < 0) {
          return t0 + area * mEnv[0]->GetVal();
-      area -= added;
+      }
+      else {
+         i = 1;
+         lastT = mEnv[0]->GetT();
+         lastVal = mEnv[0]->GetVal();
+         double added = (lastT - t0) / lastVal;
+         if(added >= area)
+            return t0 + area * mEnv[0]->GetVal();
+         area -= added;
+      }
    }
    else if(t0 >= mEnv[count - 1]->GetT()) // t0 following the last point
    {
-      return t0 + area * mEnv[count - 1]->GetVal();
+      if (area < 0) {
+         i = count - 2;
+         lastT = mEnv[count - 1]->GetT();
+         lastVal = mEnv[count - 1]->GetVal();
+         double added = (lastT - t0) / lastVal; // negative
+         if(added <= area)
+            return t0 + area * mEnv[count - 1]->GetVal();
+         area -= added;
+      }
+      else {
+         return t0 + area * mEnv[count - 1]->GetVal();
+      }
    }
    else // t0 enclosed by points
    {
@@ -1466,25 +1456,52 @@ double Envelope::SolveIntegralOfInverse( double t0, double area )
       BinarySearchForTime(lo, hi, t0);
       lastVal = InterpolatePoints(mEnv[lo]->GetVal(), mEnv[hi]->GetVal(), (t0 - mEnv[lo]->GetT()) / (mEnv[hi]->GetT() - mEnv[lo]->GetT()), mDB);
       lastT = t0;
-      i = hi; // the point immediately after t0.
+      if (area < 0)
+         i = lo;
+      else
+         i = hi; // the point immediately after t0.
    }
 
-   // loop through the rest of the envelope points until we get to t1
-   while (1)
-   {
-      if(i >= count) // the requested range extends beyond the last point
+   if (area < 0) {
+      // loop BACKWARDS through the rest of the envelope points until we get to t1
+      // (which is less than t0)
+      while (1)
       {
-         return lastT + area * lastVal;
+         if(i < 0) // the requested range extends beyond the leftmost point
+         {
+            return lastT + area * lastVal;
+         }
+         else
+         {
+            double added =
+               -IntegrateInverseInterpolated(mEnv[i]->GetVal(), lastVal, lastT - mEnv[i]->GetT(), mDB);
+            if(added <= area)
+               return lastT - SolveIntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), lastT - mEnv[i]->GetT(), -area, mDB);
+            area -= added;
+            lastT = mEnv[i]->GetT();
+            lastVal = mEnv[i]->GetVal();
+            --i;
+         }
       }
-      else
+   }
+   else {
+      // loop through the rest of the envelope points until we get to t1
+      while (1)
       {
-         double added = IntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, mDB);
-         if(added >= area)
-            return lastT + SolveIntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, area, mDB);
-         area -= added;
-         lastT = mEnv[i]->GetT();
-         lastVal = mEnv[i]->GetVal();
-         i++;
+         if(i >= count) // the requested range extends beyond the last point
+         {
+            return lastT + area * lastVal;
+         }
+         else
+         {
+            double added = IntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, mDB);
+            if(added >= area)
+               return lastT + SolveIntegrateInverseInterpolated(lastVal, mEnv[i]->GetVal(), mEnv[i]->GetT() - lastT, area, mDB);
+            area -= added;
+            lastT = mEnv[i]->GetT();
+            lastVal = mEnv[i]->GetVal();
+            i++;
+         }
       }
    }
 }

@@ -184,11 +184,13 @@ AC_ARG_ENABLE(dynamic-loading,
             [dynamic_loading="$enableval"],
             [dynamic_loading="yes"])
 
-dnl AC_ARG_WITH(wx-version,
-dnl            [AS_HELP_STRING([--with-wx-version],
-dnl                            [select wxWidgets version (if both installed) [2.8,]])],
-dnl            wx_preference="--version=$withval",
-dnl            wx_preference="")
+AC_ARG_ENABLE(gtk3, [AS_HELP_STRING([--enable-gtk3],[enable use of GTK+-3.0 (default: use GTK+-2.0)])], enable_gtk3=$enableval, enable_gtk3=no)
+
+AC_ARG_WITH(wx-version,
+           [AS_HELP_STRING([--with-wx-version],
+                           [select wxWidgets version (if both installed) [2.8,]])],
+           wx_preference="--version=$withval",
+           wx_preference="")
 dnl At the moment we only support wx2.8. If we start supporting 3.0 when it
 dnl comes out, we'll want it back again.
 
@@ -292,7 +294,7 @@ wx_version=`${WX_CONFIG} $wxconfigargs --version`
 AC_MSG_NOTICE([Checking that the chosen version of wxWidgets is 2.8.x])
 
 case "${wx_version}" in
-  2.8.*)
+  2.8.* | 3.0.*)
     echo "Great, you're using wxWidgets ${wx_version}!"
     ;;
   *)
@@ -320,8 +322,11 @@ dnl Pull in library Cflags and so on for the non-optional libraries
 dnl All libraries in lib-src should build static libraries, but not shared ones.
 ac_configure_args="$ac_configure_args --enable-static=yes --enable-shared=no"
 
+dnl Include "external" headers
+CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/include"
+
 dnl Include FileDialog
-AC_CONFIG_SUBDIRS([lib-src/FileDialog])
+AC_CONFIG_SUBDIRS([lib-src/FileDialog lib-src/mod-nyq-bench])
 CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/FileDialog"
 FILEDIALOG_LIBS='$(top_builddir)/lib-src/FileDialog/libFileDialog.la'
 AC_SUBST([FILEDIALOG_LIBS])
@@ -331,7 +336,7 @@ dnl Optional library support. Lots of things we could use, but
 dnl can do without if they aren't available.
 dnl-------------------------------------------------------------
 dnl GSTREAMER removed for 2.0.6 release
-LIBRARIES="EXPAT FFMPEG LAME LIBFLAC LIBID3TAG LIBMAD LIBNYQUIST LIBRESAMPLE LIBSAMPLERATE LIBSBSMS LIBSNDFILE LIBSOUNDTOUCH LIBSOXR LIBTWOLAME LIBVAMP LIBVORBIS LV2 PORTAUDIO PORTSMF WIDGETEXTRA"
+LIBRARIES="EXPAT FFMPEG LAME LIBFLAC LIBID3TAG LIBMAD LIBNYQUIST LIBSBSMS LIBSNDFILE LIBSOUNDTOUCH LIBSOXR LIBTWOLAME LIBVAMP LIBVORBIS LV2 PORTAUDIO PORTSMF WIDGETEXTRA"
 
 AC_MSG_NOTICE([Determining what libraries are available in this tree and on the system])
 
@@ -343,8 +348,6 @@ AUDACITY_CHECKLIB_LIBFLAC
 AUDACITY_CHECKLIB_LIBID3TAG
 AUDACITY_CHECKLIB_LIBMAD
 AUDACITY_CHECKLIB_LIBNYQUIST
-AUDACITY_CHECKLIB_LIBRESAMPLE
-AUDACITY_CHECKLIB_LIBSAMPLERATE
 AUDACITY_CHECKLIB_LIBSBSMS
 AUDACITY_CHECKLIB_LIBSNDFILE
 AUDACITY_CHECKLIB_LIBSOUNDTOUCH
@@ -412,7 +415,7 @@ done
 #   * we need to have libwidgetextra one way or another
 #   * we need to have libsndfile one way or another
 #   * we need to have portaudio way or another
-#   * we can only use one of libsoxr, libsamplerate and libresample
+#   * we need to have libsoxr
 
 if test "$EXPAT_USE_LOCAL" != "yes" -a "$EXPAT_USE_SYSTEM" != "yes"; then
    AC_MSG_ERROR([Audacity requires expat to be enabled.])
@@ -430,51 +433,9 @@ if test "$PORTAUDIO_USE_LOCAL" != "yes" && test "$PORTAUDIO_USE_SYSTEM" != "yes"
    AC_MSG_ERROR([Audacity requires portaudio to be enabled])
 fi
 
-dnl we can only have one alternative resampling library used.
-dnl by now we will have multiple enabled if they are present, regardless of whether
-dnl they were requested, unless some were specifically disabled.
-dnl we would like to honour requests at this stage, so need to know about
-dnl the original options, not just which LIB_USE variables have been set.
-if test x"$LIBSAMPLERATE_ARGUMENT" = x"unspecified" ; then
-   dnl they didn't ask for libsamplerate, they don't get it
-   LIBSAMPLERATE_USE_LOCAL="no"
-   LIBSAMPLERATE_USE_SYSTEM="no"
+if test "$LIBSOXR_USE_LOCAL" != "yes" && test "$LIBSOXR_USE_SYSTEM" != "yes" ; then
+   AC_MSG_ERROR([Audacity requires libsoxr to be enabled])
 fi
-if test x"$LIBRESAMPLE_ARGUMENT" = x"unspecified" ; then
-   dnl they didn't ask for libresample, they don't get it
-   LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-dnl The above favours libsoxr (by ommission) if no options are passed
-
-
-dnl favour libsoxr over libresample
-if ( test "$LIBRESAMPLE_USE_LOCAL" = "yes" || test "$LIBRESAMPLE_USE_SYSTEM" = "yes") && ( test "$LIBSOXR_USE_LOCAL" = "yes" || test "$LIBSOXR_USE_SYSTEM" = "yes"); then
-   dnl if we get here, both libsoxr and libresample available and have been
-   dnl requested: use libsoxr, disable libresample
-   AC_MSG_NOTICE([Both libresample and libsoxr were requested: favouring libsoxr.])
-   LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-
-dnl favour libsamplerate over libresample
-if ( test "$LIBRESAMPLE_USE_LOCAL" = "yes" || test "$LIBRESAMPLE_USE_SYSTEM" = "yes") && ( test "$LIBSAMPLERATE_USE_LOCAL" = "yes" || test "$LIBSAMPLERATE_USE_SYSTEM" = "yes"); then
-   dnl if we get here, both libresample and libsamplerate available and requested:
-   dnl use libsamplerate, disable libresample.
-   AC_MSG_NOTICE([Both libresample and libsamplerate were requested: favouring libsamplerate])
-   LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-
-dnl by now the only possible combination is libsamplerate and libsoxr: favour libsoxr.
-if ( test "$LIBSOXR_USE_LOCAL" = "yes" || test "$LIBSOXR_USE_SYSTEM" = "yes") && ( test "$LIBSAMPLERATE_USE_LOCAL" = "yes" || test "$LIBSAMPLERATE_USE_SYSTEM" = "yes"); then
-   dnl if we get here, both libsoxr and libsamplerate available and requested:
-   dnl use libsoxr, disable libsamplerate.
-   AC_MSG_NOTICE([Both libsoxr and libsamplerate were requested: favouring libsoxr])
-   LIBSOXR_USE_LOCAL="no"
-   LIBSOXR_USE_SYSTEM="no"
-fi
-
 
 dnl-----------------------------------------------------------------
 dnl Based on the optional lib selections, modify CXXFLAGS, etc
@@ -515,8 +476,6 @@ AUDACITY_CONFIG_LIBFLAC
 AUDACITY_CONFIG_LIBID3TAG
 AUDACITY_CONFIG_LIBMAD
 AUDACITY_CONFIG_LIBNYQUIST
-AUDACITY_CONFIG_LIBRESAMPLE
-AUDACITY_CONFIG_LIBSAMPLERATE
 AUDACITY_CONFIG_LIBSBSMS
 AUDACITY_CONFIG_LIBSNDFILE
 AUDACITY_CONFIG_LIBSOUNDTOUCH
@@ -601,6 +560,8 @@ case "${host_os}" in
       dnl Unix configuration
       CONFIGHEADER="configunix.h"
 
+      AC_CHECK_HEADERS_ONCE(libudev.h)
+
       dnl On Unix we always use dlopen
       AC_SEARCH_LIBS([dlopen], [dl])
       if [[ "$ac_cv_search_dlopen" = no ]]; then
@@ -608,17 +569,22 @@ case "${host_os}" in
       fi
 
       AC_SUBST(HAVE_GTK)
-      PKG_CHECK_MODULES(GTK, gtk+-2.0, have_gtk=yes, have_gtk=no)
+      if [[ "$enable_gtk3" = yes ]]; then
+         PKG_CHECK_MODULES(GTK, gtk+-3.0, have_gtk=yes, have_gtk=no)
+      else
+         PKG_CHECK_MODULES(GTK, gtk+-2.0, have_gtk=yes, have_gtk=no)
+      fi
+      PKG_CHECK_MODULES(GTK, $gtk_version, have_gtk=yes, have_gtk=no)
       if [[ "$have_gtk" = "yes" ]]
       then
          AC_DEFINE(HAVE_GTK, 1, [Define if GTK is available])
          CPPFLAGS="$CPPFLAGS $GTK_CFLAGS"
          LIBS="$LIBS $GTK_LIBS"
       fi
-
-	  dnl VST support on platforms other than Mac OS and Windows not enabled for
-	  dnl 2.0.6 release
-	  use_vst="no"
+      
+      dnl VST support on platforms other than Mac OS and Windows not enabled for
+      dnl 2.0.6 release
+	   dnl use_vst="no"
    ;;
 esac
 
@@ -647,6 +613,9 @@ case "${host_os}" in
       AC_CHECK_LIB(rt, clock_gettime, [rt_libs=" -lrt"])
       LIBS="${LIBS}${rt_libs}"
       AC_CHECK_FUNCS([clock_gettime nanosleep])
+
+      AC_CHECK_LIB(udev, udev_new, [udev_libs=" -ludev"])
+      LIBS="${LIBS}${udev_libs}"
       ;;
 esac
 
@@ -725,6 +694,30 @@ AC_OUTPUT
 echo ""
 echo "Finished configure:"
 
+# When building from a temporary directory and not the top level directory,
+# the locale files get copied and the Makefile.in.in adjusted.  Otherwise,
+# the generated locale files will be placed in the top level "po" directory.
+#
+# The temporary Makefile.in.in is updated so we don't have to worry about
+# committing changes that might get lost when regenerating config files.
+if [[ ! -e "${ac_abs_top_builddir}/po/LINGUAS" ]]
+then
+   pushd >/dev/null "${ac_abs_top_builddir}/po/"
+   if [[ "${ac_abs_top_builddir}" != "${ac_abs_top_srcdir}" ]]
+   then
+      cp -pr "${ac_abs_top_srcdir}/po/." .
+      sed -e "s/@srcdir@/./" "${ac_abs_top_srcdir}/po/Makefile.in.in" >"Makefile.in.in"
+   fi
+
+   for lang in $(cat "${ac_abs_top_srcdir}/po/LINGUAS")
+   do
+      mkdir -p "${lang}/LC_MESSAGES"
+      pushd >/dev/null "${lang}/LC_MESSAGES"
+      ln -s "../../${lang}.gmo" "audacity.mo"
+      popd >/dev/null
+   done
+   popd >/dev/null
+fi
 
 for lib in $LIBRARIES ; do
    eval LIB_USE_LOCAL=\$${lib}_USE_LOCAL

@@ -14,13 +14,16 @@
 #ifndef __FILEDIALOGGTKH__
 #define __FILEDIALOGGTKH__
 
-#include "wx/generic/filedlgg.h"
+#include "wx/defs.h"
+
+#define GENERIC_FILEDIALOG 1
+#include "../generic/FileDialogPrivate.h"
 
 //-------------------------------------------------------------------------
 // FileDialog
 //-------------------------------------------------------------------------
 
-class FileDialog: public wxGenericFileDialog
+class FileDialog: public GenericFileDialog
 {
 public:
    FileDialog() { }
@@ -72,6 +75,7 @@ private:
    wxString m_buttonlabel;
    fdCallback m_callback;
    void *m_cbdata;
+   wxArrayString m_patterns;
 };
 
 #endif

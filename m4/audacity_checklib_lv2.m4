@@ -12,7 +12,7 @@ AC_DEFUN([AUDACITY_CHECKLIB_LV2], [
 
    dnl see if lv2 is installed on the system
 
-   PKG_CHECK_MODULES(LV2, [lv2 lilv-0 >= 0.16],
+   PKG_CHECK_MODULES(LV2, [lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2],
                      LV2_SYSTEM_AVAILABLE="yes",
                      LV2_SYSTEM_AVAILABLE="no")
 
@@ -39,7 +39,7 @@ AC_DEFUN([AUDACITY_CHECKLIB_LV2], [
 
 AC_DEFUN([AUDACITY_CONFIG_LV2], [
    if test "$LV2_USE_LOCAL" = yes; then
-      LV2_CFLAGS='-I$(top_srcdir)/lib-src/lv2/include'
+      LV2_CFLAGS='-I$(top_srcdir)/lib-src/lv2/include -I$(top_builddir)/lib-src/lv2/include'
       LV2_LIBS='$(top_builddir)/lib-src/lv2/liblv2.a'
       AC_CONFIG_SUBDIRS([lib-src/lv2])
    fi

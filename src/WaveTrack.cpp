@@ -27,6 +27,7 @@ Track classes.
 *//*******************************************************************/
 
 
+#include "WaveTrack.h"
 #include <wx/defs.h>
 #include <wx/intl.h>
 #include <wx/debug.h>
@@ -34,10 +35,10 @@ Track classes.
 #include <float.h>
 #include <math.h>
 #include <algorithm>
+#include <memory>
 
 #include "float_cast.h"
 
-#include "WaveTrack.h"
 #include "LabelTrack.h"
 
 #include "Envelope.h"
@@ -83,7 +84,7 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
       rate = GetActiveProject()->GetRate();
    }
 
-   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0);
+   mDisplay = FindDefaultViewMode();
 
    mLegacyProjectFileOffset = 0;
 
@@ -99,13 +100,14 @@ WaveTrack::WaveTrack(DirManager *projDirManager, sampleFormat format, double rat
    mDisplayLocations = NULL;
    mDisplayNumLocationsAllocated = 0;
    mLastDisplay = -1;
+   mAutoSaveIdent = 0;
 }
 
 WaveTrack::WaveTrack(WaveTrack &orig):
    Track(orig)
 {
-   gPrefs->Read(wxT("/GUI/DefaultViewMode"), &mDisplay, 0);
-   mLastDisplay=-1;
+   mDisplay = FindDefaultViewMode();
+   mLastDisplay = -1;
 
    mLegacyProjectFileOffset = 0;
 
@@ -159,7 +161,7 @@ WaveTrack::~WaveTrack()
 
 }
 
-double WaveTrack::GetOffset()
+double WaveTrack::GetOffset() const
 {
    return GetStartTime();
 }
@@ -175,6 +177,73 @@ void WaveTrack::SetOffset(double o)
    }
 
    mOffset = o;
+}
+
+//static
+WaveTrack::WaveTrackDisplay WaveTrack::FindDefaultViewMode()
+{
+   // PRL:  Bugs 1043, 1044
+   // 2.1.1 writes a new key for this preference, which got new values,
+   // to avoid confusing version 2.1.0 if it reads the preference file afterwards.
+   // Prefer the new preference key if it is present
+
+   WaveTrack::WaveTrackDisplay viewMode;
+   gPrefs->Read(wxT("/GUI/DefaultViewModeNew"), (int*)&viewMode, -1);
+
+   // Default to the old key only if not, default the value if it's not there either
+   wxASSERT(WaveTrack::MinDisplay >= 0);
+   if (viewMode < 0) {
+      int oldMode;
+      gPrefs->Read(wxT("/GUI/DefaultViewMode"), &oldMode,
+         int(WaveTrack::WaveformDisplay));
+      viewMode = WaveTrack::ConvertLegacyDisplayValue(oldMode);
+   }
+
+   // Now future-proof 2.1.1 against a recurrence of this sort of bug!
+   viewMode = WaveTrack::ValidateWaveTrackDisplay(viewMode);
+
+   return viewMode;
+}
+
+// static
+WaveTrack::WaveTrackDisplay
+WaveTrack::ConvertLegacyDisplayValue(int oldValue)
+{
+   // Remap old values.
+   enum OldValues {
+      Waveform,
+      WaveformDB,
+      Spectrogram,
+      SpectrogramLogF,
+      Pitch,
+   };
+
+   WaveTrackDisplay newValue;
+   switch (oldValue) {
+   default:
+   case Waveform:
+      newValue = WaveTrack::WaveformDisplay; break;
+   case WaveformDB:
+      newValue = WaveTrack::WaveformDBDisplay; break;
+   case Spectrogram:
+      newValue = WaveTrack::SpectrumDisplay; break;
+   case SpectrogramLogF:
+      newValue = WaveTrack::SpectrumLogDisplay; break;
+   case Pitch:
+      newValue = WaveTrack::PitchDisplay; break;
+   }
+   return newValue;
+}
+
+// static
+WaveTrack::WaveTrackDisplay
+WaveTrack::ValidateWaveTrackDisplay(WaveTrackDisplay display)
+{
+   // To do, in future:  detect obsolete values between min and max
+   if (display >= int(MinDisplay) && display <= int(MaxDisplay))
+      return display;
+   else
+      return MinDisplay;
 }
 
 void WaveTrack::GetDisplayBounds(float *min, float *max)
@@ -310,7 +379,7 @@ void WaveTrack::VirtualStereoInit()
 }
 #endif
 
-float WaveTrack::GetChannelGain(int channel)
+float WaveTrack::GetChannelGain(int channel) const
 {
    float left = 1.0;
    float right = 1.0;
@@ -733,6 +802,10 @@ bool WaveTrack::ClearAndPaste(double t0, // Start of time to clear
          }
       }
    }
+
+   // Delete cutlines that fell outside of resulting clips
+   for (int ii = cuts.GetCount(); ii--;)
+      delete cuts[ii];
 
    // If we created a default time warper, we need to delete it
    if (effectWarper == NULL)
@@ -1326,21 +1399,21 @@ bool WaveTrack::Append(samplePtr buffer, sampleFormat format,
                        sampleCount len, unsigned int stride /* = 1 */,
                        XMLWriter *blockFileLog /* = NULL */)
 {
-   return GetLastOrCreateClip()->Append(buffer, format, len, stride,
+   return RightmostOrNewClip()->Append(buffer, format, len, stride,
                                         blockFileLog);
 }
 
 bool WaveTrack::AppendAlias(wxString fName, sampleCount start,
                             sampleCount len, int channel,bool useOD)
 {
-   return GetLastOrCreateClip()->AppendAlias(fName, start, len, channel,useOD);
+   return RightmostOrNewClip()->AppendAlias(fName, start, len, channel, useOD);
 }
 
 
 bool WaveTrack::AppendCoded(wxString fName, sampleCount start,
                             sampleCount len, int channel, int decodeType)
 {
-   return GetLastOrCreateClip()->AppendCoded(fName, start, len, channel, decodeType);
+   return RightmostOrNewClip()->AppendCoded(fName, start, len, channel, decodeType);
 }
 
 ///gets an int with OD flags so that we can determine which ODTasks should be run on this track after save/open, etc.
@@ -1356,18 +1429,34 @@ unsigned int WaveTrack::GetODFlags()
 }
 
 
-sampleCount WaveTrack::GetBestBlockSize(sampleCount s)
+sampleCount WaveTrack::GetBlockStart(sampleCount s) const
+{
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+      it; it = it->GetNext())
+   {
+      WaveClip* clip = it->GetData();
+      const sampleCount startSample = (sampleCount)floor(0.5 + clip->GetStartTime()*mRate);
+      const sampleCount endSample = startSample + clip->GetNumSamples();
+      if (s >= startSample && s < endSample)
+         return startSample + clip->GetSequence()->GetBlockStart(s - startSample);
+   }
+
+   return -1;
+}
+
+sampleCount WaveTrack::GetBestBlockSize(sampleCount s) const
 {
    sampleCount bestBlockSize = GetMaxBlockSize();
 
-   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+      it; it = it->GetNext())
    {
       WaveClip* clip = it->GetData();
       sampleCount startSample = (sampleCount)floor(clip->GetStartTime()*mRate + 0.5);
       sampleCount endSample = startSample + clip->GetNumSamples();
       if (s >= startSample && s < endSample)
       {
-         bestBlockSize = clip->GetSequence()->GetMaxBlockSize();
+         bestBlockSize = clip->GetSequence()->GetBestBlockSize(s - startSample);
          break;
       }
    }
@@ -1375,10 +1464,11 @@ sampleCount WaveTrack::GetBestBlockSize(sampleCount s)
    return bestBlockSize;
 }
 
-sampleCount WaveTrack::GetMaxBlockSize()
+sampleCount WaveTrack::GetMaxBlockSize() const
 {
    int maxblocksize = 0;
-   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+      it; it = it->GetNext())
    {
       WaveClip* clip = it->GetData();
       if (clip->GetSequence()->GetMaxBlockSize() > maxblocksize)
@@ -1401,12 +1491,13 @@ sampleCount WaveTrack::GetMaxBlockSize()
 
 sampleCount WaveTrack::GetIdealBlockSize()
 {
-   return GetLastOrCreateClip()->GetSequence()->GetIdealBlockSize();
+   return NewestOrNewClip()->GetSequence()->GetIdealBlockSize();
 }
 
 bool WaveTrack::Flush()
 {
-   return GetLastOrCreateClip()->Flush();
+   // After appending, presumably.  Do this to the clip that gets appended.
+   return RightmostOrNewClip()->Flush();
 }
 
 bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
@@ -1476,6 +1567,9 @@ bool WaveTrack::HandleXMLTag(const wxChar *tag, const wxChar **attrs)
          else if (!wxStrcmp(attr, wxT("linked")) &&
                   XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
             SetLinked(nValue != 0);
+         else if (!wxStrcmp(attr, wxT("autosaveid")) &&
+                  XMLValueChecker::IsGoodInt(strValue) && strValue.ToLong(&nValue))
+            mAutoSaveIdent = (int) nValue;
 
       } // while
 #ifdef EXPERIMENTAL_OUTPUT_DISPLAY
@@ -1491,7 +1585,7 @@ void WaveTrack::HandleXMLEndTag(const wxChar * WXUNUSED(tag))
 {
    // In case we opened a pre-multiclip project, we need to
    // simulate closing the waveclip tag.
-   GetLastOrCreateClip()->HandleXMLEndTag( wxT("waveclip") );
+   NewestOrNewClip()->HandleXMLEndTag(wxT("waveclip"));
 }
 
 XMLTagHandler *WaveTrack::HandleXMLChild(const wxChar *tag)
@@ -1502,13 +1596,13 @@ XMLTagHandler *WaveTrack::HandleXMLChild(const wxChar *tag)
    if (!wxStrcmp(tag, wxT("sequence")) || !wxStrcmp(tag, wxT("envelope")))
    {
       // This is a legacy project, so set the cached offset
-      GetLastOrCreateClip()->SetOffset(mLegacyProjectFileOffset);
+      NewestOrNewClip()->SetOffset(mLegacyProjectFileOffset);
 
       // Legacy project file tracks are imported as one single wave clip
       if (!wxStrcmp(tag, wxT("sequence")))
-         return GetLastOrCreateClip()->GetSequence();
+         return NewestOrNewClip()->GetSequence();
       else if (!wxStrcmp(tag, wxT("envelope")))
-         return GetLastOrCreateClip()->GetEnvelope();
+         return NewestOrNewClip()->GetEnvelope();
    }
 
    // JKC... for 1.1.0, one step better than what we had, but still badly broken.
@@ -1516,8 +1610,8 @@ XMLTagHandler *WaveTrack::HandleXMLChild(const wxChar *tag)
    if( !wxStrcmp( tag, wxT("waveblock" )))
    {
       // This is a legacy project, so set the cached offset
-      GetLastOrCreateClip()->SetOffset(mLegacyProjectFileOffset);
-      Sequence *pSeq = GetLastOrCreateClip()->GetSequence();
+      NewestOrNewClip()->SetOffset(mLegacyProjectFileOffset);
+      Sequence *pSeq = NewestOrNewClip()->GetSequence();
       return pSeq;
    }
 
@@ -1533,6 +1627,10 @@ XMLTagHandler *WaveTrack::HandleXMLChild(const wxChar *tag)
 void WaveTrack::WriteXML(XMLWriter &xmlFile)
 {
    xmlFile.StartTag(wxT("wavetrack"));
+   if (mAutoSaveIdent)
+   {
+      xmlFile.WriteAttr(wxT("autosaveid"), mAutoSaveIdent);
+   }
    xmlFile.WriteAttr(wxT("name"), mName);
    xmlFile.WriteAttr(wxT("channel"), mChannel);
    xmlFile.WriteAttr(wxT("linked"), mLinked);
@@ -1601,12 +1699,12 @@ AUDACITY_DLL_API sampleCount WaveTrack::TimeToLongSamples(double t0) const
    return (sampleCount)floor(t0 * mRate + 0.5);
 }
 
-double WaveTrack::LongSamplesToTime(sampleCount pos)
+double WaveTrack::LongSamplesToTime(sampleCount pos) const
 {
    return ((double)pos) / mRate;
 }
 
-double WaveTrack::GetStartTime()
+double WaveTrack::GetStartTime() const
 {
    bool found = false;
    double best = 0.0;
@@ -1614,7 +1712,8 @@ double WaveTrack::GetStartTime()
    if (mClips.IsEmpty())
       return 0;
 
-   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+      it; it = it->GetNext())
       if (!found)
       {
          found = true;
@@ -1625,7 +1724,7 @@ double WaveTrack::GetStartTime()
    return best;
 }
 
-double WaveTrack::GetEndTime()
+double WaveTrack::GetEndTime() const
 {
    bool found = false;
    double best = 0.0;
@@ -1633,7 +1732,8 @@ double WaveTrack::GetEndTime()
    if (mClips.IsEmpty())
       return 0;
 
-   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+      it; it = it->GetNext())
       if (!found)
       {
          found = true;
@@ -1728,13 +1828,13 @@ bool WaveTrack::GetRMS(float *rms, double t0, double t1)
          }
       }
    }
-   *rms = sqrt(sumsq/length);
+   *rms = length > 0.0 ? sqrt(sumsq / length) : 0.0;
 
    return result;
 }
 
 bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
-                    sampleCount start, sampleCount len, fillFormat fill )
+                    sampleCount start, sampleCount len, fillFormat fill ) const
 {
    // Simple optimization: When this buffer is completely contained within one clip,
    // don't clear anything (because we won't have to). Otherwise, just clear
@@ -1742,9 +1842,9 @@ bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
    WaveClipList::compatibility_iterator it;
 
    bool doClear = true;
-   for (it=GetClipIterator(); it; it=it->GetNext())
+   for (it = const_cast<WaveTrack&>(*this).GetClipIterator(); it; it = it->GetNext())
    {
-      WaveClip *clip = it->GetData();
+      const WaveClip *const clip = it->GetData();
       if (start >= clip->GetStartSample() && start+len <= clip->GetEndSample())
       {
          doClear = false;
@@ -1770,9 +1870,9 @@ bool WaveTrack::Get(samplePtr buffer, sampleFormat format,
       }
    }
 
-   for (it=GetClipIterator(); it; it=it->GetNext())
+   for (it = const_cast<WaveTrack&>(*this).GetClipIterator(); it; it = it->GetNext())
    {
-      WaveClip *clip = it->GetData();
+      const WaveClip *const clip = it->GetData();
 
       sampleCount clipStart = clip->GetStartSample();
       sampleCount clipEnd = clip->GetEndSample();
@@ -1845,25 +1945,33 @@ bool WaveTrack::Set(samplePtr buffer, sampleFormat format,
 }
 
 void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
-                         double t0, double tstep)
+                         double t0, double tstep) const
 {
    // Possibly nothing to do.
    if( bufferLen <= 0 )
       return;
 
-   // This is useful in debugging, to easily find null envelope settings, but
-   // should not be necessary in Release build.
-   // If we were going to set it to failsafe values in Release build, better to set each element to 1.0.
-   #ifdef __WXDEBUG__
-      memset(buffer, 0, sizeof(double)*bufferLen);
-   #endif
+   // The output buffer corresponds to an unbroken span of time which the callers expect
+   // to be fully valid.  As clips are processed below, the output buffer is updated with
+   // envelope values from any portion of a clip, start, end, middle, or none at all.
+   // Since this does not guarantee that the entire buffer is filled with values we need
+   // to initialize the entire buffer to a default value.
+   //
+   // This does mean that, in the cases where a usuable clip is located, the buffer value will
+   // be set twice.  Unfortunately, there is no easy way around this since the clips are not
+   // stored in increasing time order.  If they were, we could just track the time as the
+   // buffer is filled.
+   for (int i = 0; i < bufferLen; i++)
+   {
+      buffer[i] = 1.0;
+   }
 
    double startTime = t0;
    double endTime = t0+tstep*bufferLen;
-
-   for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
+   for (WaveClipList::compatibility_iterator it = const_cast<WaveTrack&>(*this).GetClipIterator();
+        it; it = it->GetNext())
    {
-      WaveClip *clip = it->GetData();
+      WaveClip *const clip = it->GetData();
 
       // IF clip intersects startTime..endTime THEN...
       double dClipStartTime = clip->GetStartTime();
@@ -1884,8 +1992,6 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
 
          if (rt0 + rlen*tstep > dClipEndTime)
          {
-            //vvvvv debugging   int nStartSample = clip->GetStartSample();
-            //vvvvv debugging   int nEndSample = clip->GetEndSample();
             int nClipLen = clip->GetEndSample() - clip->GetStartSample();
 
             if (nClipLen <= 0) // Testing for bug 641, this problem is consistently '== 0', but doesn't hurt to check <.
@@ -1894,8 +2000,10 @@ void WaveTrack::GetEnvelopeValues(double *buffer, int bufferLen,
             // This check prevents problem cited in http://bugzilla.audacityteam.org/show_bug.cgi?id=528#c11,
             // Gale's cross_fade_out project, which was already corrupted by bug 528.
             // This conditional prevents the previous write past the buffer end, in clip->GetEnvelope() call.
-            if (nClipLen < rlen) // Never increase rlen here.
-               rlen = nClipLen;
+            // Never increase rlen here.
+            // PRL bug 827:  rewrote it again
+            rlen = std::min(rlen, nClipLen);
+            rlen = std::min(rlen, int(floor(0.5 + (dClipEndTime - rt0) / tstep)));
          }
          clip->GetEnvelope()->GetValues(rbuf, rlen, rt0, tstep);
       }
@@ -1971,7 +2079,7 @@ WaveClip* WaveTrack::CreateClip()
    return clip;
 }
 
-WaveClip* WaveTrack::GetLastOrCreateClip()
+WaveClip* WaveTrack::NewestOrNewClip()
 {
    if (mClips.IsEmpty()) {
       WaveClip *clip = CreateClip();
@@ -1980,6 +2088,29 @@ WaveClip* WaveTrack::GetLastOrCreateClip()
    }
    else
       return mClips.GetLast()->GetData();
+}
+
+WaveClip* WaveTrack::RightmostOrNewClip()
+{
+   if (mClips.IsEmpty()) {
+      WaveClip *clip = CreateClip();
+      clip->SetOffset(mOffset);
+      return clip;
+   }
+   else
+   {
+      WaveClipList::compatibility_iterator it = GetClipIterator();
+      WaveClip *rightmost = it->GetData();
+      double maxOffset = rightmost->GetOffset();
+      for (it = it->GetNext(); it; it = it->GetNext())
+      {
+         WaveClip *clip = it->GetData();
+         double offset = clip->GetOffset();
+         if (maxOffset < offset)
+            maxOffset = offset, rightmost = clip;
+      }
+      return rightmost;
+   }
 }
 
 int WaveTrack::GetClipIndex(WaveClip* clip)
@@ -2339,4 +2470,191 @@ void WaveTrack::AddInvalidRegion(sampleCount startSample, sampleCount endSample)
 {
    for (WaveClipList::compatibility_iterator it=GetClipIterator(); it; it=it->GetNext())
       it->GetData()->AddInvalidRegion(startSample,endSample);
+}
+
+int WaveTrack::GetAutoSaveIdent()
+{
+   return mAutoSaveIdent;
+}
+
+void WaveTrack::SetAutoSaveIdent(int ident)
+{
+   mAutoSaveIdent = ident;
+}
+
+WaveTrackCache::~WaveTrackCache()
+{
+   Free();
+}
+
+void WaveTrackCache::SetTrack(const WaveTrack *pTrack)
+{
+   if (mPTrack != pTrack) {
+      if (pTrack) {
+         mBufferSize = pTrack->GetMaxBlockSize();
+         if (!mPTrack ||
+             mPTrack->GetMaxBlockSize() != mBufferSize) {
+            Free();
+            mBuffers[0].data = new float[mBufferSize];
+            mBuffers[1].data = new float[mBufferSize];
+         }
+      }
+      else
+         Free();
+      mPTrack = pTrack;
+      mNValidBuffers = 0;
+   }
+}
+
+constSamplePtr WaveTrackCache::Get(sampleFormat format,
+   sampleCount start, sampleCount len)
+{
+   if (format == floatSample && len > 0) {
+      const sampleCount end = start + len;
+
+      bool fillFirst = (mNValidBuffers < 1);
+      bool fillSecond = (mNValidBuffers < 2);
+
+      // Discard cached results that we no longer need
+      if (mNValidBuffers > 0 &&
+          (end <= mBuffers[0].start ||
+           start >= mBuffers[mNValidBuffers - 1].end())) {
+         // Complete miss
+         fillFirst = true;
+         fillSecond = true;
+      }
+      else if (mNValidBuffers == 2 &&
+               start >= mBuffers[1].start &&
+               end > mBuffers[1].end()) {
+         // Request starts in the second buffer and extends past it.
+         // Discard the first buffer.
+         // (But don't deallocate the buffer space.)
+         float *save = mBuffers[0].data;
+         mBuffers[0] = mBuffers[1];
+         mBuffers[1].data = save;
+         fillSecond = true;
+         mNValidBuffers = 1;
+      }
+      else if (mNValidBuffers > 0 &&
+         start < mBuffers[0].start &&
+         0 <= mPTrack->GetBlockStart(start)) {
+         // Request is not a total miss but starts before the cache,
+         // and there is a clip to fetch from.
+         // Not the access pattern for drawing spectrogram or playback,
+         // but maybe scrubbing causes this.
+         // Move the first buffer into second place, and later
+         // refill the first.
+         // (This case might be useful when marching backwards through
+         // the track, as with scrubbing.)
+         float *save = mBuffers[1].data;
+         mBuffers[1] = mBuffers[0];
+         mBuffers[0].data = save;
+         fillFirst = true;
+         // Cache is not in a consistent state yet
+         mNValidBuffers = 0;
+      }
+
+      // Refill buffers as needed
+      if (fillFirst) {
+         const sampleCount start0 = mPTrack->GetBlockStart(start);
+         if (start0 >= 0) {
+            const sampleCount len0 = mPTrack->GetBestBlockSize(start0);
+            wxASSERT(len0 <= mBufferSize);
+            if (!mPTrack->Get(samplePtr(mBuffers[0].data), floatSample, start0, len0))
+               return false;
+            mBuffers[0].start = start0;
+            mBuffers[0].len = len0;
+            if (!fillSecond &&
+                mBuffers[0].end() != mBuffers[1].start)
+               fillSecond = true;
+            // Keep the partially updated state consistent:
+            mNValidBuffers = fillSecond ? 1 : 2;
+         }
+         else {
+            // Request may fall between the clips of a track.
+            // Invalidate all.  WaveTrack::Get() will return zeroes.
+            mNValidBuffers = 0;
+            fillSecond = false;
+         }
+      }
+      wxASSERT(!fillSecond || mNValidBuffers > 0);
+      if (fillSecond) {
+         mNValidBuffers = 1;
+         const sampleCount end0 = mBuffers[0].end();
+         if (end > end0) {
+            const sampleCount start1 = mPTrack->GetBlockStart(end0);
+            if (start1 == end0) {
+               const sampleCount len1 = mPTrack->GetBestBlockSize(start1);
+               wxASSERT(len1 <= mBufferSize);
+               if (!mPTrack->Get(samplePtr(mBuffers[1].data), floatSample, start1, len1))
+                  return false;
+               mBuffers[1].start = start1;
+               mBuffers[1].len = len1;
+               mNValidBuffers = 2;
+            }
+         }
+      }
+      wxASSERT(mNValidBuffers < 2 || mBuffers[0].end() == mBuffers[1].start);
+
+      samplePtr buffer = 0;
+      sampleCount remaining = len;
+
+      // Possibly get an initial portion that is uncached
+      const sampleCount initLen =
+         mNValidBuffers < 1 ? len : std::min(len, mBuffers[0].start - start);
+      if (initLen > 0) {
+         // This might be fetching zeroes between clips
+         mOverlapBuffer.Resize(len, format);
+         if (!mPTrack->Get(mOverlapBuffer.ptr(), format, start, initLen))
+            return 0;
+         remaining -= initLen;
+         start += initLen;
+         buffer = mOverlapBuffer.ptr() + initLen * SAMPLE_SIZE(format);
+      }
+
+      // Now satisfy the request from the buffers
+      for (int ii = 0; ii < mNValidBuffers && remaining > 0; ++ii) {
+         const sampleCount starti = start - mBuffers[ii].start;
+         const sampleCount leni = std::min(remaining, mBuffers[ii].len - starti);
+         if (leni == len) {
+            // All is contiguous already.  We can completely avoid copying
+            return samplePtr(mBuffers[ii].data + starti);
+         }
+         else if (leni > 0) {
+            if (buffer == 0) {
+               mOverlapBuffer.Resize(len, format);
+               buffer = mOverlapBuffer.ptr();
+            }
+            const size_t size = sizeof(float) * leni;
+            memcpy(buffer, mBuffers[ii].data + starti, size);
+            remaining -= leni;
+            start += leni;
+            buffer += size;
+         }
+      }
+
+      if (remaining > 0) {
+         // Very big request!
+         // Fall back to direct fetch
+         if (!mPTrack->Get(buffer, format, start, remaining))
+            return false;
+      }
+
+      return mOverlapBuffer.ptr();
+   }
+
+   // Cache works only for float format.
+   mOverlapBuffer.Resize(len, format);
+   if (mPTrack->Get(mOverlapBuffer.ptr(), format, start, len))
+      return mOverlapBuffer.ptr();
+   else
+      return 0;
+}
+
+void WaveTrackCache::Free()
+{
+   mBuffers[0].Free();
+   mBuffers[1].Free();
+   mOverlapBuffer.Free();
+   mNValidBuffers = 0;
 }

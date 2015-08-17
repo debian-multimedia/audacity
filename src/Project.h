@@ -19,17 +19,18 @@
 #define __AUDACITY_PROJECT__
 
 #include "Audacity.h"
+#include "Experimental.h"
 
 #include "DirManager.h"
 #include "UndoManager.h"
 #include "ViewInfo.h"
-#include "TrackPanel.h"
-#include "AudioIO.h"
+#include "TrackPanelListener.h"
+#include "AudioIOListener.h"
 #include "commands/CommandManager.h"
 #include "effects/EffectManager.h"
 #include "xml/XMLTagHandler.h"
-#include "toolbars/SelectionBar.h"
-#include "FreqWindow.h"
+#include "toolbars/SelectionBarListener.h"
+#include "toolbars/SpectralSelectionBarListener.h"
 
 #include <wx/defs.h>
 #include <wx/event.h>
@@ -50,11 +51,18 @@ class wxScrollBar;
 class wxPanel;
 
 class AudacityProject;
+class AutoSaveFile;
 class Importer;
 class ODLock;
 class RecordingRecoveryHandler;
 class TrackList;
 class Tags;
+class EffectPlugs;
+
+class TrackPanel;
+class FreqWindow;
+class ContrastDialog;
+class Meter;
 
 // toolbar classes
 class ControlToolBar;
@@ -62,7 +70,8 @@ class DeviceToolBar;
 class EditToolBar;
 class MeterToolBar;
 class MixerToolBar;
-class SelectionToolBar;
+class SelectionBar;
+class SpectralSelectionBar;
 class Toolbar;
 class ToolManager;
 class ToolsToolBar;
@@ -75,6 +84,7 @@ class LyricsWindow;
 class MixerBoard;
 class MixerBoardFrame;
 
+struct AudioIOStartStreamOptions;
 
 AudacityProject *CreateNewAudacityProject();
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
@@ -99,14 +109,20 @@ enum PlayMode {
    loopedPlay
 };
 
+enum StatusBarField {
+   stateStatusBarField = 1,
+   mainStatusBarField = 2,
+   rateStatusBarField = 3
+};
+
 // XML handler for <import> tag
 class ImportXMLTagHandler : public XMLTagHandler
 {
  public:
-   ImportXMLTagHandler(AudacityProject* pProject) { mProject = pProject; };
+   ImportXMLTagHandler(AudacityProject* pProject) { mProject = pProject; }
 
    virtual bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
-   virtual XMLTagHandler *HandleXMLChild(const wxChar * WXUNUSED(tag)) { return NULL; };
+   virtual XMLTagHandler *HandleXMLChild(const wxChar * WXUNUSED(tag)) { return NULL; }
 
    // Don't want a WriteXML method because ImportXMLTagHandler is not a WaveTrack.
    // <import> tags are instead written by AudacityProject::WriteXML.
@@ -119,6 +135,7 @@ class ImportXMLTagHandler : public XMLTagHandler
 class AUDACITY_DLL_API AudacityProject:  public wxFrame,
                                      public TrackPanelListener,
                                      public SelectionBarListener,
+                                     public SpectralSelectionBarListener,
                                      public XMLTagHandler,
                                      public AudioIOListener
 {
@@ -127,15 +144,17 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
                    const wxPoint & pos, const wxSize & size);
    virtual ~AudacityProject();
 
-   TrackList *GetTracks() { return mTracks; };
+   AudioIOStartStreamOptions GetDefaultPlayOptions();
+
+   TrackList *GetTracks() { return mTracks; }
    UndoManager *GetUndoManager() { return &mUndoManager; }
 
    sampleFormat GetDefaultFormat() { return mDefaultFormat; }
 
    double GetRate() { return mRate; }
    double GetZoom() { return mViewInfo.zoom; }
-   double GetSel0() { return mViewInfo.sel0; }
-   double GetSel1() { return mViewInfo.sel1; }
+   double GetSel0() { return mViewInfo.selectedRegion.t0(); }
+   double GetSel1() { return mViewInfo.selectedRegion.t1(); }
 
    Track *GetFirstVisible();
    void UpdateFirstVisible();
@@ -189,7 +208,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
     */
    static wxArrayString ShowOpenDialog(wxString extraformat = wxEmptyString,
          wxString extrafilter = wxEmptyString);
-   static bool IsAlreadyOpen(const wxString projPathName);
+   static bool IsAlreadyOpen(const wxString & projPathName);
    static void OpenFiles(AudacityProject *proj);
    void OpenFile(wxString fileName, bool addtohistory = true);
    bool WarnOfLegacyFile( );
@@ -203,9 +222,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void UnlockAllBlocks();
    bool Save(bool overwrite = true, bool fromSaveAs = false, bool bWantSaveCompressed = false);
    bool SaveAs(bool bWantSaveCompressed = false);
-   bool SaveAs(const wxString newFileName, bool bWantSaveCompressed = false, bool addToHistory = true);
+   bool SaveAs(const wxString & newFileName, bool bWantSaveCompressed = false, bool addToHistory = true);
    #ifdef USE_LIBVORBIS
-      bool SaveCompressedWaveTracks(const wxString strProjectPathName); // full path for aup except extension
+      bool SaveCompressedWaveTracks(const wxString & strProjectPathName); // full path for aup except extension
    #endif
    void Clear();
 
@@ -213,7 +232,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool GetDirty() { return mDirty; }
    void SetProjectTitle();
 
-   TrackPanel * GetTrackPanel(){return mTrackPanel;};
+   TrackPanel * GetTrackPanel(){return mTrackPanel;}
 
    bool GetIsEmpty() { return mTracks->IsEmpty(); }
 
@@ -279,7 +298,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static void DeleteClipboard();
    static void DeleteAllProjectsDeleteLock();
 
-   void UpdateMenus();
+   // checkActive is a temporary hack that should be removed as soon as we
+   // get multiple effect preview working
+   void UpdateMenus(bool checkActive = true);
    void UpdatePrefs();
    void UpdatePrefsVariables();
    void RedrawProject(const bool bForceWaveTracks = false);
@@ -289,7 +310,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void Zoom(double level);
    void Rewind(bool shift);
    void SkipEnd(bool shift);
-   void SetStop(bool bStopped);
    void EditByLabel( WaveTrack::EditFunction action, bool bSyncLockedTracks );
    void EditClipboardByLabel( WaveTrack::EditDestFunction action );
    bool IsSyncLocked();
@@ -310,7 +330,15 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Selection Format
 
    void SetSelectionFormat(const wxString & format);
-   const wxString & GetSelectionFormat();
+   const wxString & GetSelectionFormat() const;
+
+   // Spectral Selection Formats
+
+   void SetFrequencySelectionFormatName(const wxString & format);
+   const wxString & GetFrequencySelectionFormatName() const;
+
+   void SetBandwidthSelectionFormatName(const wxString & format);
+   const wxString & GetBandwidthSelectionFormatName() const;
 
    // Scrollbars
 
@@ -324,6 +352,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void FixScrollbars();
 
    void SafeDisplayStatusMessage(const wxChar *msg);
+
+   double ScrollingLowerBoundTime() const;
+   void SetHorizontalThumb(double scrollto);
 
    // TrackPanel access
    virtual wxSize GetTPTracksUsableArea();
@@ -356,16 +387,25 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    DeviceToolBar *GetDeviceToolBar();
    EditToolBar *GetEditToolBar();
-   MeterToolBar *GetMeterToolBar();
    MixerToolBar *GetMixerToolBar();
    SelectionBar *GetSelectionBar();
+#ifdef EXPERIMENTAL_SPECTRAL_EDITING
+   SpectralSelectionBar *GetSpectralSelectionBar();
+#endif
    ToolsToolBar *GetToolsToolBar();
    TranscriptionToolBar *GetTranscriptionToolBar();
 
-   LyricsWindow* GetLyricsWindow() { return mLyricsWindow; };
-   MixerBoard* GetMixerBoard() { return mMixerBoard; };
+   Meter *GetPlaybackMeter();
+   void SetPlaybackMeter(Meter *playback);
+   Meter *GetCaptureMeter();
+   void SetCaptureMeter(Meter *capture);
 
-   // SelectionBar callback methods
+   LyricsWindow* GetLyricsWindow() { return mLyricsWindow; }
+   MixerBoard* GetMixerBoard() { return mMixerBoard; }
+
+   wxStatusBar* GetStatusBar() { return mStatusBar; }
+
+   // SelectionBarListener callback methods
 
    virtual double AS_GetRate();
    virtual void AS_SetRate(double rate);
@@ -374,6 +414,18 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    virtual const wxString & AS_GetSelectionFormat();
    virtual void AS_SetSelectionFormat(const wxString & format);
    virtual void AS_ModifySelection(double &start, double &end, bool done);
+
+   // SpectralSelectionBarListener callback methods
+
+   virtual double SSBL_GetRate() const;
+
+   virtual const wxString & SSBL_GetFrequencySelectionFormatName();
+   virtual void SSBL_SetFrequencySelectionFormatName(const wxString & formatName);
+
+   virtual const wxString & SSBL_GetBandwidthSelectionFormatName();
+   virtual void SSBL_SetBandwidthSelectionFormatName(const wxString & formatName);
+
+   virtual void SSBL_ModifySpectralSelection(double &bottom, double &top, bool done);
 
    void SetStateTo(unsigned int n);
 
@@ -396,7 +448,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    virtual void OnAudioIORate(int rate);
    virtual void OnAudioIOStartRecording();
    virtual void OnAudioIOStopRecording();
-   virtual void OnAudioIONewBlockFiles(const wxString& blockFileLog);
+   virtual void OnAudioIONewBlockFiles(const AutoSaveFile & blockFileLog);
 
    // Command Handling
    bool TryToMakeActionAllowed( wxUint32 & flags, wxUint32 flagsRqd, wxUint32 mask );
@@ -406,10 +458,11 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    static void AllProjectsDeleteUnlock();
 
    void PushState(wxString desc, wxString shortDesc,
-                  int flags = PUSH_AUTOSAVE | PUSH_CALC_SPACE);
+                  int flags = PUSH_AUTOSAVE);
 
  private:
 
+   void OnCapture(wxCommandEvent & evt);
    void ClearClipboard();
    void InitialState();
    void ModifyState(bool bWantsAutoSave);    // if true, writes auto-save file. Should set only if you really want the state change restored after
@@ -424,11 +477,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void AutoSave();
    void DeleteCurrentAutoSaveFile();
 
-   static bool GetCacheBlockFiles();
-
  public:
-   bool IsSoloSimple() { return mSoloPref == wxT("Simple"); };
-   bool IsSoloNone() { return mSoloPref == wxT("None"); };
+   bool IsSoloSimple() { return mSoloPref == wxT("Simple"); }
+   bool IsSoloNone() { return mSoloPref == wxT("None"); }
 
  private:
 
@@ -450,6 +501,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    int mSnapTo;
    wxString mSelectionFormat;
+   wxString mFrequencySelectionFormatName;
+   wxString mBandwidthSelectionFormatName;
 
    TrackList *mLastSavedTracks;
 
@@ -495,9 +548,14 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    MixerBoardFrame* mMixerBoardFrame;
 
    FreqWindow *mFreqWindow;
+   ContrastDialog *mContrastDialog;
 
    // dialog for missing alias warnings
    wxDialog            *mAliasMissingWarningDialog;
+
+   // Project owned meters
+   Meter *mPlaybackMeter;
+   Meter *mCaptureMeter;
 
  public:
    ToolManager *mToolManager;
@@ -526,6 +584,9 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mNormalizeOnLoad;  //lda
    bool mShowId3Dialog; //lda
    bool mEmptyCanBeDirty;
+
+   bool mScrollBeyondZero;
+
    bool mSelectAllOnNone;
 
    bool mIsSyncLocked;
@@ -561,9 +622,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    wxArrayString mStrOtherNamesArray; // used to make sure compressed file names are unique
 
    // Last effect applied to this project
-   Effect *mLastEffect;
-   int mLastEffectType;
-
+   PluginID mLastEffect;
+   
    // The screenshot class needs to access internals
    friend class ScreenshotCommand;
 
@@ -575,13 +635,18 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Are we currently closing as the result of a menu command?
    bool mMenuClose;
 
- public:
-    DECLARE_EVENT_TABLE()
+   bool mbInitializingScrollbar;
+
+   // Flag that we're recoding.
+   bool mIsCapturing;
+
+   DECLARE_EVENT_TABLE()
 };
 
 typedef void (AudacityProject::*audCommandFunction)();
 typedef void (AudacityProject::*audCommandKeyFunction)(const wxEvent *);
 typedef void (AudacityProject::*audCommandListFunction)(int);
+typedef bool (AudacityProject::*audCommandPluginFunction)(const PluginID &, int);
 
 // Previously this was in menus.cpp, and the declaration of the
 // command functor was not visible anywhere else.
@@ -595,15 +660,18 @@ public:
    AudacityProjectCommandFunctor(AudacityProject *project,
       audCommandListFunction commandFunction);
    AudacityProjectCommandFunctor(AudacityProject *project,
-      audCommandListFunction commandFunction,
-      wxArrayInt explicitIndices);
+      audCommandPluginFunction commandFunction,
+      const PluginID & pluginID);
+
    virtual void operator()(int index = 0, const wxEvent *evt = NULL);
+
 private:
    AudacityProject *mProject;
    audCommandFunction mCommandFunction;
    audCommandKeyFunction mCommandKeyFunction;
    audCommandListFunction mCommandListFunction;
-   wxArrayInt mExplicitIndices;
+   audCommandPluginFunction mCommandPluginFunction;
+   PluginID mPluginID;
 };
 
 #endif

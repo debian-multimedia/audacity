@@ -30,6 +30,7 @@ undo memory so as to free up space.
 #include <wx/textctrl.h>
 
 #include "../images/Arrow.xpm"
+#include "../images/Empty9x16.xpm"
 #include "HistoryWindow.h"
 #include "UndoManager.h"
 #include "Project.h"
@@ -37,6 +38,7 @@ undo memory so as to free up space.
 
 enum {
    ID_AVAIL = 1000,
+   ID_TOTAL,
    ID_LEVELS,
    ID_DISCARD
 };
@@ -53,12 +55,14 @@ HistoryWindow::HistoryWindow(AudacityProject *parent, UndoManager *manager):
       wxDefaultPosition, wxDefaultSize,
       wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER )
 {
+   SetName(GetTitle());
+
    mManager = manager;
    mProject = parent;
    mSelected = 0;
 
    wxImageList *imageList = new wxImageList(9, 16);
-   imageList->Add(wxIcon(empty_9x16_xpm));
+   imageList->Add(wxIcon(empty9x16_xpm));
    imageList->Add(wxIcon(arrow_xpm));
 
    //------------------------- Main section --------------------
@@ -68,27 +72,30 @@ HistoryWindow::HistoryWindow(AudacityProject *parent, UndoManager *manager):
    S.SetBorder(5);
    S.StartVerticalLay(true);
    {
-      S.StartStatic(_("Manage History"), 1);
+      S.StartStatic(_("&Manage History"), 1);
       {
          mList = S.AddListControlReportMode();
          // Do this BEFORE inserting the columns.  On the Mac at least, the
          // columns are deleted and later InsertItem()s will cause Audacity to crash.
          mList->SetSingleStyle(wxLC_SINGLE_SEL);
          mList->InsertColumn(0, _("Action"), wxLIST_FORMAT_LEFT, 300);
-         mList->InsertColumn(1, _("Size"), wxLIST_FORMAT_LEFT, 65);
+         mList->InsertColumn(1, _("Size"), wxLIST_FORMAT_LEFT, 85);
 
          //Assign rather than set the image list, so that it is deleted later.
          mList->AssignImageList(imageList, wxIMAGE_LIST_SMALL);
 
          S.StartMultiColumn(3, wxCENTRE);
          {
+            // FIXME: Textbox labels have inconsistent capitalization
+            mTotal = S.Id(ID_TOTAL).AddTextBox(_("&Total space used"), wxT("0"), 10);
+            mTotal->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(HistoryWindow::OnChar));
+            S.AddVariableText(wxT(""))->Hide();
+
             mAvail = S.Id(ID_AVAIL).AddTextBox(_("&Undo Levels Available"), wxT("0"), 10);
             mAvail->Connect(wxEVT_KEY_DOWN, wxKeyEventHandler(HistoryWindow::OnChar));
             S.AddVariableText(wxT(""))->Hide();
-         }
 
-         {
-            S.AddPrompt(_("Levels To Discard"));
+            S.AddPrompt(_("&Levels To Discard"));
             mLevels = new wxSpinCtrl(this,
                                      ID_LEVELS,
                                      wxT("1"),
@@ -116,14 +123,7 @@ HistoryWindow::HistoryWindow(AudacityProject *parent, UndoManager *manager):
    S.EndVerticalLay();
    // ----------------------- End of main section --------------
 
-   // Vaughan, 2010-07-30: AudacityProject::OnHistory always calls Show()
-   //    then HistoryWindow::UpdateDisplay, so no need to do it here.
-   // Vaughan, 2010-10-16: Not on Windows, anyway.
-   //    But Steve reported that on Ubuntu, View > History now crashes,
-   //    so restore it for non-Windows.
-   #ifdef __WXGTK__
-      DoUpdate();
-   #endif
+   DoUpdate();
    mList->SetMinSize(mList->GetSize());
    Fit();
    SetMinSize(GetSize());
@@ -146,16 +146,21 @@ void HistoryWindow::DoUpdate()
 {
    int i;
 
+   mManager->CalculateSpaceUsage();
+
    mList->DeleteAllItems();
 
+   wxLongLong_t total = 0;
    mSelected = mManager->GetCurrentState() - 1;
    for (i = 0; i < (int)mManager->GetNumStates(); i++) {
       wxString desc, size;
 
-      mManager->GetLongDescription(i + 1, &desc, &size);
+      total += mManager->GetLongDescription(i + 1, &desc, &size);
       mList->InsertItem(i, desc, i == mSelected ? 1 : 0);
       mList->SetItem(i, 1, size);
    }
+
+   mTotal->SetValue(Internat::FormatSize(total));
 
    mList->EnsureVisible(mSelected);
 
@@ -204,7 +209,7 @@ void HistoryWindow::OnDiscard(wxCommandEvent & WXUNUSED(event))
    while(--i >= 0)
       mList->DeleteItem(i);
 
-   UpdateLevels();
+   DoUpdate();
 }
 
 void HistoryWindow::OnItemSelected(wxListEvent &event)

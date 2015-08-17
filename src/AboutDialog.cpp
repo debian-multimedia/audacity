@@ -57,6 +57,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxString(wxT("Roger Dannenberg - ")) + _("co-founder"), roleTeamDeveloper);
    AddCredit(wxT("Benjamin Drung"), roleTeamDeveloper);
    AddCredit(wxT("Vaughan Johnson"), roleTeamDeveloper);
+   AddCredit(wxT("Paul Licameli"), roleTeamDeveloper);
    AddCredit(wxT("Leland Lucius"), roleTeamDeveloper);
    AddCredit(wxT("Martyn Shaw"), roleTeamDeveloper);
 
@@ -84,14 +85,18 @@ void AboutDialog::CreateCreditsList()
 
    // All other contributors
    AddCredit(wxT("Lynn Allan"), roleContributor);
+   AddCredit(wxT("David Avery"), roleContributor);
    AddCredit(wxT("David Bailes"), roleContributor);
    AddCredit(wxT("William Bland"), roleContributor);
+   AddCredit(wxT("Sami Boukortt"), roleContributor);
    AddCredit(wxT("Jeremy R. Brown"), roleContributor);
    AddCredit(wxT("Alex S. Brown"), roleContributor);
    AddCredit(wxT("Chris Cannam"), roleContributor);
+   AddCredit(wxT("Cory Cook"), roleContributor);
    AddCredit(wxT("Craig DeForest"), roleContributor);
    AddCredit(wxT("Mitch Golden"), roleContributor);
    AddCredit(wxT("Brian Gunlogson"), roleContributor);
+   AddCredit(wxT("Andrew Hallendorff"), roleContributor);
    AddCredit(wxT("Daniel Horgan"), roleContributor);
    AddCredit(wxT("David Hostetler"), roleContributor);
    AddCredit(wxT("Steve Jolly"), roleContributor);
@@ -103,7 +108,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Abe Milde"), roleContributor);
    AddCredit(wxT("<a href=\"http://www.paulnasca.com/\">Paul Nasca</a>"), roleContributor);
    AddCredit(wxT("Clayton Otey"), roleContributor);
-   AddCredit(wxT("Andr\u00e9 Pinto"), roleContributor);
+   AddCredit(wxT("Andr\x00e9 Pinto"), roleContributor);
    AddCredit(wxT("Mark Phillips"), roleContributor);
    AddCredit(wxT("Jean Claude Risset"), roleContributor);
    AddCredit(wxT("Edgar-RFT"), roleContributor);
@@ -115,6 +120,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("Philip Van Baren"), roleContributor);
    AddCredit(wxT("Salvo Ventura"), roleContributor);
    AddCredit(wxT("Jun Wan"), roleContributor);
+   AddCredit(wxT("Daniel Winzen"), roleContributor);
    AddCredit(wxT("Tom Woodhams"), roleContributor);
    AddCredit(wxT("Wing Yu"), roleContributor);
 
@@ -122,15 +128,7 @@ void AboutDialog::CreateCreditsList()
    AddCredit(wxT("FLAC"), roleLibrary);
    AddCredit(wxT("LAME"), roleLibrary);
    AddCredit(wxT("libmad"), roleLibrary);
-   #if USE_LIBRESAMPLE
-      AddCredit(wxT("libresample, by Dominic Mazzoni and Julius Smith"), roleLibrary);
-   #endif
-   #if USE_LIBSAMPLERATE
-      AddCredit(wxT("libsamplerate, by Erik de Castro Lopo"), roleLibrary);
-   #endif
-   #if USE_LIBSOXR
-      AddCredit(wxT("libsoxr, by Rob Sykes"), roleLibrary);
-   #endif
+   AddCredit(wxT("libsoxr, by Rob Sykes"), roleLibrary);
    #if USE_LV2
       AddCredit(wxT("lilv, serd, sord, and sratom, by David Robillard"), roleLibrary);
       AddCredit(wxT("msinttypes, by Alexander Chemeris"), roleLibrary);
@@ -182,6 +180,7 @@ AboutDialog::AboutDialog(wxWindow * parent)
                wxDefaultPosition, wxDefaultSize,
                wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
 {
+   SetName(GetTitle());
    this->SetBackgroundColour(theTheme.Colour( clrAboutBoxBackground ));
    icon = NULL;
    ShuttleGui S( this, eIsCreating );
@@ -213,9 +212,8 @@ void AboutDialog::PopulateAudacityPage( ShuttleGui & S )
    CreateCreditsList();
 
    wxString par1Str = _(
-"Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacity.sourceforge.net/community/developers\">developers</a>. \
-We thank <a href=\"http://code.google.com\">Google Code</a> and <a href=\"http://sourceforge.net\">SourceForge</a> for hosting our project. \
-Audacity is <a href=\"http://audacity.sourceforge.net/download/\">available</a> for Windows, Mac, and GNU/Linux (and other Unix-like systems).");
+"Audacity is a free program written by a worldwide team of volunteer <a href=\"http://audacityteam.org/about/credits\">developers</a>. \
+Audacity is <a href=\"http://audacityteam.org/download\">available</a> for Windows, Mac, and GNU/Linux (and other Unix-like systems).");
 
    // This trick here means that the English language version won't mention using
    // English, whereas all translated versions will.
@@ -250,7 +248,7 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
       wxT("<body bgcolor=\"#ffffff\"><center>") +
       wxT("<h3>Audacity ") + wxString(AUDACITY_VERSION_STRING) + wxT("</h3>")+
       _("free, open source, cross-platform software for recording and editing sounds<br>") +
-      wxT("<a href=\"http://audacity.sourceforge.net/\">http://audacity.sourceforge.net/</a>") +
+      wxT("<a href=\"http://audacityteam.org/\">http://audacityteam.org/</a>") +
       wxT("<p><br>") + par1Str +
       wxT("<p>") + par2Str +
       wxT("<h3>") + _("Credits") + wxT("</h3>") +
@@ -278,7 +276,7 @@ visit our <a href=\"http://forum.audacityteam.org/\">forum</a>.");
       GetCreditsByRole(roleThanks) +
 
       wxT("<p><br>") + _("<b>Audacity&reg;</b> software is copyright")+
-      wxT("&copy; 1999-2014 Audacity Team.<br>") +
+      wxT("&copy; 1999-2015 Audacity Team.<br>") +
       _("The name <b>Audacity&reg;</b> is a registered trademark of Dominic Mazzoni.") +
       wxT("</center></font></body></html>");
 
@@ -337,7 +335,7 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    wxString informationStr;   // string to build up list of information in
    S.StartNotebookPage( _("Build Information") );  // start the tab
    S.StartVerticalLay(2);  // create the window
-   HtmlWindow *html = new HtmlWindow(S.GetParent(), -1, wxDefaultPosition,
+   HtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1, wxDefaultPosition,
                            wxSize(ABOUT_DIALOG_WIDTH, 264),
                            wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);
    // create a html pane in it to put the content in.
@@ -429,27 +427,8 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    informationStr += _("Core Libraries");
    informationStr += wxT("</h3>\n<table>");  // start table of features
 
-
-   #if USE_LIBRESAMPLE
-   AddBuildinfoRow(&informationStr, wxT("libresample"),
+   AddBuildinfoRow(&informationStr, wxT("libsoxr"),
          _("Sample rate conversion"), enabled);
-   #elif USE_LIBSAMPLERATE
-   AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
-         _("Sample rate conversion"), enabled);
-   #else
-      AddBuildinfoRow(&informationStr, wxT("libresample"),
-            _("Sample rate conversion"), disabled);
-      AddBuildinfoRow(&informationStr, wxT("libsamplerate"),
-            _("Sample rate conversion"), disabled);
-   #endif
-
-   #if USE_LIBSOXR
-      AddBuildinfoRow(&informationStr, wxT("libsoxr"),
-            _("Sample rate conversion"), enabled);
-   #else
-      AddBuildinfoRow(&informationStr, wxT("libsoxr"),
-            _("Sample rate conversion"), disabled);
-   #endif
 
    AddBuildinfoRow(&informationStr, wxT("PortAudio"),
          _("Audio playback and recording"), wxString(wxT("v19")));
@@ -547,6 +526,14 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    // Current date
    AddBuildinfoRow(&informationStr, _("Program build date: "), __TDATE__);
 
+// Uncomment the next two lines to test hyperlinks work from here.
+//   AddBuildinfoRow(&informationStr, wxT("Link Test:"), 
+//      wxT("<a href=\"https:web.audacityteam.org\">Click bait</a>") );
+
+   AddBuildinfoRow(&informationStr, _("Commit Id:"),
+#include "RevisionIdent.h"
+);
+
 #ifdef __WXDEBUG__
    AddBuildinfoRow(&informationStr, _("Build type:"), _("Debug build"));
 #else
@@ -576,7 +563,7 @@ void AboutDialog::PopulateLicensePage( ShuttleGui & S )
 {
    S.StartNotebookPage( _("GPL License") );
    S.StartVerticalLay(1);
-   HtmlWindow *html = new HtmlWindow(S.GetParent(), -1,
+   HtmlWindow *html = new LinkingHtmlWindow(S.GetParent(), -1,
                                          wxDefaultPosition,
                                          wxSize(ABOUT_DIALOG_WIDTH, 264),
                                          wxHW_SCROLLBAR_AUTO | wxSUNKEN_BORDER);

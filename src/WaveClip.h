@@ -29,8 +29,11 @@
 #include <wx/list.h>
 #include <wx/msgdlg.h>
 
+#include <vector>
+
 class Envelope;
 class WaveCache;
+class WaveTrackCache;
 class SpecCache;
 
 class SpecPxCache {
@@ -40,6 +43,8 @@ public:
       len = cacheLen;
       values = new float[len];
       valid = false;
+      range = gain = -1;
+      minFreq = maxFreq = -1;
    }
 
    ~SpecPxCache()
@@ -50,12 +55,35 @@ public:
    sampleCount  len;
    float       *values;
    bool         valid;
+
+   int range;
+   int gain;
+   int minFreq;
+   int maxFreq;
 };
 
 class WaveClip;
 
 WX_DECLARE_USER_EXPORTED_LIST(WaveClip, WaveClipList, AUDACITY_DLL_API);
 WX_DEFINE_USER_EXPORTED_ARRAY_PTR(WaveClip*, WaveClipArray, class AUDACITY_DLL_API);
+
+class WaveDisplay
+{
+public:
+   int width;
+   sampleCount *where;
+   float *min, *max, *rms;
+   int* bl;
+
+   WaveDisplay(int w)
+      : width(w), where(0), min(0), max(0), rms(0), bl(0)
+   {
+   }
+
+   ~WaveDisplay()
+   {
+   }
+};
 
 class AUDACITY_DLL_API WaveClip : public XMLTagHandler
 {
@@ -69,7 +97,7 @@ private:
    WaveClip(const WaveClip&)
    {
       wxFAIL_MSG(wxT("It is an error to copy a WaveClip without specifying the DirManager."));
-   };
+   }
    WaveClip& operator=(const WaveClip& orig)
    {
       WaveClip bogus(orig);
@@ -83,7 +111,7 @@ public:
    // essentially a copy constructor - but you must pass in the
    // current project's DirManager, because we might be copying
    // from one project to another
-   WaveClip(WaveClip& orig, DirManager *projDirManager);
+   WaveClip(const WaveClip& orig, DirManager *projDirManager);
 
    virtual ~WaveClip();
 
@@ -138,9 +166,10 @@ public:
 
    /** Getting high-level data from the for screen display and clipping
     * calculations and Contrast */
-   bool GetWaveDisplay(float *min, float *max, float *rms,int* bl, sampleCount *where,
-                       int numPixels, double t0, double pixelsPerSecond, bool &isLoadingOD);
-   bool GetSpectrogram(float *buffer, sampleCount *where,
+   bool GetWaveDisplay(WaveDisplay &display,
+                       double t0, double pixelsPerSecond, bool &isLoadingOD);
+   bool GetSpectrogram(WaveTrackCache &cache,
+                       const float *& spectrogram, const sampleCount *& where,
                        int numPixels,
                        double t0, double pixelsPerSecond,
                        bool autocorrelation);
@@ -179,7 +208,7 @@ public:
    bool ClearAndAddCutLine(double t0, double t1);
 
    /// Paste data from other clip, resampling it if not equal rate
-   bool Paste(double t0, WaveClip* other);
+   bool Paste(double t0, const WaveClip* other);
 
    /** Insert silence - note that this is an efficient operation for large
     * amounts of silence */
@@ -232,8 +261,8 @@ public:
    SpecPxCache    *mSpecPxCache;
 
    // AWD, Oct 2009: for pasting whitespace at the end of selection
-   bool GetIsPlaceholder() { return mIsPlaceholder; };
-   void SetIsPlaceholder(bool val) { mIsPlaceholder = val; };
+   bool GetIsPlaceholder() const { return mIsPlaceholder; }
+   void SetIsPlaceholder(bool val) { mIsPlaceholder = val; }
 
 protected:
    wxRect mDisplayRect;
@@ -248,13 +277,6 @@ protected:
    WaveCache    *mWaveCache;
    ODLock       mWaveCacheMutex;
    SpecCache    *mSpecCache;
-#ifdef EXPERIMENTAL_USE_REALFFTF
-   // Variables used for computing the spectrum
-   HFFT          hFFT;
-   float         *mWindow;
-   int           mWindowType;
-   int           mWindowSize;
-#endif
    samplePtr     mAppendBuffer;
    sampleCount   mAppendBufferLen;
 

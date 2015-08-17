@@ -36,10 +36,10 @@
 
 // LLL, 09 Nov 2013:
 // Allow all WASAPI devices, not just loopback
-// Not in for Audacity 2.0.6:   #define EXPERIMENTAL_FULL_WASAPI
+#define EXPERIMENTAL_FULL_WASAPI
 
 // JKC (effect by Norm C, 02 Oct 2013)
-//#define EXPERIMENTAL_SCIENCE_FILTERS
+#define EXPERIMENTAL_SCIENCE_FILTERS
 
 // LLL, 01 Oct 2013:
 // new key assignment view for preferences
@@ -73,7 +73,12 @@
 // As a minimum, if this is turned on for a release,
 // it should have an easy mechanism to disable it at run-time, such as a menu item or a pref,
 // preferrably disabled until other work is done.  Martyn 22/12/2008.
+// 
+// All code removed after 2.1.0 release since it was unmaintained. LLL
 //#define EFFECT_CATEGORIES
+
+// JKC Apr 2015, Menu item to manage effects.
+#define EXPERIMENTAL_EFFECT_MANAGEMENT
 
 // Andreas Micheler, 20.Nov 2007:
 // A spectrumLogF-like view mode with notes quantization.
@@ -102,6 +107,12 @@
 // Won't build on Fedora 17 or Windows VC++, per http://bugzilla.audacityteam.org/show_bug.cgi?id=539.
 //#define EXPERIMENTAL_OD_FFMPEG 1
 
+// Paul Licameli (PRL) 5 Oct 2014
+#define EXPERIMENTAL_SPECTRAL_EDITING
+
+// Paul Licameli (PRL) 29 Nov 2014
+// #define EXPERIMENTAL_IMPROVED_SEEKING
+
 // Philip Van Baren 01 July 2009
 // Replace RealFFT() and PowerSpectrum function to use (faster) RealFFTf function
 #define EXPERIMENTAL_USE_REALFFTF
@@ -118,33 +129,6 @@
 //#define EXPERIMENTAL_SCOREALIGN
 #endif
 
-// experimental features
-#define EXPERIMENTAL_FEATURES // ANSWER ME: EXPERIMENTAL within EXPERIMENTAL?
-#ifdef EXPERIMENTAL_FEATURES
-   // The first experimental feature is a notebook that adds
-   // a tabbed divider to the project.
-   //#define EXPERIMENTAL_NOTEBOOK
-   // The notebook in turn can contain:
-   // 1. The Nyquist Inspector, which is a browser for the objects in
-   // Audacity.
-   //#define EXPERIMENTAL_NYQUIST_INSPECTOR
-   // 2. The Vocal Studio, a screen for working with vocal sounds
-   // particularly vowel sounds.
-   //#define EXPERIMENTAL_VOCAL_STUDIO
-   // 3. The Audacity Tester is an extended version of the benchmarks
-   // display.  The crucial idea is to be able to compare waveforms
-   // where effects have been applied by audacity but using different
-   // block-sizes.  This should give high confidence that we don't
-   // suffer from end-effects on buffers, e.g. losing one sample on
-   // each buffer.
-   //#define EXPERIMENTAL_AUDACITY_TESTER
-
-   // A long term plan is to use dso's and dlls for Audacity extensions
-   // These are 'WX' plug ins that manage their own displays using
-   // wxWidgets.
-   //#define EXPERIMENTAL_WX_PLUG_INS
-#endif
-
 //If you want any of these files, ask JKC.  They are not
 //yet checked in to Audacity SVN as of 12-Feb-2010
 #ifdef EXPERIMENTAL_NOTEBOOK
@@ -157,9 +141,6 @@
    #include "NyquistAdapter.h"
 #endif
 
-#ifdef EXPERIMENTAL_AUDACITY_TESTER
-#endif
-
 #if USE_PORTMIXER
    //Automatically tries to find an acceptable input volume
    //#define AUTOMATED_INPUT_LEVEL_ADJUSTMENT
@@ -169,6 +150,58 @@
 // First committed by Martyn, 30th May 2013.
 //#define EXPERIMENTAL_OUTPUT_DISPLAY
 
-// Module prefs may be used to treat 'official' modules differently to 3rd party ones
-//#define EXPERIMENTAL_MODULE_PREFS
+// Module prefs provides a panel in prefs where users can choose which modules
+// to enable.
+#define EXPERIMENTAL_MODULE_PREFS
+
+// Define to include the effects rack (such as it is).
+//#define EXPERIMENTAL_EFFECTS_RACK
+
+// Define to make the meters look like a row of LEDs
+//#define EXPERIMENTAL_METER_LED_STYLE
+
+// Define to enable the device change handler
+//#define EXPERIMENTAL_DEVICE_CHANGE_HANDLER
+
+// Define for new noise reduction effect from Paul Licameli.
+#define EXPERIMENTAL_NOISE_REDUCTION
+
+// Define to enable Nyquist audio clip boundary control (Steve Daulton Dec 2014)
+#define EXPERIMENTAL_NYQUIST_SPLIT_CONTROL
+
+// Paul Licameli (PRL) 16 Apr 2015
+// Support for scrubbing in the AudioIO engine, without calls to it
+#define EXPERIMENTAL_SCRUBBING_SUPPORT
+#ifdef EXPERIMENTAL_SCRUBBING_SUPPORT
+   // The following enable parts of the scrubbing user interface.
+   #define EXPERIMENTAL_SCRUBBING_BASIC
+   #ifdef EXPERIMENTAL_SCRUBBING_BASIC
+      #define EXPERIMENTAL_SCRUBBING_SMOOTH_SCROLL
+      #define EXPERIMENTAL_SCRUBBING_SCROLL_WHEEL
+   #endif
+#endif
+
+// Paul Licameli (PRL) 24 May 2015
+// Allow scrolling up to one half of a screenful beyond either end of the project,
+// if you turn on the appropriate Tracks preference.
+// This allows smooth-scrolling scrub to work more reasonably at the ends.
+#define EXPERIMENTAL_SCROLLING_LIMITS
+
+// Paul Licameli (PRL) 28 May 2015
+// Draw negative numbers on the time ruler in a different color, when
+// scrolling past zero is enabled. Perhaps that lessens confusion.
+#define EXPERIMENTAL_TWO_TONE_TIME_RULER
+
+// Define to include crash reporting
+#define EXPERIMENTAL_CRASH_REPORT
+#if !defined(wxUSE_DEBUGREPORT) || !wxUSE_DEBUGREPORT
+#undef EXPERIMENTAL_CRASH_REPORT
+#endif
+
+// Paul Licameli (PRL) 31 May 2015
+// Zero-padding factor for spectrograms can smooth the display of spectrograms by
+// interpolating in frequency domain.
+#define EXPERIMENTAL_ZERO_PADDED_SPECTROGRAMS
+
+
 #endif

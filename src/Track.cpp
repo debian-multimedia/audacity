@@ -270,7 +270,7 @@ void Track::ReorderList(bool resize)
 }
 #endif
 
-bool Track::IsSyncLockSelected()
+bool Track::IsSyncLockSelected() const
 {
 #ifdef EXPERIMENTAL_SYNC_LOCK
    AudacityProject *p = GetActiveProject();
@@ -278,7 +278,7 @@ bool Track::IsSyncLockSelected()
       return false;
 
    SyncLockedTracksIterator git(mList);
-   Track *t = git.First(this);
+   Track *t = git.First(const_cast<Track*>(this));
 
    if (!t) {
       // Not in a sync-locked group.
@@ -700,8 +700,9 @@ Track *SyncLockedTracksIterator::Last(bool skiplinked)
 DEFINE_EVENT_TYPE(EVT_TRACKLIST_RESIZED);
 DEFINE_EVENT_TYPE(EVT_TRACKLIST_UPDATED);
 
-TrackList::TrackList()
+TrackList::TrackList(bool destructorDeletesTracks)
 :  wxEvtHandler()
+, mDestructorDeletesTracks(destructorDeletesTracks)
 {
    head = NULL;
    tail = NULL;
@@ -709,7 +710,7 @@ TrackList::TrackList()
 
 TrackList::~TrackList()
 {
-   Clear();
+   Clear(mDestructorDeletesTracks);
 }
 
 void TrackList::RecalcPositions(const TrackListNode *node)
@@ -1300,7 +1301,7 @@ double TrackList::GetMinOffset() const
 
    double len = node->t->GetOffset();
 
-   while ((node = node->next)) {
+   while ((node = node->next)!=NULL) {
       double l = node->t->GetOffset();
       if (l < len) {
          len = l;
@@ -1319,7 +1320,7 @@ double TrackList::GetStartTime() const
 
    double min = node->t->GetStartTime();
 
-   while ((node = node->next)) {
+   while ((node = node->next)!=NULL) {
       double l = node->t->GetStartTime();
       if (l < min) {
          min = l;
@@ -1338,7 +1339,7 @@ double TrackList::GetEndTime() const
 
    double max = node->t->GetEndTime();
 
-   while ((node = node->next)) {
+   while ((node = node->next)!=NULL) {
       double l = node->t->GetEndTime();
       if (l > max) {
          max = l;
