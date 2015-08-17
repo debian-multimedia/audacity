@@ -51,6 +51,7 @@
 #include <wx/dynarray.h>
 #include <wx/string.h>
 #include "ondemand/ODTaskThread.h"
+#include "SelectedRegion.h"
 
 class Track;
 class TrackList;
@@ -59,30 +60,32 @@ struct UndoStackElem {
    TrackList *tracks;
    wxString description;
    wxString shortDescription;
-   double sel0;
-   double sel1;
-   wxLongLong spaceUsage;
+   SelectedRegion selectedRegion;
 };
 
 WX_DEFINE_USER_EXPORTED_ARRAY(UndoStackElem *, UndoStack, class AUDACITY_DLL_API);
+// wxWidgets arrays have a base size and to use wxLongLong_t we need to use DOUBLE
+// to ensure we get a size big enough to hold a wxLongLong_t.
+WX_DEFINE_USER_EXPORTED_ARRAY_DOUBLE(wxLongLong_t, SpaceArray, class AUDACITY_DLL_API);
 
 // These flags control what extra to do on a PushState
-// Default is PUSH_AUTOSAVE | PUSH_CALC_SPACE
+// Default is PUSH_AUTOSAVE
 // Frequent/faster actions use PUSH_CONSOLIDATE
 const int PUSH_MINIMAL = 0;
 const int PUSH_CONSOLIDATE = 1;
-const int PUSH_CALC_SPACE = 2;
-const int PUSH_AUTOSAVE = 4;
+const int PUSH_AUTOSAVE = 2;
 
 class AUDACITY_DLL_API UndoManager {
  public:
    UndoManager();
    ~UndoManager();
 
-   void PushState(TrackList * l, double sel0, double sel1,
+   void PushState(TrackList * l,
+                  const SelectedRegion &selectedRegion,
                   wxString longDescription, wxString shortDescription,
-                  int flags = PUSH_CALC_SPACE|PUSH_AUTOSAVE );
-   void ModifyState(TrackList * l, double sel0, double sel1);
+                  int flags = PUSH_AUTOSAVE);
+   void ModifyState(TrackList * l,
+                    const SelectedRegion &selectedRegion);
    void ClearStates();
    void RemoveStates(int num);  // removes the 'num' oldest states
    void RemoveStateAt(int n);   // removes the n'th state (1 is oldest)
@@ -90,18 +93,20 @@ class AUDACITY_DLL_API UndoManager {
    unsigned int GetCurrentState();
 
    void GetShortDescription(unsigned int n, wxString *desc);
-   void GetLongDescription(unsigned int n, wxString *desc, wxString *size);
+   wxLongLong_t GetLongDescription(unsigned int n, wxString *desc, wxString *size);
    void SetLongDescription(unsigned int n, wxString desc);
 
-   TrackList *SetStateTo(unsigned int n, double *sel0, double *sel1);
-   TrackList *Undo(double *sel0, double *sel1);
-   TrackList *Redo(double *sel0, double *sel1);
+   TrackList *SetStateTo(unsigned int n, SelectedRegion *selectedRegion);
+   TrackList *Undo(SelectedRegion *selectedRegion);
+   TrackList *Redo(SelectedRegion *selectedRegion);
 
    bool UndoAvailable();
    bool RedoAvailable();
 
    bool UnsavedChanges();
    void StateSaved();
+
+   void CalculateSpaceUsage();
 
    // void Debug(); // currently unused
 
@@ -111,14 +116,14 @@ class AUDACITY_DLL_API UndoManager {
    void ResetODChangesFlag();
 
  private:
-   wxLongLong CalculateSpaceUsage(int index);
-
    int current;
    int saved;
    UndoStack stack;
 
    wxString lastAction;
    int consolidationCount;
+
+   SpaceArray space;
 
    bool mODChanges;
    ODLock mODChangesMutex;//mODChanges is accessed from many threads.

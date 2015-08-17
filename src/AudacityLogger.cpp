@@ -165,19 +165,22 @@ void AudacityLogger::Show(bool show)
 
    // This is the first use, so create the frame
    wxFrame *frame = new wxFrame(NULL, wxID_ANY, _("Audacity Log"));
+   frame->SetName(frame->GetTitle());
    frame->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_3DFACE));
 
    // loads either the XPM or the windows resource, depending on the platform
 #if !defined(__WXMAC__) && !defined(__WXX11__)
+   wxIcon *ic;
    #if defined(__WXMSW__)
-      wxIcon ic(wxICON(AudacityLogo));
+      ic = new wxIcon(wxICON(AudacityLogo));
    #elif defined(__WXGTK__)
-      wxIcon ic(wxICON(AudacityLogoAlpha));
+      ic = new wxIcon(wxICON(AudacityLogoAlpha));
    #else
-      wxIcon ic;
+      ic = new wxIcon();
       ic.CopyFromBitmap(theTheme.Bitmap(bmpAudacityLogo48x48));
    #endif
-   frame->SetIcon(ic);
+   frame->SetIcon(*ic);
+   delete ic;
 #endif
 
    // Log text
@@ -257,6 +260,13 @@ void AudacityLogger::Show(bool show)
    Flush();
 }
 
+#if defined(EXPERIMENTAL_CRASH_REPORT)
+wxString AudacityLogger::GetLog()
+{
+   return mBuffer;
+}
+#endif
+
 void AudacityLogger::OnCloseWindow(wxCloseEvent & WXUNUSED(e))
 {
 #if defined(__WXMAC__)
@@ -286,7 +296,7 @@ void AudacityLogger::OnSave(wxCommandEvent & WXUNUSED(e))
    wxString fName = _("log.txt");
 
    fName = FileSelector(_("Save log to:"),
-                        NULL,
+                        wxEmptyString,
                         fName,
                         wxT("txt"),
                         wxT("*.txt"),

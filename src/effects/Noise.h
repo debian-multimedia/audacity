@@ -6,115 +6,61 @@
 
   Dominic Mazzoni
 
-  An effect for the "Generator" menu to add white noise.
+  An effect to add white noise.
 
 **********************************************************************/
 
 #ifndef __AUDACITY_EFFECT_NOISE__
 #define __AUDACITY_EFFECT_NOISE__
 
-#include <wx/defs.h>
-#include <wx/intl.h>
+#include <wx/string.h>
 
-#include "Generator.h"
-#include "../widgets/TimeTextCtrl.h"
+#include "../ShuttleGui.h"
+#include "../widgets/NumericTextCtrl.h"
 
-class wxString;
-class wxChoice;
-class wxTextCtrl;
-class ShuttleGui;
+#include "Effect.h"
 
-#define __UNINITIALIZED__ (-1)
+#define NOISE_PLUGIN_SYMBOL XO("Noise")
 
-class WaveTrack;
+class EffectNoise : public Effect
+{
+public:
+   EffectNoise();
+   virtual ~EffectNoise();
 
+   // IdentInterface implementation
 
-class EffectNoise : public BlockGenerator {
+   virtual wxString GetSymbol();
+   virtual wxString GetDescription();
 
- public:
-   EffectNoise() {
-      SetEffectFlags(BUILTIN_EFFECT | INSERT_EFFECT);
-      noiseType = 0;
-      noiseAmplitude = 1.0;
-      y = z = buf0 = buf1 = buf2 = buf3 = buf4 = buf5 = buf6 = 0;
-   }
-   virtual bool Init();
+   // EffectIdentInterface implementation
 
-   virtual wxString GetEffectName() {
-      return wxString(_("Noise..."));
-   }
+   virtual EffectType GetType();
 
-   virtual std::set<wxString> GetEffectCategories() {
-      std::set<wxString> result;
-      result.insert(wxT("http://lv2plug.in/ns/lv2core#GeneratorPlugin"));
-      return result;
-   }
+   // EffectClientInterface implementation
 
-   virtual wxString GetEffectIdentifier() {
-      return wxString(wxT("Noise"));
-   }
+   virtual int GetAudioOutCount();
+   virtual sampleCount ProcessBlock(float **inBlock, float **outBlock, sampleCount blockLen);
+   virtual bool GetAutomationParameters(EffectAutomationParameters & parms);
+   virtual bool SetAutomationParameters(EffectAutomationParameters & parms);
 
-   virtual wxString GetEffectDescription() {
-      return wxString::Format(_("Applied effect: Generate Noise, %.6lf seconds"), mDuration);
-   }
+   // Effect implementation
 
-   virtual wxString GetEffectAction() {
-      return wxString(_("Generating Noise"));
-   }
+   virtual bool Startup();
+   virtual void PopulateOrExchange(ShuttleGui & S);
+   virtual bool TransferDataToWindow();
+   virtual bool TransferDataFromWindow();
 
-   virtual bool PromptUser();
-   virtual bool TransferParameters( Shuttle & shuttle );
+private:
+   // EffectNoise implementation
 
-   void GenerateBlock(float *data, const WaveTrack &track, sampleCount block);
-   void Success();
+private:
+   int mType;
+   double mAmp;
 
- private:
-   sampleCount numSamples;
-   int noiseType;
-   double noiseAmplitude;
    float y, z, buf0, buf1, buf2, buf3, buf4, buf5, buf6;
 
- protected:
-   virtual bool MakeNoise(float *buffer, sampleCount len, float fs, float amplitude);
-   //double mCurRate;
-
- // friendship ...
- friend class NoiseDialog;
-
-};
-
-//----------------------------------------------------------------------------
-// NoiseDialog
-//----------------------------------------------------------------------------
-
-// Declare window functions
-
-class NoiseDialog:public EffectDialog {
- public:
-   // constructors and destructors
-   NoiseDialog(EffectNoise * effect, wxWindow * parent, const wxString & title);
-
-   // method declarations
-   void PopulateOrExchange(ShuttleGui & S);
-   bool TransferDataToWindow();
-   bool TransferDataFromWindow();
-
- private:
-   void OnTimeCtrlUpdate(wxCommandEvent & event);
-   DECLARE_EVENT_TABLE()
-
- public:
-   double nRate;
-   double nTime;
-   wxArrayString *nTypeList;
-   double nDuration;
-   int nType;
-   double nAmplitude;
-   bool nIsSelection;
-
- private:
-   EffectNoise  *mEffect;
-   TimeTextCtrl *mNoiseDurationT;
+   NumericTextCtrl *mNoiseDurationT;
 };
 
 #endif

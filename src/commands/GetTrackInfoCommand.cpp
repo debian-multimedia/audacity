@@ -17,6 +17,7 @@
 *//*******************************************************************/
 
 #include "GetTrackInfoCommand.h"
+#include "../TrackPanel.h"
 #include "../Project.h"
 #include "../Track.h"
 #include "../WaveTrack.h"
@@ -76,7 +77,7 @@ bool GetTrackInfoCommand::Apply(CommandExecutionContext context)
    // Get the track indicated by the TrackIndex parameter
    // (Note: this ought to be somewhere else)
    long i = 0;
-   TrackListIterator iter(context.proj->GetTracks());
+   TrackListIterator iter(context.GetProject()->GetTracks());
    Track *t = iter.First();
    while (t && i != trackIndex)
    {
@@ -114,7 +115,7 @@ bool GetTrackInfoCommand::Apply(CommandExecutionContext context)
    }
    else if (mode.IsSameAs(wxT("Focused")))
    {
-      TrackPanel *panel = context.proj->GetTrackPanel();
+      TrackPanel *panel = context.GetProject()->GetTrackPanel();
       SendBooleanStatus(panel->GetFocusedTrack() == t);
    }
    else if (mode.IsSameAs(wxT("Selected")))

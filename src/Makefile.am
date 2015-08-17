@@ -54,6 +54,7 @@ audacity_CPPFLAGS = \
 	$(PORTAUDIO_CFLAGS) \
 	$(PORTMIXER_CFLAGS) \
 	$(SNDFILE_CFLAGS) \
+	$(SOXR_CFLAGS) \
 	$(WIDGETEXTRA_CFLAGS) \
 	$(WX_CXXFLAGS) \
 	$(NULL)
@@ -83,6 +84,7 @@ audacity_LDADD = \
 	$(PORTAUDIO_LIBS) \
 	$(PORTMIXER_LIBS) \
 	$(SNDFILE_LIBS) \
+	$(SOXR_LIBS) \
 	$(WIDGETEXTRA_LIBS) \
 	$(WX_LIBS) \
 	$(NULL)
@@ -101,6 +103,7 @@ audacity_SOURCES = \
 	AudacityLogger.h \
 	AudioIO.cpp \
 	AudioIO.h \
+	AudioIOListenerer.h \
 	AutoRecovery.cpp \
 	AutoRecovery.h \
 	BatchCommandDialog.cpp \
@@ -115,8 +118,12 @@ audacity_SOURCES = \
 	CaptureEvents.h \
 	Dependencies.cpp \
 	Dependencies.h \
+	DeviceChange.cpp \
+	DeviceChange.h \
 	DeviceManager.cpp \
 	DeviceManager.h \
+	Diags.cpp \
+	Diags.h \
 	Envelope.cpp \
 	Envelope.h \
 	Experimental.h \
@@ -149,8 +156,6 @@ audacity_SOURCES = \
 	Languages.h \
 	Legacy.cpp \
 	Legacy.h \
-	LoadModules.cpp \
-	LoadModules.h \
 	Lyrics.cpp \
 	Lyrics.h \
 	LyricsWindow.cpp \
@@ -164,6 +169,8 @@ audacity_SOURCES = \
 	Mix.h \
 	MixerBoard.cpp \
 	MixerBoard.h \
+	ModuleManager.cpp \
+	ModuleManager.h \
 	PitchName.cpp \
 	PitchName.h \
 	PlatformCompatibility.cpp \
@@ -182,10 +189,13 @@ audacity_SOURCES = \
 	RealFFTf48x.h \
 	Resample.cpp \
 	Resample.h \
+	RevisionIdent.h \
 	RingBuffer.cpp \
 	RingBuffer.h \
 	Screenshot.cpp \
 	Screenshot.h \
+	SelectedRegion.cpp \
+	SelectedRegion.h \
 	Shuttle.cpp \
 	Shuttle.h \
 	ShuttleGui.cpp \
@@ -223,6 +233,7 @@ audacity_SOURCES = \
 	TrackPanelAx.h \
 	UndoManager.cpp \
 	UndoManager.h \
+	ViewInfo.cpp \
 	ViewInfo.h \
 	VoiceKey.cpp \
 	VoiceKey.h \
@@ -313,10 +324,10 @@ audacity_SOURCES = \
 	effects/Echo.h \
 	effects/Effect.cpp \
 	effects/Effect.h \
-	effects/EffectCategory.cpp \
-	effects/EffectCategory.h \
 	effects/EffectManager.cpp \
 	effects/EffectManager.h \
+	effects/EffectRack.cpp \
+	effects/EffectRack.h \
 	effects/Equalization.cpp \
 	effects/Equalization.h \
 	effects/Equalization48x.cpp \
@@ -335,6 +346,8 @@ audacity_SOURCES = \
 	effects/LoadEffects.h \
 	effects/Noise.cpp \
 	effects/Noise.h \
+	effects/NoiseReduction.cpp \
+	effects/NoiseReduction.h \
 	effects/NoiseRemoval.cpp \
 	effects/NoiseRemoval.h \
 	effects/Normalize.cpp \
@@ -484,6 +497,9 @@ audacity_SOURCES = \
 	toolbars/MixerToolBar.h \
 	toolbars/SelectionBar.cpp \
 	toolbars/SelectionBar.h \
+	toolbars/SpectralSelectionBar.cpp \
+	toolbars/SpectralSelectionBar.h \
+	toolbars/SpectralSelectionBarListener.h \
 	toolbars/ToolBar.cpp \
 	toolbars/ToolBar.h \
 	toolbars/ToolDock.cpp \
@@ -524,14 +540,14 @@ audacity_SOURCES = \
 	widgets/Meter.h \
 	widgets/MultiDialog.cpp \
 	widgets/MultiDialog.h \
+	widgets/NumericTextCtrl.cpp \
+	widgets/NumericTextCtrl.h \
 	widgets/numformatter.cpp \
 	widgets/numformatter.h \
 	widgets/ProgressDialog.cpp \
 	widgets/ProgressDialog.h \
 	widgets/Ruler.cpp \
 	widgets/Ruler.h \
-	widgets/TimeTextCtrl.cpp \
-	widgets/TimeTextCtrl.h \
 	widgets/valnum.cpp \
 	widgets/valnum.h \
 	widgets/Warning.cpp \
@@ -546,8 +562,6 @@ if USE_AUDIO_UNITS
 audacity_CPPFLAGS += $(AUDIOUNITS_CFLAGS)
 audacity_LDADD += $(AUDIOUNITS_LIBS)
 audacity_SOURCES += \
-	effects/audiounits/LoadAudioUnits.cpp \
-	effects/audiounits/LoadAudioUnits.h \
 	effects/audiounits/AudioUnitEffect.cpp \
 	effects/audiounits/AudioUnitEffect.h \
 	$(NULL)
@@ -582,8 +596,6 @@ audacity_SOURCES += \
 	effects/ladspa/ladspa.h \
 	effects/ladspa/LadspaEffect.cpp \
 	effects/ladspa/LadspaEffect.h \
-	effects/ladspa/LoadLadspa.cpp \
-	effects/ladspa/LoadLadspa.h \
 	$(NULL)
 endif
 
@@ -627,11 +639,6 @@ audacity_CPPFLAGS += $(SOUNDTOUCH_CFLAGS)
 audacity_LDADD += $(SOUNDTOUCH_LIBS)
 endif
 
-if USE_LIBSOXR
-audacity_CPPFLAGS += $(SOXR_CFLAGS)
-audacity_LDADD += $(SOXR_LIBS)
-endif
-
 if USE_LIBTWOLAME
 audacity_CPPFLAGS += $(LIBTWOLAME_CFLAGS)
 audacity_LDADD += $(LIBTWOLAME_LIBS)
@@ -650,11 +657,6 @@ audacity_SOURCES += \
 	effects/lv2/LoadLV2.h \
 	effects/lv2/LV2Effect.cpp \
 	effects/lv2/LV2Effect.h \
-	effects/lv2/lv2_event.h \
-	effects/lv2/lv2_event_helpers.h \
-	effects/lv2/LV2PortGroup.cpp \
-	effects/lv2/LV2PortGroup.h \
-	effects/lv2/lv2_uri_map.h \
 	$(NULL)
 endif
 

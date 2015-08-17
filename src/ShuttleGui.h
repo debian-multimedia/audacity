@@ -17,6 +17,7 @@
 #include "Audacity.h"
 
 #include <wx/grid.h>
+#include <wx/sizer.h>
 #include <wx/string.h>
 
 #include "WrappedType.h"
@@ -131,8 +132,8 @@ public:
 
    wxNotebook * StartNotebook();
    void EndNotebook();
-   wxNotebookPage * StartNotebookPage( const wxString Name );
-   void StartNotebookPage( const wxString Name, wxNotebookPage * pPage );
+   wxNotebookPage * StartNotebookPage( const wxString & Name );
+   void StartNotebookPage( const wxString & Name, wxNotebookPage * pPage );
    void EndNotebookPage();
    wxPanel * StartInvisiblePanel();
    void EndInvisiblePanel();
@@ -176,6 +177,7 @@ public:
 
    wxSlider * TieSlider( const wxString &Prompt, WrappedType & WrappedRef, const int max, const int min = 0 );
    wxSlider * TieSlider( const wxString &Prompt, int &pos, const int max, const int min = 0);
+   wxSlider * TieSlider( const wxString &Prompt, double &pos, const double max, const double min = 0.0);
    wxSlider * TieSlider( const wxString &Prompt, float &pos, const float fMin, const float fMax);
    wxSlider * TieVSlider( const wxString &Prompt, float &pos, const float fMin, const float fMax);
 
@@ -259,6 +261,8 @@ public:
    int GetId() {return miIdNext;};
    void UseUpId();
 
+   wxSizer * GetSizer() {return mpSizer;};
+
 protected:
    void SetProportions( int Default );
    void PushSizer();
@@ -334,21 +338,24 @@ enum
    eHelpButton    = 0x0010,
    ePreviewButton = 0x0020,
    eDebugButton   = 0x0040,
-   eDefaultsButton= 0x0080,
-   ePreviewDryButton  = 0x0100
+   eSettingsButton= 0x0080,
+   ePreviewDryButton  = 0x0100,
+   eApplyButton   = 0x0200,
+   eCloseButton   = 0x0400,
 };
 
 enum
 {
    ePreviewID     = wxID_LOWEST - 1,
    eDebugID       = wxID_LOWEST - 2,
-   eDefaultsID    = wxID_LOWEST - 3,
-   ePreviewDryID  = wxID_LOWEST - 4
+   eSettingsID    = wxID_LOWEST - 3,
+   ePreviewDryID  = wxID_LOWEST - 4,
+   eCloseID       = wxID_CANCEL
 };
 
 AUDACITY_DLL_API wxSizer *CreateStdButtonSizer( wxWindow *parent,
                                long buttons = eOkButton | eCancelButton,
-                               wxButton *extra = NULL );
+                               wxWindow *extra = NULL );
 
 // ShuttleGui extends ShuttleGuiBase with Audacity specific extensions.
 class AUDACITY_DLL_API ShuttleGui : public ShuttleGuiBase
@@ -365,8 +372,8 @@ public:
    RulerPanel * AddRulerVertical( float low, float hi, const wxString & Units );
    AttachableScrollBar * AddAttachableScrollBar( long style = wxSB_HORIZONTAL );
    void AddStandardButtons( long buttons = eOkButton | eCancelButton, wxButton *extra = NULL );
-   void AddSpace( int width, int height );
-   void AddSpace( int size ) { AddSpace( size, size ); };
+   wxSizerItem * AddSpace( int width, int height );
+   wxSizerItem * AddSpace( int size ) { return AddSpace( size, size ); };
    int GetBorder() { return miBorder; };
 
    void SetSizeHints( int minX = -1, int minY = -1 );
@@ -374,5 +381,7 @@ public:
    void SetSizeHints( const wxArrayInt & items );
    static void SetSizeHints( wxWindow *window, const wxArrayString & items );
    static void SetSizeHints( wxWindow *window, const wxArrayInt & items );
+
+   teShuttleMode GetMode() { return  mShuttleMode; };
 };
 #endif

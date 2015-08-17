@@ -9,8 +9,6 @@
 #ifndef __AUDACITY_CONTRAST_DIALOG__
 #define __AUDACITY_CONTRAST_DIALOG__
 
-#include "../widgets/TimeTextCtrl.h"
-
 #include <wx/dialog.h>
 #include <wx/slider.h>
 
@@ -19,10 +17,8 @@ class wxSizer;
 class wxString;
 
 class Envelope;
+class NumericTextCtrl;
 class WaveTrack;
-
-void InitContrastDialog(wxWindow * parent);
-void CloseContrastDialog();
 
 //----------------------------------------------------------------------------
 // ContrastDialog
@@ -48,10 +44,10 @@ public:
    wxButton * m_pButton_Reset;
    wxButton * m_pButton_Close;
 
-   TimeTextCtrl *mForegroundStartT;
-   TimeTextCtrl *mForegroundEndT;
-   TimeTextCtrl *mBackgroundStartT;
-   TimeTextCtrl *mBackgroundEndT;
+   NumericTextCtrl *mForegroundStartT;
+   NumericTextCtrl *mForegroundEndT;
+   NumericTextCtrl *mBackgroundStartT;
+   NumericTextCtrl *mBackgroundEndT;
 
    bool bFGset;
    bool bBGset;

@@ -21,6 +21,7 @@
 #include <wx/sizer.h>
 #include <wx/string.h>
 
+#include "widgets/NumericTextCtrl.h"
 #include "ShuttleGui.h"
 #include "TimeDialog.h"
 
@@ -41,6 +42,7 @@ TimeDialog::TimeDialog(wxWindow *parent,
    mTime(time),
    mTimeCtrl(NULL)
 {
+   SetName(GetTitle());
    ShuttleGui S(this, eIsCreating);
    PopulateOrExchange(S);
 }
@@ -53,7 +55,8 @@ void TimeDialog::PopulateOrExchange(ShuttleGui &S)
       S.StartStatic(mPrompt, true);
       {
          mTimeCtrl = new
-            TimeTextCtrl(this,
+            NumericTextCtrl(
+               NumericConverter::TIME, this,
                          wxID_ANY,
                          mFormat,
                          mTime,
@@ -82,7 +85,7 @@ bool TimeDialog::TransferDataToWindow()
 {
    mTimeCtrl->SetFormatString(mTimeCtrl->GetBuiltinFormat(mFormat));
    mTimeCtrl->SetSampleRate(mRate);
-   mTimeCtrl->SetTimeValue(mTime);
+   mTimeCtrl->SetValue(mTime);
    mTimeCtrl->SetFocus();
 
    return true;
@@ -90,7 +93,7 @@ bool TimeDialog::TransferDataToWindow()
 
 bool TimeDialog::TransferDataFromWindow()
 {
-   mTime = mTimeCtrl->GetTimeValue();
+   mTime = mTimeCtrl->GetValue();
 
    return true;
 }

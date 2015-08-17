@@ -33,6 +33,7 @@
 *//********************************************************************/
 
 #include "../Audacity.h"
+#include "../Experimental.h"
 
 #include <wx/defs.h>
 #include <wx/intl.h>
@@ -103,7 +104,23 @@ void MousePrefs::CreateList()
    AddItem(_("Left-Drag"),         _("Select"),   _("Set Selection Range"));
    AddItem(_("Shift-Left-Click"),  _("Select"),   _("Extend Selection Range"));
    AddItem(_("Left-Double-Click"), _("Select"),   _("Select Clip or Entire Track"));
-   AddItem(_("Ctrl-Left-Click"),   _("Select"),   _("Set Selection Point and Play"));
+#ifdef EXPERIMENTAL_SCRUBBING_BASIC
+   AddItem(_("Ctrl-Left-Click"),    _("Select"),  _("Scrub"));
+   AddItem(_("Ctrl-Left-Drag"),     _("Select"),  _("Seek"));
+#endif
+#ifdef EXPERIMENTAL_SCRUBBING_SMOOTH_SCROLL
+   AddItem(_("Ctrl-Left-Double-Click"), _("Select"), _("Scroll-scrub"));
+#endif
+#ifdef EXPERIMENTAL_SCRUBBING_SCROLL_WHEEL
+   AddItem(_("Wheel-Rotate"),      _("Select"),   _("Change scrub speed"));
+#endif
+
+#ifdef EXPERIMENTAL_SPECTRAL_EDITING
+   // JKC: Prompt is disabled for now.  It's a toggle rather than a drag modifier.
+   // more like Snap-to than anything else.
+   // Spectral selection
+   // AddItem(_("ESC"),              _("Select"),    _("Toggle center snapping in spectrogram"));
+#endif
 
    AddItem(_("Left-Click"),       _("Zoom"),      _("Zoom in on Point"));
    AddItem(_("Left-Drag"),        _("Zoom"),      _("Zoom in on a Range"), _("same as right-drag"));
@@ -130,6 +147,13 @@ void MousePrefs::CreateList()
    AddItem(_("Left-Drag"),        _("Multi"),     _("Set Selection Range"), _("same as select tool"));
    AddItem(_("Right-Click"),      _("Multi"),     _("Zoom out one step"),   _("same as zoom tool"));
    AddItem(_("Right-Drag"),       _("Multi"),     _("Zoom in on a Range"),  _("same as zoom tool"));
+
+#ifdef EXPERIMENTAL_SPECTRAL_EDITING
+   // JKC: Prompt is disabled for now.  It's a toggle rather than a drag modifier.
+   // more like Snap-to than anything else.
+   // Spectral selection
+   // AddItem(_("ESC"),              _("Select"),    _("Toggle center snapping in spectrogram"), _("same as select tool"));
+#endif
 
    AddItem(_("Wheel-Rotate"),      _("Any"),      _("Scroll up or down"));
    AddItem(_("Shift-Wheel-Rotate"),_("Any"),      _("Scroll left or right"));

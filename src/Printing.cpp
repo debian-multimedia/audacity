@@ -81,12 +81,12 @@ bool AudacityPrintout::OnPrintPage(int WXUNUSED(page))
    artist.SetBackgroundBrushes(*wxWHITE_BRUSH, *wxWHITE_BRUSH,
                                *wxWHITE_PEN, *wxWHITE_PEN);
    ViewInfo viewInfo;
-   viewInfo.sel0 = viewInfo.sel1 = 0;
+   viewInfo.selectedRegion = SelectedRegion();
    viewInfo.vpos = 0;
    viewInfo.h = 0.0;
    viewInfo.screen = mTracks->GetEndTime() - viewInfo.h;
    viewInfo.total = viewInfo.screen;
-   viewInfo.zoom = viewInfo.lastZoom = width / viewInfo.screen;
+   viewInfo.zoom = width / viewInfo.screen;
    int y = rulerPageHeight;
 
    TrackListIterator iter(mTracks);

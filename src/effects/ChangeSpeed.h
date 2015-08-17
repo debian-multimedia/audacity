@@ -13,56 +13,76 @@
 #ifndef __AUDACITY_EFFECT_CHANGESPEED__
 #define __AUDACITY_EFFECT_CHANGESPEED__
 
-#include "Effect.h"
-#include "../Resample.h"
-
 #include <wx/choice.h>
-#include <wx/dialog.h>
-#include <wx/intl.h>
+#include <wx/event.h>
 #include <wx/slider.h>
 #include <wx/string.h>
 #include <wx/textctrl.h>
 
+#include "../ShuttleGui.h"
+#include "../Track.h"
+#include "../WaveTrack.h"
+#include "../widgets/NumericTextCtrl.h"
+
+#include "Effect.h"
+
+#define CHANGESPEED_PLUGIN_SYMBOL XO("Change Speed")
+
 class EffectChangeSpeed : public Effect
 {
- public:
+public:
    EffectChangeSpeed();
+   virtual ~EffectChangeSpeed();
 
-   virtual wxString GetEffectName() {
-      return wxString(_("Change Speed..."));
-   }
+   // IdentInterface implementation
 
-   virtual std::set<wxString> GetEffectCategories() {
-      std::set<wxString> result;
-      result.insert(wxT("http://audacityteam.org/namespace#PitchAndTempo"));
-      return result;
-   }
+   virtual wxString GetSymbol();
+   virtual wxString GetDescription();
 
-   virtual wxString GetEffectIdentifier() {
-      return wxString(wxT("ChangeSpeed"));
-   }
+   // EffectIdentInterface implementation
 
-   virtual wxString GetEffectAction() {
-      return wxString(_("Changing Speed"));
-   }
+   virtual EffectType GetType();
 
-   // Useful only after PromptUser values have been set.
-   virtual wxString GetEffectDescription();
+   // EffectClientInterface implementation
 
-   double CalcPreviewInputLength(double previewLength);
+   virtual bool GetAutomationParameters(EffectAutomationParameters & parms);
+   virtual bool SetAutomationParameters(EffectAutomationParameters & parms);
+   virtual bool LoadFactoryDefaults();
 
- protected:
-   virtual bool PromptUser();
-   virtual bool TransferParameters( Shuttle & shuttle );
+   // Effect implementation
 
-   virtual bool CheckWhetherSkipEffect() { return (m_PercentChange == 0.0); }
+   virtual bool CheckWhetherSkipEffect();
+   virtual double CalcPreviewInputLength(double previewLength);
+   virtual bool Startup();
+   virtual bool Init();
    virtual bool Process();
+   virtual void PopulateOrExchange(ShuttleGui & S);
+   virtual bool TransferDataFromWindow();
+   virtual bool TransferDataToWindow();
 
- private:
-   bool ProcessOne(WaveTrack * t, sampleCount start, sampleCount end);
+private:
+   // EffectChangeSpeed implementation
+
+   bool ProcessOne(WaveTrack *t, sampleCount start, sampleCount end);
    bool ProcessLabelTrack(Track *t);
 
- private:
+   // handlers
+   void OnText_PercentChange(wxCommandEvent & evt);
+   void OnText_Multiplier(wxCommandEvent & evt);
+   void OnSlider_PercentChange(wxCommandEvent & evt);
+   void OnChoice_Vinyl(wxCommandEvent & evt);
+   void OnTimeCtrl_ToLength(wxCommandEvent & evt);
+   void OnTimeCtrlUpdate(wxCommandEvent & evt);
+
+   // helper functions
+   void Update_Text_PercentChange();   // Update control per current m_PercentChange.
+   void Update_Text_Multiplier();      // Update control per current m_PercentChange.
+   void Update_Slider_PercentChange(); // Update control per current m_PercentChange.
+   void Update_Vinyl();                // Update Vinyl controls for new percent change.
+   void Update_TimeCtrl_ToLength();    // Update target length controls for new percent change.
+   void UpdateUI();                    // Enable / disable OK / preview.
+
+private:
    // track related
    int    mCurTrackNum;
    double mMaxNewLength;
@@ -74,60 +94,29 @@ class EffectChangeSpeed : public Effect
                               // -100% is meaningless, but sky's the upper limit.
                               // Slider is (-100, 200], but textCtrls can set higher.
    int      mFromVinyl;       // from standard vinyl speed (RPM) enum
-   int      mToVinyl;         // to standard vinyl speed (RPM) enum
    double   mFactor;          // scale factor calculated from percent change
+   double   mFromLength;      // current selection length
+   int      mTimeCtrlFormat;  // time control format index number
+   double   mMultiplier;
 
-friend class ChangeSpeedDialog;
-};
-
-
-class ChangeSpeedDialog : public EffectDialog
-{
- public:
-   ChangeSpeedDialog(EffectChangeSpeed * effect,
-                     wxWindow * parent);
-
-   void PopulateOrExchange(ShuttleGui& S);
-   bool TransferDataToWindow();
-   bool TransferDataFromWindow();
-
- private:
-   // handlers
-   void OnText_PercentChange(wxCommandEvent & event);
-   void OnSlider_PercentChange(wxCommandEvent & event);
-   void OnChoice_FromVinyl(wxCommandEvent & event);
-   void OnChoice_ToVinyl(wxCommandEvent & event);
-
-   void OnPreview(wxCommandEvent &event);
-
-   // helper fns
-   void Update_Text_PercentChange();   // Update control per current m_PercentChange.
-   void Update_Slider_PercentChange(); // Update control per current m_PercentChange.
-   void Update_Vinyl();                // Update Vinyl controls for new percent change.
-   void Update_PercentChange();        // Update percent change controls for new Vinyl values.
-
- private:
-   EffectChangeSpeed * mEffect;
    bool mbLoopDetect;
 
    // controls
-   wxTextCtrl *	mpTextCtrl_PercentChange;
-   wxSlider *		mpSlider_PercentChange;
-   wxChoice *		mpChoice_FromVinyl;
-   wxChoice *		mpChoice_ToVinyl;
+   wxTextCtrl *      mpTextCtrl_PercentChange;
+   wxTextCtrl *      mpTextCtrl_Multiplier;
+   wxSlider *        mpSlider_PercentChange;
+   wxChoice *        mpChoice_FromVinyl;
+   wxChoice *        mpChoice_ToVinyl;
+   NumericTextCtrl * mpFromLengthCtrl;
+   NumericTextCtrl * mpToLengthCtrl;
+   double mRate;
 
- public:
-   // effect parameters
-   double   m_PercentChange;   // percent change to apply to tempo
-                              // -100% is meaningless, but sky's the upper limit.
-                              // Slider is (-100, 200], but textCtrls can set higher.
-   int      mFromVinyl;       // from standard vinyl speed (RPM)
-   int      mToVinyl;         // to standard vinyl speed (RPM)
+   // private effect parameters
+   int      mToVinyl;         // to standard vinyl speed (rpm)
+   double   mToLength;        // target length of selection
+   wxString mFormat;          // time control format
 
- private:
-   DECLARE_EVENT_TABLE()
+   DECLARE_EVENT_TABLE();
 };
 
-
 #endif // __AUDACITY_EFFECT_CHANGESPEED__
-

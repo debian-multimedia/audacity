@@ -1,14 +1,15 @@
 /**********************************************************************
 
    Audacity: A Digital Audio Editor
-   Audacity(R) is copyright (c) 1999-2011 Audacity Team.
+   Audacity(R) is copyright (c) 1999-2015 Audacity Team.
    License: GPL v2.  See License.txt.
 
    Audacity.h
 
    Dominic Mazzoni
    Joshua Haberman
-   et al
+   Vaughan Johnson
+   et alii
 
 ********************************************************************//*!
 
@@ -30,8 +31,8 @@
 
 // Increment as appropriate every time we release a new version.
 #define AUDACITY_VERSION   2
-#define AUDACITY_RELEASE   0
-#define AUDACITY_REVISION  6
+#define AUDACITY_RELEASE   1
+#define AUDACITY_REVISION  1
 #define AUDACITY_MODLEVEL  0
 
 #if IS_ALPHA
@@ -151,23 +152,10 @@ void QuitAudacity();
    #endif
 #endif
 
-// For compilers that support precompilation, includes "wx/wx.h".
-// Mainly for MSVC developers.
-//
-// This precompilation is only done for non-unicode debug builds.
-// The rationale is that this is where there is the big time saving
-// because that's what you build whilst debugging.
-// Whilst disabling precompilation for other builds will ensure
-// that missing headers that would affect other platforms do get
-// seen by MSVC developers too.
-
-#ifndef UNICODE
-#ifdef __WXDEBUG__
-//#include <wx/wxprec.h>
-#endif
-#endif
-
 // This macro is used widely, so declared here.
 #define QUANTIZED_TIME(time, rate) ((double)((sampleCount)floor(((double)(time) * (rate)) + 0.5))) / (rate)
+
+// Marks strings for extraction only...must use wxGetTranslation() to translate.
+#define XO(s) wxT(s)
 
 #endif // __AUDACITY_H__

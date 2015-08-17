@@ -33,6 +33,7 @@
 
 
 #include "../Audacity.h"
+#include "ToolsToolBar.h"
 
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
@@ -46,33 +47,18 @@
 #include <wx/tooltip.h>
 
 #include "MeterToolBar.h"
-#include "ToolsToolBar.h"
 
 #include "../Prefs.h"
 #include "../AllThemeResources.h"
 #include "../ImageManipulation.h"
 #include "../Project.h"
+#ifdef EXPERIMENTAL_SCRUBBING_BASIC
+#include "../TrackPanel.h"
+#endif
 #include "../Theme.h"
 #include "../widgets/AButton.h"
 
 IMPLEMENT_CLASS(ToolsToolBar, ToolBar);
-
-// Strings to convert a tool number into a status message
-// These MUST be in the same order as the ids above.
-static const wxChar * MessageOfTool[numTools] = {
-   wxTRANSLATE("Click and drag to select audio"),
-   wxTRANSLATE("Click and drag to edit the amplitude envelope"),
-   wxTRANSLATE("Click and drag to edit the samples"),
-#if defined( __WXMAC__ )
-   wxTRANSLATE("Click to Zoom In, Shift-Click to Zoom Out"),
-#elif defined( __WXMSW__ )
-   wxTRANSLATE("Drag to Zoom Into Region, Right-Click to Zoom Out"),
-#elif defined( __WXGTK__ )
-   wxTRANSLATE("Left=Zoom In, Right=Zoom Out, Middle=Normal"),
-#endif
-   wxTRANSLATE("Click and drag to move a track in time"),
-   wxT("") // multi-mode tool
-};
 
 ////////////////////////////////////////////////////////////
 /// Methods for ToolsToolBar
@@ -96,17 +82,34 @@ ToolsToolBar::ToolsToolBar()
    wxASSERT( zoomTool     == zoomTool     - firstTool );
    wxASSERT( drawTool     == drawTool     - firstTool );
    wxASSERT( multiTool    == multiTool    - firstTool );
-}
 
-ToolsToolBar::~ToolsToolBar()
-{
-   for (int i = 0; i < 5; i++)
-      delete mTool[i];
-}
+   {
+#ifdef EXPERIMENTAL_SCRUBBING_BASIC
 
-void ToolsToolBar::Create(wxWindow * parent)
-{
-   ToolBar::Create(parent);
+      mMessageOfTool[selectTool] =
+#if defined(__WXMAC__)
+         _("Click and drag to select audio, Command-Click to scrub, Command-Double-Click to scroll-scrub, Command-drag to seek")
+#else
+         _("Click and drag to select audio, Ctrl-Click to scrub, Ctrl-Double-Click to scroll-scrub, Ctrl-drag to seek")
+#endif
+         ;
+
+#else
+      mMessageOfTool[selectTool] = _("Click and drag to select audio");
+#endif
+   }
+
+   mMessageOfTool[envelopeTool] = _("Click and drag to edit the amplitude envelope");
+   mMessageOfTool[drawTool] = _("Click and drag to edit the samples");
+#if defined( __WXMAC__ )
+   mMessageOfTool[zoomTool] = _("Click to Zoom In, Shift-Click to Zoom Out");
+#elif defined( __WXMSW__ )
+   mMessageOfTool[zoomTool] = _("Drag to Zoom Into Region, Right-Click to Zoom Out");
+#elif defined( __WXGTK__ )
+   mMessageOfTool[zoomTool] = _("Left=Zoom In, Right=Zoom Out, Middle=Normal");
+#endif
+   mMessageOfTool[slideTool] = _("Click and drag to move a track in time");
+   mMessageOfTool[multiTool] = wxT(""); // multi-mode tool
 
    bool multiToolActive = false;
    gPrefs->Read(wxT("/GUI/ToolBars/Tools/MultiToolActive"), &multiToolActive);
@@ -115,8 +118,12 @@ void ToolsToolBar::Create(wxWindow * parent)
       mCurrentTool = multiTool;
    else
       mCurrentTool = selectTool;
+}
 
-   mTool[mCurrentTool]->PushDown();
+ToolsToolBar::~ToolsToolBar()
+{
+   for (int i = 0; i < 5; i++)
+      delete mTool[i];
 }
 
 void ToolsToolBar::RegenerateToolsTooltips()
@@ -190,6 +197,8 @@ void ToolsToolBar::Populate()
    mTool[ slideTool    ] = MakeTool( bmpTimeShift, slideTool, _("Slide Tool") );
    mTool[ multiTool    ] = MakeTool( bmpMulti, multiTool, _("Multi Tool") );
 
+   mTool[mCurrentTool]->PushDown();
+
    RegenerateToolsTooltips();
 }
 
@@ -208,6 +217,18 @@ void ToolsToolBar::SetCurrentTool(int tool, bool show)
 {
    //In multi-mode the current tool is shown by the
    //cursor icon.  The buttons are not updated.
+
+#ifdef EXPERIMENTAL_SCRUBBING_BASIC
+   if (tool != selectTool) {
+      AudacityProject *p = GetActiveProject();
+      if (p) {
+         TrackPanel *tp = p->GetTrackPanel();
+         if (tp) {
+            tp->StopScrubbing();
+         }
+      }
+   }
+#endif
 
    bool leavingMulticlipMode =
       IsDown(multiTool) && show && tool != multiTool;
@@ -258,7 +279,8 @@ const wxChar * ToolsToolBar::GetMessageForTool( int ToolNumber )
 {
    wxASSERT( ToolNumber >= 0 );
    wxASSERT( ToolNumber < numTools );
-   return wxGetTranslation(MessageOfTool[ ToolNumber ]);
+
+   return mMessageOfTool[ToolNumber];
 }
 
 
@@ -270,6 +292,18 @@ void ToolsToolBar::OnTool(wxCommandEvent & evt)
          mTool[i]->PushDown();
       else
          mTool[i]->PopUp();
+
+#ifdef EXPERIMENTAL_SCRUBBING_BASIC
+   if (0 != mCurrentTool) {
+      AudacityProject *p = GetActiveProject();
+      if (p) {
+         TrackPanel *tp = p->GetTrackPanel();
+         if (tp) {
+            tp->StopScrubbing();
+         }
+      }
+   }
+#endif
 
    RedrawAllProjects();
 

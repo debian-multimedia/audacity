@@ -94,8 +94,6 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ac_c99_func_lrint.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libid3tag.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libmad.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libnyquist.m4 \
-	$(top_srcdir)/m4/audacity_checklib_libresample.m4 \
-	$(top_srcdir)/m4/audacity_checklib_libsamplerate.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libsbsms.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libsndfile.m4 \
 	$(top_srcdir)/m4/audacity_checklib_libsoundtouch.m4 \
@@ -267,8 +265,6 @@ LIBMAD_LIBS = @LIBMAD_LIBS@
 LIBNYQUIST_CFLAGS = @LIBNYQUIST_CFLAGS@
 LIBNYQUIST_LIBS = @LIBNYQUIST_LIBS@
 LIBOBJS = @LIBOBJS@
-LIBRESAMPLE_CFLAGS = @LIBRESAMPLE_CFLAGS@
-LIBRESAMPLE_LIBS = @LIBRESAMPLE_LIBS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIBTWOLAME_CFLAGS = @LIBTWOLAME_CFLAGS@
@@ -313,8 +309,6 @@ PORTSMF_LIBS = @PORTSMF_LIBS@
 POSUB = @POSUB@
 PRECOMP_CFLAGS = @PRECOMP_CFLAGS@
 RANLIB = @RANLIB@
-SAMPLERATE_CFLAGS = @SAMPLERATE_CFLAGS@
-SAMPLERATE_LIBS = @SAMPLERATE_LIBS@
 SBSMS_CFLAGS = @SBSMS_CFLAGS@
 SBSMS_LIBS = @SBSMS_LIBS@
 SED = @SED@
@@ -474,7 +468,6 @@ EXTRA_DIST = \
 	SliderThumb_VerticalDisabled.xpm \
 	$(NULL)
 
-CLEANFILES = icons/48x48/audacity.xpm
 all: all-am
 
 .SUFFIXES:
@@ -748,7 +741,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -851,11 +843,6 @@ uninstall-am: uninstall-dist_icons16DATA uninstall-dist_icons22DATA \
 	uninstall-dist_iconsscalableDATA uninstall-dist_pixmapDATA \
 	uninstall-pixmapDATA
 
-
-# Copy AudacityLogo48x48.xpm to icons/48x48/audacity.xpm
-# We could rename this file instead and adjust all locations.
-icons/48x48/audacity.xpm: AudacityLogo48x48.xpm
-	cp AudacityLogo48x48.xpm icons/48x48/audacity.xpm
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

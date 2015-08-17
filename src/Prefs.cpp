@@ -61,17 +61,9 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 
+#include "AudacityApp.h"
 #include "FileNames.h"
-
-#include "sndfile.h"
-
-#ifdef __WXMAC__
-#include <CoreServices/CoreServices.h>
-
-/* prototype of MoreFiles fn, included in wxMac already */
-pascal OSErr FSpGetFullPath(const FSSpec * spec,
-                            short *fullPathLength, Handle * fullPath);
-#endif
+#include "Languages.h"
 
 #include "Prefs.h"
 
@@ -148,57 +140,83 @@ void InitPreferences()
 
    wxConfigBase::Set(gPrefs);
 
-   static wxString resourcesDir;
-   resourcesDir = wxStandardPaths::Get().GetResourcesDir();
-   wxFileName fn;
-   fn = wxFileName( resourcesDir, wxT("resetPrefs.txt") );
-   if( fn.FileExists() )   // it will exist if the (win) installer put it there on request
+   bool resetPrefs = false;
+   wxString langCode = gPrefs->Read(wxT("/Locale/Language"), wxEmptyString);
+   bool writeLang = false;
+
+   wxFileName fn(wxStandardPaths::Get().GetResourcesDir(), wxT("FirstTime.ini"));
+   if (fn.FileExists())   // it will exist if the (win) installer put it there
    {
-      // pop up a dialogue
-      wxString prompt = _("Reset Preferences?\n\nThis is a one-time question, after an 'install' where you asked to have the Preferences reset.");
-      int action = wxMessageBox(prompt, _("Reset Audacity Preferences"),
-                                wxYES_NO, NULL);
-      if(action == wxYES)   // reset
+      wxFileConfig ini(wxEmptyString,
+                       wxEmptyString,
+                       fn.GetFullPath(),
+                       wxEmptyString,
+                       wxCONFIG_USE_LOCAL_FILE);
+
+      wxString lang;
+      if (ini.Read(wxT("/FromInno/Language"), &lang))
       {
-         gPrefs->DeleteAll();
-         gPrefs->Write(wxT("/NewPrefsInitialized"), true);
+         // Only change "langCode" if the language was actually specified in the ini file.
+         langCode = lang;
+         writeLang = true;
+
+         // Inno Setup doesn't allow special characters in the Name values, so "0" is used
+         // to represent the "@" character.
+         langCode.Replace(wxT("0"), wxT("@"));
       }
-      bool gone = wxRemoveFile(fn.GetFullPath());  // remove resetPrefs.txt
-      if(!gone)
+
+      ini.Read(wxT("/FromInno/ResetPrefs"), &resetPrefs, false);
+
+      bool gone = wxRemoveFile(fn.GetFullPath());  // remove FirstTime.ini
+      if (!gone)
       {
          wxString fileName = fn.GetFullPath();
          wxMessageBox(wxString::Format( _("Failed to remove %s"), fileName.c_str()), _("Failed!"));
       }
    }
 
-   // We introduced new file-based preferences in version 1.3.1; the
+   // Use the system default language if one wasn't specified or if the user selected System.
+   if (langCode.IsEmpty())
+   {
+      langCode = GetSystemLanguageCode();
+   }
+
+   // Initialize the language
+   wxGetApp().InitLang(langCode);
+
+   // User requested that the preferences be completely reset
+   if (resetPrefs)
+   {
+      // pop up a dialogue
+      wxString prompt = _("Reset Preferences?\n\nThis is a one-time question, after an 'install' where you asked to have the Preferences reset.");
+      int action = wxMessageBox(prompt, _("Reset Audacity Preferences"),
+                                wxYES_NO, NULL);
+      if (action == wxYES)   // reset
+      {
+         gPrefs->DeleteAll();
+         writeLang = true;
+      }
+   }
+
+   // Save the specified language
+   if (writeLang)
+   {
+      gPrefs->Write(wxT("/Locale/Language"), langCode);
+   }
+
+   // In AUdacity 2.1.0 support for the legacy 1.2.x preferences (depreciated since Audacity
+   // 1.3.1) is dropped. As a result we can drop the import flag
    // first time this version of Audacity is run we try to migrate
    // old preferences.
    bool newPrefsInitialized = false;
    gPrefs->Read(wxT("/NewPrefsInitialized"), &newPrefsInitialized, false);
-   if (!newPrefsInitialized) {
-      wxConfigBase *legacyConfig = new wxConfig(appName);
-      CopyEntriesRecursive(wxT("/"), legacyConfig, gPrefs);
-      delete legacyConfig;
-      gPrefs->Write(wxT("/NewPrefsInitialized"), true);
+   if (newPrefsInitialized) {
+      gPrefs->DeleteEntry(wxT("/NewPrefsInitialized"), true);  // take group as well if empty
    }
 
-   gPrefs->Write(wxT("/Version"), wxString(AUDACITY_VERSION_STRING));
-
-   // BG: Make sure the users prefs are up to date
-   // BG: Otherwise reset some of them to their defaults
-   wxString prefsversion;
-   prefsversion = gPrefs->Read(wxT("/PrefsVersion"), wxT(""));
-
-   if(prefsversion.CmpNoCase(wxString(wxT(AUDACITY_PREFS_VERSION_STRING))))
-   {
-      // BG: Reset the prefs by removing them
-      if(gPrefs->Exists(wxT("/Keyboard")))
-         gPrefs->DeleteGroup(wxT("/Keyboard"));
-      if(gPrefs->Exists(wxT("/Locale")))
-         gPrefs->DeleteGroup(wxT("/Locale"));
-      gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
-   }
+   // record the Prefs version for future checking (this has not been used for a very
+   // long time).
+   gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
 
    // Check if some prefs updates need to happen based on audacity version.
    // Unfortunately we can't use the PrefsVersion prefs key because that resets things.
@@ -230,6 +248,64 @@ void InitPreferences()
       }
    }
 
+   // In 2.1.0, the Meter toolbar was split and lengthened, but strange arrangements happen
+   // if upgrading due to the extra length.  So, if a user is upgrading, use the pre-2.1.0
+   // lengths, but still use the new split versions.
+   if (gPrefs->Exists(wxT("/GUI/ToolBars/Meter")) &&
+      !gPrefs->Exists(wxT("/GUI/ToolBars/CombinedMeter"))) {
+
+      // Read in all of the existing values
+      long dock, order, show, x, y, w, h;
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/Dock"), &dock, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/Order"), &order, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/Show"), &show, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/X"), &x, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/Y"), &y, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/W"), &w, -1);
+      gPrefs->Read(wxT("/GUI/ToolBars/Meter/H"), &h, -1);
+
+      // "Order" must be adjusted since we're inserting two new toolbars
+      if (dock > 0) {
+         wxString oldPath = gPrefs->GetPath();
+         gPrefs->SetPath(wxT("/GUI/ToolBars"));
+
+         wxString bar;
+         long ndx = 0;
+         bool cont = gPrefs->GetFirstGroup(bar, ndx);
+         while (cont) {
+            long o;
+            if (gPrefs->Read(bar + wxT("/Order"), &o) && o >= order) {
+               gPrefs->Write(bar + wxT("/Order"), o + 2);
+            }
+            cont = gPrefs->GetNextGroup(bar, ndx);
+         }
+         gPrefs->SetPath(oldPath);
+
+         // And override the height
+         h = 27;
+      }
+
+      // Write the split meter bar values
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/Dock"), dock);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/Order"), order);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/Show"), show);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/X"), -1);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/Y"), -1);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/W"), w);
+      gPrefs->Write(wxT("/GUI/ToolBars/RecordMeter/H"), h);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/Dock"), dock);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/Order"), order + 1);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/Show"), show);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/X"), -1);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/Y"), -1);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/W"), w);
+      gPrefs->Write(wxT("/GUI/ToolBars/PlayMeter/H"), h);
+
+      // And hide the old combined meter bar
+      gPrefs->Write(wxT("/GUI/ToolBars/Meter/Dock"), -1);
+   }
+
+   // write out the version numbers to the prefs file for future checking
    gPrefs->Write(wxT("/Version/Major"), AUDACITY_VERSION);
    gPrefs->Write(wxT("/Version/Minor"), AUDACITY_RELEASE);
    gPrefs->Write(wxT("/Version/Micro"), AUDACITY_REVISION);

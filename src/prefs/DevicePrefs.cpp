@@ -92,7 +92,7 @@ void DevicePrefs::GetNamesAndLabels()
    for (int i = 0; i < nDevices; i++) {
       const PaDeviceInfo *info = Pa_GetDeviceInfo(i);
       if (info->maxOutputChannels > 0 || info->maxInputChannels > 0) {
-         wxString name(Pa_GetHostApiInfo(info->hostApi)->name, wxConvLocal);
+         wxString name = wxSafeConvertMB2WX(Pa_GetHostApiInfo(info->hostApi)->name);
          if (mHostNames.Index(name) == wxNOT_FOUND) {
             mHostNames.Add(name);
             mHostLabels.Add(name);
@@ -112,7 +112,7 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(HostID);
-         mHost = S.TieChoice(_("&Host") + wxString(wxT(":")),
+         mHost = S.TieChoice(_("&Host:"),
                              wxT("/AudioIO/Host"),
                              wxT(""),
                              mHostNames,
@@ -120,7 +120,7 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
          S.SetSizeHints(mHostNames);
 
          S.AddPrompt(_("Using:"));
-         S.AddFixedText(wxString(Pa_GetVersionText(), wxConvLocal));
+         S.AddFixedText(wxString(wxSafeConvertMB2WX(Pa_GetVersionText())));
       }
       S.EndMultiColumn();
    }
@@ -131,7 +131,7 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(PlayID);
-         mPlay = S.AddChoice(_("&Device") + wxString(wxT(":")),
+         mPlay = S.AddChoice(_("&Device:"),
                              wxEmptyString,
                              &empty);
       }
@@ -144,12 +144,12 @@ void DevicePrefs::PopulateOrExchange(ShuttleGui & S)
       S.StartMultiColumn(2);
       {
          S.Id(RecordID);
-         mRecord = S.AddChoice(_("De&vice") + wxString(wxT(":")),
+         mRecord = S.AddChoice(_("De&vice:"),
                                wxEmptyString,
                                &empty);
 
          S.Id(ChannelsID);
-         mChannels = S.AddChoice(_("Cha&nnels") + wxString(wxT(":")),
+         mChannels = S.AddChoice(_("Cha&nnels:"),
                                  wxEmptyString,
                                  &empty);
       }
@@ -169,7 +169,7 @@ void DevicePrefs::OnHost(wxCommandEvent & e)
    wxString apiName = mHostNames[mHost->GetCurrentSelection()];
    int nHosts = Pa_GetHostApiCount();
    for (int i = 0; i < nHosts; ++i) {
-      wxString name(Pa_GetHostApiInfo(i)->name, wxConvLocal);
+      wxString name = wxSafeConvertMB2WX(Pa_GetHostApiInfo(i)->name);
       if (name == apiName) {
          index = i;
          break;
@@ -201,7 +201,7 @@ void DevicePrefs::OnHost(wxCommandEvent & e)
 
    recDevice = mRecordDevice;
    if (this->mRecordSource != wxT(""))
-      recDevice += wxString(": ", wxConvLocal) + mRecordSource;
+      recDevice += wxT(": ") + mRecordSource;
 
    mRecord->Clear();
    for (i = 0; i < inMaps.size(); i++) {

@@ -14,14 +14,17 @@
 
 **********************************************************************/
 
+#include "../Project.h"
 #include "../Prefs.h"
 
 #include "Generator.h"
 #include "TimeWarper.h"
 
+#include <memory>
+
 bool Generator::Process()
 {
-   if (mDuration < 0.0)
+   if (GetDuration() < 0.0)
       return false;
 
 
@@ -47,7 +50,7 @@ bool Generator::Process()
          //make sure there's room.
          if (!editClipCanMove &&
              track->IsEmpty(mT0, mT1+1.0/track->GetRate()) &&
-             !track->IsEmpty(mT0, mT0+mDuration-(mT1-mT0)-1.0/track->GetRate()))
+             !track->IsEmpty(mT0, mT0+GetDuration()-(mT1-mT0)-1.0/track->GetRate()))
          {
             wxMessageBox(
                   _("There is not enough room available to generate the audio"),
@@ -56,24 +59,26 @@ bool Generator::Process()
             return false;
          }
 
-         if (mDuration > 0.0)
+         if (GetDuration() > 0.0)
          {
+            AudacityProject *p = GetActiveProject();
             // Create a temporary track
-            WaveTrack *tmp = mFactory->NewWaveTrack(track->GetSampleFormat(),
-                                                    track->GetRate());
+            std::auto_ptr<WaveTrack> tmp(
+               mFactory->NewWaveTrack(track->GetSampleFormat(),
+               track->GetRate())
+            );
             BeforeTrack(*track);
             BeforeGenerate();
 
             // Fill it with data
-            if (!GenerateTrack(tmp, *track, ntrack))
+            if (!GenerateTrack(&*tmp, *track, ntrack))
                bGoodResult = false;
             else {
                // Transfer the data from the temporary track to the actual one
                tmp->Flush();
-               SetTimeWarper(new StepTimeWarper(mT0+mDuration, mDuration-(mT1-mT0)));
-               bGoodResult = track->ClearAndPaste(mT0, mT1, tmp, true,
+               SetTimeWarper(new StepTimeWarper(mT0+GetDuration(), GetDuration()-(mT1-mT0)));
+               bGoodResult = track->ClearAndPaste(p->GetSel0(), p->GetSel1(), &*tmp, true,
                      false, GetTimeWarper());
-               delete tmp;
             }
 
             if (!bGoodResult) {
@@ -91,7 +96,7 @@ bool Generator::Process()
          ntrack++;
       }
       else if (t->IsSyncLockSelected()) {
-         t->SyncLockAdjust(mT1, mT0 + mDuration);
+         t->SyncLockAdjust(mT1, mT0 + GetDuration());
       }
       // Move on to the next track
       t = iter.Next();
@@ -101,7 +106,7 @@ bool Generator::Process()
 
    this->ReplaceProcessedTracks(bGoodResult);
 
-   mT1 = mT0 + mDuration; // Update selection.
+   mT1 = mT0 + GetDuration(); // Update selection.
 
    return true;
 }
@@ -111,7 +116,7 @@ bool BlockGenerator::GenerateTrack(WaveTrack *tmp,
                                    int ntrack)
 {
    bool bGoodResult = true;
-   numSamples = track.TimeToLongSamples(mDuration);
+   numSamples = track.TimeToLongSamples(GetDuration());
    sampleCount i = 0;
    float *data = new float[tmp->GetMaxBlockSize()];
    sampleCount block = 0;

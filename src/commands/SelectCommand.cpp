@@ -59,12 +59,12 @@ bool SelectCommand::Apply(CommandExecutionContext context)
    if (mode.IsSameAs(wxT("None")))
    {
       // select none
-      context.proj->OnSelectNone();
+      context.GetProject()->OnSelectNone();
    }
    else if (mode.IsSameAs(wxT("All")))
    {
       // select all
-      context.proj->OnSelectAll();
+      context.GetProject()->OnSelectAll();
    }
    else if (mode.IsSameAs(wxT("Range")))
    {
@@ -72,20 +72,28 @@ bool SelectCommand::Apply(CommandExecutionContext context)
       double t0 = GetDouble(wxT("StartTime"));
       double t1 = GetDouble(wxT("EndTime"));
 
-      TrackList *tracks = context.proj->GetTracks();
+      TrackList *tracks = context.GetProject()->GetTracks();
 
-      if (t0 < context.proj->GetTracks()->GetMinOffset())
+      if (t0 < context.GetProject()->GetTracks()->GetMinOffset())
       {
          Error(wxT("Start time is before start of track!"));
          return false;
       }
-      if (t1 > context.proj->GetTracks()->GetEndTime())
+      if (t1 > context.GetProject()->GetTracks()->GetEndTime())
       {
          Error(wxT("End time is after end of track!"));
          return false;
       }
-      context.proj->mViewInfo.sel0 = t0;
-      context.proj->mViewInfo.sel1 = t1;
+
+      // PRL: to do: only setting time boundaries of current selection.
+      // Should other fields be left alone, or rather
+      // defaulted, as in the second branch?
+      // Or should this command take more parameters?
+#if 1
+      context.GetProject()->mViewInfo.selectedRegion.setTimes(t0, t1);
+#else
+      context.GetProject()->mViewInfo.selectedRegion = SelectedRegion(t0, t1);
+#endif
 
       // select specified tracks
       long firstTrack = GetLong(wxT("FirstTrack"));
@@ -120,7 +128,7 @@ bool SelectCommand::Apply(CommandExecutionContext context)
    else if (mode.IsSameAs(wxT("Name")))
    {
       wxString name = GetString(wxT("TrackName"));
-      TrackList *tracks = context.proj->GetTracks();
+      TrackList *tracks = context.GetProject()->GetTracks();
       TrackListIterator iter(tracks);
       Track *t = iter.First();
       while (t) {

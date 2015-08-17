@@ -1,9 +1,12 @@
 ;nyquist plug-in
-;version 3
+;version 4
 ;type process
+;preview linear
 ;categories "http://lv2plug.in/ns/lv2core#LowpassPlugin"
 ;name "Low Pass Filter..."
 ;action "Performing Low Pass Filter..."
+;author "Dominic Mazzoni"
+;copyright "Released under terms of the GNU General Public License version 2"
 
 ;; lowpass.ny by Dominic Mazzoni
 ;; Modified by David R. Sky
@@ -11,7 +14,7 @@
 ;; Released under terms of the GNU General Public License version 2:
 ;; http://www.gnu.org/licenses/old-licenses/gpl-2.0.html .
 
-;; To enable the Q control, remove one semicolon from the start of lines 18 and 32
+;; To enable the Q control, remove one semicolon from the start of lines 20 and 34
 
 ;control rolloff "Rolloff (dB per octave)" choice "  6 dB,12 dB,24 dB,36 dB,48 dB" 0
 ;;control q "Filter quality (Q) for 12 dB rolloff" real "" 0.7071 .1 20
@@ -32,4 +35,4 @@
   (T 
     (funcall 
       (nth rolloff '(lp lowpass2 lowpass4 lowpass6 lowpass8))
-      s frequency)))
+      *track* frequency)))

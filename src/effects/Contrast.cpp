@@ -22,6 +22,7 @@
 #include "../FileNames.h"
 #include "../widgets/LinkingHtmlWindow.h"
 #include "../widgets/HelpSystem.h"
+#include "../widgets/NumericTextCtrl.h"
 #include "FileDialog.h"
 
 #include <math.h>
@@ -52,47 +53,6 @@
 
 #include "../PlatformCompatibility.h"
 
-static ContrastDialog *gContrastDialog = NULL;
-
-void InitContrastDialog(wxWindow * parent)
-{
-   if(!gContrastDialog)
-   {
-      wxPoint where;
-
-      where.x = 150;
-      where.y = 150;
-
-      gContrastDialog = new ContrastDialog(parent, -1, _("Contrast Analysis (WCAG 2 compliance)"), where);
-
-      gContrastDialog->bFGset = false;
-      gContrastDialog->bBGset = false;
-   }
-
-   // Zero dialog boxes.  Do we need to do this here?
-   if( !gContrastDialog->bFGset )
-   {
-      gContrastDialog->mForegroundStartT->SetTimeValue(0.0);
-      gContrastDialog->mForegroundEndT->SetTimeValue(0.0);
-   }
-   if( !gContrastDialog->bBGset )
-   {
-      gContrastDialog->mBackgroundStartT->SetTimeValue(0.0);
-      gContrastDialog->mBackgroundEndT->SetTimeValue(0.0);
-   }
-
-   gContrastDialog->CentreOnParent();
-   gContrastDialog->Show();
-}
-
-void CloseContrastDialog()
-{
-   if (gContrastDialog) {
-      delete gContrastDialog;
-      gContrastDialog = NULL;
-   }
-}
-
 float ContrastDialog::GetDB()
 {
    // FIXME: what if more than one track?
@@ -101,6 +61,12 @@ float ContrastDialog::GetDB()
    AudacityProject *p = GetActiveProject();
    TrackListOfKindIterator iter(Track::Wave, p->GetTracks());
    Track *t = iter.First();
+   if(!t)
+   {
+      wxMessageDialog m(NULL, _("No wave tracks exist."), _("Error"), wxOK);
+      m.ShowModal();
+      return 1234.0; // 'magic number', but the whole +ve dB range will 'almost' never occur
+   }
    if(mT0 > mT1)
    {
       wxMessageDialog m(NULL, _("Start time after end time!\nPlease enter reasonable times."), _("Error"), wxOK);
@@ -220,6 +186,8 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
   wxDialog(parent, id, title, pos, wxDefaultSize,
      wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMAXIMIZE_BOX )
 {
+   SetName(GetTitle());
+
    foregrounddB = 1234.0;
    backgrounddB = 1234.0;
 
@@ -239,7 +207,7 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
    S.SetBorder(5);
    S.StartHorizontalLay(wxCENTER, false);
    {
-      S.AddTitle(_("Contrast Analyzer, for measuring rms volume differences between two selections of audio."));
+      S.AddTitle(_("Contrast Analyzer, for measuring RMS volume differences between two selections of audio."));
    }
    S.EndHorizontalLay();
    S.StartStatic( _("Parameters") );
@@ -256,10 +224,10 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
 
          //Foreground
          S.AddFixedText(_("&Foreground:"), false);
-         if (mForegroundStartT == NULL)
+         if (S.GetMode() == eIsCreating)
          {
             mForegroundStartT = new
-            TimeTextCtrl(this,
+               NumericTextCtrl(NumericConverter::TIME, this,
                          ID_FOREGROUNDSTART_T,
                          _("hh:mm:ss + hundredths"),
                          0.0,
@@ -272,10 +240,10 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
          }
          S.AddWindow(mForegroundStartT);
 
-         if (mForegroundEndT == NULL)
+         if (S.GetMode() == eIsCreating)
          {
             mForegroundEndT = new
-            TimeTextCtrl(this,
+               NumericTextCtrl(NumericConverter::TIME, this,
                          ID_FOREGROUNDEND_T,
                          _("hh:mm:ss + hundredths"),
                          0.0,
@@ -294,10 +262,10 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
 
          //Background
          S.AddFixedText(_("&Background:"));
-         if (mBackgroundStartT == NULL)
+         if (S.GetMode() == eIsCreating)
          {
             mBackgroundStartT = new
-            TimeTextCtrl(this,
+               NumericTextCtrl(NumericConverter::TIME, this,
                          ID_BACKGROUNDSTART_T,
                          _("hh:mm:ss + hundredths"),
                          0.0,
@@ -310,10 +278,10 @@ ContrastDialog::ContrastDialog(wxWindow * parent, wxWindowID id,
          }
          S.AddWindow(mBackgroundStartT);
 
-         if (mBackgroundEndT == NULL)
+         if (S.GetMode() == eIsCreating)
          {
             mBackgroundEndT = new
-            TimeTextCtrl(this,
+               NumericTextCtrl(NumericConverter::TIME, this,
                          ID_BACKGROUNDEND_T,
                          _("hh:mm:ss + hundredths"),
                          0.0,
@@ -375,8 +343,8 @@ ContrastDialog::~ContrastDialog()
 
 void ContrastDialog::OnGetForegroundDB( wxCommandEvent & WXUNUSED(event))
 {
-   SetStartTime(mForegroundStartT->GetTimeValue());
-   SetEndTime(mForegroundEndT->GetTimeValue());
+   SetStartTime(mForegroundStartT->GetValue());
+   SetEndTime(mForegroundEndT->GetValue());
    foregrounddB = GetDB();
    m_pButton_UseCurrentF->SetFocus();
    results();
@@ -384,8 +352,8 @@ void ContrastDialog::OnGetForegroundDB( wxCommandEvent & WXUNUSED(event))
 
 void ContrastDialog::OnGetBackgroundDB( wxCommandEvent & WXUNUSED(event))
 {
-   SetStartTime(mBackgroundStartT->GetTimeValue());
-   SetEndTime(mBackgroundEndT->GetTimeValue());
+   SetStartTime(mBackgroundStartT->GetValue());
+   SetEndTime(mBackgroundEndT->GetValue());
    backgrounddB = GetDB();
    m_pButton_UseCurrentB->SetFocus();
    results();
@@ -410,8 +378,8 @@ void ContrastDialog::OnUseSelectionF(wxCommandEvent & event)
    Track *t = iter.First();
    while (t) {
       if (t->GetSelected() && t->GetKind() == Track::Wave) {
-         mForegroundStartT->SetTimeValue(p->mViewInfo.sel0);
-         mForegroundEndT->SetTimeValue(p->mViewInfo.sel1);
+         mForegroundStartT->SetValue(p->mViewInfo.selectedRegion.t0());
+         mForegroundEndT->SetValue(p->mViewInfo.selectedRegion.t1());
          break;
       }
       t = iter.Next();
@@ -427,8 +395,8 @@ void ContrastDialog::OnUseSelectionB(wxCommandEvent & event)
    Track *t = iter.First();
    while (t) {
       if (t->GetSelected() && t->GetKind() == Track::Wave) {
-         mBackgroundStartT->SetTimeValue(p->mViewInfo.sel0);
-         mBackgroundEndT->SetTimeValue(p->mViewInfo.sel1);
+         mBackgroundStartT->SetValue(p->mViewInfo.selectedRegion.t0());
+         mBackgroundEndT->SetValue(p->mViewInfo.selectedRegion.t1());
          break;
       }
       t = iter.Next();
@@ -478,7 +446,7 @@ void ContrastDialog::results()
          mDiffText->ChangeValue(wxString::Format(_("indeterminate")));
       else
          if( fabs(diffdB) != std::numeric_limits<float>::infinity() )
-            mDiffText->ChangeValue(wxString::Format(_("%.1f dB Average rms"), diffdB));
+            mDiffText->ChangeValue(wxString::Format(_("%.1f dB Average RMS"), diffdB));
          else
             mDiffText->ChangeValue(wxString::Format(_("infinite dB difference")));
    }
@@ -496,7 +464,7 @@ void ContrastDialog::OnExport(wxCommandEvent & WXUNUSED(event))
    wxString fName = wxT("contrast.txt");
 
    fName = FileSelector(_("Export Contrast Result As:"),
-                        NULL, fName, wxT("txt"), wxT("*.txt"), wxFD_SAVE | wxRESIZE_BORDER, this);
+                        wxEmptyString, fName, wxT("txt"), wxT("*.txt"), wxFD_SAVE | wxRESIZE_BORDER, this);
 
    if (fName == wxT(""))
       return;
@@ -521,42 +489,42 @@ void ContrastDialog::OnExport(wxCommandEvent & WXUNUSED(event))
    f.AddLine(wxString::Format(_("Filename = %s."), project->GetFileName().c_str() ));
    f.AddLine(wxT(""));
    f.AddLine(_("Foreground"));
-   float t = (float)mForegroundStartT->GetTimeValue();
+   float t = (float)mForegroundStartT->GetValue();
    int h = (int)(t/3600);  // there must be a standard function for this!
    int m = (int)((t - h*3600)/60);
    float s = t - h*3600.0 - m*60.0;
    f.AddLine(wxString::Format(_("Time started = %2d hour(s), %2d minute(s), %.2f seconds."), h, m, s ));
-   t = (float)mForegroundEndT->GetTimeValue();
+   t = (float)mForegroundEndT->GetValue();
    h = (int)(t/3600);
    m = (int)((t - h*3600)/60);
    s = t - h*3600.0 - m*60.0;
    f.AddLine(wxString::Format(_("Time ended = %2d hour(s), %2d minute(s), %.2f seconds."), h, m, s ));
    if(foregrounddB != 1234.0) // see other instances of '1234.0' in here
       if( fabs(foregrounddB) != std::numeric_limits<float>::infinity() )
-         f.AddLine(wxString::Format(_("Average rms = %.1f dB."), foregrounddB ));
+         f.AddLine(wxString::Format(_("Average RMS = %.1f dB."), foregrounddB ));
       else
-         f.AddLine(wxString::Format(_("Average rms = zero.") ));
+         f.AddLine(wxString::Format(_("Average RMS = zero.") ));
    else
-      f.AddLine(wxString::Format(_("Average rms =  dB.")));
+      f.AddLine(wxString::Format(_("Average RMS =  dB.")));
    f.AddLine(wxT(""));
    f.AddLine(_("Background"));
-   t = (float)mBackgroundStartT->GetTimeValue();
+   t = (float)mBackgroundStartT->GetValue();
    h = (int)(t/3600);
    m = (int)((t - h*3600)/60);
    s = t - h*3600.0 - m*60.0;
    f.AddLine(wxString::Format(_("Time started = %2d hour(s), %2d minute(s), %.2f seconds."), h, m, s ));
-   t = (float)mBackgroundEndT->GetTimeValue();
+   t = (float)mBackgroundEndT->GetValue();
    h = (int)(t/3600);
    m = (int)((t - h*3600)/60);
    s = t - h*3600.0 - m*60.0;
    f.AddLine(wxString::Format(_("Time ended = %2d hour(s), %2d minute(s), %.2f seconds."), h, m, s ));
    if(backgrounddB != 1234.0)
       if( fabs(backgrounddB) != std::numeric_limits<float>::infinity() )
-         f.AddLine(wxString::Format(_("Average rms = %.1f dB."), backgrounddB ));
+         f.AddLine(wxString::Format(_("Average RMS = %.1f dB."), backgrounddB ));
       else
-         f.AddLine(wxString::Format(_("Average rms = zero.") ));
+         f.AddLine(wxString::Format(_("Average RMS = zero.") ));
    else
-      f.AddLine(wxString::Format(_("Average rms =  dB.")));
+      f.AddLine(wxString::Format(_("Average RMS =  dB.")));
    f.AddLine(wxT(""));
    f.AddLine(_("Results"));
    float diffdB = foregrounddB - backgrounddB;
@@ -564,9 +532,9 @@ void ContrastDialog::OnExport(wxCommandEvent & WXUNUSED(event))
       f.AddLine(wxString::Format(_("Difference is indeterminate.") ));
    else
       if( fabs(diffdB) != std::numeric_limits<float>::infinity() )
-         f.AddLine(wxString::Format(_("Difference = %.1f Average rms dB."), diffdB ));
+         f.AddLine(wxString::Format(_("Difference = %.1f Average RMS dB."), diffdB ));
       else
-         f.AddLine(wxString::Format(_("Difference = infinite Average rms dB.")));
+         f.AddLine(wxString::Format(_("Difference = infinite Average RMS dB.")));
    if( diffdB > 20. )
       f.AddLine(_("Success Criteria 1.4.7 of WCAG 2.0: Pass"));
    else
@@ -603,10 +571,10 @@ void ContrastDialog::OnReset(wxCommandEvent & event)
    bFGset = false;
    bBGset = false;
 
-   mForegroundStartT->SetTimeValue(0.0);
-   mForegroundEndT->SetTimeValue(0.0);
-   mBackgroundStartT->SetTimeValue(0.0);
-   mBackgroundEndT->SetTimeValue(0.0);
+   mForegroundStartT->SetValue(0.0);
+   mForegroundEndT->SetValue(0.0);
+   mBackgroundStartT->SetValue(0.0);
+   mBackgroundEndT->SetValue(0.0);
 
    wxCommandEvent dummyEvt;
    OnGetForegroundDB(event);

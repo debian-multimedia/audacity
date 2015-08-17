@@ -18,6 +18,7 @@
 #include <wx/combobox.h>
 #include <wx/log.h>
 #include <wx/process.h>
+#include <wx/sizer.h>
 #include <wx/textctrl.h>
 #include <FileDialog.h>
 #include "Export.h"
@@ -64,6 +65,8 @@ ExportCLOptions::ExportCLOptions(wxWindow *parent)
 :  wxDialog(parent, wxID_ANY,
             wxString(_("Specify Command Line Encoder")))
 {
+   SetName(GetTitle());
+
    mHistory.Load(*gPrefs, wxT("/FileFormats/ExternalProgramHistory"));
 
    if (mHistory.GetCount() == 0) {
@@ -201,6 +204,11 @@ class ExportCLProcess : public wxProcess
 public:
    ExportCLProcess(wxString *output)
    {
+#if defined(__WXMAC__)
+      // Don't want to crash on broken pipe
+      signal(SIGPIPE, SIG_IGN);
+#endif
+
       mOutput = output;
       mActive = true;
       mStatus = -555;
@@ -358,6 +366,7 @@ int ExportCL::Export(AudacityProject *project,
                                     fName.c_str()));
       p->Detach();
       p->CloseOutput();
+
       return false;
    }
 
@@ -496,6 +505,7 @@ int ExportCL::Export(AudacityProject *project,
                    wxDefaultPosition,
                    wxSize(600, 400),
                    wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+      dlg.SetName(dlg.GetTitle());
 
       ShuttleGui S(&dlg, eIsCreating);
       S.AddTextWindow(cmd + wxT("\n\n") + output);

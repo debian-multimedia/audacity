@@ -78,6 +78,7 @@ of an LWSlider or ASlider.
 
 #include "../Experimental.h"
 #include "ASlider.h"
+#include "Ruler.h"
 
 #include "../AColor.h"
 #include "../ImageManipulation.h"
@@ -244,6 +245,7 @@ SliderDialog::SliderDialog(wxWindow * parent, wxWindowID id,
    wxDialog(parent,id,title,position),
    mStyle(style)
 {
+   SetName(GetTitle());
    ShuttleGui S(this, eIsCreating);
 
    S.StartVerticalLay();
@@ -881,6 +883,7 @@ void LWSlider::Draw()
       }
    }
 
+   dc->SelectObject(wxNullBitmap);
 
    // Must preceed creating the mask as that will attempt to
    // select the bitmap into another DC.
@@ -1070,7 +1073,9 @@ void LWSlider::OnMouseEvent(wxMouseEvent & event)
                event.ShiftDown());
       }
 
-      mParent->CaptureMouse();
+      if (!mParent->HasCapture()) {
+         mParent->CaptureMouse();
+      }
       // wxSetCursor(wxCURSOR_BLANK);
       ((TipPanel*)LWSlider::sharedTipPanel)->SetTargetParent(mParent);
       FormatPopWin();
@@ -1191,7 +1196,7 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
                nevent.SetDirection( !event.ShiftDown() );
                nevent.SetEventObject( mParent );
                nevent.SetCurrentFocus( mParent );
-               mParent->GetParent()->ProcessEvent( nevent );
+               mParent->GetParent()->GetEventHandler()->ProcessEvent(nevent);
             }
             break;
 
@@ -1203,7 +1208,7 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
                if (def && def->IsEnabled()) {
                   wxCommandEvent cevent(wxEVT_COMMAND_BUTTON_CLICKED,
                         def->GetId());
-                  mParent->ProcessEvent(cevent);
+                  mParent->GetEventHandler()->ProcessEvent(cevent);
                }
             }
 
@@ -1228,7 +1233,7 @@ void LWSlider::SendUpdate( float newValue )
    int intValue = (int)( ( mCurrentValue - mMinValue ) * 1000.0f /
                          ( mMaxValue - mMinValue ) );
    e.SetInt( intValue );
-   mParent->ProcessEvent( e );
+   mParent->GetEventHandler()->ProcessEvent(e);
 }
 
 int LWSlider::ValueToPosition(float val)

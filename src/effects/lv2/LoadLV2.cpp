@@ -24,6 +24,7 @@ Functions that find and load all LV2 plugins on the system.
 #include <iostream>
 
 #include <wx/dynlib.h>
+#include <wx/filename.h>
 #include <wx/hashmap.h>
 #include <wx/list.h>
 #include <wx/log.h>
@@ -35,192 +36,271 @@ Functions that find and load all LV2 plugins on the system.
 
 #include "LV2Effect.h"
 #include "lv2/lv2plug.in/ns/ext/event/event.h"
-#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
+#include "lv2/lv2plug.in/ns/ext/instance-access/instance-access.h"
 #include "lv2/lv2plug.in/ns/ext/port-groups/port-groups.h"
+#include "lv2/lv2plug.in/ns/ext/port-props/port-props.h"
 #include "lv2/lv2plug.in/ns/ext/uri-map/uri-map.h"
+#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
 
 #include "LoadLV2.h"
 
+// ============================================================================
+// Module registration entry point
+//
+// This is the symbol that Audacity looks for when the module is built as a
+// dynamic library.
+//
+// When the module is builtin to Audacity, we use the same function, but it is
+// declared static so as not to clash with other builtin modules.
+// ============================================================================
+DECLARE_MODULE_ENTRY(AudacityModule)
+{
+   // Create and register the importer
+   return new LV2EffectsModule(moduleManager, path);
+}
+
+// ============================================================================
+// Register this as a builtin module
+// ============================================================================
+DECLARE_BUILTIN_MODULE(LV2sEffectBuiltin);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// LV2EffectsModule
+//
+///////////////////////////////////////////////////////////////////////////////
+WX_DECLARE_STRING_HASH_MAP(LilvNode *, UriHash);
+
 LilvWorld *gWorld = NULL;
 
-// This is the URI Map Feature object. It is required for loading synth
-// plugins.
-static uint32_t uri_to_id(LV2_URI_Map_Callback_Data WXUNUSED(cbd),
-                          const char *map, const char *uri)
+LV2EffectsModule::LV2EffectsModule(ModuleManagerInterface *moduleManager,
+                                   const wxString *path)
 {
-   if (!std::strcmp(map, LV2_EVENT_URI))
+   mModMan = moduleManager;
+   if (path)
    {
-      if (!std::strcmp(uri, LV2_MIDI__MidiEvent))
-      {
-         return 1;
-      }
-      else if (!std::strcmp(uri, LV2_EVENT__TimeStamp))
-      {
-         return 2;
-      }
+      mPath = *path;
    }
-
-   return 0;
 }
-static LV2_URI_Map_Feature gURIMap = { 0, &uri_to_id };
-static LV2_Feature gURIMapFeature = { "http://lv2plug.in/ns/ext/uri-map",
-                                      &gURIMap };
 
-// This is the event refcounter object. We don't actually implement it
-// since we only ever send flat MIDI events to the plugins, but it is
-// still required.
-uint32_t event_ref(LV2_Event_Callback_Data WXUNUSED(callback_data),
-                   LV2_Event *WXUNUSED(event))
+LV2EffectsModule::~LV2EffectsModule()
 {
-   return 0;
 }
-static LV2_Event_Feature gEventRef = { 0, &event_ref, &event_ref };
-static LV2_Feature gEventRefFeature = { "http://lv2plug.in/ns/ext/event",
-                                        &gEventRef };
 
-// These are the LV2 Features we support.
-LV2_Feature*const gLV2Features[] = { &gURIMapFeature, &gEventRefFeature, 0 };
+// ============================================================================
+// IdentInterface implementation
+// ============================================================================
 
-LilvNode *gAudioPortClass;
-LilvNode *gControlPortClass;
-LilvNode *gMidiPortClass;
-LilvNode *gInputPortClass;
-LilvNode *gOutputPortClass;
-LilvNode *gPortToggled;
-LilvNode *gPortIsInteger;
-LilvNode *gPortIsSampleRate;
-LilvNode *gPortIsEnumeration;
-LilvNode *gPortIsLatency;
-LilvNode *gPortIsOptional;
-LilvNode *gName;
-LilvNode *gPortGroup;
-LilvNode *gSubGroupOf;
-
-void LoadLV2Plugins()
+wxString LV2EffectsModule::GetPath()
 {
+   return mPath;
+}
 
-   EffectManager& em = EffectManager::Get();
+wxString LV2EffectsModule::GetSymbol()
+{
+   return XO("LV2 Effects");
+}
 
-   // If gWorld isn't 0 we have already initialised Lilv - unload all plugins
-   // and initialise again.
-   if (gWorld)
-   {
-      UnloadLV2Plugins();
-   }
+wxString LV2EffectsModule::GetName()
+{
+   return GetSymbol();
+}
 
+wxString LV2EffectsModule::GetVendor()
+{
+   return XO("The Audacity Team");
+}
+
+wxString LV2EffectsModule::GetVersion()
+{
+   // This "may" be different if this were to be maintained as a separate DLL
+   return LV2EFFECTS_VERSION;
+}
+
+wxString LV2EffectsModule::GetDescription()
+{
+   return XO("Provides LV2 Effects support to Audacity");
+}
+
+// ============================================================================
+// ModuleInterface implementation
+// ============================================================================
+
+bool LV2EffectsModule::Initialize()
+{
    // Try to initialise Lilv, or return.
    gWorld = lilv_world_new();
    if (!gWorld)
    {
-      wxLogMessage(wxT("Could not initialise lilv!"));
-      return;
+      return false;
    }
 
-   gAudioPortClass = lilv_new_uri(gWorld, LV2_CORE__AudioPort);
-   gControlPortClass = lilv_new_uri(gWorld, LV2_CORE__ControlPort);
-   gMidiPortClass = lilv_new_uri(gWorld, LV2_EVENT__EventPort);
-   gInputPortClass = lilv_new_uri(gWorld, LV2_CORE__InputPort);
-   gOutputPortClass = lilv_new_uri(gWorld, LV2_CORE__OutputPort);
-   gPortToggled = lilv_new_uri(gWorld, LV2_CORE__toggled);
-   gPortIsInteger = lilv_new_uri(gWorld, LV2_CORE__integer);
-   gPortIsSampleRate = lilv_new_uri(gWorld, LV2_CORE__sampleRate);
-   gPortIsEnumeration = lilv_new_uri(gWorld, LV2_CORE__enumeration);
-   gPortIsLatency = lilv_new_uri(gWorld, LV2_CORE__reportsLatency);
-   gPortIsOptional = lilv_new_uri(gWorld, LV2_CORE__connectionOptional);
-   gName = lilv_new_uri(gWorld, LV2_CORE__name);
-   gPortGroup = lilv_new_uri(gWorld, LV2_PORT_GROUPS__group);
-   gSubGroupOf = lilv_new_uri(gWorld, LV2_PORT_GROUPS__subGroupOf);
+   // Create LilvNodes for each of the URIs we need
+   #undef URI
+   #define URI(n, u) LV2Effect::n = lilv_new_uri(gWorld, u);
+   URILIST
 
-   lilv_world_load_all(gWorld);
+   wxString newVar;
 
-#ifdef EFFECT_CATEGORIES
+#if defined(__WXMAC__)
+#define LV2PATH wxT("/Library/Audio/Plug-Ins/LV2")
 
-   // Add all LV2 categories and their relationships
-   LilvPluginClasses classes = Lilv_world_get_plugin_classes(gWorld);
-   for (unsigned index = 0; index < Lilv_plugin_classes_size(classes);++index){
-      LilvPluginClass c = Lilv_plugin_classes_get_at(classes, index);
-      em.AddCategory(wxString::FromUTF8(lilv_node_as_uri(Lilv_plugin_class_get_uri(c))),
-                     wxString::FromUTF8(lilv_node_as_string(Lilv_plugin_class_get_label(c))));
-   }
-   for (unsigned index = 0; index < Lilv_plugin_classes_size(classes);++index){
-      LilvPluginClass c = Lilv_plugin_classes_get_at(classes, index);
-      LilvPluginClasses ch = Lilv_plugin_class_get_children(c);
-      EffectCategory* pCat = em.LookupCategory(wxString::FromUTF8(lilv_node_as_uri(Lilv_plugin_class_get_uri(c))));
-      for (unsigned j = 0; j < Lilv_plugin_classes_size(ch); ++j) {
-         EffectCategory* chCat = em.LookupCategory(wxString::FromUTF8(lilv_node_as_uri(Lilv_plugin_class_get_uri(Lilv_plugin_classes_get_at(ch, j)))));
-         if (chCat && pCat) {
-            em.AddCategoryParent(chCat, pCat);
-         }
-      }
-   }
+   wxFileName libdir;
+//   libdir.AssignDir(wxT(LIBDIR));
+   libdir.AppendDir(wxT("lv2"));
+
+   newVar += wxT(":$HOME/.lv2");
+
+   // Look in ~/Library/Audio/Plug-Ins/lv2 and /Library/Audio/Plug-Ins/lv2
+   newVar += wxT(":$HOME") LV2PATH;
+   newVar += wxT(":") LV2PATH;
+   
+   newVar += wxT(":/usr/local/lib/lv2");
+   newVar += wxT(":/usr/lib/lv2");
+   newVar += wxT(":") + libdir.GetPath();
+
+#elif defined(__WXMSW__)
+
+   newVar += wxT(";%APPDATA%\\LV2");
+   newVar += wxT(";%COMMONPROGRAMFILES%\\LV2");
+   newVar += wxT(";%COMMONPROGRAMFILES(x86)%\\LV2");
+
+#else
+
+   wxFileName libdir;
+   libdir.AssignDir(wxT(LIBDIR));
+   libdir.AppendDir(wxT("lv2"));
+
+   newVar += wxT(":$HOME/.lv2");
+   newVar += wxT(":/usr/local/lib/lv2");
+   newVar += wxT(":/usr/lib/lv2");
+   newVar += wxT(":/usr/local/lib64/lv2");
+   newVar += wxT(":/usr/lib64/lv2");
+   newVar += wxT(":") + libdir.GetPath();
 
 #endif
 
-   // Retrieve data about all plugins
-   const LilvPlugins *plugs = lilv_world_get_all_plugins(gWorld);
+   // Start with the LV2_PATH environment variable (if any)
+   wxString pathVar;
+   wxGetEnv(wxT("LV2_PATH"), &pathVar);
 
-   // Iterate over all plugins and register them with the EffectManager
-   LILV_FOREACH(plugins, i, plugs)
+   if (pathVar.IsEmpty())
    {
-      const LilvPlugin *plug = lilv_plugins_get(plugs, i);
-      std::set<wxString> cats;
-      cats.insert(wxString::FromUTF8(lilv_node_as_uri(lilv_plugin_class_get_uri(lilv_plugin_get_class(plug)))));
-      LV2Effect *effect = new LV2Effect(plug, cats);
-      if (effect->IsValid())
-         em.RegisterEffect(effect);
-      else
-         delete effect;
-      //std::cerr<<"Loaded LV2 \""<<lilv_node_as_string(Lilv_plugin_get_name(plug))<<"\""<<std::endl;
+      pathVar = newVar.Mid(1);
+   }
+   else
+   {
+      pathVar += newVar;
    }
 
+   wxSetEnv(wxT("LV2_PATH"), pathVar);
+
+   lilv_world_load_all(gWorld);
+
+   return true;
 }
 
-void UnloadLV2Plugins()
+void LV2EffectsModule::Terminate()
 {
-   lilv_node_free(gAudioPortClass);
-   gAudioPortClass = NULL;
-
-   lilv_node_free(gControlPortClass);
-   gControlPortClass = NULL;
-
-   lilv_node_free(gMidiPortClass);
-   gMidiPortClass = NULL;
-
-   lilv_node_free(gInputPortClass);
-   gInputPortClass = NULL;
-
-   lilv_node_free(gOutputPortClass);
-   gOutputPortClass = NULL;
-
-   lilv_node_free(gPortToggled);
-   gPortToggled = NULL;
-
-   lilv_node_free(gPortIsInteger);
-   gPortIsInteger = NULL;
-
-   lilv_node_free(gPortIsSampleRate);
-   gPortIsSampleRate = NULL;
-
-   lilv_node_free(gPortIsEnumeration);
-   gPortIsEnumeration = NULL;
-
-   lilv_node_free(gPortIsLatency);
-   gPortIsLatency = NULL;
-
-   lilv_node_free(gPortIsOptional);
-   gPortIsOptional = NULL;
-
-   lilv_node_free(gName);
-   gName = NULL;
-
-   lilv_node_free(gPortGroup);
-   gPortGroup = NULL;
-
-   lilv_node_free(gSubGroupOf);
-   gSubGroupOf = NULL;
+   // Free the LilvNodes for each of the URIs we need
+   #undef URI
+   #define URI(n, u) lilv_node_free(LV2Effect::n);
+   URILIST
 
    lilv_world_free(gWorld);
    gWorld = NULL;
+
+   return;
+}
+
+bool LV2EffectsModule::AutoRegisterPlugins(PluginManagerInterface & WXUNUSED(pm))
+{
+   return false;
+}
+
+wxArrayString LV2EffectsModule::FindPlugins(PluginManagerInterface & WXUNUSED(pm))
+{
+   // Retrieve data about all LV2 plugins
+   const LilvPlugins *plugs = lilv_world_get_all_plugins(gWorld);
+
+   // Iterate over all plugins retrieve their URI
+   wxArrayString plugins;
+   LILV_FOREACH(plugins, i, plugs)
+   {
+      const LilvPlugin *plug = lilv_plugins_get(plugs, i);
+
+      // Bypass Instrument (MIDI) plugins for now
+      const LilvPluginClass *cls = lilv_plugin_get_class(plug);
+      if (lilv_node_equals(lilv_plugin_class_get_uri(cls), LV2Effect::gInstrument))
+      {
+         continue;
+      }
+
+      plugins.Add(LilvString(lilv_plugin_get_uri(plug)));
+   }
+
+   return plugins;
+}
+
+bool LV2EffectsModule::RegisterPlugin(PluginManagerInterface & pm, const wxString & path)
+{
+   const LilvPlugin *plug = GetPlugin(path);
+   if (!plug)
+   {
+      return false;
+   }
+
+   LV2Effect effect(plug);
+   if (effect.SetHost(NULL))
+   {
+      pm.RegisterPlugin(this, &effect);
+   }
+
+   return true;
+}
+
+bool LV2EffectsModule::IsPluginValid(const wxString & path)
+{
+   return GetPlugin(path) != NULL;
+}
+
+IdentInterface *LV2EffectsModule::CreateInstance(const wxString & path)
+{
+   const LilvPlugin *plug = GetPlugin(path);
+   if (!plug)
+   {
+      return NULL;
+   }
+
+   return new LV2Effect(plug);
+}
+
+void LV2EffectsModule::DeleteInstance(IdentInterface *instance)
+{
+   LV2Effect *effect = dynamic_cast<LV2Effect *>(instance);
+   if (effect)
+   {
+      delete effect;
+   }
+}
+
+// ============================================================================
+// LV2EffectsModule implementation
+// ============================================================================
+
+const LilvPlugin *LV2EffectsModule::GetPlugin(const wxString & path)
+{
+   LilvNode *uri = lilv_new_uri(gWorld, path.ToUTF8());
+   if (!uri)
+   {
+      return NULL;
+   }
+
+   const LilvPlugin *plug = lilv_plugins_get_by_uri(lilv_world_get_all_plugins(gWorld), uri);
+
+   lilv_node_free(uri);
+
+   return plug;
 }
 
 #endif

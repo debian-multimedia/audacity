@@ -677,8 +677,6 @@ USE_LIBTWOLAME_FALSE
 USE_LIBTWOLAME_TRUE
 USE_LOCAL_LIBSOXR_FALSE
 USE_LOCAL_LIBSOXR_TRUE
-USE_LIBSOXR_FALSE
-USE_LIBSOXR_TRUE
 USE_LOCAL_LIBSOUNDTOUCH_FALSE
 USE_LOCAL_LIBSOUNDTOUCH_TRUE
 USE_LIBSOUNDTOUCH_FALSE
@@ -689,18 +687,6 @@ USE_LOCAL_SBSMS_FALSE
 USE_LOCAL_SBSMS_TRUE
 USE_SBSMS_FALSE
 USE_SBSMS_TRUE
-USE_LOCAL_LIBSAMPLERATE_FALSE
-USE_LOCAL_LIBSAMPLERATE_TRUE
-USE_LIBSAMPLERATE_FALSE
-USE_LIBSAMPLERATE_TRUE
-SAMPLERATE_LIBS
-SAMPLERATE_CFLAGS
-USE_LOCAL_LIBRESAMPLE_FALSE
-USE_LOCAL_LIBRESAMPLE_TRUE
-USE_LIBRESAMPLE_FALSE
-USE_LIBRESAMPLE_TRUE
-LIBRESAMPLE_LIBS
-LIBRESAMPLE_CFLAGS
 USE_LOCAL_LIBNYQUIST_FALSE
 USE_LOCAL_LIBNYQUIST_TRUE
 USE_LIBNYQUIST_FALSE
@@ -759,8 +745,6 @@ SNDFILE_LIBS
 SNDFILE_CFLAGS
 SBSMS_LIBS
 SBSMS_CFLAGS
-LIBSAMPLERATE_SYSTEM_LIBS
-LIBSAMPLERATE_SYSTEM_CFLAGS
 LIBMAD_LIBS
 LIBMAD_CFLAGS
 ID3TAG_LIBS
@@ -955,6 +939,8 @@ with_lib_preference
 enable_sse
 enable_universal_binary
 enable_dynamic_loading
+enable_gtk3
+with_wx_version
 with_expat
 with_ffmpeg
 with_lame
@@ -962,8 +948,6 @@ with_libflac
 with_libid3tag
 with_libmad
 enable_nyquist
-with_libresample
-with_libsamplerate
 with_sbsms
 with_libsndfile
 with_soundtouch
@@ -1009,8 +993,6 @@ ID3TAG_CFLAGS
 ID3TAG_LIBS
 LIBMAD_CFLAGS
 LIBMAD_LIBS
-LIBSAMPLERATE_SYSTEM_CFLAGS
-LIBSAMPLERATE_SYSTEM_LIBS
 SBSMS_CFLAGS
 SBSMS_LIBS
 SNDFILE_CFLAGS
@@ -1037,14 +1019,12 @@ GTK_CFLAGS
 GTK_LIBS
 JACK_CFLAGS
 JACK_LIBS'
-ac_subdirs_all='lib-src/FileDialog
+ac_subdirs_all='lib-src/FileDialog lib-src/mod-nyq-bench
 lib-src/expat
 lib-src/libflac
 lib-src/libid3tag
 lib-src/libmad
 lib-src/libnyquist
-lib-src/libresample
-lib-src/libsamplerate
 lib-src/sbsms
 lib-src/libsndfile
 lib-src/soundtouch
@@ -1698,6 +1678,7 @@ Optional Features:
   --enable-dynamic-loading
                           enable dynamic loading of lame and FFmpeg
                           [default=yes]
+  --enable-gtk3           enable use of GTK+-3.0 (default: use GTK+-2.0)
   --enable-nyquist        enable Nyquist plug-in support [default=yes]
   --enable-audiounits     enable audio unit plug-in support (Mac OS X only)
                           [default=auto]
@@ -1721,6 +1702,7 @@ Optional Packages:
                         (or the compiler's sysroot if not specified).
   --with-lib-preference   whether to use local and/or system libraries, in
                           order of preference (default="system local")
+  --with-wx-version       select wxWidgets version (if both installed) [2.8,]
   --with-expat            which expat to use for XML file support:
                           [system,local]
   --with-ffmpeg           use ffmpeg for import and export support
@@ -1728,12 +1710,11 @@ Optional Packages:
   --with-libflac          use libFLAC for FLAC support
   --with-libid3tag        use libid3tag for mp3 id3 tag support
   --with-libmad           use libmad for mp2/3 decoding support
-  --with-libresample      use libresample for sample rate conversion
-  --with-libsamplerate    use libsamplerate for sample rate conversion
   --with-sbsms            use libsbsms for pitch and tempo changing
   --with-libsndfile       which libsndfile to use (required): [system,local]
   --with-soundtouch       use libSoundTouch for pitch and tempo changing
-  --with-libsoxr          use libsoxr for sample rate conversion
+  --with-libsoxr          use libsoxr for sample rate conversion (required):
+                          [system,local]
   --with-libtwolame       use libtwolame for MP2 export support
   --with-libvamp          use libvamp for Vamp plug-in support [default=yes]
   --with-libvorbis        use libvorbis for Ogg Vorbis support
@@ -1779,10 +1760,6 @@ Some influential environment variables:
   LIBMAD_CFLAGS
               C compiler flags for LIBMAD, overriding pkg-config
   LIBMAD_LIBS linker flags for LIBMAD, overriding pkg-config
-  LIBSAMPLERATE_SYSTEM_CFLAGS
-              C compiler flags for LIBSAMPLERATE_SYSTEM, overriding pkg-config
-  LIBSAMPLERATE_SYSTEM_LIBS
-              linker flags for LIBSAMPLERATE_SYSTEM, overriding pkg-config
   SBSMS_CFLAGS
               C compiler flags for SBSMS, overriding pkg-config
   SBSMS_LIBS  linker flags for SBSMS, overriding pkg-config
@@ -2811,6 +2788,7 @@ fi
 
 gt_needs="$gt_needs "
 as_fn_append ac_header_list " alloca.h"
+as_fn_append ac_header_list " libudev.h"
 # Check that the precious variables saved in the cache have kept the same
 # value.
 ac_cache_corrupted=false
@@ -19178,6 +19156,22 @@ else
 fi
 
 
+# Check whether --enable-gtk3 was given.
+if test "${enable_gtk3+set}" = set; then :
+  enableval=$enable_gtk3; enable_gtk3=$enableval
+else
+  enable_gtk3=no
+fi
+
+
+
+# Check whether --with-wx-version was given.
+if test "${with_wx_version+set}" = set; then :
+  withval=$with_wx_version; wx_preference="--version=$withval"
+else
+  wx_preference=""
+fi
+
 
 
 if test x$enable_universal_binary = xyes; then
@@ -19839,7 +19833,7 @@ wx_version=`${WX_CONFIG} $wxconfigargs --version`
 $as_echo "$as_me: Checking that the chosen version of wxWidgets is 2.8.x" >&6;}
 
 case "${wx_version}" in
-  2.8.*)
+  2.8.* | 3.0.*)
     echo "Great, you're using wxWidgets ${wx_version}!"
     ;;
   *)
@@ -19862,15 +19856,17 @@ WX_LIBS=$($WX_CONFIG $wxconfigargs --libs)
 
 ac_configure_args="$ac_configure_args --enable-static=yes --enable-shared=no"
 
+CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/include"
 
 
-subdirs="$subdirs lib-src/FileDialog"
+
+subdirs="$subdirs lib-src/FileDialog lib-src/mod-nyq-bench"
 
 CXXFLAGS="$CXXFLAGS -I\$(top_srcdir)/lib-src/FileDialog"
 FILEDIALOG_LIBS='$(top_builddir)/lib-src/FileDialog/libFileDialog.la'
 
 
-LIBRARIES="EXPAT FFMPEG LAME LIBFLAC LIBID3TAG LIBMAD LIBNYQUIST LIBRESAMPLE LIBSAMPLERATE LIBSBSMS LIBSNDFILE LIBSOUNDTOUCH LIBSOXR LIBTWOLAME LIBVAMP LIBVORBIS LV2 PORTAUDIO PORTSMF WIDGETEXTRA"
+LIBRARIES="EXPAT FFMPEG LAME LIBFLAC LIBID3TAG LIBMAD LIBNYQUIST LIBSBSMS LIBSNDFILE LIBSOUNDTOUCH LIBSOXR LIBTWOLAME LIBVAMP LIBVORBIS LV2 PORTAUDIO PORTSMF WIDGETEXTRA"
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: Determining what libraries are available in this tree and on the system" >&5
 $as_echo "$as_me: Determining what libraries are available in this tree and on the system" >&6;}
@@ -21117,173 +21113,6 @@ $as_echo "$as_me: nyquist libraries are NOT available in the local tree" >&6;}
 
 
 
-
-# Check whether --with-libresample was given.
-if test "${with_libresample+set}" = set; then :
-  withval=$with_libresample; LIBRESAMPLE_ARGUMENT=$withval
-else
-  LIBRESAMPLE_ARGUMENT="unspecified"
-fi
-
-
-
-
-   LIBRESAMPLE_SYSTEM_AVAILABLE="no"
-
-
-   as_ac_File=`$as_echo "ac_cv_file_${srcdir}/lib-src/libresample/include/libresample.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${srcdir}/lib-src/libresample/include/libresample.h" >&5
-$as_echo_n "checking for ${srcdir}/lib-src/libresample/include/libresample.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${srcdir}/lib-src/libresample/include/libresample.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  LIBRESAMPLE_LOCAL_AVAILABLE="yes"
-else
-  LIBRESAMPLE_LOCAL_AVAILABLE="no"
-fi
-
-
-   if test "$LIBRESAMPLE_LOCAL_AVAILABLE" = "yes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: libresample libraries are available in the local tree" >&5
-$as_echo "$as_me: libresample libraries are available in the local tree" >&6;}
-   else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: libresample libraries are NOT available in the local tree" >&5
-$as_echo "$as_me: libresample libraries are NOT available in the local tree" >&6;}
-   fi
-
-
-
-
-# Check whether --with-libsamplerate was given.
-if test "${with_libsamplerate+set}" = set; then :
-  withval=$with_libsamplerate; LIBSAMPLERATE_ARGUMENT=$withval
-else
-  LIBSAMPLERATE_ARGUMENT="unspecified"
-fi
-
-
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBSAMPLERATE_SYSTEM" >&5
-$as_echo_n "checking for LIBSAMPLERATE_SYSTEM... " >&6; }
-
-if test -n "$LIBSAMPLERATE_SYSTEM_CFLAGS"; then
-    pkg_cv_LIBSAMPLERATE_SYSTEM_CFLAGS="$LIBSAMPLERATE_SYSTEM_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"samplerate >= 0.1.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "samplerate >= 0.1.2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBSAMPLERATE_SYSTEM_CFLAGS=`$PKG_CONFIG --cflags "samplerate >= 0.1.2" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBSAMPLERATE_SYSTEM_LIBS"; then
-    pkg_cv_LIBSAMPLERATE_SYSTEM_LIBS="$LIBSAMPLERATE_SYSTEM_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"samplerate >= 0.1.2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "samplerate >= 0.1.2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBSAMPLERATE_SYSTEM_LIBS=`$PKG_CONFIG --libs "samplerate >= 0.1.2" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBSAMPLERATE_SYSTEM_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "samplerate >= 0.1.2" 2>&1`
-        else
-	        LIBSAMPLERATE_SYSTEM_PKG_ERRORS=`$PKG_CONFIG --print-errors "samplerate >= 0.1.2" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBSAMPLERATE_SYSTEM_PKG_ERRORS" >&5
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-                LIBSAMPLERATE_SYSTEM_AVAILABLE="no"
-elif test $pkg_failed = untried; then
-	LIBSAMPLERATE_SYSTEM_AVAILABLE="no"
-else
-	LIBSAMPLERATE_SYSTEM_CFLAGS=$pkg_cv_LIBSAMPLERATE_SYSTEM_CFLAGS
-	LIBSAMPLERATE_SYSTEM_LIBS=$pkg_cv_LIBSAMPLERATE_SYSTEM_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	LIBSAMPLERATE_SYSTEM_AVAILABLE="yes"
-fi
-            if test "$LIBSAMPLERATE_SYSTEM_AVAILABLE" = "yes" ; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Libsamplerate libraries are available as system libraries" >&5
-$as_echo "$as_me: Libsamplerate libraries are available as system libraries" >&6;}
-   else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Libsamplerate libraries are NOT available as system libraries" >&5
-$as_echo "$as_me: Libsamplerate libraries are NOT available as system libraries" >&6;}
-   fi
-
-
-   as_ac_File=`$as_echo "ac_cv_file_${srcdir}/lib-src/libsamplerate/src/samplerate.h" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${srcdir}/lib-src/libsamplerate/src/samplerate.h" >&5
-$as_echo_n "checking for ${srcdir}/lib-src/libsamplerate/src/samplerate.h... " >&6; }
-if eval \${$as_ac_File+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  test "$cross_compiling" = yes &&
-  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
-if test -r "${srcdir}/lib-src/libsamplerate/src/samplerate.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-eval ac_res=\$$as_ac_File
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
-  LIBSAMPLERATE_LOCAL_AVAILABLE="yes"
-else
-  LIBSAMPLERATE_LOCAL_AVAILABLE="no"
-fi
-
-
-   if test "$LIBSAMPLERATE_LOCAL_AVAILABLE" = "yes" ; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: libsamplerate libraries are available in the local tree" >&5
-$as_echo "$as_me: libsamplerate libraries are available in the local tree" >&6;}
-   else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: libsamplerate libraries are NOT available in the local tree" >&5
-$as_echo "$as_me: libsamplerate libraries are NOT available in the local tree" >&6;}
-   fi
-
-
-
 # Check whether --with-sbsms was given.
 if test "${with_sbsms+set}" = set; then :
   withval=$with_sbsms; LIBSBSMS_ARGUMENT=$withval
@@ -22293,10 +22122,11 @@ fi
    if test "$vorbisenc_h_available" = "yes" -a "$ogg_h_available" = "yes"; then
       LIBVORBIS_LOCAL_AVAILABLE="yes"
 
-                  libogg_dir="$(pwd)/lib-src/libogg"
-      LIBVORBIS_LOCAL_CONFIGURE_ARGS="--disable-oggtest OGG_CFLAGS=-I${libogg_dir}/include OGG_LIBS=${libogg_dir}/src/libogg.la"
+                  ogg_srcdir="$(pwd)/${srcdir}/lib-src/libogg"
+      ogg_blddir="$(pwd)/lib-src/libogg"
+      LIBVORBIS_LOCAL_CONFIGURE_ARGS="--disable-oggtest OGG_CFLAGS='-I${ogg_blddir}/include -I${ogg_srcdir}/include' OGG_LIBS=${ogg_blddir}/src/libogg.la"
 
-                  LIBVORBIS_LOCAL_CONFIGURE_ARGS="$LIBVORBIS_LOCAL_CONFIGURE_ARGS --with-ogg-includes=${libogg_dir}/include --with-ogg-libraries=${libogg_dir}/src/.libs"
+                  LIBVORBIS_LOCAL_CONFIGURE_ARGS="$LIBVORBIS_LOCAL_CONFIGURE_ARGS --with-ogg-includes='${ogg_blddir}/include -I${ogg_srcdir}/include' --with-ogg-libraries=${ogg_blddir}/src/.libs"
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: Vorbis libraries are available in this source tree" >&5
 $as_echo "$as_me: Vorbis libraries are available in this source tree" >&6;}
@@ -22326,12 +22156,12 @@ if test -n "$LV2_CFLAGS"; then
     pkg_cv_LV2_CFLAGS="$LV2_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lv2 lilv-0 >= 0.16\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lv2 lilv-0 >= 0.16") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LV2_CFLAGS=`$PKG_CONFIG --cflags "lv2 lilv-0 >= 0.16" 2>/dev/null`
+  pkg_cv_LV2_CFLAGS=`$PKG_CONFIG --cflags "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22342,12 +22172,12 @@ if test -n "$LV2_LIBS"; then
     pkg_cv_LV2_LIBS="$LV2_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lv2 lilv-0 >= 0.16\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lv2 lilv-0 >= 0.16") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LV2_LIBS=`$PKG_CONFIG --libs "lv2 lilv-0 >= 0.16" 2>/dev/null`
+  pkg_cv_LV2_LIBS=`$PKG_CONFIG --libs "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -22365,9 +22195,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LV2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "lv2 lilv-0 >= 0.16" 2>&1`
+	        LV2_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2" 2>&1`
         else
-	        LV2_PKG_ERRORS=`$PKG_CONFIG --print-errors "lv2 lilv-0 >= 0.16" 2>&1`
+	        LV2_PKG_ERRORS=`$PKG_CONFIG --print-errors "lv2 lilv-0 >= 0.16 suil-0 >= 0.8.2" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$LV2_PKG_ERRORS" >&5
@@ -22562,8 +22392,8 @@ fi
 
 
    if test "$PORTAUDIO_LOCAL_AVAILABLE" = "yes"; then
-                  portaudio_dir="$(pwd)/lib-src/portaudio-v19"
-      PORTAUDIO_LOCAL_CONFIGURE_ARGS="PORTAUDIO_CFLAGS=-I${portaudio_dir}/include PORTAUDIO_LIBS=${portaudio_dir}/lib/libportaudio.la"
+                  pa_dir="$(pwd)/${srcdir}/lib-src/portaudio-v19"
+      PORTAUDIO_LOCAL_CONFIGURE_ARGS="PORTAUDIO_CFLAGS=-I${pa_dir}/include PORTAUDIO_LIBS=${pa_dir}/lib/libportaudio.la"
       { $as_echo "$as_me:${as_lineno-$LINENO}: portaudio19 library is available in the local tree" >&5
 $as_echo "$as_me: portaudio19 library is available in the local tree" >&6;}
    else
@@ -22871,7 +22701,7 @@ done
 #   * we need to have libwidgetextra one way or another
 #   * we need to have libsndfile one way or another
 #   * we need to have portaudio way or another
-#   * we can only use one of libsoxr, libsamplerate and libresample
+#   * we need to have libsoxr
 
 if test "$EXPAT_USE_LOCAL" != "yes" -a "$EXPAT_USE_SYSTEM" != "yes"; then
    as_fn_error $? "Audacity requires expat to be enabled." "$LINENO" 5
@@ -22889,37 +22719,9 @@ if test "$PORTAUDIO_USE_LOCAL" != "yes" && test "$PORTAUDIO_USE_SYSTEM" != "yes"
    as_fn_error $? "Audacity requires portaudio to be enabled" "$LINENO" 5
 fi
 
-if test x"$LIBSAMPLERATE_ARGUMENT" = x"unspecified" ; then
-      LIBSAMPLERATE_USE_LOCAL="no"
-   LIBSAMPLERATE_USE_SYSTEM="no"
+if test "$LIBSOXR_USE_LOCAL" != "yes" && test "$LIBSOXR_USE_SYSTEM" != "yes" ; then
+   as_fn_error $? "Audacity requires libsoxr to be enabled" "$LINENO" 5
 fi
-if test x"$LIBRESAMPLE_ARGUMENT" = x"unspecified" ; then
-      LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-
-
-if ( test "$LIBRESAMPLE_USE_LOCAL" = "yes" || test "$LIBRESAMPLE_USE_SYSTEM" = "yes") && ( test "$LIBSOXR_USE_LOCAL" = "yes" || test "$LIBSOXR_USE_SYSTEM" = "yes"); then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: Both libresample and libsoxr were requested: favouring libsoxr." >&5
-$as_echo "$as_me: Both libresample and libsoxr were requested: favouring libsoxr." >&6;}
-   LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-
-if ( test "$LIBRESAMPLE_USE_LOCAL" = "yes" || test "$LIBRESAMPLE_USE_SYSTEM" = "yes") && ( test "$LIBSAMPLERATE_USE_LOCAL" = "yes" || test "$LIBSAMPLERATE_USE_SYSTEM" = "yes"); then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: Both libresample and libsamplerate were requested: favouring libsamplerate" >&5
-$as_echo "$as_me: Both libresample and libsamplerate were requested: favouring libsamplerate" >&6;}
-   LIBRESAMPLE_USE_LOCAL="no"
-   LIBRESAMPLE_USE_SYSTEM="no"
-fi
-
-if ( test "$LIBSOXR_USE_LOCAL" = "yes" || test "$LIBSOXR_USE_SYSTEM" = "yes") && ( test "$LIBSAMPLERATE_USE_LOCAL" = "yes" || test "$LIBSAMPLERATE_USE_SYSTEM" = "yes"); then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: Both libsoxr and libsamplerate were requested: favouring libsoxr" >&5
-$as_echo "$as_me: Both libsoxr and libsamplerate were requested: favouring libsoxr" >&6;}
-   LIBSOXR_USE_LOCAL="no"
-   LIBSOXR_USE_SYSTEM="no"
-fi
-
 
 for lib in $LIBRARIES ; do
    eval LIB_USE_LOCAL=\$${lib}_USE_LOCAL
@@ -23146,7 +22948,7 @@ $as_echo "#define USE_LIBID3TAG 1" >>confdefs.h
 
 
    if test "$LIBMAD_USE_LOCAL" = yes; then
-      LIBMAD_CFLAGS='-I$(top_srcdir)/lib-src/libmad'
+      LIBMAD_CFLAGS='-I$(top_builddir)/lib-src/libmad -I$(top_srcdir)/lib-src/libmad'
       LIBMAD_LIBS='$(top_builddir)/lib-src/libmad/libmad.la'
       subdirs="$subdirs lib-src/libmad"
 
@@ -23213,74 +23015,6 @@ $as_echo "#define USE_NYQUIST 1" >>confdefs.h
    fi
 
 
-   if test "$LIBRESAMPLE_USE_LOCAL" = yes; then
-      LIBRESAMPLE_CFLAGS='-I$(top_srcdir)/lib-src/libresample/include'
-      LIBRESAMPLE_LIBS='$(top_builddir)/lib-src/libresample/libresample.a'
-      subdirs="$subdirs lib-src/libresample"
-
-   fi
-
-
-
-
-    if test "$LIBRESAMPLE_USE_LOCAL" = yes -o "$LIBRESAMPLE_USE_SYSTEM" = yes; then
-  USE_LIBRESAMPLE_TRUE=
-  USE_LIBRESAMPLE_FALSE='#'
-else
-  USE_LIBRESAMPLE_TRUE='#'
-  USE_LIBRESAMPLE_FALSE=
-fi
-
-    if test "$LIBRESAMPLE_USE_LOCAL" = yes; then
-  USE_LOCAL_LIBRESAMPLE_TRUE=
-  USE_LOCAL_LIBRESAMPLE_FALSE='#'
-else
-  USE_LOCAL_LIBRESAMPLE_TRUE='#'
-  USE_LOCAL_LIBRESAMPLE_FALSE=
-fi
-
-
-   if test "$LIBRESAMPLE_USE_LOCAL" = yes -o "$LIBRESAMPLE_USE_SYSTEM" = yes; then
-
-$as_echo "#define USE_LIBRESAMPLE 1" >>confdefs.h
-
-   fi
-
-
-   if test "$LIBSAMPLERATE_USE_LOCAL" = yes; then
-      SAMPLERATE_CFLAGS='-I$(top_srcdir)/lib-src/libsamplerate/src'
-      SAMPLERATE_LIBS='$(top_builddir)/lib-src/libsamplerate/libsamplerate.a'
-      subdirs="$subdirs lib-src/libsamplerate"
-
-   fi
-
-
-
-
-    if test "$LIBSAMPLERATE_USE_LOCAL" = yes -o "$LIBSAMPLERATE_USE_SYSTEM" = yes; then
-  USE_LIBSAMPLERATE_TRUE=
-  USE_LIBSAMPLERATE_FALSE='#'
-else
-  USE_LIBSAMPLERATE_TRUE='#'
-  USE_LIBSAMPLERATE_FALSE=
-fi
-
-    if test "$LIBSAMPLERATE_USE_LOCAL" = yes; then
-  USE_LOCAL_LIBSAMPLERATE_TRUE=
-  USE_LOCAL_LIBSAMPLERATE_FALSE='#'
-else
-  USE_LOCAL_LIBSAMPLERATE_TRUE='#'
-  USE_LOCAL_LIBSAMPLERATE_FALSE=
-fi
-
-
-   if test "$LIBSAMPLERATE_USE_LOCAL" = yes -o "$LIBSAMPLERATE_USE_SYSTEM" = yes; then
-
-$as_echo "#define USE_LIBSAMPLERATE 1" >>confdefs.h
-
-   fi
-
-
    if test "$LIBSBSMS_USE_LOCAL" = yes; then
       SBSMS_CFLAGS='-I$(top_srcdir)/lib-src/sbsms/include'
       SBSMS_LIBS='$(top_builddir)/lib-src/sbsms/src/.libs/libsbsms.a'
@@ -23316,7 +23050,7 @@ $as_echo "#define USE_SBSMS 1" >>confdefs.h
 
 
    if test "$LIBSNDFILE_USE_LOCAL" = yes; then
-      SNDFILE_CFLAGS='-I$(top_srcdir)/lib-src/libsndfile/src'
+      SNDFILE_CFLAGS='-I$(top_builddir)/lib-src/libsndfile/src -I$(top_srcdir)/lib-src/libsndfile/src'
       SNDFILE_LIBS='$(top_builddir)/lib-src/libsndfile/src/.libs/libsndfile.a'
       subdirs="$subdirs lib-src/libsndfile"
 
@@ -23336,7 +23070,7 @@ fi
 
 
    if test "$LIBSOUNDTOUCH_USE_LOCAL" = yes; then
-      SOUNDTOUCH_CFLAGS='-I$(top_srcdir)/lib-src/soundtouch/include'
+      SOUNDTOUCH_CFLAGS='-I$(top_builddir)/lib-src/soundtouch/include -I$(top_srcdir)/lib-src/soundtouch/include'
       SOUNDTOUCH_LIBS='$(top_builddir)/lib-src/soundtouch/source/SoundTouch/.libs/libSoundTouch.a'
       subdirs="$subdirs lib-src/soundtouch"
 
@@ -23379,14 +23113,6 @@ $as_echo "#define USE_SOUNDTOUCH 1" >>confdefs.h
 
 
 
-    if test "$LIBSOXR_USE_LOCAL" = yes -o "$LIBSOXR_USE_SYSTEM" = yes; then
-  USE_LIBSOXR_TRUE=
-  USE_LIBSOXR_FALSE='#'
-else
-  USE_LIBSOXR_TRUE='#'
-  USE_LIBSOXR_FALSE=
-fi
-
     if test "$LIBSOXR_USE_LOCAL" = yes; then
   USE_LOCAL_LIBSOXR_TRUE=
   USE_LOCAL_LIBSOXR_FALSE='#'
@@ -23395,12 +23121,6 @@ else
   USE_LOCAL_LIBSOXR_FALSE=
 fi
 
-
-   if test "$LIBSOXR_USE_LOCAL" = yes -o "$LIBSOXR_USE_SYSTEM" = yes; then
-
-$as_echo "#define USE_LIBSOXR 1" >>confdefs.h
-
-   fi
 
 
    if test "$LIBTWOLAME_USE_LOCAL" = yes; then
@@ -23472,7 +23192,7 @@ $as_echo "#define USE_VAMP 1" >>confdefs.h
 
 
    if test "$LIBVORBIS_USE_LOCAL" = yes; then
-      LIBVORBIS_CFLAGS='-I$(top_srcdir)/lib-src/libogg/include -I$(top_srcdir)/lib-src/libvorbis/include'
+      LIBVORBIS_CFLAGS='-I$(top_builddir)/lib-src/libogg/include -I$(top_srcdir)/lib-src/libogg/include -I$(top_srcdir)/lib-src/libvorbis/include'
       LIBVORBIS_LIBS='$(top_builddir)/lib-src/libvorbis/lib/libvorbisenc.la $(top_builddir)/lib-src/libvorbis/lib/libvorbisfile.la'
       subdirs="$subdirs lib-src/libogg lib-src/libvorbis"
 
@@ -23506,7 +23226,7 @@ $as_echo "#define USE_LIBVORBIS 1" >>confdefs.h
 
 
    if test "$LV2_USE_LOCAL" = yes; then
-      LV2_CFLAGS='-I$(top_srcdir)/lib-src/lv2/include'
+      LV2_CFLAGS='-I$(top_srcdir)/lib-src/lv2/include -I$(top_builddir)/lib-src/lv2/include'
       LV2_LIBS='$(top_builddir)/lib-src/lv2/liblv2.a'
       subdirs="$subdirs lib-src/lv2"
 
@@ -23698,6 +23418,10 @@ $as_echo "#define _FILE_OFFSET_BITS 32" >>confdefs.h
    *)
             CONFIGHEADER="configunix.h"
 
+
+
+
+
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
 $as_echo_n "checking for library containing dlopen... " >&6; }
 if ${ac_cv_search_dlopen+:} false; then :
@@ -23759,6 +23483,75 @@ fi
       fi
 
 
+      if [ "$enable_gtk3" = yes ]; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GTK" >&5
+$as_echo_n "checking for GTK... " >&6; }
+
+if test -n "$GTK_CFLAGS"; then
+    pkg_cv_GTK_CFLAGS="$GTK_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gtk+-3.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gtk+-3.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GTK_CFLAGS=`$PKG_CONFIG --cflags "gtk+-3.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GTK_LIBS"; then
+    pkg_cv_GTK_LIBS="$GTK_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gtk+-3.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gtk+-3.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GTK_LIBS=`$PKG_CONFIG --libs "gtk+-3.0" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GTK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gtk+-3.0" 2>&1`
+        else
+	        GTK_PKG_ERRORS=`$PKG_CONFIG --print-errors "gtk+-3.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GTK_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                have_gtk=no
+elif test $pkg_failed = untried; then
+	have_gtk=no
+else
+	GTK_CFLAGS=$pkg_cv_GTK_CFLAGS
+	GTK_LIBS=$pkg_cv_GTK_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_gtk=yes
+fi
+      else
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GTK" >&5
@@ -23826,6 +23619,74 @@ else
 $as_echo "yes" >&6; }
 	have_gtk=yes
 fi
+      fi
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for GTK" >&5
+$as_echo_n "checking for GTK... " >&6; }
+
+if test -n "$GTK_CFLAGS"; then
+    pkg_cv_GTK_CFLAGS="$GTK_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$gtk_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$gtk_version") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GTK_CFLAGS=`$PKG_CONFIG --cflags "$gtk_version" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$GTK_LIBS"; then
+    pkg_cv_GTK_LIBS="$GTK_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\$gtk_version\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "$gtk_version") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_GTK_LIBS=`$PKG_CONFIG --libs "$gtk_version" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        GTK_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "$gtk_version" 2>&1`
+        else
+	        GTK_PKG_ERRORS=`$PKG_CONFIG --print-errors "$gtk_version" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$GTK_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                have_gtk=no
+elif test $pkg_failed = untried; then
+	have_gtk=no
+else
+	GTK_CFLAGS=$pkg_cv_GTK_CFLAGS
+	GTK_LIBS=$pkg_cv_GTK_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	have_gtk=yes
+fi
       if [ "$have_gtk" = "yes" ]
       then
 
@@ -23835,8 +23696,7 @@ $as_echo "#define HAVE_GTK 1" >>confdefs.h
          LIBS="$LIBS $GTK_LIBS"
       fi
 
-	  	  	  use_vst="no"
-   ;;
+            	      ;;
 esac
 
 
@@ -24061,6 +23921,48 @@ _ACEOF
 fi
 done
 
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for udev_new in -ludev" >&5
+$as_echo_n "checking for udev_new in -ludev... " >&6; }
+if ${ac_cv_lib_udev_udev_new+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ludev  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char udev_new ();
+int
+main ()
+{
+return udev_new ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_udev_udev_new=yes
+else
+  ac_cv_lib_udev_udev_new=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_udev_udev_new" >&5
+$as_echo "$ac_cv_lib_udev_udev_new" >&6; }
+if test "x$ac_cv_lib_udev_udev_new" = xyes; then :
+  udev_libs=" -ludev"
+fi
+
+      LIBS="${LIBS}${udev_libs}"
       ;;
 esac
 
@@ -24424,22 +24326,6 @@ if test -z "${USE_LOCAL_LIBNYQUIST_TRUE}" && test -z "${USE_LOCAL_LIBNYQUIST_FAL
   as_fn_error $? "conditional \"USE_LOCAL_LIBNYQUIST\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_LIBRESAMPLE_TRUE}" && test -z "${USE_LIBRESAMPLE_FALSE}"; then
-  as_fn_error $? "conditional \"USE_LIBRESAMPLE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${USE_LOCAL_LIBRESAMPLE_TRUE}" && test -z "${USE_LOCAL_LIBRESAMPLE_FALSE}"; then
-  as_fn_error $? "conditional \"USE_LOCAL_LIBRESAMPLE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${USE_LIBSAMPLERATE_TRUE}" && test -z "${USE_LIBSAMPLERATE_FALSE}"; then
-  as_fn_error $? "conditional \"USE_LIBSAMPLERATE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${USE_LOCAL_LIBSAMPLERATE_TRUE}" && test -z "${USE_LOCAL_LIBSAMPLERATE_FALSE}"; then
-  as_fn_error $? "conditional \"USE_LOCAL_LIBSAMPLERATE\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${USE_SBSMS_TRUE}" && test -z "${USE_SBSMS_FALSE}"; then
   as_fn_error $? "conditional \"USE_SBSMS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -24458,10 +24344,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_LOCAL_LIBSOUNDTOUCH_TRUE}" && test -z "${USE_LOCAL_LIBSOUNDTOUCH_FALSE}"; then
   as_fn_error $? "conditional \"USE_LOCAL_LIBSOUNDTOUCH\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${USE_LIBSOXR_TRUE}" && test -z "${USE_LIBSOXR_FALSE}"; then
-  as_fn_error $? "conditional \"USE_LIBSOXR\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_LOCAL_LIBSOXR_TRUE}" && test -z "${USE_LOCAL_LIBSOXR_FALSE}"; then
@@ -27304,6 +27186,30 @@ fi
 echo ""
 echo "Finished configure:"
 
+# When building from a temporary directory and not the top level directory,
+# the locale files get copied and the Makefile.in.in adjusted.  Otherwise,
+# the generated locale files will be placed in the top level "po" directory.
+#
+# The temporary Makefile.in.in is updated so we don't have to worry about
+# committing changes that might get lost when regenerating config files.
+if [ ! -e "${ac_abs_top_builddir}/po/LINGUAS" ]
+then
+   pushd >/dev/null "${ac_abs_top_builddir}/po/"
+   if [ "${ac_abs_top_builddir}" != "${ac_abs_top_srcdir}" ]
+   then
+      cp -pr "${ac_abs_top_srcdir}/po/." .
+      sed -e "s/@srcdir@/./" "${ac_abs_top_srcdir}/po/Makefile.in.in" >"Makefile.in.in"
+   fi
+
+   for lang in $(cat "${ac_abs_top_srcdir}/po/LINGUAS")
+   do
+      mkdir -p "${lang}/LC_MESSAGES"
+      pushd >/dev/null "${lang}/LC_MESSAGES"
+      ln -s "../../${lang}.gmo" "audacity.mo"
+      popd >/dev/null
+   done
+   popd >/dev/null
+fi
 
 for lib in $LIBRARIES ; do
    eval LIB_USE_LOCAL=\$${lib}_USE_LOCAL

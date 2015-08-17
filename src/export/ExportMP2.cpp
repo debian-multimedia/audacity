@@ -108,6 +108,7 @@ ExportMP2Options::ExportMP2Options(wxWindow *parent)
 :  wxDialog(parent, wxID_ANY,
             wxString(_("Specify MP2 Options")))
 {
+   SetName(GetTitle());
    ShuttleGui S(this, eIsCreatingFromPrefs);
 
    for (unsigned int i=0; i < (sizeof(iBitrates)/sizeof(int)); i++)
@@ -276,8 +277,8 @@ int ExportMP2::Export(AudacityProject *project,
 
    ProgressDialog *progress = new ProgressDialog(wxFileName(fName).GetName(),
       selectionOnly ?
-      wxString::Format(_("Exporting selected audio at %d kbps"), bitrate) :
-      wxString::Format(_("Exporting entire file at %d kbps"), bitrate));
+      wxString::Format(_("Exporting selected audio at %ld kbps"), bitrate) :
+      wxString::Format(_("Exporting entire file at %ld kbps"), bitrate));
 
    int updateResult = eProgressSuccess;
    while(updateResult == eProgressSuccess) {

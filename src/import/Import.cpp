@@ -66,7 +66,33 @@ WX_DEFINE_LIST(UnusableImportPluginList);
 WX_DEFINE_LIST(FormatList);
 WX_DEFINE_OBJARRAY(ExtImportItems);
 
+// ============================================================================
+//
+// Return reference to singleton
+//
+// (Thread-safe...no active threading during construction or after destruction)
+// ============================================================================
+Importer Importer::mInstance;
+Importer & Importer::Get()
+{
+   return mInstance;
+}
+
 Importer::Importer()
+{
+   mExtImportItems = NULL;
+}
+
+Importer::~Importer()
+{
+   if (mExtImportItems != NULL)
+   {
+      delete mExtImportItems;
+      mExtImportItems = NULL;
+   }
+}
+
+bool Importer::Initialize()
 {
    mImportPluginList = new ImportPluginList;
    mUnusableImportPluginList = new UnusableImportPluginList;
@@ -92,17 +118,19 @@ Importer::Importer()
    #endif
 
    ReadImportItems();
+
+   return true;
 }
 
-Importer::~Importer()
+bool Importer::Terminate()
 {
    WriteImportItems();
    mImportPluginList->DeleteContents(true);
    delete mImportPluginList;
    mUnusableImportPluginList->DeleteContents(true);//JKC
    delete mUnusableImportPluginList;
-   if (this->mExtImportItems != NULL)
-      delete this->mExtImportItems;
+
+   return true;
 }
 
 void Importer::GetSupportedImportFormats(FormatList *formatList)
@@ -279,7 +307,7 @@ void Importer::WriteImportItems()
                val.Append (wxT(":"));
          }
       }
-      name.Printf (wxT("/ExtImportItems/Item%d"), i);
+      name.Printf (wxT("/ExtImportItems/Item%d"), (int)i);
       gPrefs->Write (name, val);
       gPrefs->Flush();
    }
@@ -288,7 +316,7 @@ void Importer::WriteImportItems()
    more to delete.*/
    i = this->mExtImportItems->Count();
    do {
-     name.Printf (wxT("/ExtImportItems/Item%d"), i);
+     name.Printf (wxT("/ExtImportItems/Item%d"), (int)i);
      // No item to delete?  Then it's time to finish.
      if (!gPrefs->Read(name, &val))
         break;
@@ -673,6 +701,13 @@ int Importer::Import(wxString fName,
          return 0;
       }
 
+      // Audacity project
+      if (extension.IsSameAs(wxT("aup"), false)) {
+         errorMessage.Printf(_("\"%s\" is an Audacity Project file. \nUse the 'File > Open' command to open Audacity Projects."), fName.c_str());
+         pProj->mbBusyImporting = false;
+         return 0;
+      }
+
       // we were not able to recognize the file type
       errorMessage.Printf(_("Audacity did not recognize the type of the file '%s'.\nIf it is uncompressed, try importing it using \"Import Raw\"."),fName.c_str());
    }
@@ -712,6 +747,8 @@ ImportStreamDialog::ImportStreamDialog( ImportFileHandle *_mFile, wxWindow *pare
                                        const wxPoint &position, const wxSize& size, long style ):
 wxDialog( parent, id, title, position, size, style | wxRESIZE_BORDER )
 {
+   SetName(GetTitle());
+
    mFile = _mFile;
    scount = mFile->GetStreamCount();
    for (wxInt32 i = 0; i < scount; i++)

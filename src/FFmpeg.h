@@ -177,6 +177,7 @@ public:
    FFmpegNotFoundDialog(wxWindow *parent)
       :  wxDialog(parent, wxID_ANY, wxString(_("FFmpeg not found")))
    {
+      SetName(GetTitle());
       ShuttleGui S(this, eIsCreating);
       PopulateOrExchange(S);
    }
@@ -273,7 +274,7 @@ public:
    wxString GetLibraryTypeString()
    {
       /* i18n-hint: do not translate avformat.  Preserve the computer gibberish.*/
-      return _("Only avformat.dll|*avformat*.dll|Dynamically Linked Libraries (*.dll)|*.dll|All Files (*.*)|*");
+      return _("Only avformat.dll|*avformat*.dll|Dynamically Linked Libraries (*.dll)|*.dll|All Files|*");
    }
 
    wxString GetLibAVFormatPath()
