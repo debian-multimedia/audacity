@@ -10,8 +10,6 @@ configure_flags := \
 	--with-libflac=system \
 	--with-libid3tag=system \
 	--with-libmad=system \
-	--without-libresample \
-	--without-libsamplerate \
 	--with-libsndfile=system \
 	--with-libsoxr=system \
 	--with-libtwolame=system \
