@@ -62,6 +62,7 @@ wxPen AColor::labelSurroundPen;
 wxPen AColor::trackFocusPens[3];
 wxPen AColor::snapGuidePen;
 
+wxPen AColor::tooltipPen;
 wxBrush AColor::tooltipBrush;
 
 // The spare pen and brush possibly help us cut down on the
@@ -104,7 +105,7 @@ void AColor::Line(wxDC & dc, wxCoord x1, wxCoord y1, wxCoord x2, wxCoord y2)
    // last point since it is now based on the new wxGraphicsContext system.
    // Make the other platforms do the same thing since the other platforms
    // "may" follow they get wxGraphicsContext going.
-#if defined(__WXMAC__)
+#if defined(__WXMAC__) || defined(__WXGTK3__)
    dc.DrawLine(x1, y1, x2, y2);
 #else
    bool point = false;
@@ -300,13 +301,17 @@ void AColor::TrackPanelBackground(wxDC * dc, bool selected)
 #endif
 }
 
-
 void AColor::CursorColor(wxDC * dc)
 {
    if (!inited)
       Init();
+#if defined(__WXMAC__) || defined(__WXGTK3__)
+   dc->SetLogicalFunction(wxCOPY);
+   dc->SetPen(wxColor(0, 0, 0, 128));
+#else
    dc->SetLogicalFunction(wxINVERT);
    dc->SetPen(cursorPen);
+#endif
 }
 
 void AColor::IndicatorColor(wxDC * dc, bool bIsNotRecording)
@@ -423,6 +428,7 @@ void AColor::Init()
    theTheme.SetPenColour(   playRegionPen[1],  clrRulerPlaybackPen);
 
    //Determine tooltip color
+   tooltipPen.SetColour( wxSystemSettingsNative::GetColour(wxSYS_COLOUR_INFOTEXT) );
    tooltipBrush.SetColour( wxSystemSettingsNative::GetColour(wxSYS_COLOUR_INFOBK) );
 
    // A tiny gradient of yellow surrounding the current focused track
@@ -616,8 +622,11 @@ void AColor::PreComputeGradient() {
                   case ColorGradientTimeAndFrequencySelected:
                      if( !grayscale )
                      {
-                        // flip the blue, makes spectrogram more yellow.
-                        b = 1.0f - 0.75f * b;
+                        float temp;
+                        temp = r;
+                        r = g;
+                        g = b;
+                        b = temp;
                         break;
                      }
                      // else fall through to SAME grayscale colour as normal selection.

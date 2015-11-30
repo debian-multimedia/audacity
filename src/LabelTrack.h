@@ -36,6 +36,7 @@ class TrackList;
 class AudacityProject;
 class DirManager;
 class TimeWarper;
+class ZoomInfo;
 
 
 class LabelStruct
@@ -112,8 +113,8 @@ class AUDACITY_DLL_API LabelTrack : public Track
    friend class LabelStruct;
 
  public:
-   bool IsGoodLabelFirstKey(int keyCode);
-   bool IsGoodLabelEditKey(int keyCode);
+   bool IsGoodLabelFirstKey(const wxKeyEvent & evt);
+   bool IsGoodLabelEditKey(const wxKeyEvent & evt);
    bool IsTextSelected();
 
    void CreateCustomGlyphs();
@@ -125,10 +126,12 @@ class AUDACITY_DLL_API LabelTrack : public Track
 
    static void ResetFont();
 
-   void Draw(wxDC & dc, const wxRect & r, double h, double pps,
-             double sel0, double sel1);
+   void Draw(wxDC & dc, const wxRect & r,
+             const SelectedRegion &selectedRegion,
+             const ZoomInfo &zoomInfo);
 
    int getSelectedIndex() const { return mSelIndex; }
+   bool IsAdjustingLabel() const { return mIsAdjustingLabel; }
 
    virtual int GetKind() const { return Label; }
 
@@ -136,7 +139,9 @@ class AUDACITY_DLL_API LabelTrack : public Track
    virtual double GetStartTime() const;
    virtual double GetEndTime() const;
 
-   virtual Track *Duplicate() { return new LabelTrack(*this); }
+   virtual Track *Duplicate();
+
+   virtual void SetSelected(bool s);
 
    virtual bool HandleXMLTag(const wxChar *tag, const wxChar **attrs);
    virtual XMLTagHandler *HandleXMLChild(const wxChar *tag);
@@ -164,7 +169,8 @@ class AUDACITY_DLL_API LabelTrack : public Track
 
 
    void ResetFlags();
-   bool OverTextBox(const LabelStruct *pLabel, int x, int y);
+   int OverATextBox(int xx, int yy) const;
+   bool OverTextBox(const LabelStruct *pLabel, int x, int y) const;
    bool CutSelectedText();
    bool CopySelectedText();
    bool PasteSelectedText(double sel0, double sel1);
@@ -177,8 +183,11 @@ class AUDACITY_DLL_API LabelTrack : public Track
    void SetWrongDragging(bool rightFlag) { mRightDragging = rightFlag; }
    void SetDrawCursor(bool drawCursorFlag) { mDrawCursor = drawCursorFlag; }
 
-   bool HandleMouse(const wxMouseEvent & evt, wxRect & r, double h, double pps,
-                           SelectedRegion *newSel);
+   void HandleClick(const wxMouseEvent & evt, const wxRect & r, const ZoomInfo &zoomInfo,
+      SelectedRegion *newSel);
+   bool HandleGlyphDragRelease(const wxMouseEvent & evt, wxRect & r, const ZoomInfo &zoomInfo,
+      SelectedRegion *newSel);
+   void HandleTextDragRelease(const wxMouseEvent & evt);
 
    bool CaptureKey(wxKeyEvent & event);
    bool OnKeyDown(SelectedRegion &sel, wxKeyEvent & event);
@@ -230,6 +239,8 @@ class AUDACITY_DLL_API LabelTrack : public Track
    //mOldEdge is useful for telling us when there has been a state change.
    int mOldEdge;
  private:
+   void ShowContextMenu();
+   void OnContextMenu(wxCommandEvent & evt);
 
    int mSelIndex;              /// Keeps track of the currently selected label
    int mMouseOverLabelLeft;    /// Keeps track of which left label the mouse is currently over.
@@ -260,7 +271,7 @@ class AUDACITY_DLL_API LabelTrack : public Track
    // Set in copied label tracks
    double mClipLen;
 
-   void ComputeLayout(const wxRect & r, double h, double pps);
+   void ComputeLayout(const wxRect & r, const ZoomInfo &zoomInfo);
    void ComputeTextPosition(const wxRect & r, int index);
    void SetCurrentCursorPosition(wxDC & dc, int xPos);
 

@@ -17,11 +17,31 @@
 
 #include <wx/defs.h>
 #include <wx/dynarray.h>
-
-#include "Track.h"
+#include <wx/string.h>
 #include "widgets/NumericTextCtrl.h"
 
+class AudacityProject;
+class Track;
+class TrackArray;
 class TrackClipArray;
+class WaveClip;
+class TrackList;
+class ZoomInfo;
+
+class TrackClip
+{
+public:
+   TrackClip(Track *t, WaveClip *c)
+   {
+      track = origTrack = t;
+      clip = c;
+   }
+   Track *track;
+   Track *origTrack;
+   WaveClip *clip;
+};
+
+WX_DECLARE_USER_EXPORTED_OBJARRAY(TrackClip, TrackClipArray, AUDACITY_DLL_API);
 
 enum
 {
@@ -30,9 +50,13 @@ enum
    SNAP_PRIOR
 };
 
-class SnapPoint {
- public:
-   SnapPoint(double t, Track *track) {
+const int kPixelTolerance = 4;
+
+class SnapPoint
+{
+public:
+   SnapPoint(double t, Track *track)
+   {
       this->t = t;
       this->track = track;
    }
@@ -42,11 +66,15 @@ class SnapPoint {
 
 WX_DEFINE_SORTED_ARRAY(SnapPoint *, SnapPointArray);
 
-class SnapManager {
- public:
-   SnapManager(TrackList *tracks, TrackClipArray *exclusions,
-               double zoom, int pixelTolerance, bool noTimeSnap = false);
-
+class SnapManager
+{
+public:
+   SnapManager(TrackList *tracks,
+               const ZoomInfo *zoomInfo,
+               const TrackClipArray *clipExclusions = NULL,
+               const TrackArray *trackExclusions = NULL,
+               bool noTimeSnap = false,
+               int pixelTolerance = kPixelTolerance);
    ~SnapManager();
 
    // The track may be NULL.
@@ -56,7 +84,7 @@ class SnapManager {
    bool Snap(Track *currentTrack,
              double t,
              bool rightEdge,
-             double *out_t,
+             double *outT,
              bool *snappedPoint,
              bool *snappedTime);
 
@@ -65,23 +93,36 @@ class SnapManager {
    static const wxString & GetSnapValue(int index);
    static int GetSnapIndex(const wxString & value);
 
- private:
-   void CondListAdd(double t, Track *tr);
-   double Get(int index);
-   double Diff(double t, int index);
-   int Find(double t, int i0, int i1);
-   int Find(double t);
-   bool SnapToPoints(Track *currentTrack, double t, bool rightEdge,
-                     double *out_t);
+private:
 
-   double           mEpsilon;
-   double           mTolerance;
-   double           mZoom;
-   SnapPointArray  *mSnapPoints;
+   void Reinit();
+   void CondListAdd(double t, Track *track);
+   double Get(size_t index);
+   wxInt64 PixelDiff(double t, size_t index);
+   size_t Find(double t, size_t i0, size_t i1);
+   size_t Find(double t);
+   bool SnapToPoints(Track *currentTrack, double t, bool rightEdge, double *outT);
+
+private:
+
+   const AudacityProject *mProject;
+   TrackList *mTracks;
+   const TrackClipArray *mClipExclusions;
+   const TrackArray *mTrackExclusions;
+   const ZoomInfo *mZoomInfo;
+   int mPixelTolerance;
+   bool mNoTimeSnap;
+   
+   double mEpsilon;
+   SnapPointArray mSnapPoints;
 
    // Info for snap-to-time
-   NumericConverter    mConverter;
-   bool             mSnapToTime;
+   NumericConverter mConverter;
+   bool mSnapToTime;
+
+   int mSnapTo;
+   double mRate;
+   wxString mFormat;
 };
 
 #endif

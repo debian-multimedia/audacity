@@ -771,8 +771,6 @@ enable_fast_install
 with_gnu_ld
 with_sysroot
 enable_libtool_lock
-enable_static_wx
-enable_unicode
 enable_debug
 with_wx_version
 '
@@ -1421,8 +1419,6 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --enable-static-wx      link wx statically [default=no]
-  --enable-unicode        enable unicode support [default=yes]
   --enable-debug          enable debug support [default=no]
 
 Optional Packages:
@@ -6566,7 +6562,7 @@ ia64-*-hpux*)
   rm -rf conftest*
   ;;
 
-x86_64-*kfreebsd*-gnu|x86_64-*linux*|ppc*-*linux*|powerpc*-*linux*| \
+x86_64-*kfreebsd*-gnu|x86_64-*linux*|powerpc*-*linux*| \
 s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
   # Find out which ABI we are using.
   echo 'int i;' > conftest.$ac_ext
@@ -6591,7 +6587,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 		;;
 	    esac
 	    ;;
-	  ppc64-*linux*|powerpc64-*linux*)
+	  powerpc64le-*)
+	    LD="${LD-ld} -m elf32lppclinux"
+	    ;;
+	  powerpc64-*)
 	    LD="${LD-ld} -m elf32ppclinux"
 	    ;;
 	  s390x-*linux*)
@@ -6610,7 +6609,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_x86_64"
 	    ;;
-	  ppc*-*linux*|powerpc*-*linux*)
+	  powerpcle-*)
+	    LD="${LD-ld} -m elf64lppc"
+	    ;;
+	  powerpc-*)
 	    LD="${LD-ld} -m elf64ppc"
 	    ;;
 	  s390*-*linux*|s390*-*tpf*)
@@ -16209,22 +16211,6 @@ CPPFLAGS="$cppflags_save"
 CXXFLAGS="$cxxflags_save"
 
 
-# Check whether --enable-static-wx was given.
-if test "${enable_static_wx+set}" = set; then :
-  enableval=$enable_static_wx; static_wx_preference="--static=$enableval"
-else
-  static_wx_preference=""
-fi
-
-
-# Check whether --enable-unicode was given.
-if test "${enable_unicode+set}" = set; then :
-  enableval=$enable_unicode; unicode_preference="--unicode=$enableval"
-else
-  unicode_preference="--unicode=yes"
-fi
-
-
 # Check whether --enable-debug was given.
 if test "${enable_debug+set}" = set; then :
   enableval=$enable_debug; debug_preference="$enableval"
@@ -16243,11 +16229,14 @@ fi
 
 
 
-if test "$debug_preference" = "yes"; then
+if test x"$debug_preference" = "xyes" ; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: Adding -g for debugging to CFLAGS and CXXFLAGS ..." >&5
 $as_echo "$as_me: Adding -g for debugging to CFLAGS and CXXFLAGS ..." >&6;}
-   CFLAGS="${CFLAGS} -g "
-   CXXFLAGS="${CXXFLAGS} -g "
+   CFLAGS="${CFLAGS} -g -DwxDEBUG_LEVEL=1"
+   CXXFLAGS="${CXXFLAGS} -g -DwxDEBUG_LEVEL=1"
+else
+   CFLAGS="${CFLAGS} -DwxDEBUG_LEVEL=0"
+   CXXFLAGS="${CXXFLAGS} -DwxDEBUG_LEVEL=0"
 fi
 
 
@@ -16566,8 +16555,10 @@ if test "x$cpp_does_wall" = "xyes" ; then
 fi
 
 
-# Extract the first word of "wx-config", so it can be a program name with args.
-set dummy wx-config; ac_word=$2
+for ac_prog in wx-config wx-config-3.0
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_WX_CONFIG+:} false; then :
@@ -16594,7 +16585,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_WX_CONFIG" && ac_cv_path_WX_CONFIG="no"
   ;;
 esac
 fi
@@ -16607,6 +16597,10 @@ else
 $as_echo "no" >&6; }
 fi
 
+
+  test -n "$WX_CONFIG" && break
+done
+test -n "$WX_CONFIG" || WX_CONFIG="no"
 
 if [ "$WX_CONFIG" = "no" ] ; then
    as_fn_error $? "\"Could not find wx-config: is wxWidgets installed? is wx-config in your path?\"" "$LINENO" 5

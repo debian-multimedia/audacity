@@ -47,6 +47,7 @@ libaudacity_la_SOURCES = \
 	$(NULL)
 
 audacity_CPPFLAGS = \
+	-Wno-deprecated-declarations \
 	-D__STDC_CONSTANT_MACROS \
 	-DLIBDIR=\"$(libdir)\" \
 	$(EXPAT_CFLAGS) \
@@ -103,7 +104,7 @@ audacity_SOURCES = \
 	AudacityLogger.h \
 	AudioIO.cpp \
 	AudioIO.h \
-	AudioIOListenerer.h \
+	AudioIOListener.h \
 	AutoRecovery.cpp \
 	AutoRecovery.h \
 	BatchCommandDialog.cpp \
@@ -114,8 +115,6 @@ audacity_SOURCES = \
 	BatchProcessDialog.h \
 	Benchmark.cpp \
 	Benchmark.h \
-	CaptureEvents.cpp \
-	CaptureEvents.h \
 	Dependencies.cpp \
 	Dependencies.h \
 	DeviceChange.cpp \
@@ -171,6 +170,7 @@ audacity_SOURCES = \
 	MixerBoard.h \
 	ModuleManager.cpp \
 	ModuleManager.h \
+        NumberScale.h \
 	PitchName.cpp \
 	PitchName.h \
 	PlatformCompatibility.cpp \
@@ -231,6 +231,8 @@ audacity_SOURCES = \
 	TrackPanel.h \
 	TrackPanelAx.cpp \
 	TrackPanelAx.h \
+	TrackPanelListener.h \
+	TranslatableStringArray.h \
 	UndoManager.cpp \
 	UndoManager.h \
 	ViewInfo.cpp \
@@ -241,6 +243,7 @@ audacity_SOURCES = \
 	WaveClip.h \
 	WaveTrack.cpp \
 	WaveTrack.h \
+	WaveTrackLocation.h \
 	WrappedType.cpp \
 	WrappedType.h \
 	commands/AppCommandEvent.cpp \
@@ -454,6 +457,7 @@ audacity_SOURCES = \
 	prefs/ExtImportPrefs.h \
 	prefs/GUIPrefs.cpp \
 	prefs/GUIPrefs.h \
+	prefs/GUISettings.h \
 	prefs/ImportExportPrefs.cpp \
 	prefs/ImportExportPrefs.h \
 	prefs/KeyConfigPrefs.cpp \
@@ -477,6 +481,8 @@ audacity_SOURCES = \
 	prefs/QualityPrefs.h \
 	prefs/RecordingPrefs.cpp \
 	prefs/RecordingPrefs.h \
+	prefs/SpectrogramSettings.cpp \
+	prefs/SpectrogramSettings.h \
 	prefs/SpectrumPrefs.cpp \
 	prefs/SpectrumPrefs.h \
 	prefs/ThemePrefs.cpp \
@@ -485,6 +491,10 @@ audacity_SOURCES = \
 	prefs/TracksPrefs.h \
 	prefs/WarningsPrefs.cpp \
 	prefs/WarningsPrefs.h \
+	prefs/WaveformPrefs.cpp \
+	prefs/WaveformPrefs.h \
+	prefs/WaveformSettings.cpp \
+	prefs/WaveformSettings.h \
 	toolbars/ControlToolBar.cpp \
 	toolbars/ControlToolBar.h \
 	toolbars/DeviceToolBar.cpp \
@@ -703,6 +713,8 @@ audacity_SOURCES += \
 	effects/VST/aeffectx.h \
 	effects/VST/VSTEffect.cpp \
 	effects/VST/VSTEffect.h \
+	effects/VST/VSTControlGTK.cpp \
+	effects/VST/VSTControlGTK.h \
 	$(NULL)
 endif
 

@@ -29,6 +29,8 @@
 
 #include "EffectsPrefs.h"
 
+#include "../Experimental.h"
+
 EffectsPrefs::EffectsPrefs(wxWindow * parent)
 :  PrefsPanel(parent, _("Effects"))
 {
@@ -164,4 +166,9 @@ bool EffectsPrefs::Apply()
    PopulateOrExchange(S);
 
    return true;
+}
+
+PrefsPanel *EffectsPrefsFactory::Create(wxWindow *parent)
+{
+   return new EffectsPrefs(parent);
 }

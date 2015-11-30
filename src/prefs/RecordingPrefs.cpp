@@ -19,17 +19,18 @@
 *//********************************************************************/
 
 #include "../Audacity.h"
+#include "RecordingPrefs.h"
 
 #include <wx/defs.h>
 #include <wx/textctrl.h>
 #include <algorithm>
 
 #include "../AudioIO.h"
-#include "../Envelope.h"
+#include "../prefs/GUISettings.h"
 #include "../Prefs.h"
 #include "../ShuttleGui.h"
 
-#include "RecordingPrefs.h"
+#include "../Experimental.h"
 
 using std::min;
 
@@ -113,7 +114,7 @@ void RecordingPrefs::PopulateOrExchange(ShuttleGui & S)
       {
          S.SetStretchyCol(1);
 
-         int dBRange = gPrefs->Read(wxT("/GUI/EnvdBRange"), ENV_DB_RANGE);
+         int dBRange = gPrefs->Read(ENV_DB_KEY, ENV_DB_RANGE);
          S.TieSlider(_("Sound Activation Le&vel (dB):"),
                      wxT("/AudioIO/SilenceLevel"),
                      -50,
@@ -124,7 +125,7 @@ void RecordingPrefs::PopulateOrExchange(ShuttleGui & S)
    }
    S.EndStatic();
 
-   #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
       S.StartStatic(_("Automated Recording Level Adjustment"));
       {
          S.TieCheckBox(_("Enable Automated Recording Level Adjustment."),
@@ -181,7 +182,7 @@ bool RecordingPrefs::Apply()
       gPrefs->Write(wxT("/AudioIO/LatencyDuration"), DEFAULT_LATENCY_DURATION);
    }
 
-   #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
       double targetpeak, deltapeak;
       gPrefs->Read(wxT("/AudioIO/TargetPeak"),  &targetpeak);
       gPrefs->Read(wxT("/AudioIO/DeltaPeakVolume"), &deltapeak);
@@ -201,4 +202,9 @@ bool RecordingPrefs::Apply()
          gPrefs->Write(wxT("/AudioIO/NumberAnalysis"), AILA_DEF_NUMBER_ANALYSIS);
    #endif
    return gPrefs->Flush();
+}
+
+PrefsPanel *RecordingPrefsFactory::Create(wxWindow *parent)
+{
+   return new RecordingPrefs(parent);
 }

@@ -29,6 +29,8 @@ MP3 and FFmpeg encoding libraries.
 
 #include "LibraryPrefs.h"
 
+#include "../Experimental.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #define ID_MP3_FIND_BUTTON          7001
@@ -142,7 +144,8 @@ void LibraryPrefs::PopulateOrExchange(ShuttleGui & S)
          bfnd->Enable(FALSE);
 #else
          // fix compilation warnings about unused variables
-         bfnd, bdwn;
+         wxUnusedVar(bfnd);
+         wxUnusedVar(bdwn);
 #endif
       }
       S.EndTwoColumn();
@@ -234,4 +237,9 @@ bool LibraryPrefs::Apply()
    PopulateOrExchange(S);
 
    return true;
+}
+
+PrefsPanel *LibraryPrefsFactory::Create(wxWindow *parent)
+{
+   return new LibraryPrefs(parent);
 }

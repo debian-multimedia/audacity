@@ -22,6 +22,7 @@ greater use in future.
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "Effect.h"
 
 #include <wx/defs.h>
 #include <wx/hashmap.h>
@@ -36,11 +37,11 @@ greater use in future.
 
 #include "audacity/ConfigInterface.h"
 
-#include "Effect.h"
 #include "../AudioIO.h"
 #include "../Mix.h"
 #include "../Prefs.h"
 #include "../Project.h"
+#include "../ShuttleGui.h"
 #include "../WaveTrack.h"
 #include "../toolbars/ControlToolBar.h"
 #include "../widgets/AButton.h"
@@ -50,27 +51,29 @@ greater use in future.
 #include "nyquist/Nyquist.h"
 
 #if defined(__WXMAC__)
-#include <wx/mac/private.h>
+#include <Cocoa/Cocoa.h>
 #endif
 
-static const int kDummyID = 30000;
-static const int kSaveAsID = 30001;
-static const int kImportID = 30002;
-static const int kExportID = 30003;
-static const int kDefaultsID = 30004;
-static const int kOptionsID = 30005;
-static const int kUserPresetsDummyID = 30006;
-static const int kDeletePresetDummyID = 30007;
-static const int kMenuID = 30100;
-static const int kEnableID = 30101;
-static const int kPlayID = 30102;
-static const int kRewindID = 30103;
-static const int kFFwdID = 30104;
-static const int kPlaybackID = 30105;
-static const int kCaptureID = 30106;
-static const int kUserPresetsID = 31000;
-static const int kDeletePresetID = 32000;
-static const int kFactoryPresetsID = 33000;
+#include "../Experimental.h"
+
+static const int kDummyID = 20000;
+static const int kSaveAsID = 20001;
+static const int kImportID = 20002;
+static const int kExportID = 20003;
+static const int kDefaultsID = 20004;
+static const int kOptionsID = 20005;
+static const int kUserPresetsDummyID = 20006;
+static const int kDeletePresetDummyID = 20007;
+static const int kMenuID = 20100;
+static const int kEnableID = 20101;
+static const int kPlayID = 20102;
+static const int kRewindID = 20103;
+static const int kFFwdID = 20104;
+static const int kPlaybackID = 20105;
+static const int kCaptureID = 20106;
+static const int kUserPresetsID = 21000;
+static const int kDeletePresetID = 22000;
+static const int kFactoryPresetsID = 23000;
 
 const wxString Effect::kUserPresetIdent = wxT("User Preset:");
 const wxString Effect::kFactoryPresetIdent = wxT("Factory Preset:");
@@ -420,6 +423,8 @@ bool Effect::RealtimeInitialize()
       return mClient->RealtimeInitialize();
    }
 
+   mBlockSize = 512;
+
    return false;
 }
 
@@ -454,9 +459,15 @@ bool Effect::RealtimeSuspend()
          mRealtimeSuspendLock.Leave();
          return true;
       }
+
+      return false;
    }
 
-   return false;
+   mRealtimeSuspendLock.Enter();
+   mRealtimeSuspendCount++;
+   mRealtimeSuspendLock.Leave();
+
+   return true;
 }
 
 bool Effect::RealtimeResume()
@@ -470,9 +481,15 @@ bool Effect::RealtimeResume()
          mRealtimeSuspendLock.Leave();
          return true;
       }
+
+      return false;
    }
 
-   return false;
+   mRealtimeSuspendLock.Enter();
+   mRealtimeSuspendCount--;
+   mRealtimeSuspendLock.Leave();
+
+   return true;
 }
 
 bool Effect::RealtimeProcessStart()
@@ -676,6 +693,7 @@ bool Effect::CloseUI()
    mUIParent->RemoveEventHandler(this);
 
    mUIParent = NULL;
+   mUIDialog = NULL;
 
    return true;
 }
@@ -722,6 +740,11 @@ double Effect::GetDuration()
 wxString Effect::GetDurationFormat()
 {
    return mDurationFormat;
+}
+
+wxString Effect::GetSelectionFormat()
+{
+   return GetActiveProject()->GetSelectionFormat();
 }
 
 void Effect::SetDuration(double seconds)
@@ -1260,6 +1283,11 @@ bool Effect::Process()
 {
    CopyInputTracks(Track::All);
    bool bGoodResult = true;
+
+   // It's possible that the number of channels the effect expects changed based on
+   // the parameters (the Audacity Reverb effect does when the stereo width is 0).
+   mNumAudioIn = GetAudioInCount();
+   mNumAudioOut = GetAudioOutCount();
 
    mPass = 1;
    if (InitPass1())
@@ -1993,10 +2021,10 @@ bool Effect::TrackProgress(int whichTrack, double frac, wxString msg)
    return (updateResult != eProgressSuccess);
 }
 
-bool Effect::TrackGroupProgress(int whichGroup, double frac)
+bool Effect::TrackGroupProgress(int whichGroup, double frac, wxString msg)
 {
    int updateResult = (mProgress ?
-      mProgress->Update(whichGroup + frac, (double) mNumGroups) :
+      mProgress->Update(whichGroup + frac, (double) mNumGroups, msg) :
       eProgressSuccess);
    return (updateResult != eProgressSuccess);
 }
@@ -2054,6 +2082,11 @@ TimeWarper *Effect::GetTimeWarper()
 // Use these two methods to copy the input tracks to mOutputTracks, if
 // doing the processing on them, and replacing the originals only on success (and not cancel).
 // Copy the group tracks that have tracks selected
+void Effect::CopyInputTracks()
+{
+   CopyInputTracks(Track::Wave);
+}
+
 void Effect::CopyInputTracks(int trackType)
 {
    // Reset map
@@ -2259,7 +2292,7 @@ bool Effect::RealtimeAddProcessor(int group, int chans, float rate)
       }
 
       // Add a new processor
-      mClient->RealtimeAddProcessor(gchans, rate);
+      RealtimeAddProcessor(gchans, rate);
 
       // Bump to next processor
       mCurrentProcessor++;
@@ -2366,7 +2399,7 @@ sampleCount Effect::RealtimeProcess(int group,
       for (sampleCount block = 0; block < numSamples; block += mBlockSize)
       {
          sampleCount cnt = (block + mBlockSize > numSamples ? numSamples - block : mBlockSize);
-         len += mClient->RealtimeProcess(processor, clientIn, clientOut, cnt);
+         len += RealtimeProcess(processor, clientIn, clientOut, cnt);
 
          for (int i = 0 ; i < mNumAudioIn; i++)
          {
@@ -2759,6 +2792,11 @@ EffectUIHost::EffectUIHost(wxWindow *parent,
             wxDefaultPosition, wxDefaultSize,
             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX)
 {
+#if defined(__WXMAC__)
+   // Make sure the effect window actually floats above the main window
+   [[((NSView *)GetHandle()) window] setLevel:NSFloatingWindowLevel];
+#endif
+
    SetName(effect->GetName());
    SetExtraStyle(wxWS_EX_VALIDATE_RECURSIVELY);
 
@@ -2795,37 +2833,6 @@ EffectUIHost::~EffectUIHost()
 // wxWindow implementation
 // ============================================================================
 
-#if defined(__WXMAC__)
-
-// As mentioned below, we want to manipulate the window attributes, but doing
-// so causes extra events to fire and those events lead to the rebuilding of
-// the menus.  Unfortunately, if this happens when a modal dialog is displayed
-// the menus become disabled until the menubar is completely rebuilt, like when
-// leaving preferecnes.
-//
-// So, we only do this when NOT displaying a modal dialog since that's really
-// only when it is needed.
-
-bool EffectUIHost::Show(bool show)
-{
-   if (!mIsModal)
-   {
-      // We want the effects windows on the Mac to float above the project window
-      // but still have normal modal dialogs appear above the effects windows and
-      // not let the effect windows fall behind the project window.
-      //
-      // This seems to accomplish that, but time will be the real judge.
-      WindowRef windowRef = (WindowRef) MacGetWindowRef();
-      WindowGroupRef parentGroup = GetWindowGroup((WindowRef) ((wxFrame *)wxGetTopLevelParent(mParent))->MacGetWindowRef());
-      ChangeWindowGroupAttributes(parentGroup, kWindowGroupAttrSharedActivation, kWindowGroupAttrMoveTogether);
-      SetWindowGroup(windowRef, parentGroup);
-   }
-   mIsModal = false;
-
-   return wxDialog::Show(show);
-}
-#endif
-
 bool EffectUIHost::TransferDataToWindow()
 {
    return mEffect->TransferDataToWindow();
@@ -2842,11 +2849,6 @@ bool EffectUIHost::TransferDataFromWindow()
 
 int EffectUIHost::ShowModal()
 {
-#if defined(__WXMAC__)
-   // See explanation in EffectUIHost::Show()
-   mIsModal = true;
-#endif
-
 #if defined(__WXMSW__)
    // Swap the Close and Apply buttons
    wxSizer *sz = mApplyBtn->GetContainingSizer();
@@ -3032,7 +3034,7 @@ bool EffectUIHost::Initialize()
    }
 
    buttonPanel->SetSizer(CreateStdButtonSizer(buttonPanel, buttons, bar));
-   vs->Add(buttonPanel, 0, wxEXPAND | wxALIGN_CENTER_VERTICAL);
+   vs->Add(buttonPanel, 0, wxEXPAND);
 
    SetSizer(vs);
    Layout();
@@ -3051,6 +3053,7 @@ bool EffectUIHost::Initialize()
 
    InitializeRealtime();
 
+   SetMinSize(GetSize());
    return true;
 }
 

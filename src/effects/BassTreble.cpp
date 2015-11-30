@@ -19,6 +19,7 @@
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "BassTreble.h"
 
 #include <math.h>
 
@@ -28,10 +29,9 @@
 #include <wx/sizer.h>
 
 #include "../Prefs.h"
+#include "../ShuttleGui.h"
 #include "../WaveTrack.h"
 #include "../widgets/valnum.h"
-
-#include "BassTreble.h"
 
 enum 
 {
@@ -44,8 +44,8 @@ enum
 // Define keys, defaults, minimums, and maximums for the effect parameters
 //
 //     Name       Type     Key               Def      Min      Max      Scale
-Param( Bass,      double,  XO("Bass"),       0.0,     -15.0,   15.0,    1  );
-Param( Treble,    double,  XO("Treble"),     0.0,     -15.0,   15.0,    1  );
+Param( Bass,      double,  XO("Bass"),       0.0,     -30.0,   30.0,    1  );
+Param( Treble,    double,  XO("Treble"),     0.0,     -30.0,   30.0,    1  );
 Param( Level,     double,  XO("Level"),      -1.0,    -30.0,   0.0,     1  );
 Param( Normalize, bool,    XO("Normalize"),  true,    false,   true,    1  );
 
@@ -155,7 +155,7 @@ sampleCount EffectBassTreble::ProcessBlock(float **inBlock, float **outBlock, sa
    }
    else
    {
-      float gain = (pow(10.0, dB_level / 20.0f)) / mMax;
+      float gain = DB_TO_LINEAR(dB_level) / mMax;
       for (sampleCount i = 0; i < blockLen; i++)
       {
          // Normalize to specified level
@@ -267,55 +267,44 @@ void EffectBassTreble::PopulateOrExchange(ShuttleGui & S)
 {
    S.StartVerticalLay(0);
    {
-      S.StartStatic(wxT(""));
+      S.StartMultiColumn(3, wxEXPAND);
+      S.SetStretchyCol(2);
       {
-         S.StartMultiColumn(3, wxEXPAND);
-         S.SetStretchyCol(2);
-         {
-            #ifdef __WXGTK__
-            // BoxSizer is to make first mnemonic work, on Linux.
-            wxPanel* cPanel = new wxPanel(S.GetParent(), wxID_ANY);
-            wxBoxSizer* cSizer = new wxBoxSizer(wxVERTICAL);
-            cPanel->SetSizer(cSizer);
-            #endif
+         // Bass control
+         FloatingPointValidator<double> vldBass(1, &dB_bass);
+         vldBass.SetRange(MIN_Bass, MAX_Bass);
+         mBassT = S.Id(ID_Bass).AddTextBox(_("&Bass (dB):"), wxT(""), 10);
+         mBassT->SetName(_("Bass (dB):"));
+         mBassT->SetValidator(vldBass);
 
-            // Bass control
-            FloatingPointValidator<double> vldBass(1, &dB_bass);
-            vldBass.SetRange(MIN_Bass, MAX_Bass);
-            mBassT = S.Id(ID_Bass).AddTextBox(_("&Bass (dB):"), wxT(""), 10);
-            mBassT->SetName(_("Bass (dB):"));
-            mBassT->SetValidator(vldBass);
+         S.SetStyle(wxSL_HORIZONTAL);
+         mBassS = S.Id(ID_Bass).AddSlider(wxT(""), 0, MAX_Bass * kSliderScale, MIN_Bass * kSliderScale);
+         mBassS->SetName(_("Bass"));
+         mBassS->SetPageSize(30);
 
-            S.SetStyle(wxSL_HORIZONTAL);
-            mBassS = S.Id(ID_Bass).AddSlider(wxT(""), 0, MAX_Bass * kSliderScale, MIN_Bass * kSliderScale);
-            mBassS->SetName(_("Bass"));
-            mBassS->SetPageSize(30);
+         // Treble control
+         FloatingPointValidator<double> vldTreble(1, &dB_treble);
+         vldTreble.SetRange(MIN_Treble, MAX_Treble);
+         mTrebleT = S.Id(ID_Treble).AddTextBox(_("&Treble (dB):"), wxT(""), 10);
+         mTrebleT->SetValidator(vldTreble);
 
-            // Treble control
-            FloatingPointValidator<double> vldTreble(1, &dB_treble);
-            vldTreble.SetRange(MIN_Treble, MAX_Treble);
-            mTrebleT = S.Id(ID_Treble).AddTextBox(_("&Treble (dB):"), wxT(""), 10);
-            mTrebleT->SetValidator(vldTreble);
+         S.SetStyle(wxSL_HORIZONTAL);
+         mTrebleS = S.Id(ID_Treble).AddSlider(wxT(""), 0, MAX_Treble * kSliderScale, MIN_Treble * kSliderScale);
+         mTrebleS->SetName(_("Treble"));
+         mTrebleS->SetPageSize(30);
 
-            S.SetStyle(wxSL_HORIZONTAL);
-            mTrebleS = S.Id(ID_Treble).AddSlider(wxT(""), 0, MAX_Treble * kSliderScale, MIN_Treble * kSliderScale);
-            mTrebleS->SetName(_("Treble"));
-            mTrebleS->SetPageSize(30);
+         // Level control
+         FloatingPointValidator<double> vldLevel(1, &dB_level);
+         vldLevel.SetRange(MIN_Level, MAX_Level);
+         mLevelT = S.Id(ID_Level).AddTextBox(_("&Level (dB):"), wxT(""), 10);
+         mLevelT->SetValidator(vldLevel);
 
-            // Level control
-            FloatingPointValidator<double> vldLevel(1, &dB_level);
-            vldLevel.SetRange(MIN_Level, MAX_Level);
-            mLevelT = S.Id(ID_Level).AddTextBox(_("&Level (dB):"), wxT(""), 10);
-            mLevelT->SetValidator(vldLevel);
-
-            S.SetStyle(wxSL_HORIZONTAL);
-            mLevelS = S.Id(ID_Level).AddSlider(wxT(""), 0, MAX_Level * kSliderScale, MIN_Level * kSliderScale);
-            mLevelS->SetName(_("Level"));
-            mLevelS->SetPageSize(30);
-         }
-         S.EndMultiColumn();
+         S.SetStyle(wxSL_HORIZONTAL);
+         mLevelS = S.Id(ID_Level).AddSlider(wxT(""), 0, MAX_Level * kSliderScale, MIN_Level * kSliderScale);
+         mLevelS->SetName(_("Level"));
+         mLevelS->SetPageSize(30);
       }
-      S.EndStatic();
+      S.EndMultiColumn();
 
       // Normalize checkbox
       S.StartHorizontalLay(wxLEFT, true);

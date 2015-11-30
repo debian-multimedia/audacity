@@ -29,18 +29,10 @@ have a window permanently associated with it.
 *//****************************************************************//**
 
 \class TipPanel
-\brief A wxPanel or a wxPopupWindow used to give the numerical value
-of an LWSlider or ASlider.
+\brief A wxPopupWindow used to give the numerical value of an LWSlider
+or ASlider.
 
 *//*******************************************************************/
-
-// For compilers that support precompilation, includes "wx/wx.h".
-#include <wx/wxprec.h>
-
-#ifndef WX_PRECOMP
-// Include your minimal set of headers here, or wx.h
-#include <wx/window.h>
-#endif
 
 
 #include "../Audacity.h"
@@ -48,8 +40,10 @@ of an LWSlider or ASlider.
 #include <math.h>
 
 #include <wx/defs.h>
+#include <wx/dcbuffer.h>
 #include <wx/dcclient.h>
 #include <wx/dcmemory.h>
+#include <wx/graphics.h>
 #include <wx/image.h>
 #include <wx/msgdlg.h>
 #include <wx/panel.h>
@@ -63,18 +57,8 @@ of an LWSlider or ASlider.
 #include <wx/statline.h>
 #include <wx/sizer.h>
 #include <wx/settings.h>
-
-#ifndef __WXMAC__
-#define USE_POPUPWIN 1
-#endif
-
-#if USE_POPUPWIN
 #include <wx/popupwin.h>
-#endif
-
-#if defined(__WXMAC__)
-#include <wx/sysopt.h>
-#endif
+#include <wx/window.h>
 
 #include "../Experimental.h"
 #include "ASlider.h"
@@ -88,143 +72,106 @@ of an LWSlider or ASlider.
 #include "../Theme.h"
 #include "../AllThemeResources.h"
 
-//#include "../../images/SliderThumb.xpm"
-
-#include "../../images/SliderThumbAlpha.xpm"
-#include "../../images/SliderThumbDisabled.xpm"
-#include "../../images/SliderThumb_Vertical.xpm"
-#include "../../images/SliderThumb_VerticalAlpha.xpm"
-#include "../../images/SliderThumb_VerticalDisabled.xpm"
-
 #if defined __WXMSW__
 const int sliderFontSize = 10;
 #else
 const int sliderFontSize = 12;
 #endif
 
-wxWindow* LWSlider::sharedTipPanel;
 //
 // TipPanel
 //
 
-#if USE_POPUPWIN
 class TipPanel : public wxPopupWindow
-#else
-// On the Mac we use a wxFrame since wxPopWindow isn't supported yet
-class TipPanel : public wxFrame
-#endif
 {
  public:
-   TipPanel(wxWindow * parent, wxWindowID id,
-            wxString label,
-            const wxPoint &pos);
-   virtual ~TipPanel(){}
-   void SetPos(const wxPoint &pos, wxString maxLabel);
+   TipPanel(wxWindow *parent, const wxString & label);
+   virtual ~TipPanel() {}
 
+   wxSize GetSize() const;
+   void SetPos(const wxPoint & pos);
+   void SetLabel(const wxString & label);
+
+private:
    void OnPaint(wxPaintEvent & event);
-
-   void SetTargetParent( wxWindowBase *newParent ){mParent = (wxWindow*)newParent;}
-
-   wxString label;
-
-   wxWindow *mParent;
-#ifdef USE_POPUPWIN
-   //wxwin won't let you create a wxPopupWindow without a parent frame.
-   //so we use a permanent offscreen dummy since projects can be deleted and their childs go with them.
-   static wxFrame*  sharedDummyParent;
+#if defined(__WXGTK__)
+   void OnCreate(wxWindowCreateEvent & event);
 #endif
+
+private:
+   wxString mMaxLabel;
+   wxString mLabel;
+   int mWidth;
+   int mHeight;
 
    DECLARE_EVENT_TABLE()
 };
 
-#if USE_POPUPWIN
-#define kDummyOffsetX -32000
-#define kDummyOffsetY -32000
-wxFrame*  TipPanel::sharedDummyParent;
-
 BEGIN_EVENT_TABLE(TipPanel, wxPopupWindow)
    EVT_PAINT(TipPanel::OnPaint)
-END_EVENT_TABLE()
-
-TipPanel::TipPanel(wxWindow *parent, wxWindowID  WXUNUSED(id),
-                   wxString label, const wxPoint &pos):
-wxPopupWindow(TipPanel::sharedDummyParent)
-{
-   this->label = label;
-   mParent = parent;
-   SetPos(pos, label);
-}
-
-void TipPanel::SetPos(const wxPoint& pos, wxString maxLabel)
-{
-   int x = pos.x;
-   int y = pos.y;
-
-//   if (mParent)
-//      mParent->ClientToScreen(&x,&y);
-
-   wxClientDC dc(this);
-   wxFont labelFont(sliderFontSize, wxSWISS, wxNORMAL, wxNORMAL);
-   dc.SetFont(labelFont);
-   int width, height;
-   dc.GetTextExtent(maxLabel, &width, &height);
-   height += 4;
-   SetSize(x - width/2, y, width, height);
-}
-
-#else
-
-BEGIN_EVENT_TABLE(TipPanel, wxFrame)
-   EVT_PAINT(TipPanel::OnPaint)
-END_EVENT_TABLE()
-
-TipPanel::TipPanel(wxWindow *parent, wxWindowID id,
-                   wxString label,
-                   const wxPoint &pos):
-   wxFrame(NULL, id, wxEmptyString, wxDefaultPosition, wxDefaultSize,
-           wxNO_BORDER | wxFRAME_NO_TASKBAR)
-{
-   mParent = parent;
-   this->label = label;
-   SetPos(pos, label);
-}
-
-void TipPanel::SetPos(const wxPoint& pos, wxString maxLabel)
-{
-   wxClientDC dc(this);
-   wxFont labelFont(sliderFontSize, wxSWISS, wxNORMAL, wxNORMAL);
-   dc.SetFont(labelFont);
-   int width, height;
-   dc.GetTextExtent(maxLabel, &width, &height);
-   width += 4;
-   height += 4;
-   int left = pos.x - width/2;
-   if (left < 0)
-      left = 0;
-   SetSize(left, pos.y, width, height);
-   Raise();
-}
-
+#if defined(__WXGTK__)
+   EVT_WINDOW_CREATE(TipPanel::OnCreate)
 #endif
+END_EVENT_TABLE()
 
-void TipPanel::OnPaint(wxPaintEvent& WXUNUSED(event))
+TipPanel::TipPanel(wxWindow *parent, const wxString & maxLabel)
+:  wxPopupWindow(parent, wxFRAME_SHAPED)
 {
-   wxPaintDC dc(this);
-   int width, height, textWidth, textHeight;
+   SetBackgroundStyle(wxBG_STYLE_PAINT);
 
+   mMaxLabel = maxLabel;
    wxFont labelFont(sliderFontSize, wxSWISS, wxNORMAL, wxNORMAL);
-   dc.SetFont(labelFont);
-   GetClientSize(&width, &height);
-#if defined(__WXMAC__)
-   dc.SetPen(AColor::tooltipBrush.GetColour());
-#else
+   GetTextExtent(mMaxLabel, &mWidth, &mHeight, NULL, NULL, &labelFont);
+
+   mWidth += 8;
+   mHeight += 8;
+
+#if defined(__WXMSW__) || defined(__WXMAC__)
+   wxGraphicsPath path = wxGraphicsRenderer::GetDefaultRenderer()->CreatePath();
+   path.AddRoundedRectangle(0, 0, mWidth, mHeight, 5);
+   SetShape(path);
+#endif
+}
+
+wxSize TipPanel::GetSize() const
+{
+   return wxSize(mWidth, mHeight);
+}
+
+void TipPanel::SetPos(const wxPoint & pos)
+{
+   SetSize(pos.x, pos.y, mWidth, mHeight);
+}
+
+void TipPanel::SetLabel(const wxString & label)
+{
+   mLabel = label;
+}
+
+void TipPanel::OnPaint(wxPaintEvent & WXUNUSED(event))
+{
+   wxAutoBufferedPaintDC dc(this);
+
    dc.SetPen(*wxBLACK_PEN);
-#endif
    dc.SetBrush(AColor::tooltipBrush);
-   dc.DrawRectangle(0, 0, width, height);
-   dc.GetTextExtent(label, &textWidth, &textHeight);
-   dc.DrawText(label, (width-textWidth)/2, (height-textHeight)/2);
+   dc.DrawRoundedRectangle(0, 0, mWidth, mHeight, 5);
+
+   dc.SetFont(wxFont(sliderFontSize, wxSWISS, wxNORMAL, wxNORMAL));
+   dc.SetTextForeground(AColor::tooltipPen.GetColour());
+
+   int textWidth, textHeight;
+   dc.GetTextExtent(mLabel, &textWidth, &textHeight);
+   dc.DrawText(mLabel, (mWidth - textWidth) / 2, (mHeight - textHeight) / 2);
 }
+
+#if defined(__WXGTK__)
+void TipPanel::OnCreate(wxWindowCreateEvent & WXUNUSED(event))
+{
+   wxGraphicsPath path = wxGraphicsRenderer::GetDefaultRenderer()->CreatePath();
+   path.AddRoundedRectangle(0, 0, mWidth, mHeight, 5);
+   SetShape(path);
+}
+#endif
 
 //
 // SliderDialog
@@ -292,7 +239,7 @@ bool SliderDialog::TransferDataFromWindow()
 
    mTextCtrl->GetValue().ToDouble(&value);
    if (mStyle == DB_SLIDER)
-      value = pow(10.0, value / 20.0);
+      value = DB_TO_LINEAR(value);
    mSlider->Set(value);
 
    return true;
@@ -313,6 +260,85 @@ float SliderDialog::Get()
 //
 // LWSlider
 //
+
+// Define the thumb outline
+static const wxPoint2DDouble outer[] =
+{
+   wxPoint2DDouble(  2,  0 ),
+   wxPoint2DDouble(  8,  0 ),
+   wxPoint2DDouble( 10,  2 ),
+   wxPoint2DDouble( 10,  8 ),
+   wxPoint2DDouble(  5, 13 ),
+   wxPoint2DDouble(  0,  8 ),
+   wxPoint2DDouble(  0,  2 ),
+   wxPoint2DDouble(  2,  0 )
+};
+
+// Define the left and top interior components when enabled
+static const wxPoint2DDouble enabledLeftBegin[] =
+{
+   wxPoint2DDouble(  2,  1 ),
+   wxPoint2DDouble(  1,  2 ),
+   wxPoint2DDouble(  1,  8 ),
+   wxPoint2DDouble(  4,  4 ),
+   wxPoint2DDouble(  4,  7 )
+};
+static const wxPoint2DDouble enabledLeftEnd[] =
+{
+   wxPoint2DDouble(  8,  1 ),
+   wxPoint2DDouble(  1,  8 ),
+   wxPoint2DDouble(  5, 12 ),
+   wxPoint2DDouble(  6,  4 ),
+   wxPoint2DDouble(  6,  7 )
+};
+
+// Define right and bottom interior components when enabled
+static const wxPoint2DDouble enabledRightBegin[] =
+{
+   wxPoint2DDouble(  9,  2 ),
+   wxPoint2DDouble(  9,  8 ),
+   wxPoint2DDouble(  4,  5 ),
+   wxPoint2DDouble(  4,  8 ),
+};
+static const wxPoint2DDouble enabledRightEnd[] =
+{
+   wxPoint2DDouble(  9,  8 ),
+   wxPoint2DDouble(  6, 11 ),
+   wxPoint2DDouble(  6,  5 ),
+   wxPoint2DDouble(  6,  8 )
+};
+
+// Define the interior stripes when disabled
+static const wxPoint2DDouble disabledStripesBegin[] =
+{
+   wxPoint2DDouble(  3,  2 ),
+   wxPoint2DDouble(  5,  2 ),
+   wxPoint2DDouble(  7,  2 ),
+   wxPoint2DDouble(  2,  3 ),
+   wxPoint2DDouble(  2,  5 ),
+   wxPoint2DDouble(  2,  7 ),
+};
+static const wxPoint2DDouble disabledStripesEnd[] =
+{
+   wxPoint2DDouble(  8,  7 ),
+   wxPoint2DDouble(  8,  5 ),
+   wxPoint2DDouble(  8,  3 ),
+   wxPoint2DDouble(  7,  8 ),
+   wxPoint2DDouble(  6,  9 ),
+   wxPoint2DDouble(  5, 10 ),
+};
+
+// Define the right and bottom interior components when disabled
+static const wxPoint2DDouble disabledRightBegin[] =
+{
+   wxPoint2DDouble(  9,  2 ),
+   wxPoint2DDouble(  9,  8 ),
+};
+static const wxPoint2DDouble disabledRightEnd[] =
+{
+   wxPoint2DDouble(  9,  8 ),
+   wxPoint2DDouble(  6, 11 ),
+};
 
 // Construct customizable slider
 LWSlider::LWSlider(wxWindow * parent,
@@ -467,8 +493,6 @@ void LWSlider::Init(wxWindow * parent,
    mStyle = style;
    mOrientation = orientation;
    mIsDragging = false;
-   mWidth = size.x;
-   mHeight = size.y;
    mParent = parent;
    mHW = heavyweight;
    mPopup = popup;
@@ -483,24 +507,35 @@ void LWSlider::Init(wxWindow * parent,
    mDefaultShortcut = false;
    mBitmap = NULL;
    mThumbBitmap = NULL;
-   mThumbBitmapAllocated = false;
    mScrollLine = 1.0f;
    mScrollPage = 5.0f;
+   mTipPanel = NULL;
+
+   AdjustSize(size);
 
    mpRuler = NULL; // Do this and Move() before Draw().
    Move(pos);
-   Draw();
-
-   CreatePopWin();
 }
 
 LWSlider::~LWSlider()
 {
-   delete mBitmap;
-   if (mThumbBitmapAllocated) {
-      delete mThumbBitmap;
+   if (mBitmap)
+   {
+      delete mBitmap;
+      mBitmap = NULL;
    }
+
+   if (mThumbBitmap)
+   {
+      delete mThumbBitmap;
+      mThumbBitmap = NULL;
+   }
+
    delete mpRuler;
+   if (mTipPanel)
+   {
+      delete mTipPanel;
+   }
 }
 
 wxWindowID LWSlider::GetId()
@@ -536,179 +571,28 @@ void LWSlider::SetScroll(float line, float page)
    mScrollPage = page;
 }
 
-wxWindow* LWSlider::GetToolTipParent() const
-{
-   wxWindow *top = mParent;
-   while(top && top->GetParent()) {
-      top = top->GetParent();
-   }
-
-   return top;
-}
-
-void LWSlider::CreatePopWin()
-{
-   maxTipLabel = mName + wxT(": 000000");
-
-   if (mStyle == PAN_SLIDER || mStyle == DB_SLIDER || mStyle == SPEED_SLIDER
-#ifdef EXPERIMENTAL_MIDI_OUT
-       || mStyle == VEL_SLIDER
-#endif
-       )
-      maxTipLabel += wxT("000");
-
-
-   if(!LWSlider::sharedTipPanel) {
-#ifdef USE_POPUPWIN
-      TipPanel::sharedDummyParent = new wxFrame(NULL, -1, wxT("offscreentip"), wxPoint(kDummyOffsetX, kDummyOffsetY));
-#endif
-      LWSlider::sharedTipPanel = new TipPanel(mParent, -1, maxTipLabel, wxDefaultPosition);
-      LWSlider::sharedTipPanel->Hide();
-   }
-}
-
-void LWSlider::SetPopWinPosition()
-{
-   wxPoint pt;
-   if (mOrientation == wxHORIZONTAL)
-      pt = wxPoint(mWidth/2 + mLeft, mHeight + mTop + 1);
-   else
-      pt = wxPoint(mWidth + mLeft + 1, mHeight/2 + mTop);
-   pt = mParent->ClientToScreen(pt);
-
-   if (LWSlider::sharedTipPanel)
-      ((TipPanel *)LWSlider::sharedTipPanel)->SetPos(pt, maxTipLabel);
-}
-
 void LWSlider::Move(const wxPoint &newpos)
 {
    mLeft = newpos.x;
    mTop = newpos.y;
 }
 
-void LWSlider::RecreateTipWin()
+void LWSlider::AdjustSize(const wxSize & sz)
 {
-   LWSlider::sharedTipPanel->Destroy();
-   LWSlider::sharedTipPanel = NULL;
-   CreatePopWin();
-}
+   mWidth = sz.GetWidth();
+   mHeight = sz.GetHeight();
 
-void LWSlider::OnPaint(wxDC &dc, bool  WXUNUSED(selected))
-{
-   //thumbPos should be in pixels
-   int thumbPos = ValueToPosition(mCurrentValue);
-   int thumbOrtho; // position in axis orthogonal to mOrientation
-   if (mOrientation == wxHORIZONTAL)
-      thumbOrtho = mCenterY - (mThumbHeight/2);
-   else
-      thumbOrtho = mCenterX - (mThumbWidth/2);
-
-#if defined(__WXMSW__)
-   if( mHW )
-   {
-      dc.Clear();
-   }
-#endif
-#if defined(__WXGTK__)
-   if (mHW)
-   {
-      dc.SetBackground(wxSystemSettings::GetColour(wxSYS_COLOUR_BACKGROUND));
-      dc.Clear();
-   }
-#endif
-
-   dc.DrawBitmap(*mBitmap, mLeft, mTop, true);
-   if (mOrientation == wxHORIZONTAL)
-      dc.DrawBitmap(*mThumbBitmap, mLeft+thumbPos, mTop+thumbOrtho, true);
-   else
-      dc.DrawBitmap(*mThumbBitmap, mLeft+thumbOrtho, mTop+thumbPos, true);
-
-   if (LWSlider::sharedTipPanel)
-      LWSlider::sharedTipPanel->Refresh();
-}
-
-void LWSlider::OnSize( wxSizeEvent & event )
-{
-   mWidth = event.GetSize().GetX();
-   mHeight = event.GetSize().GetY();
-
-   Draw();
-
-   Refresh();
-}
-
-void LWSlider::Draw()
-{
-   //
-   // Get the thumb slider bitmap
-   //
-   // AD: Setting the mThumbBitmap pointer requires caution, because
-   // ownership of the object pointed to varies. If we've allocated
-   // mThumbBitmap we must delete it first, and we must set
-   // mThumbBitmapAllocated according to whether we have.
-   //
-
-   if (mEnabled && mOrientation == wxHORIZONTAL)
-   {
-      if (mThumbBitmapAllocated)
-         delete mThumbBitmap;
-      mThumbBitmap = &theTheme.Bitmap( bmpSliderThumb );
-      mThumbBitmapAllocated = false;
-   }
-   //v \todo Convert this to an image in AllThemeResources, as bmpSliderThumb. Make an alpha also, as for horizontal slider thumb?
-   else if (mOrientation == wxHORIZONTAL)
-   {
-      wxImage thumbImage(wxBitmap(SliderThumbDisabled).ConvertToImage());
-
-      if (mThumbBitmapAllocated)
-         delete mThumbBitmap;
-      mThumbBitmap = new wxBitmap(thumbImage);
-      mThumbBitmapAllocated = true;
-
-      mThumbBitmap->SetMask(new wxMask(wxBitmap(SliderThumbAlpha), *wxBLACK));
-   }
-   else if (mEnabled)
-   {
-      wxImage thumbImage(wxBitmap(SliderThumb_Vertical).ConvertToImage());
-      if (mThumbBitmapAllocated)
-         delete mThumbBitmap;
-      mThumbBitmap = new wxBitmap(thumbImage);
-      mThumbBitmapAllocated = true;
-
-      mThumbBitmap->SetMask(
-            new wxMask(wxBitmap(SliderThumb_VerticalAlpha), *wxBLACK));
-   }
-   else
-   {
-      wxImage thumbImage(wxBitmap(
-               SliderThumb_VerticalDisabled).ConvertToImage());
-
-      if (mThumbBitmapAllocated)
-         delete mThumbBitmap;
-      mThumbBitmap = new wxBitmap(thumbImage);
-      mThumbBitmapAllocated = true;
-
-      mThumbBitmap->SetMask(
-            new wxMask(wxBitmap(SliderThumb_VerticalAlpha), *wxBLACK));
-   }
-
-   //
-   // Now the background bitmap
-   //
-
-   if( mBitmap )
-   {
-      delete mBitmap;
-      mBitmap = NULL;
-   }
+   mThumbWidth = 14;
+   mThumbHeight = 14;
 
    if (mOrientation == wxHORIZONTAL)
+   {
       mCenterY = mHeight - 9;
+   }
    else
+   {
       mCenterX = mWidth - 9;
-
-   mThumbWidth = mThumbBitmap->GetWidth();
-   mThumbHeight = mThumbBitmap->GetHeight();
+   }
 
    if (mOrientation == wxHORIZONTAL)
    {
@@ -723,33 +607,169 @@ void LWSlider::Draw()
       mHeightY = mBottomY - mTopY;
    }
 
-   wxMemoryDC *dc = new wxMemoryDC();
-   mBitmap = new wxBitmap(mWidth, mHeight);
+   Refresh();
+}
 
-   // Set background to an unused color.  This allows for easy
-   // mask creation.  And garbage can be displayed if it isn't
-   // cleared.
-   dc->SelectObject(*mBitmap);
+void LWSlider::OnPaint(wxDC &dc)
+{
+   if (!mBitmap || !mThumbBitmap)
+   {
+      Draw(dc);
+   }
 
-   wxColour TransparentColour = wxColour( 255, 254, 255 );
+   //thumbPos should be in pixels
+   int thumbPos = ValueToPosition(mCurrentValue);
+   int thumbOrtho; // position in axis orthogonal to mOrientation
+   if (mOrientation == wxHORIZONTAL)
+      thumbOrtho = mCenterY - (mThumbHeight/2);
+   else
+      thumbOrtho = mCenterX - (mThumbWidth/2);
+
+#if !defined(__WXMAC__)
+   if( mHW )
+   {
+      dc.Clear();
+   }
+#endif
+
+   dc.DrawBitmap(*mBitmap, mLeft, mTop, true);
+   if (mOrientation == wxHORIZONTAL)
+   {
+      dc.DrawBitmap(*mThumbBitmap, mLeft+thumbPos, mTop+thumbOrtho, true);
+   }
+   else
+   {
+      dc.DrawBitmap(*mThumbBitmap, mLeft+thumbOrtho, mTop+thumbPos, true);
+   }
+
+   if (mTipPanel)
+   {
+      mTipPanel->Update();
+   }
+}
+
+void LWSlider::OnSize( wxSizeEvent & event )
+{
+   AdjustSize(event.GetSize());
+
+   Refresh();
+}
+
+void LWSlider::Draw(wxDC & paintDC)
+{
+   if (mBitmap)
+   {
+      delete mBitmap;
+      mBitmap = NULL;
+   }
+
+   if (mThumbBitmap)
+   {
+      delete mThumbBitmap;
+      mThumbBitmap = NULL;
+   }
+
+   // The color we'll use to create the mask
+   wxColour transparentColour(255, 254, 255);
+
+   // Set up the memory DC
+   wxMemoryDC dc;
+
+   // Create the bitmap
+   mThumbBitmap = new wxBitmap();
+   mThumbBitmap->Create(mThumbWidth, mThumbHeight, paintDC);
+   dc.SelectObject(*mThumbBitmap);
+
+#if !defined(__WXMAC__)
+   // Clear the background for our mask
+   dc.SetBackground(transparentColour);
+   dc.Clear();
+#endif
+
+   // Create the graphics contexxt
+   wxGraphicsContext *gc = wxGraphicsContext::Create(dc);
+
+   // For vertical, we use the same downward pointing thumb, but rotate and flip it
+   if (mOrientation == wxVERTICAL)
+   {
+      gc->Translate(0, 3);
+      gc->Scale(1, -1);
+      gc->Rotate((-90 * M_PI) / 180);
+   }
+   else
+   {
+      gc->Translate(1.5, 0);
+   }
+
+   // Draw the thumb outline
+   gc->SetBrush(wxBrush(mEnabled ? wxColour(192, 192, 216) : wxColour(238, 238, 238)));
+   gc->SetPen(wxPen(mEnabled ? wxColour(0, 0, 0) : wxColour(119, 119, 119)));
+   gc->DrawLines(WXSIZEOF(outer), outer);
+
+   // The interior is based on whether the slider is enabled or not
+   if (mEnabled)
+   {
+      // Draw the left and top interior components
+      gc->SetPen(wxPen(wxColour(255, 255, 255)));
+      gc->StrokeLines(WXSIZEOF(enabledLeftBegin), enabledLeftBegin, enabledLeftEnd);
+
+      // Draw the right and bottom interior components
+      gc->SetPen(wxPen(wxColour(141, 141, 178)));
+      gc->StrokeLines(WXSIZEOF(enabledRightBegin), enabledRightBegin, enabledRightEnd);
+   }
+   else
+   {
+      // Draw the interior stripes
+      gc->SetPen(wxPen(wxColour(200, 200, 200)));
+      gc->StrokeLines(WXSIZEOF(disabledStripesBegin), disabledStripesBegin, disabledStripesEnd);
+
+      // Draw the right and bottom interior components
+      gc->SetPen(wxPen(wxColour(153, 153, 153)));
+      gc->StrokeLines(WXSIZEOF(disabledRightBegin), disabledRightBegin, disabledRightEnd);
+   }
+
+   // Done with the graphics context and memory DC
+   delete gc;
+   dc.SelectObject(wxNullBitmap);
+
+#if !defined(__WXMAC__)
+   // Now create and set the mask
+   mThumbBitmap->SetMask(new wxMask(*mThumbBitmap, transparentColour));
+#endif
+
+   //
+   // Now the background bitmap
+   //
+
+   mBitmap = new wxBitmap();
+   mBitmap->Create(mWidth, mHeight, paintDC);
+   dc.SelectObject(*mBitmap);
+
    // DO-THEME Mask colour!!  JC-Aug-2007
    // Needed with experimental theming!
    //  ... because windows blends against this colour.
 #ifdef EXPERIMENTAL_THEMING
-   TransparentColour = theTheme.Colour( clrTrackInfo );
+   transparentColour = theTheme.Colour(clrTrackInfo);
+#else
+   transparentColour = wxColour(255, 254, 255);
 #endif
 
-   dc->SetBackground( wxBrush( TransparentColour  ) );
-   dc->Clear();
+#if !defined(__WXMAC__)
+   dc.SetBackground(transparentColour);
+   dc.Clear();
+#endif
 
    // Draw the line along which the thumb moves.
-   AColor::Dark(dc, false);
+   AColor::Dark(&dc, false);
 
    if (mOrientation == wxHORIZONTAL)
-      AColor::Line(*dc, mLeftX, mCenterY+1, mRightX+2, mCenterY+1);
+   {
+      AColor::Line(dc, mLeftX, mCenterY+1, mRightX+2, mCenterY+1);
+   }
    else //v if (mStyle != DB_SLIDER) // Let the ruler do it for vertical DB_SLIDER.
-      AColor::Line(*dc, mCenterX+1, mTopY, mCenterX+1, mBottomY+2);
-
+   {
+      AColor::Line(dc, mCenterX+1, mTopY, mCenterX+1, mBottomY+2);
+   }
 
    // Draw +/- or L/R first.  We need to draw these before the tick marks.
    if (mStyle == PAN_SLIDER)
@@ -759,51 +779,46 @@ void LWSlider::Draw()
       // sliderFontSize is for the tooltip.
       // we need something smaller here...
       wxFont labelFont(sliderFontSize-3, wxSWISS, wxNORMAL, wxNORMAL);
-      dc->SetFont(labelFont);
+      dc.SetFont(labelFont);
 
       // Colors
 #ifdef EXPERIMENTAL_THEMING
-      dc->SetTextForeground( theTheme.Colour( clrTrackPanelText ));
+      dc.SetTextForeground( theTheme.Colour( clrTrackPanelText ));
 
       // TransparentColour should be same as clrTrackInfo.
-      dc->SetTextBackground( theTheme.Colour( clrTrackInfo ) );
-      dc->SetBackground( theTheme.Colour( clrTrackInfo ) );
+      dc.SetTextBackground( theTheme.Colour( clrTrackInfo ) );
+      dc.SetBackground( theTheme.Colour( clrTrackInfo ) );
       // HAVE to use solid and not transparent here,
       // otherwise windows will do it's clever font optimisation trick,
       // but against a default colour of white, which is not OK on a dark
       // background.
-      dc->SetBackgroundMode( wxSOLID );
+      dc.SetBackgroundMode( wxSOLID );
 #else
-      if (mEnabled)
-         dc->SetTextForeground( wxColour( 0,0,0) );
-      else
-         dc->SetTextForeground( wxColour(128, 128, 128));
-
-      dc->SetTextBackground( wxColour( 255,255,255));
+      dc.SetTextForeground(mEnabled ? wxColour(0, 0, 0) : wxColour(128, 128, 128));
+      dc.SetTextBackground(wxColour(255,255,255));
 #endif
 
       /* i18n-hint: One-letter abbreviation for Left, in the Pan slider */
-      dc->DrawText(_("L"), mLeftX, 0);
+      dc.DrawText(_("L"), mLeftX, 0);
 
       /* i18n-hint: One-letter abbreviation for Right, in the Pan slider */
-      dc->DrawText(_("R"), mRightX-6,0);
-   } else
+      dc.DrawText(_("R"), mRightX-6,0);
+   }
+   else
    {
       // draw the '-' and the '+'
 #ifdef EXPERIMENTAL_THEMING
       wxPen pen( theTheme.Colour( clrTrackPanelText ));
-      dc->SetPen( pen );
+      dc.SetPen( pen );
 #else
-      if (mEnabled)
-         dc->SetPen(*wxBLACK_PEN);
-      else
-         dc->SetPen(wxColour(128, 128, 128));
+      dc.SetPen(mEnabled ? *wxBLACK : wxColour(128, 128, 128));
 #endif
+
       if (mOrientation == wxHORIZONTAL)
       {
-         AColor::Line(*dc, mLeftX, mCenterY-10, mLeftX+4, mCenterY-10);
-         AColor::Line(*dc, mRightX-5, mCenterY-10, mRightX-1, mCenterY-10);
-         AColor::Line(*dc, mRightX-3, mCenterY-12, mRightX-3, mCenterY-8);
+         AColor::Line(dc, mLeftX, mCenterY-10, mLeftX+4, mCenterY-10);
+         AColor::Line(dc, mRightX-5, mCenterY-10, mRightX-1, mCenterY-10);
+         AColor::Line(dc, mRightX-3, mCenterY-12, mRightX-3, mCenterY-8);
       }
       else
       {
@@ -812,9 +827,9 @@ void LWSlider::Draw()
          // Draw '+' and '-' only for other vertical sliders.
          if (mStyle != DB_SLIDER)
          {
-            AColor::Line(*dc, mCenterX-12, mBottomY-3,  mCenterX-8, mBottomY-3);
-            AColor::Line(*dc, mCenterX-12, mTopY+3,     mCenterX-8, mTopY+3);
-            AColor::Line(*dc, mCenterX-10, mTopY,       mCenterX-10, mTopY+5);
+            AColor::Line(dc, mCenterX-12, mBottomY-3,  mCenterX-8, mBottomY-3);
+            AColor::Line(dc, mCenterX-12, mTopY+3,     mCenterX-8, mTopY+3);
+            AColor::Line(dc, mCenterX-10, mTopY,       mCenterX-10, mTopY+5);
          }
       }
    }
@@ -852,7 +867,9 @@ void LWSlider::Draw()
       int divs = 10;
       double upp;
       if (mOrientation == wxHORIZONTAL)
+      {
          upp = divs / (double)(mWidthX-1);
+      }
       else
       {
          if (mStyle == DB_SLIDER)
@@ -862,82 +879,223 @@ void LWSlider::Draw()
       double d = 0.0;
       int int_d = -1;
       const int kMax = (mOrientation == wxHORIZONTAL) ? mWidthX : mHeightY;
-      for(int p = 0; p <= kMax; p++) {
-         if (((int)d) > int_d) {
+      for(int p = 0; p <= kMax; p++)
+      {
+         if (((int)d) > int_d)
+         {
             int_d = (int)d;
             int tickLength = ((int_d == 0) || (int_d == divs)) ? 5: 3; // longer ticks at extremes
-            AColor::Light(dc, false);
+            AColor::Light(&dc, false);
             if (mOrientation == wxHORIZONTAL)
-               AColor::Line(*dc, mLeftX+p, mCenterY-tickLength, mLeftX+p, mCenterY-1); // ticks above
+            {
+               AColor::Line(dc, mLeftX+p, mCenterY-tickLength, mLeftX+p, mCenterY-1); // ticks above
+            }
             else
-               AColor::Line(*dc, mCenterX-tickLength, mTopY+p, mCenterX-1, mTopY+p); // ticks at left
+            {
+               AColor::Line(dc, mCenterX-tickLength, mTopY+p, mCenterX-1, mTopY+p); // ticks at left
+            }
 
-            AColor::Dark(dc, false);
+            AColor::Dark(&dc, false);
 
             if (mOrientation == wxHORIZONTAL)
-               AColor::Line(*dc, mLeftX+p+1, mCenterY-tickLength+1, mLeftX+p+1, mCenterY-1); // ticks above
+            {
+               AColor::Line(dc, mLeftX+p+1, mCenterY-tickLength+1, mLeftX+p+1, mCenterY-1); // ticks above
+            }
             else
-               AColor::Line(*dc, mCenterX-tickLength+1, mTopY+p+1, mCenterX-1, mTopY+p+1); // ticks at left
+            {
+               AColor::Line(dc, mCenterX-tickLength+1, mTopY+p+1, mCenterX-1, mTopY+p+1); // ticks at left
+            }
          }
          d += upp;
       }
    }
 
-   dc->SelectObject(wxNullBitmap);
+   dc.SelectObject(wxNullBitmap);
 
-   // Must preceed creating the mask as that will attempt to
-   // select the bitmap into another DC.
-   delete dc;
-
-   mBitmap->SetMask( new wxMask( *mBitmap, TransparentColour ) );
+#if !defined(__WXMAC__)
+   mBitmap->SetMask(new wxMask(*mBitmap, transparentColour));
+#endif
 }
 
+void LWSlider::SetToolTipTemplate(const wxString & tip)
+{
+   mTipTemplate = tip;
+}
+
+void LWSlider::ShowTip(bool show)
+{
+   if (show)
+   {
+      if (mTipPanel)
+      {
+         if (mTipPanel->IsShownOnScreen())
+         {
+            return;
+         }
+
+         delete mTipPanel;
+         mTipPanel = NULL;
+      }
+
+      CreatePopWin();
+      FormatPopWin();
+      SetPopWinPosition();
+      mTipPanel->Show();
+   }
+   else
+   {
+      if (mTipPanel)
+      {
+         mTipPanel->Hide();
+         delete mTipPanel;
+         mTipPanel = NULL;
+      }
+   }
+}
+
+void LWSlider::CreatePopWin()
+{
+   if (mTipPanel)
+   {
+      delete mTipPanel;
+      mTipPanel = NULL;
+   }
+
+   mTipPanel = new TipPanel(mParent, GetMaxTip());
+}
+
+void LWSlider::SetPopWinPosition()
+{
+   if (mTipPanel)
+   {
+      wxSize sz = mTipPanel->GetSize();
+      wxPoint pt;
+
+      if (mOrientation == wxHORIZONTAL)
+      {
+         pt.x = mLeft + ((mWidth - sz.x) / 2);
+         pt.y = mTop + mHeight + 1;
+      }
+      else
+      {
+         pt.x = mLeft + mWidth + 1;
+         pt.y = mTop + ((mHeight - sz.y) / 2);
+      }
+
+      mTipPanel->SetPos(mParent->ClientToScreen(pt));
+   }
+}
 
 void LWSlider::FormatPopWin()
 {
-   wxString label;
-   wxString valstr;
-
-   switch(mStyle) {
-   case FRAC_SLIDER:
-      label.Printf(wxT("%s: %.2f"), mName.c_str(), mCurrentValue);
-      break;
-
-   case DB_SLIDER:
-      valstr.Printf(wxT("%.1f"), mCurrentValue);
-      if (valstr.Right(1) == wxT("0"))
-         valstr = valstr.Left(valstr.Length() - 2);
-      if (mCurrentValue > 0)
-         valstr = wxT("+") + valstr;
-
-      label.Printf(wxT("%s: %s dB"), mName.c_str(), valstr.c_str());
-      break;
-   case PAN_SLIDER:
-      if (mCurrentValue == 0.0)
-         label.Printf(wxT("%s: %s"), mName.c_str(),
-                      _("Center"));
-      else {
-         if (mCurrentValue < 0.0)
-            label.Printf(wxT("%s: %.0f%% %s"), mName.c_str(),
-                         -mCurrentValue * 100.0f, _("Left"));
-         else /* if (val > 0.0) */
-            label.Printf(wxT("%s: %.0f%% %s"), mName.c_str(),
-                         mCurrentValue * 100.0f, _("Right"));
-      }
-
-      break;
-   case SPEED_SLIDER:
-      label.Printf(wxT("%s: %.2fx"), mName.c_str(), mCurrentValue);
-      break;
-#ifdef EXPERIMENTAL_MIDI_OUT
-   case VEL_SLIDER:
-       label.Printf(wxT("%s: %s%d"), mName.c_str(),
-                    (mCurrentValue > 0.0f ? _("+") : wxT("")),
-                    (int) mCurrentValue);
-#endif
+   if (!mTipPanel)
+   {
+      return;
    }
 
-   ((TipPanel *)LWSlider::sharedTipPanel)->label = label;
+   mTipPanel->SetLabel(GetTip(mCurrentValue));
+   mTipPanel->Refresh();
+}
+
+wxString LWSlider::GetTip(float value) const
+{
+   wxString label;
+
+   if (mTipTemplate.IsEmpty())
+   {
+      wxString val;
+
+      switch(mStyle)
+      {
+      case FRAC_SLIDER:
+         val.Printf(wxT("%.2f"), value);
+         break;
+   
+      case DB_SLIDER:
+         val.Printf(wxT("%+.1f dB"), value);
+         if (val.Right(1) == wxT("0"))
+         {
+            val.Left(val.Length() - 2);
+         }
+         break;
+
+      case PAN_SLIDER:
+         if (value == 0.0)
+         {
+            val = _("Center");
+         }
+         else
+         {
+            val.Printf(wxT("%.0f%% %s"),
+               value * (value < 0.0 ? -100.0f : 100.0f),
+               value < 0.0 ? _("Left") : _("Right"));
+         }
+         break;
+
+      case SPEED_SLIDER:
+         val.Printf(wxT("%.2fx"), value);
+         break;
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+      case VEL_SLIDER:
+          val.Printf(wxT("%s%d"),
+                     (value > 0.0f ? _("+") : wxT("")),
+                     (int) value);
+          break;
+#endif
+      }
+
+      label.Printf(wxT("%s: %s"), mName.c_str(), val.c_str());
+   }
+   else
+   {
+      label.Printf(mTipTemplate, value);
+   }
+
+   return label;
+}
+
+wxString LWSlider::GetMaxTip() const
+{
+   wxString label;
+
+   if (mTipTemplate.IsEmpty())
+   {
+      wxString val;
+
+      switch(mStyle)
+      {
+      case FRAC_SLIDER:
+         val.Printf(wxT("%d.99"), (int) mMinValue - mMaxValue);
+         break;
+
+      case DB_SLIDER:
+         val = wxT("-99.999 dB");
+         break;
+
+      case PAN_SLIDER:
+         val = wxT("-100% Right");
+         break;
+
+      case SPEED_SLIDER:
+         val = wxT("9.99x");
+         break;
+
+#ifdef EXPERIMENTAL_MIDI_OUT
+      case VEL_SLIDER:
+          val = wxT("+127");
+          break;
+#endif
+      }
+
+      label.Printf(wxT("%s: %s"), mName.c_str(), val.c_str());
+   }
+   else
+   {
+      label.Printf(mTipTemplate, floor(mMaxValue - mMinValue) + 0.999);
+   }
+
+   return label;
 }
 
 bool LWSlider::ShowDialog()
@@ -981,32 +1139,21 @@ bool LWSlider::DoShowDialog(wxPoint pos)
    return changed;
 }
 
-void LWSlider::DeleteSharedTipPanel()
-{
-   if(LWSlider::sharedTipPanel) {
-      ((TipPanel*)LWSlider::sharedTipPanel)->Destroy();
-#ifdef USE_POPUPWIN
-      TipPanel::sharedDummyParent->Destroy();
-#endif
-   }
-   LWSlider::sharedTipPanel = NULL;
-}
-
 void LWSlider::OnMouseEvent(wxMouseEvent & event)
 {
-   if (event.Entering()) {
-      #if wxUSE_TOOLTIPS // Not available in wxX11
+   if (event.Entering())
+   {
       // Display the tooltip in the status bar
-      if (mParent->GetToolTip())
-      {
-         wxString tip = mParent->GetToolTip()->GetTip();
-         GetActiveProject()->TP_DisplayStatusMessage(tip);
-         Refresh();
-      }
-      #endif
+      wxString tip = GetTip(mCurrentValue);
+      GetActiveProject()->TP_DisplayStatusMessage(tip);
+      Refresh();
    }
    else if (event.Leaving())
    {
+      if (!mIsDragging)
+      {
+         ShowTip(false);
+      }
       GetActiveProject()->TP_DisplayStatusMessage(wxT(""));
       Refresh();
    }
@@ -1014,6 +1161,15 @@ void LWSlider::OnMouseEvent(wxMouseEvent & event)
    // Events other than mouse-overs are ignored when we are disabled
    if (!mEnabled)
       return;
+
+   // Windows sends a right button mouse event when you press the context menu
+   // key, so ignore it.
+   if ((event.RightDown() && !event.RightIsDown()) ||
+       (event.RightUp() && event.GetPosition() == wxPoint(-1, -1)))
+   {
+      event.Skip(false);
+      return;
+   }
 
    float prevValue = mCurrentValue;
 
@@ -1043,7 +1199,7 @@ void LWSlider::OnMouseEvent(wxMouseEvent & event)
    }
    else if( event.ButtonDown() )
    {
-      if( mDefaultShortcut && event.CmdDown() )
+      if( mDefaultShortcut && event.ControlDown() )
       {
          mCurrentValue = mDefaultValue;
       }
@@ -1076,23 +1232,16 @@ void LWSlider::OnMouseEvent(wxMouseEvent & event)
       if (!mParent->HasCapture()) {
          mParent->CaptureMouse();
       }
-      // wxSetCursor(wxCURSOR_BLANK);
-      ((TipPanel*)LWSlider::sharedTipPanel)->SetTargetParent(mParent);
-      FormatPopWin();
-      SetPopWinPosition();
-      LWSlider::sharedTipPanel->Show();
-      //hide mouseover tooltip
-      wxToolTip::Enable(false);
+
+      ShowTip(true);
    }
    else if( event.ButtonUp() )
    {
       mIsDragging = false;
       if (mParent->HasCapture())
          mParent->ReleaseMouse();
-      LWSlider::sharedTipPanel->Hide();
-      //restore normal tooltip behavor for mouseovers
-      wxToolTip::Enable(true);
-      // wxSetCursor(wxNullCursor);
+
+      ShowTip(false);
    }
    else if (event.Dragging() && mIsDragging)
    {
@@ -1153,6 +1302,12 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
    {
       switch( event.GetKeyCode() )
       {
+         case WXK_TAB:
+            mParent->Navigate(event.ShiftDown()
+                              ? wxNavigationKeyEvent::IsBackward
+                              : wxNavigationKeyEvent::IsForward);
+            break;
+
          case WXK_RIGHT:
          case WXK_UP:
             Increase( mScrollLine );
@@ -1166,17 +1321,11 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
             break;
 
          case WXK_PAGEUP:
-#if !wxCHECK_VERSION(2,7,0)
-         case WXK_PRIOR:
-#endif
             Increase( mScrollPage );
             SendUpdate( mCurrentValue );
             break;
 
          case WXK_PAGEDOWN:
-#if !wxCHECK_VERSION(2,7,0)
-         case WXK_NEXT:
-#endif
             Decrease( mScrollPage );
             SendUpdate( mCurrentValue );
             break;
@@ -1187,17 +1336,6 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
 
          case WXK_END:
             SendUpdate( mMaxValue );
-            break;
-
-         case WXK_TAB:
-            {
-               wxNavigationKeyEvent nevent;
-               nevent.SetWindowChange( event.ControlDown() );
-               nevent.SetDirection( !event.ShiftDown() );
-               nevent.SetEventObject( mParent );
-               nevent.SetCurrentFocus( mParent );
-               mParent->GetParent()->GetEventHandler()->ProcessEvent(nevent);
-            }
             break;
 
          case WXK_RETURN:
@@ -1218,15 +1356,18 @@ void LWSlider::OnKeyEvent(wxKeyEvent & event)
             break;
       }
    }
-
-   event.Skip();
+   else
+   {
+      event.Skip();
+   }
 }
 
 void LWSlider::SendUpdate( float newValue )
 {
    mCurrentValue = newValue;
+
    FormatPopWin();
-   LWSlider::sharedTipPanel->Refresh();
+
    Refresh();
 
    wxCommandEvent e( wxEVT_COMMAND_SLIDER_UPDATED, mID );
@@ -1330,7 +1471,7 @@ float LWSlider::DragPositionToValue(int fromPos, bool shiftDown)
 float LWSlider::Get( bool convert )
 {
    if (mStyle == DB_SLIDER)
-      return ( convert ? pow(10.0f, mCurrentValue / 20.0f) : mCurrentValue );
+      return (convert ? DB_TO_LINEAR(mCurrentValue) : mCurrentValue);
    else
       return mCurrentValue;
 }
@@ -1340,7 +1481,7 @@ void LWSlider::Set(float value)
    if (mIsDragging)
       return;
    if (mStyle == DB_SLIDER)
-      mCurrentValue = 20.0f*log10(value);
+      mCurrentValue = LINEAR_TO_DB(value);
    else
       mCurrentValue = value;
 
@@ -1412,7 +1553,13 @@ bool LWSlider::GetEnabled()
 void LWSlider::SetEnabled(bool enabled)
 {
    mEnabled = enabled;
-   Draw();
+
+   if (mThumbBitmap)
+   {
+      delete mThumbBitmap;
+      mThumbBitmap = NULL;
+   }
+
    Refresh();
 }
 
@@ -1430,6 +1577,7 @@ BEGIN_EVENT_TABLE(ASlider, wxWindow)
    EVT_SLIDER(wxID_ANY, ASlider::OnSlider)
    EVT_SET_FOCUS(ASlider::OnSetFocus)
    EVT_KILL_FOCUS(ASlider::OnKillFocus)
+   EVT_TIMER(wxID_ANY, ASlider::OnTimer)
 END_EVENT_TABLE()
 
 ASlider::ASlider( wxWindow * parent,
@@ -1459,6 +1607,8 @@ ASlider::ASlider( wxWindow * parent,
    mSliderIsFocused = false;
 
    mStyle = style;
+
+   mTimer.SetOwner(this);
 
 #if wxUSE_ACCESSIBILITY
    SetAccessible( new ASliderAx( this ) );
@@ -1506,7 +1656,7 @@ void ASlider::OnPaint(wxPaintEvent & WXUNUSED(event))
    this->SetBackgroundColour( Col );
 #endif
 
-   mLWSlider->OnPaint(dc, false);
+   mLWSlider->OnPaint(dc);
 
    if ( mSliderIsFocused )
    {
@@ -1520,6 +1670,15 @@ void ASlider::OnPaint(wxPaintEvent & WXUNUSED(event))
 
 void ASlider::OnMouseEvent(wxMouseEvent &event)
 {
+   if (event.Entering())
+   {
+      mTimer.StartOnce(1000);
+   }
+   else if (event.Leaving())
+   {
+      mTimer.Stop();
+   }
+
    mLWSlider->OnMouseEvent(event);
 }
 
@@ -1546,9 +1705,9 @@ void ASlider::OnKillFocus(wxFocusEvent & WXUNUSED(event))
    Refresh();
 }
 
-void ASlider::RecreateTipWin()
+void ASlider::OnTimer(wxTimerEvent & WXUNUSED(event))
 {
-   mLWSlider->RecreateTipWin();
+   mLWSlider->ShowTip(true);
 }
 
 void ASlider::GetScroll(float & line, float & page)
@@ -1559,6 +1718,11 @@ void ASlider::GetScroll(float & line, float & page)
 void ASlider::SetScroll(float line, float page)
 {
    mLWSlider->SetScroll(line, page);
+}
+
+void ASlider::SetToolTipTemplate(const wxString & tip)
+{
+   mLWSlider->SetToolTipTemplate(tip);
 }
 
 float ASlider::Get( bool convert )
@@ -1605,6 +1769,9 @@ bool ASlider::Enable(bool enable)
       return false;
 
    mLWSlider->SetEnabled(enable);
+
+   wxWindow::Enable(enable);
+
    return true;
 }
 

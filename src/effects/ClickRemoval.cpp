@@ -25,6 +25,7 @@
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "ClickRemoval.h"
 
 #include <math.h>
 
@@ -33,9 +34,10 @@
 #include <wx/valgen.h>
 
 #include "../Prefs.h"
+#include "../ShuttleGui.h"
 #include "../widgets/valnum.h"
 
-#include "ClickRemoval.h"
+#include "../WaveTrack.h"
 
 enum
 {
@@ -348,10 +350,7 @@ void EffectClickRemoval::PopulateOrExchange(ShuttleGui & S)
       mThreshS = S.Id(ID_Thresh).AddSlider(wxT(""), mThresholdLevel, MAX_Threshold, MIN_Threshold);
       mThreshS->SetName(_("Threshold"));
       mThreshS->SetValidator(wxGenericValidator(&mThresholdLevel));
-#if defined(__WXGTK__)
-      // Force a minimum size since wxGTK allows it to go to zero
-      mThreshS->SetMinSize(wxSize(100, -1));
-#endif
+      mThreshS->SetMinSize(wxSize(150, -1));
 
       // Click width
       IntegerValidator<int> vldWidth(&mClickWidth);
@@ -365,10 +364,7 @@ void EffectClickRemoval::PopulateOrExchange(ShuttleGui & S)
       mWidthS = S.Id(ID_Width).AddSlider(wxT(""), mClickWidth, MAX_Width, MIN_Width);
       mWidthS->SetName(_("Max Spike Width"));
       mWidthS->SetValidator(wxGenericValidator(&mClickWidth));
-#if defined(__WXGTK__)
-      // Force a minimum size since wxGTK allows it to go to zero
-      mWidthS->SetMinSize(wxSize(100, -1));
-#endif
+      mWidthS->SetMinSize(wxSize(150, -1));
    }
    S.EndMultiColumn();
 

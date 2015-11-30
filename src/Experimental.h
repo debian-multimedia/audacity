@@ -63,7 +63,7 @@
 //#define EXPERIMENTAL_EXTRA_MONITORING
 
 //#define EXPERIMENTAL_ROLL_UP_DIALOG
-//#define RIGHT_ALIGNED_TEXTBOXES
+//#define EXPERIMENTAL_RIGHT_ALIGNED_TEXTBOXES
 //#define EXPERIMENTAL_VOICE_DETECTION
 
 // Effect categorisation. Adds support for arranging effects in categories
@@ -74,8 +74,6 @@
 // it should have an easy mechanism to disable it at run-time, such as a menu item or a pref,
 // preferrably disabled until other work is done.  Martyn 22/12/2008.
 // 
-// All code removed after 2.1.0 release since it was unmaintained. LLL
-//#define EFFECT_CATEGORIES
 
 // JKC Apr 2015, Menu item to manage effects.
 #define EXPERIMENTAL_EFFECT_MANAGEMENT
@@ -85,10 +83,6 @@
 // Just select the "Find Notes" checkbox in the spectrum prefs
 // to activate it instead of the Spectrum log(f) mode.
 //#define EXPERIMENTAL_FIND_NOTES
-
-// AM, 22.Nov 2007
-// Skip Points support in the spectrum view mode.
-//#define EXPERIMENTAL_FFT_SKIP_POINTS
 
 // AM, 22.Nov 2007:
 // A Frequency Grid for the Spectrum Log(f) & Find Notes modes
@@ -143,7 +137,7 @@
 
 #if USE_PORTMIXER
    //Automatically tries to find an acceptable input volume
-   //#define AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   //#define EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
 #endif
 
 // John (Thales) work to make the display show the result of the pan and gain sliders, rather than their input.
@@ -153,6 +147,9 @@
 // Module prefs provides a panel in prefs where users can choose which modules
 // to enable.
 #define EXPERIMENTAL_MODULE_PREFS
+
+// Define to allow realtime processing in Audacity effects that have been converted.
+#define EXPERIMENTAL_REALTIME_AUDACITY_EFFECTS
 
 // Define to include the effects rack (such as it is).
 //#define EXPERIMENTAL_EFFECTS_RACK
@@ -193,6 +190,7 @@
 #define EXPERIMENTAL_TWO_TONE_TIME_RULER
 
 // Define to include crash reporting
+#include <wx/defs.h>
 #define EXPERIMENTAL_CRASH_REPORT
 #if !defined(wxUSE_DEBUGREPORT) || !wxUSE_DEBUGREPORT
 #undef EXPERIMENTAL_CRASH_REPORT

@@ -8,229 +8,307 @@
 
 **********************************************************************/
 
-#include <math.h>
-
-#include "LabelTrack.h"
-#include "Prefs.h"
-#include "Project.h"
 #include "Snap.h"
+
+#include <cstdlib>
+
+#include "Project.h"
+#include "LabelTrack.h"
 #include "TrackPanel.h"
 #include "WaveTrack.h"
-#include "widgets/NumericTextCtrl.h"
 
-// Change this to "true" to snap to nearest and "false" to snap to previous
-// As of 2013/10/23, defaulting to "true" until a decision is made on
-// which method is prefered.
-#define SNAP_TO_NEAREST false
+#include <wx/arrimpl.cpp>
+
+WX_DEFINE_USER_EXPORTED_OBJARRAY(TrackClipArray);
 
 static int CompareSnapPoints(SnapPoint *s1, SnapPoint *s2)
 {
    return (s1->t - s2->t > 0? 1 : -1);
 }
 
-SnapManager::SnapManager(TrackList *tracks, TrackClipArray *exclusions,
-                         double zoom, int pixelTolerance, bool noTimeSnap)
- : mConverter(NumericConverter::TIME)
+SnapManager::SnapManager(TrackList *tracks,
+                         const ZoomInfo *zoomInfo,
+                         const TrackClipArray *clipExclusions,
+                         const TrackArray *trackExclusions,
+                         bool noTimeSnap,
+                         int pixelTolerance)
+:  mConverter(NumericConverter::TIME),
+   mSnapPoints(CompareSnapPoints)
 {
-   int i;
+   mTracks = tracks;
+   mZoomInfo = zoomInfo;
+   mClipExclusions = clipExclusions;
+   mTrackExclusions = trackExclusions;
+   mPixelTolerance = pixelTolerance;
+   mNoTimeSnap = noTimeSnap;
+
+   mProject = GetActiveProject();
+   wxASSERT(mProject);
+
+   mSnapTo = 0;
+   mRate = 0.0;
+   mFormat.Empty();
+
+   // Two time points closer than this are considered the same
+   mEpsilon = 1 / 44100.0;
+
+   Reinit();
+}
+
+SnapManager::~SnapManager()
+{
+   for (size_t i = 0, cnt = mSnapPoints.GetCount(); i < cnt; ++i)
+   {
+      delete mSnapPoints[i];
+   }
+}
+
+void SnapManager::Reinit()
+{
+   int snapTo = mProject->GetSnapTo();
+   double rate = mProject->GetRate();
+   wxString format = mProject->GetSelectionFormat();
+
+   // No need to reinit if these are still the same
+   if (snapTo == mSnapTo && rate == mRate && format == mFormat)
+   {
+      return;
+   }
+
+   // Save new settings
+   mSnapTo = snapTo;
+   mRate = rate;
+   mFormat = format;
+
+   // Clear snap points
+   for (size_t i = 0, cnt = mSnapPoints.GetCount(); i < cnt; ++i)
+   {
+      delete mSnapPoints[i];
+   }
+   mSnapPoints.Clear();
 
    // Grab time-snapping prefs (unless otherwise requested)
    mSnapToTime = false;
 
-   AudacityProject *p = GetActiveProject();
-   wxASSERT(p);
-   if (p)
+   // Look up the format string
+   if (mSnapTo != SNAP_OFF && !mNoTimeSnap)
    {
-      // Look up the format string
-      if (p->GetSnapTo() && !noTimeSnap) {
-         mSnapToTime = true;
-         mConverter.SetSampleRate(p->GetRate());
-         mConverter.SetFormatName(p->GetSelectionFormat());
-      }
+      mSnapToTime = true;
+      mConverter.SetSampleRate(mRate);
+      mConverter.SetFormatName(mFormat);
    }
-
-   mSnapPoints = new SnapPointArray(CompareSnapPoints);
-   if (zoom > 0 && pixelTolerance > 0)
-      mTolerance = pixelTolerance / zoom;
-   else {
-      // This shouldn't happen, but we don't want to crash if we get
-      // illegal values.  The net effect of this is to never snap.
-      mTolerance = 0.0;
-   }
-   // Two time points closer than this are considered the same
-   mEpsilon = 1 / 44100.0;
 
    // Add a SnapPoint at t=0
-   mSnapPoints->Add(new SnapPoint(0.0, NULL));
+   mSnapPoints.Add(new SnapPoint(0.0, NULL));
 
-   TrackListIterator iter(tracks);
-   Track *track = iter.First();
-   while (track) {
-      if (track->GetKind() == Track::Label) {
+   TrackListIterator iter(mTracks);
+   for (Track *track = iter.First();  track; track = iter.Next())
+   {
+      if (mTrackExclusions && mTrackExclusions->Index(track) != wxNOT_FOUND)
+      {
+         continue;
+      }
+
+      if (track->GetKind() == Track::Label)
+      {
          LabelTrack *labelTrack = (LabelTrack *)track;
-         for(i = 0; i < labelTrack->GetNumLabels(); i++) {
+         for (int i = 0, cnt = labelTrack->GetNumLabels(); i < cnt; ++i)
+         {
             const LabelStruct *label = labelTrack->GetLabel(i);
             const double t0 = label->getT0();
             const double t1 = label->getT1();
             CondListAdd(t0, labelTrack);
-            if (t1 != t0) {
+            if (t1 != t0)
+            {
                CondListAdd(t1, labelTrack);
             }
          }
       }
-      else if (track->GetKind() == Track::Wave) {
+      else if (track->GetKind() == Track::Wave)
+      {
          WaveTrack *waveTrack = (WaveTrack *)track;
          WaveClipList::compatibility_iterator it;
-         for (it=waveTrack->GetClipIterator(); it; it=it->GetNext()) {
+         for (it = waveTrack->GetClipIterator(); it; it = it->GetNext())
+         {
             WaveClip *clip = it->GetData();
-            if (exclusions) {
+            if (mClipExclusions)
+            {
                bool skip = false;
-               for(int j=0; j<(int)exclusions->GetCount(); j++) {
-                  if ((*exclusions)[j].track == waveTrack &&
-                      (*exclusions)[j].clip == clip)
+               for (size_t j = 0, cnt = mClipExclusions->GetCount(); j < cnt; ++j)
+               {
+                  if (mClipExclusions->Item(j).track == waveTrack &&
+                      mClipExclusions->Item(j).clip == clip)
+                  {
                      skip = true;
+                     break;
+                  }
                }
+
                if (skip)
+               {
                   continue;
+               }
             }
+
             CondListAdd(clip->GetStartTime(), waveTrack);
             CondListAdd(clip->GetEndTime(), waveTrack);
          }
       }
 #ifdef USE_MIDI
-      else if (track->GetKind() == Track::Note) {
+      else if (track->GetKind() == Track::Note)
+      {
          CondListAdd(track->GetStartTime(), track);
          CondListAdd(track->GetEndTime(), track);
       }
 #endif
-      track = iter.Next();
    }
 }
 
 // Adds to mSnapPoints, filtering by TimeConverter
-void SnapManager::CondListAdd(double t, Track *tr)
+void SnapManager::CondListAdd(double t, Track *track)
 {
-   if (mSnapToTime) {
+   if (mSnapToTime)
+   {
       mConverter.SetValue(t);
    }
 
-   if (!mSnapToTime || mConverter.GetValue() == t) {
-      mSnapPoints->Add(new SnapPoint(t, tr));
+   if (!mSnapToTime || mConverter.GetValue() == t)
+   {
+      mSnapPoints.Add(new SnapPoint(t, track));
    }
 }
 
-SnapManager::~SnapManager()
-{
-   int len = (int)mSnapPoints->GetCount();
-   int i;
-   for(i = 0; i < len; i++)
-      delete (*mSnapPoints)[i];
-   delete mSnapPoints;
-}
-
 // Return the time of the SnapPoint at a given index
-double SnapManager::Get(int index)
+double SnapManager::Get(size_t index)
 {
-   return (*mSnapPoints)[index]->t;
+   return mSnapPoints[index]->t;
 }
 
 // Returns the difference in time between t and the point at a given index
-double SnapManager::Diff(double t, int index)
+wxInt64 SnapManager::PixelDiff(double t, size_t index)
 {
-   return fabs(t - Get(index));
+   return std::abs(mZoomInfo->TimeToPosition(t, 0) -
+                   mZoomInfo->TimeToPosition(Get(index), 0));
 }
 
 // Find the index where this SnapPoint should go in
 // sorted order, between i0 (inclusive) and i1 (exclusive).
-int SnapManager::Find(double t, int i0, int i1)
+size_t SnapManager::Find(double t, size_t i0, size_t i1)
 {
    if (i1 <= i0 + 1)
+   {
       return i0;
+   }
 
-   int half = (i0 + i1) / 2;
+   size_t half = (i0 + i1) / 2;
+
    if (t < Get(half))
+   {
       return Find(t, i0, half);
-   else
-      return Find(t, half, i1);
+   }
+
+   return Find(t, half, i1);
 }
 
 // Find the SnapPoint nearest to time t
-int SnapManager::Find(double t)
+size_t SnapManager::Find(double t)
 {
-   int len = (int)mSnapPoints->GetCount();
-   int index = Find(t, 0, len);
+   size_t cnt = mSnapPoints.GetCount();
+   size_t index = Find(t, 0, cnt);
 
    // At this point, either index is the closest, or the next one
    // to the right is.  Keep moving to the right until we get a
    // different value
-   int next = index + 1;
-   while(next+1 < len && Get(next) == Get(index))
+   size_t next = index + 1;
+   while (next + 1 < cnt && Get(next) == Get(index))
+   {
       next++;
+   }
 
    // Now return whichever one is closer to time t
-   if (next < len && Diff(t, next) < Diff(t, index))
+   if (next < cnt && PixelDiff(t, next) < PixelDiff(t, index))
+   {
       return next;
-   else
-      return index;
+   }
+
+   return index;
 }
 
 // Helper: performs snap-to-points for Snap(). Returns true if a snap happened.
 bool SnapManager::SnapToPoints(Track *currentTrack,
                                double t,
                                bool rightEdge,
-                               double *out_t)
+                               double *outT)
 {
-   int len = (int)mSnapPoints->GetCount();
-   *out_t = t;
-   if (len == 0)
+   *outT = t;
+
+   size_t cnt = mSnapPoints.GetCount();
+   if (cnt == 0)
+   {
       return false;
+   }
 
    // Find the nearest SnapPoint
-   int index = Find(t);
+   size_t index = Find(t);
 
    // If it's too far away, just give up now
-   if (Diff(t, index) >= mTolerance)
+   if (PixelDiff(t, index) >= mPixelTolerance)
+   {
       return false;
+   }
 
    // Otherwise, search left and right for all of the points
    // within the allowed range.
-   int left = index;
-   int right = index;
-   int i;
+   size_t left = index;
+   size_t right = index;
+   size_t i;
 
-   while(left > 0 && Diff(t, left-1) < mTolerance)
+   while (left > 0 && PixelDiff(t, left - 1) < mPixelTolerance)
+   {
       left--;
+   }
 
-   while(right < len-1 && Diff(t, right+1) < mTolerance)
+   while (right < cnt - 1 && PixelDiff(t, right + 1) < mPixelTolerance)
+   {
       right++;
+   }
 
-   if (left == index && right == index) {
+   if (left == index && right == index)
+   {
       // Awesome, there's only one point that matches!
-      *out_t = Get(index);
+      *outT = Get(index);
       return true;
    }
 
-   int indexInThisTrack = -1;
-   int countInThisTrack = 0;
-   for(i=left; i<=right; i++) {
-      if ((*mSnapPoints)[i]->track == currentTrack) {
+   size_t indexInThisTrack = -1;
+   size_t countInThisTrack = 0;
+   for (i = left; i <= right; ++i)
+   {
+      if (mSnapPoints[i]->track == currentTrack)
+      {
          indexInThisTrack = i;
          countInThisTrack++;
       }
    }
-   if (countInThisTrack == 1) {
+
+   if (countInThisTrack == 1)
+   {
       // Cool, only one of the points is in the same track, so
       // we'll use that one.
-      *out_t = Get(indexInThisTrack);
+      *outT = Get(indexInThisTrack);
       return true;
    }
 
-   if (Get(right) - Get(left) < mEpsilon) {
+   if (Get(right) - Get(left) < mEpsilon)
+   {
       // OK, they're basically the same point
       if (rightEdge)
-         *out_t = Get(right);  // Return rightmost
-      else
-         *out_t = Get(left);   // Return leftmost
+      {
+         *outT = Get(right);  // Return rightmost
+      }
+      else {
+         *outT = Get(left);   // Return leftmost
+      }
       return true;
    }
 
@@ -241,26 +319,32 @@ bool SnapManager::SnapToPoints(Track *currentTrack,
 bool SnapManager::Snap(Track *currentTrack,
                        double t,
                        bool rightEdge,
-                       double *out_t,
+                       double *outT,
                        bool *snappedPoint,
                        bool *snappedTime)
 {
+   // Check to see if we need to reinitialize
+   Reinit();
+
    // First snap to points in mSnapPoints
-   *out_t = t;
-   *snappedPoint = SnapToPoints(currentTrack, t, rightEdge, out_t);
+   *outT = t;
+   *snappedPoint = SnapToPoints(currentTrack, t, rightEdge, outT);
 
    // Now snap to the time grid
    *snappedTime = false;
-   if (mSnapToTime) {
-      if (*snappedPoint) {
+   if (mSnapToTime)
+   {
+      if (*snappedPoint)
+      {
          // Since mSnapPoints only contains points on the grid, we're done
          *snappedTime = true;
       }
-      else {
+      else
+      {
          // Snap time to the grid
          mConverter.ValueToControls(t, GetActiveProject()->GetSnapTo() == SNAP_NEAREST);
          mConverter.ControlsToValue();
-         *out_t = mConverter.GetValue();
+         *outT = mConverter.GetValue();
          *snappedTime = true;
       }
    }

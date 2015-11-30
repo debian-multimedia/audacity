@@ -28,6 +28,8 @@
 #include "../ShuttleGui.h"
 #include "../WaveTrack.h"
 
+#include "../Experimental.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 TracksPrefs::TracksPrefs(wxWindow * parent)
@@ -36,7 +38,7 @@ TracksPrefs::TracksPrefs(wxWindow * parent)
    // Bugs 1043, 1044
    // First rewrite legacy preferences
    gPrefs->Write(wxT("/GUI/DefaultViewModeNew"),
-      WaveTrack::FindDefaultViewMode());
+      (int) WaveTrack::FindDefaultViewMode());
 
    Populate();
 }
@@ -56,23 +58,17 @@ void TracksPrefs::Populate()
    mSoloChoices.Add(_("None"));
 
 
-   // Keep the same order as in TrackPanel.cpp menu: OnWaveformID, OnWaveformDBID, OnSpectrumID, OnSpectrumLogID, 
-   // OnSpectralSelID, OnSpectralSelLogID, OnPitchID
-   mViewCodes.Add(0);
-   mViewCodes.Add(1);
-   mViewCodes.Add(2);
-   mViewCodes.Add(3);
-   mViewCodes.Add(4);
-   mViewCodes.Add(5);
-   mViewCodes.Add(6);
+   // Keep view choices and codes in proper correspondence --
+   // we don't display them by increasing integer values.
 
    mViewChoices.Add(_("Waveform"));
+   mViewCodes.Add(int(WaveTrack::Waveform));
+
    mViewChoices.Add(_("Waveform (dB)"));
+   mViewCodes.Add(int(WaveTrack::obsoleteWaveformDBDisplay));
+
    mViewChoices.Add(_("Spectrogram"));
-   mViewChoices.Add(_("Spectrogram log(f)"));
-   mViewChoices.Add(_("Spectral Selection"));
-   mViewChoices.Add(_("Spectral Selection log(f)"));
-   mViewChoices.Add(_("Pitch (EAC)"));
+   mViewCodes.Add(WaveTrack::Spectrum);
 
    //------------------------- Main section --------------------
    // Now construct the GUI itself.
@@ -158,4 +154,9 @@ bool TracksPrefs::Apply()
    PopulateOrExchange(S);
 
    return true;
+}
+
+PrefsPanel *TracksPrefsFactory::Create(wxWindow *parent)
+{
+   return new TracksPrefs(parent);
 }

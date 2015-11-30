@@ -65,7 +65,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>audacity.lib;wxbase28ud.lib;wxbase28ud_net.lib;wxmsw28ud_adv.lib;wxmsw28ud_core.lib;wxmsw28ud_html.lib;wxpngd.lib;wxzlibd.lib;wxjpegd.lib;wxtiffd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>audacity.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\win\$(ConfigurationName)\modules\$(ProjectName).dll</OutputFile>
       <AdditionalLibraryDirectories>..\..\win/$(Configuration);$(WXWIN)\lib\vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -84,13 +84,13 @@ copy "$(TargetPath)" "%25dest%25"
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(WXWIN)\lib\vc_dll\mswu;$(WXWIN)\include;../../include;../../win;../../src;../../src/include/win32;../../src/include;../../lib-src/libsndfile/win32;../../lib-src/libsndfile/src;../../lib-src/portaudio-v19/include;../../lib-src/portmixer/include;../../lib-src/portsmf;../../lib-src/libnyquist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WXUSINGDLL;__WXMSW__;WIN32;NDEBUG;STRICT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>wxDEBUG_LEVEL=0;WXUSINGDLL;__WXMSW__;WIN32;NDEBUG;STRICT;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader />
       <WarningLevel>Level3</WarningLevel>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>audacity.lib;wxbase28u.lib;wxbase28u_net.lib;wxmsw28u_adv.lib;wxmsw28u_core.lib;wxmsw28u_html.lib;wxpng.lib;wxzlib.lib;wxjpeg.lib;wxtiff.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>audacity.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\win\$(ConfigurationName)\modules\$(ProjectName).dll</OutputFile>
       <AdditionalLibraryDirectories>../../win/$(Configuration);$(WXWIN)\lib\vc_dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>

@@ -22,6 +22,8 @@ It handles initialization and termination by subclassing wxApp.
 #endif
 
 #include "Audacity.h" // This should always be included first
+#include "AudacityApp.h"
+#include "TranslatableStringArray.h"
 
 #include <wx/defs.h>
 #include <wx/app.h>
@@ -58,8 +60,6 @@ It handles initialization and termination by subclassing wxApp.
 #include <sys/stat.h>
 #endif
 
-#include "AudacityApp.h"
-
 #include "AudacityLogger.h"
 #include "AboutDialog.h"
 #include "AColor.h"
@@ -92,6 +92,7 @@ It handles initialization and termination by subclassing wxApp.
 #include "ondemand/ODManager.h"
 #include "commands/Keyboard.h"
 #include "widgets/ErrorDialog.h"
+#include "prefs/DirectoriesPrefs.h"
 
 //temporarilly commented out till it is added to all projects
 //#include "Profiler.h"
@@ -99,6 +100,8 @@ It handles initialization and termination by subclassing wxApp.
 #include "ModuleManager.h"
 
 #include "import/Import.h"
+
+#include "Experimental.h"
 
 #if defined(EXPERIMENTAL_CRASH_REPORT)
 #include <wx/debugrpt.h>
@@ -123,7 +126,9 @@ It handles initialization and termination by subclassing wxApp.
 // Windows specific linker control...only needed once so
 // this is a good place (unless we want to add another file).
 #if defined(__WXMSW__)
-
+//#if wxCHECK_VERSION(3, 0, 2) && !wxCHECK_VERSION(3, 1, 0)
+#include <wx/init.h>
+//#endif
 // These lines ensure that Audacity gets WindowsXP themes.
 // Without them we get the old-style Windows98/2000 look under XP.
 #  if !defined(__WXWINCE__)
@@ -207,6 +212,15 @@ It handles initialization and termination by subclassing wxApp.
 #  if defined(EXPERIMENTAL_CRASH_REPORT)
 #     pragma comment(lib, "wxmsw" V "u" D "_qa")
 #  endif
+#  pragma comment(lib, "wxbase" V "u" D)
+#  pragma comment(lib, "wxbase" V "u" D "_net")
+#  pragma comment(lib, "wxmsw"  V "u" D "_adv")
+#  pragma comment(lib, "wxmsw"  V "u" D "_core")
+#  pragma comment(lib, "wxmsw"  V "u" D "_html")
+#  pragma comment(lib, "wxpng"        D)
+#  pragma comment(lib, "wxzlib"       D)
+#  pragma comment(lib, "wxjpeg"       D)
+#  pragma comment(lib, "wxtiff"       D)
 
 #  undef V
 #  undef D
@@ -220,9 +234,7 @@ It handles initialization and termination by subclassing wxApp.
 ////////////////////////////////////////////////////////////
 
 DEFINE_EVENT_TYPE(EVT_OPEN_AUDIO_FILE);
-DEFINE_EVENT_TYPE(EVT_CAPTURE_KEYBOARD);
-DEFINE_EVENT_TYPE(EVT_RELEASE_KEYBOARD);
-DEFINE_EVENT_TYPE(EVT_CAPTURE_KEY);
+DEFINE_EVENT_TYPE(EVT_LANGUAGE_CHANGE);
 
 #ifdef __WXGTK__
 static void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg)
@@ -241,8 +253,6 @@ static void wxOnAssert(const wxChar *fileName, int lineNumber, const wxChar *msg
 }
 #endif
 
-static wxFrame *gParentFrame = NULL;
-
 static bool gInited = false;
 bool gIsQuitting = false;
 
@@ -252,6 +262,8 @@ void QuitAudacity(bool bForce)
       return;
 
    gIsQuitting = true;
+
+   wxTheApp->SetExitOnFrameDelete(true);
 
    // Try to close each open window.  If the user hits Cancel
    // in a Save Changes dialog, don't continue.
@@ -287,13 +299,7 @@ void QuitAudacity(bool bForce)
       }
    }
 
-   LWSlider::DeleteSharedTipPanel();
-
    ModuleManager::Get().Dispatch(AppQuiting);
-
-   if (gParentFrame)
-      gParentFrame->Destroy();
-   gParentFrame = NULL;
 
 #ifdef EXPERIMENTAL_SCOREALIGN
    CloseScoreAlignDialog();
@@ -611,16 +617,6 @@ public:
      
       return true;
    }
-
-#if !wxCHECK_VERSION(3, 0, 0)
-   bool OnExecute(const wxString & topic,
-                  wxChar *data,
-                  int WXUNUSED(size),
-                  wxIPCFormat WXUNUSED(format))
-   {
-      return OnExec(topic, data);
-   }
-#endif
 };
 
 class IPCServ : public wxServer
@@ -646,12 +642,7 @@ public:
    };
 };
 
-#ifndef __WXMAC__
-IMPLEMENT_APP(AudacityApp)
-/* make the application class known to wxWidgets for dynamic construction */
-#endif
-
-#ifdef __WXMAC__
+#if defined(__WXMAC__)
 // This should be removed when Lame and FFmpeg support is converted
 // from loadable libraries to commands.
 //
@@ -666,6 +657,7 @@ IMPLEMENT_APP(AudacityApp)
 // one tried.
 IMPLEMENT_APP_NO_MAIN(AudacityApp)
 IMPLEMENT_WX_THEME_SUPPORT
+
 int main(int argc, char *argv[])
 {
    if (getenv("DYLD_LIBRARY_PATH")) {
@@ -674,8 +666,37 @@ int main(int argc, char *argv[])
       unsetenv("DYLD_LIBRARY_PATH");
       execve(argv[0], argv, environ);
    }
+
+   wxDISABLE_DEBUG_SUPPORT();
+
    return wxEntry(argc, argv);
 }
+
+#elif defined(__WXMSW__) && !wxCHECK_VERSION(3, 1, 0)
+// Disable telling Windows that we support HiDPI displays.  It is forced on
+// in wxWidget versions between 3.0.0 and 3.1.0.
+IMPLEMENT_APP_NO_MAIN(AudacityApp)
+IMPLEMENT_WX_THEME_SUPPORT
+
+extern "C" int WINAPI WinMain(HINSTANCE hInstance,
+                              HINSTANCE hPrevInstance,
+                              wxCmdLineArgType WXUNUSED(lpCmdLine),
+                              int nCmdShow)
+{
+   wxDISABLE_DEBUG_SUPPORT();
+
+   // Disable setting of HiDPI aware mode
+   wxMSWDisableSettingHighDPIAware();
+
+   /* NB: We pass NULL in place of lpCmdLine to behave the same as  */
+   /*     Borland-specific wWinMain() above. If it becomes needed   */
+   /*     to pass lpCmdLine to wxEntry() here, you'll have to fix   */
+   /*     wWinMain() above too.                                     */
+   return wxEntry(hInstance, hPrevInstance, NULL, nCmdShow);
+}
+
+#else
+IMPLEMENT_APP(AudacityApp)
 #endif
 
 #ifdef __WXMAC__
@@ -708,8 +729,6 @@ void AudacityApp::MacNewFile()
 
 #endif //__WXMAC__
 
-typedef int (AudacityApp::*SPECIALKEYEVENT)(wxKeyEvent&);
-
 #define ID_RECENT_CLEAR 6100
 #define ID_RECENT_FIRST 6101
 #define ID_RECENT_LAST  6112
@@ -724,9 +743,6 @@ typedef int (AudacityApp::*SPECIALKEYEVENT)(wxKeyEvent&);
 BEGIN_EVENT_TABLE(AudacityApp, wxApp)
    EVT_QUERY_END_SESSION(AudacityApp::OnEndSession)
 
-   EVT_KEY_DOWN(AudacityApp::OnKeyDown)
-   EVT_CHAR(AudacityApp::OnChar)
-   EVT_KEY_UP(AudacityApp::OnKeyUp)
    EVT_TIMER(kAudacityAppTimerID, AudacityApp::OnTimer)
 #ifdef __WXMAC__
    EVT_MENU(wxID_NEW, AudacityApp::OnMenuNew)
@@ -985,11 +1001,12 @@ void AudacityApp::InitLang( const wxString & lang )
    wxSetEnv(wxT("LANG"), wxT("en_US.UTF-8"));
 #endif
 
-#if wxCHECK_VERSION(3,0,0)
-   mLocale = new wxLocale(wxT(""), lang, wxT(""), true);
-#else
-   mLocale = new wxLocale(wxT(""), lang, wxT(""), true, true);
-#endif
+   const wxLanguageInfo *info = wxLocale::FindLanguageInfo(lang);
+   if (!lang)
+   {
+      return;
+   }
+   mLocale = new wxLocale(info->Language);
 
    for(unsigned int i=0; i<audacityPathList.GetCount(); i++)
       mLocale->AddCatalogLookupPathPrefix(audacityPathList[i]);
@@ -1010,7 +1027,14 @@ void AudacityApp::InitLang( const wxString & lang )
    //
    // This must go _after_ creating the wxLocale instance because
    // creating the wxLocale instance sets the application-wide locale.
+
    Internat::Init();
+
+   // Notify listeners of language changes
+   {
+      wxCommandEvent evt(EVT_LANGUAGE_CHANGE);
+      ProcessEvent(evt);
+   }
 }
 
 void AudacityApp::OnFatalException()
@@ -1068,16 +1092,16 @@ void AudacityApp::GenerateCrashReport(wxDebugReport::Context ctx)
 }
 #endif
 
-#if defined(__WXGTK__)
-// On wxGTK, there's a focus issue where dialogs do not automatically pass focus
-// to the first child.  This means that you can use the keyboard to navigate within
-// the dialog.  Watching for the ACTIVATE event allows us to set the focus ourselves
-// when each dialog opens.
-//
-// See bug #57
-//
 int AudacityApp::FilterEvent(wxEvent & event)
 {
+#if !wxCHECK_VERSION(3, 0, 0) && defined(__WXGTK__)
+   // On wxGTK, there's a focus issue where dialogs do not automatically pass focus
+   // to the first child.  This means that you can use the keyboard to navigate within
+   // the dialog.  Watching for the ACTIVATE event allows us to set the focus ourselves
+   // when each dialog opens.
+   //
+   // See bug #57
+   //
    if (event.GetEventType() == wxEVT_ACTIVATE)
    {
       wxActivateEvent & e = (wxActivateEvent &) event;
@@ -1087,10 +1111,10 @@ int AudacityApp::FilterEvent(wxEvent & event)
          ((wxWindow *)e.GetEventObject())->SetFocus();
       }
    }
-
-   return -1;
-}
 #endif
+
+   return Event_Skip;
+}
 
 AudacityApp::AudacityApp()
 {
@@ -1108,6 +1132,9 @@ AudacityApp::AudacityApp()
 // main frame
 bool AudacityApp::OnInit()
 {
+   // Ensure we have an event loop during initialization
+   wxEventLoopGuarantor eventLoop;
+
    delete wxLog::SetActiveTarget(new AudacityLogger);
 
    mLocale = NULL;
@@ -1118,11 +1145,6 @@ bool AudacityApp::OnInit()
    mChecker = NULL;
    mIPCServ = NULL;
 
-#if defined(__WXGTK__)
-   // Workaround for bug 154 -- initialize to false
-   inKbdHandler = false;
-#endif
-
 #if defined(__WXMAC__)
    // Disable window animation
    wxSystemOptions::SetOption( wxMAC_WINDOW_PLAIN_TRANSITION, 1 );
@@ -1130,14 +1152,14 @@ bool AudacityApp::OnInit()
 
 #ifdef AUDACITY_NAME
    wxString appName = wxT(AUDACITY_NAME);
-   wxString vendorName = wxT(AUDACITY_NAME);
 #else
-   wxString vendorName = wxT("Audacity");
    wxString appName = wxT("Audacity");
 #endif
 
-   wxTheApp->SetVendorName(vendorName);
    wxTheApp->SetAppName(appName);
+   // Explicitly set since OSX will use it for the "Quit" menu item
+   wxTheApp->SetAppDisplayName(wxT("Audacity"));
+   wxTheApp->SetVendorName(wxT("Audacity"));
 
    // Unused strings that we want to be translated, even though
    // we're not using them yet...
@@ -1272,15 +1294,6 @@ bool AudacityApp::OnInit()
 // If we're waiitng in a dialog before then we can very easily
 // start multiple instances, defeating the single instance checker.
 
-
-
-
-   //JKC We'd like to initialise the module manager WHILE showing the splash screen.
-   //Can't in wx3.0.1 as MultiDialog interacts poorly with the splash screen.  So we do it before.
-   //TODO: Find out why opening a multidialog wrecks the splash screen.
-   //best current guess is that it's something to do with doing a DoModal this early
-   //in the program.
-
    // Initialize the CommandHandler
    InitCommandHandler();
 
@@ -1289,64 +1302,6 @@ bool AudacityApp::OnInit()
 
    // Initialize the ModuleManager, including loading found modules
    ModuleManager::Get().Initialize(*mCmdHandler);
-
-#if !wxCHECK_VERSION(3, 0, 0)
-   FinishInits();
-#endif
-
-   return TRUE;
-}
-
-#if wxCHECK_VERSION(3, 0, 0)
-#include <wx/evtloop.h>
-static bool bInitsDone = false;
-void AudacityApp::OnEventLoopEnter(wxEventLoopBase * pLoop)
-{
-   if( !pLoop->IsMain() )
-      return;
-   if (bInitsDone)
-      return;
-   bInitsDone = true;
-   FinishInits();
-}
-#endif
-
-// JKC: I've split 'FinishInits()' from 'OnInit()', so that 
-// we can have a real event loop running.  We could (I think) 
-// put everything that is in OnInit() in here.
-// This change was to support wxWidgets 3.0.0 and allow us
-// to show a dialog (for module loading) during initialisation.
-// without it messing up the splash screen.
-// Hasn't actually fixed that yet, but is addressing the point
-// they make in their release notes.
-void AudacityApp::FinishInits()
-{
-
-// Until we are ready for wxWidgets 3.x, put a warning dialog up.
-// Our problem is that distros may ship with 3.x builds as default.
-// We are saying, don't.
-//
-// wx3 is Ok for experimental builds.  
-//
-// Deliberately not translated.  People can search for the english error
-// text for more details.  This error will only show in versions
-// of Audacity that were incorrectly built.
-//
-// The intention was to do this, if needed, as part of the splash screen.
-// However the splash screen is one of the things broken by wx3.0
-// changes in OnInit handling.  We also can't put this dialog earlier.
-#if wxCHECK_VERSION(3, 0, 0)
-   ShowErrorDialog( NULL,
-                    wxT("Bad Version"),
-                    wxT(
-"Audacity should be built with wxWidgets 2.8.12.\n\n  This version \
-of Audacity (") AUDACITY_VERSION_STRING wxT(") is using ")  wxVERSION_STRING  \
-wxT( ".\n  We're not ready for that version of wxWidgets yet.\n\n  \
-Click the 'Help' button for known issues."),
-                    wxT("http://wiki.audacityteam.org/wiki/Incorrect_wxWidgets_Version"),
-                     true);
-#endif
-
 
    // Parse command line and handle options that might require
    // immediate exit...no need to initialize all of the audio
@@ -1397,9 +1352,6 @@ Click the 'Help' button for known issues."),
       exit(1);
    }
 
-// No Splash screen on wx3 whislt we sort out the problem
-// with showing a dialog AND a splash screen during inits.
-#if !wxCHECK_VERSION(3, 0, 0)
    // BG: Create a temporary window to set as the top window
    wxImage logoimage((const char **) AudacityLogoWithName_xpm);
    logoimage.Rescale(logoimage.GetWidth() / 2, logoimage.GetHeight() / 2);
@@ -1416,7 +1368,7 @@ Click the 'Help' button for known issues."),
                          wxSTAY_ON_TOP);
    temporarywindow->SetTitle(_("Audacity is starting up..."));
    SetTopWindow(temporarywindow);
-#endif
+   wxEventLoopBase::GetActive()->YieldFor(wxEVT_CATEGORY_UI);
 
    //JKC: Would like to put module loading here.
 
@@ -1446,14 +1398,9 @@ Click the 'Help' button for known issues."),
    mRecentFiles->UseMenu(recentMenu);
    mRecentFiles->AddFilesToMenu(recentMenu);
 
-   // This invisibale frame will be the "root" of all other frames and will
-   // become the active frame when no projects are open.
-   gParentFrame = new wxFrame(NULL, -1, wxEmptyString, wxPoint(0, 0), wxSize(0, 0), 0);
+   SetExitOnFrameDelete(false);
 
 #endif //__WXMAC__
-
-   SetExitOnFrameDelete(true);
-
 
    AudacityProject *project = CreateNewAudacityProject();
    mCmdHandler->SetProject(project);
@@ -1466,11 +1413,8 @@ Click the 'Help' button for known issues."),
       pWnd->Show( true );
    }
 
-
-#if !wxCHECK_VERSION(3, 0, 0)
    temporarywindow->Show(false);
    delete temporarywindow;
-#endif
 
    if( project->mShowSplashScreen )
       project->OnHelpWelcome();
@@ -1498,7 +1442,7 @@ Click the 'Help' button for known issues."),
       DirManager::SetDontDeleteTempFiles();
       delete parser;
       QuitAudacity(true);
-      return;
+      return false;
    }
 
    //
@@ -1511,13 +1455,17 @@ Click the 'Help' button for known issues."),
          delete parser;
    
          RunBenchmark(NULL);
-         return;
+         return false;
       }
 
+// As of wx3, there's no need to process the filename arguments as they
+// will be sent view the MacOpenFile() method.
+#if !defined(__WXMAC__)
       for (size_t i = 0, cnt = parser->GetParamCount(); i < cnt; i++)
       {
          MRUOpen(parser->GetParam(i));
-      }   
+      }
+#endif
    }
 
    delete parser;
@@ -1530,6 +1478,8 @@ Click the 'Help' button for known issues."),
 
    mTimer.SetOwner(this, kAudacityAppTimerID);
    mTimer.Start(200);
+
+   return TRUE;
 }
 
 void AudacityApp::InitCommandHandler()
@@ -1605,8 +1555,11 @@ bool AudacityApp::InitTempDir()
       // Failed
       wxMessageBox(_("Audacity could not find a place to store temporary files.\nPlease enter an appropriate directory in the preferences dialog."));
 
-      PrefsDialog dialog(NULL);
-      dialog.ShowTempDirPage();
+      // Only want one page of the preferences
+      DirectoriesPrefsFactory directoriesPrefsFactory;
+      PrefsDialog::Factories factories;
+      factories.push_back(&directoriesPrefsFactory);
+      GlobalPrefsDialog dialog(NULL, factories);
       dialog.ShowModal();
 
       wxMessageBox(_("Audacity is now going to exit. Please launch Audacity again to use the new temporary directory."));
@@ -1640,7 +1593,7 @@ bool AudacityApp::CreateSingleInstanceChecker(wxString dir)
    mChecker = new wxSingleInstanceChecker();
 
 #if defined(__UNIX__)
-   wxString sockFile(defaultTempDir + wxT("/.audacity.sock"));
+   wxString sockFile(dir + wxT("/.audacity.sock"));
 #endif
 
    wxString runningTwoCopiesStr = _("Running two copies of Audacity simultaneously may cause\ndata loss or cause your system to crash.\n\n");
@@ -1938,63 +1891,6 @@ void AudacityApp::OnEndSession(wxCloseEvent & event)
    }
 }
 
-void AudacityApp::OnKeyDown(wxKeyEvent & event)
-{
-   // Not handled
-   event.Skip(true);
-
-   // Make sure this event is destined for a project window
-   AudacityProject *prj = GetActiveProject();
-
-   // TODO: I don't know how it can happen, but it did on 2006-07-06.
-   // I was switching between apps fairly quickly so maybe that has something
-   // to do with it.
-   if (!prj)
-      return;
-
-   if (prj->HandleKeyDown(event))
-      event.Skip(false);
-}
-
-void AudacityApp::OnChar(wxKeyEvent & event)
-{
-   // Not handled
-   event.Skip(true);
-
-   // Make sure this event is destined for a project window
-   AudacityProject *prj = GetActiveProject();
-
-   // TODO: I don't know how it can happen, but it did on 2006-07-06.
-   // I was switching between apps fairly quickly so maybe that has something
-   // to do with it.
-   if (!prj)
-      return;
-
-   if (prj->HandleChar(event))
-      event.Skip(false);
-}
-
-void AudacityApp::OnKeyUp(wxKeyEvent & event)
-{
-   // Not handled
-   event.Skip(true);
-
-   // Make sure this event is destined for a project window
-   AudacityProject *prj = GetActiveProject();
-
-   // TODO: I don't know how it can happen, but it did on 2006-07-06.
-   // I was switching between apps fairly quickly so maybe that has something
-   // to do with it.
-   if (!prj)
-      return;
-
-   if (prj != wxGetTopLevelParent(wxWindow::FindFocus()))
-      return;
-
-   if (prj->HandleKeyUp(event))
-      event.Skip(false);
-}
-
 void AudacityApp::AddFileToHistory(const wxString & name)
 {
    mRecentFiles->AddFileToHistory(name);
@@ -2026,6 +1922,7 @@ int AudacityApp::OnExit()
 
    mRecentFiles->Save(*gPrefs, wxT("RecentFiles"));
    delete mRecentFiles;
+   mRecentFiles = NULL;
 
    FinishPreferences();
 
@@ -2132,7 +2029,7 @@ void AudacityApp::OnMenuPreferences(wxCommandEvent & event)
    // all platforms.
 
    if(gAudacityProjects.GetCount() == 0) {
-      PrefsDialog dialog(NULL /* parent */ );
+      GlobalPrefsDialog dialog(NULL /* parent */ );
       dialog.ShowModal();
    }
    else

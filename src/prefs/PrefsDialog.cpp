@@ -15,6 +15,7 @@
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "PrefsDialog.h"
 
 #include <wx/defs.h>
 #include <wx/button.h>
@@ -29,18 +30,14 @@
 
 #include <wx/listbook.h>
 
-#if wxCHECK_VERSION(2, 8, 4)
 #include <wx/treebook.h>
-#else
-#include "../widgets/treebook.h"
-#endif
 
 #include "../AudioIO.h"
 #include "../Experimental.h"
 #include "../Project.h"
 #include "../Prefs.h"
+#include "../ShuttleGui.h"
 
-#include "PrefsDialog.h"
 #include "PrefsPanel.h"
 
 #include "BatchPrefs.h"
@@ -63,6 +60,8 @@
 #include "ThemePrefs.h"
 #include "TracksPrefs.h"
 #include "WarningsPrefs.h"
+// #include "WaveformPrefs.h"
+#include "WaveformSettings.h"
 #include "ExtImportPrefs.h"
 
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -72,6 +71,7 @@
 BEGIN_EVENT_TABLE(PrefsDialog, wxDialog)
    EVT_BUTTON(wxID_OK, PrefsDialog::OnOK)
    EVT_BUTTON(wxID_CANCEL, PrefsDialog::OnCancel)
+   EVT_BUTTON(wxID_APPLY, PrefsDialog::OnApply)
    EVT_TREE_KEY_DOWN(wxID_ANY, PrefsDialog::OnTreeKeyDown) // Handles key events when tree has focus
 END_EVENT_TABLE()
 
@@ -80,11 +80,14 @@ class wxTreebookExt : public wxTreebook
 {
 public:
    wxTreebookExt( wxWindow *parent,
-      wxWindowID id) : wxTreebook( parent, id )
+      wxWindowID id, const wxString &titlePrefix)
+      : wxTreebook( parent, id )
+      , mTitlePrefix(titlePrefix)
    {;};
    ~wxTreebookExt(){;};
    virtual int ChangeSelection(size_t n);
    virtual int SetSelection(size_t n);
+   const wxString mTitlePrefix;
 };
 
 
@@ -99,94 +102,193 @@ int wxTreebookExt::ChangeSelection(size_t n) {
 int wxTreebookExt::SetSelection(size_t n)
 {
    int i = wxTreebook::SetSelection(n);
-   wxString Temp = wxString(_("Preferences: ")) + GetPageText( n );
+   wxString Temp = wxString(mTitlePrefix) + GetPageText( n );
    ((wxDialog*)GetParent())->SetTitle( Temp );
    ((wxDialog*)GetParent())->SetName( Temp );
+
+   PrefsPanel *const panel = static_cast<PrefsPanel *>(GetPage(n));
+   const bool showApply = panel->ShowsApplyButton();
+   wxWindow *const applyButton = wxWindow::FindWindowById(wxID_APPLY, GetParent());
+   if (applyButton) { // might still be NULL during population
+      const bool changed = applyButton->Show(showApply);
+      if (changed)
+         GetParent()->Layout();
+   }
+
    return i;
 }
 
 
 
-PrefsDialog::PrefsDialog(wxWindow * parent)
+PrefsDialog::Factories
+&PrefsDialog::DefaultFactories()
+{
+   // To do, perhaps:  create this table by registration, without including each PrefsPanel
+   // class... and thus allowing a plug-in protocol
+   static DevicePrefsFactory devicePrefsFactory;
+   static PlaybackPrefsFactory playbackPrefsFactory;
+   static RecordingPrefsFactory recordingPrefsFactory;
+#ifdef EXPERIMENTAL_MIDI_OUT
+   static MidiIOPrefsFactory midiIOPrefsFactory;
+#endif
+   static QualityPrefsFactory qualityPrefsFactory;
+   static GUIPrefsFactory guiPrefsFactory;
+   static TracksPrefsFactory tracksPrefsFactory;
+   static ImportExportPrefsFactory importExportPrefsFactory;
+   static ExtImportPrefsFactory extImportPrefsFactory;
+   static ProjectsPrefsFactory projectsPrefsFactory;
+#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG) || !defined(DISABLE_DYNAMIC_LOADING_LAME)
+   static LibraryPrefsFactory libraryPrefsFactory;
+#endif
+   // static WaveformPrefsFactory waveformPrefsFactory;
+   static SpectrumPrefsFactory spectrumPrefsFactory;
+   static DirectoriesPrefsFactory directoriesPrefsFactory;
+   static WarningsPrefsFactory warningsPrefsFactory;
+   static EffectsPrefsFactory effectsPrefsFactory;
+#ifdef EXPERIMENTAL_THEME_PREFS
+   static ThemePrefsFactory themePrefsFactory;
+#endif
+   // static BatchPrefsFactory batchPrefsFactory;
+   static KeyConfigPrefsFactory keyConfigPrefsFactory;
+   static MousePrefsFactory mousePrefsFactory;
+#ifdef EXPERIMENTAL_MODULE_PREFS
+   static ModulePrefsFactory modulePrefsFactory;
+#endif
+
+   static PrefsNode nodes[] = {
+      &devicePrefsFactory,
+      &playbackPrefsFactory,
+      &recordingPrefsFactory,
+#ifdef EXPERIMENTAL_MIDI_OUT
+      &midiIOPrefsFactory,
+#endif
+      &qualityPrefsFactory,
+      &guiPrefsFactory,
+
+      // Group other page(s)
+      PrefsNode(&tracksPrefsFactory, 1),
+      // &waveformPrefsFactory,
+      &spectrumPrefsFactory,
+
+      // Group one other page
+      PrefsNode(&importExportPrefsFactory, 1),
+      &extImportPrefsFactory,
+
+      &projectsPrefsFactory,
+#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG) || !defined(DISABLE_DYNAMIC_LOADING_LAME)
+      &libraryPrefsFactory,
+#endif
+      &directoriesPrefsFactory,
+      &warningsPrefsFactory,
+      &effectsPrefsFactory,
+#ifdef EXPERIMENTAL_THEME_PREFS
+      &themePrefsFactory,
+#endif
+      // &batchPrefsFactory,
+      &keyConfigPrefsFactory,
+      &mousePrefsFactory,
+#ifdef EXPERIMENTAL_MODULE_PREFS
+      &modulePrefsFactory,
+#endif
+   };
+
+   static Factories factories(nodes, nodes + sizeof(nodes) / sizeof(nodes[0]));
+   return factories;
+}
+
+
+PrefsDialog::PrefsDialog
+  (wxWindow * parent, const wxString &titlePrefix, Factories &factories)
 :  wxDialog(parent, wxID_ANY, wxString(_("Audacity Preferences")),
             wxDefaultPosition,
             wxDefaultSize,
             wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+, mFactories(factories)
+, mCategories(NULL)
+, mUniquePage(NULL)
+, mTitlePrefix(titlePrefix)
 {
+   wxASSERT(factories.size() > 0);
+   const bool uniquePage = (factories.size() == 1);
+
    ShuttleGui S(this, eIsCreating);
 
    S.StartVerticalLay(true);
    {
-      S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, true);
-      {
-         mCategories = new wxTreebookExt(this, wxID_ANY);
-         S.Prop(1);
-         S.AddWindow(mCategories, wxEXPAND);
+      wxASSERT(factories.size() > 0);
+      if (!uniquePage) {
+         mCategories = new wxTreebookExt(this, wxID_ANY, mTitlePrefix);
+         S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, true);
+         {
+            S.Prop(1);
+            S.AddWindow(mCategories, wxEXPAND);
 
-         wxWindow *w;
-         // Parameters are: AddPage(page, name, IsSelected, imageId).
-         w = new DevicePrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new PlaybackPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new RecordingPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
-#ifdef EXPERIMENTAL_MIDI_OUT
-         w = new MidiIOPrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
-#endif
-         w = new QualityPrefs(mCategories);     mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new GUIPrefs(mCategories);         mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new TracksPrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new ImportExportPrefs(mCategories);mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new ExtImportPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new ProjectsPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
-#if !defined(DISABLE_DYNAMIC_LOADING_FFMPEG) || !defined(DISABLE_DYNAMIC_LOADING_LAME)
-         w = new LibraryPrefs(mCategories);     mCategories->AddPage(w, w->GetName(), false, 0);
-#endif
-         w = new SpectrumPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new DirectoriesPrefs(mCategories); mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new WarningsPrefs(mCategories);    mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new EffectsPrefs(mCategories);     mCategories->AddPage(w, w->GetName(), false, 0);
-
-#ifdef EXPERIMENTAL_THEME_PREFS
-         w = new ThemePrefs(mCategories);       mCategories->AddPage(w, w->GetName(), false, 0);
-#endif
-
-//       w = new BatchPrefs(mCategories);       mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new KeyConfigPrefs(mCategories);   mCategories->AddPage(w, w->GetName(), false, 0);
-         w = new MousePrefs(mCategories);       mCategories->AddPage(w, w->GetName(), false, 0);
-#ifdef EXPERIMENTAL_MODULE_PREFS
-         w = new ModulePrefs(mCategories);      mCategories->AddPage(w, w->GetName(), false, 0);
-#endif
+            {
+               typedef std::pair<int, int> IntPair;
+               std::vector<IntPair> stack;
+               int iPage = 0;
+               for (Factories::const_iterator it = factories.begin(), end = factories.end();
+                  it != end; ++it, ++iPage)
+               {
+                  const PrefsNode &node = *it;
+                  PrefsPanelFactory &factory = *node.pFactory;
+                  wxWindow *const w = factory.Create(mCategories);
+                  if (stack.empty())
+                     // Parameters are: AddPage(page, name, IsSelected, imageId).
+                     mCategories->AddPage(w, w->GetName(), false, 0);
+                  else {
+                     IntPair &top = *stack.rbegin();
+                     mCategories->InsertSubPage(top.first, w, w->GetName(), false, 0);
+                     if (--top.second == 0) {
+                        // Expand all nodes before the layout calculation
+                        mCategories->ExpandNode(top.first, true);
+                        stack.pop_back();
+                     }
+                  }
+                  if (node.nChildren > 0)
+                     stack.push_back(IntPair(iPage, node.nChildren));
+               }
+            }
+         }
+         S.EndHorizontalLay();
       }
-      S.EndHorizontalLay();
+      else {
+         // Unique page, don't show the factory
+         const PrefsNode &node = factories[0];
+         PrefsPanelFactory &factory = *node.pFactory;
+         mUniquePage = factory.Create(this);
+         S.AddWindow(mUniquePage, wxEXPAND);
+      }
    }
    S.EndVerticalLay();
 
-   S.AddStandardButtons(eOkButton | eCancelButton);
+   S.AddStandardButtons(eOkButton | eCancelButton | eApplyButton);
+   static_cast<wxButton*>(wxWindow::FindWindowById(wxID_OK, this))->SetDefault();
 
-   /* long is signed, size_t is unsigned. On some platforms they are different
-    * lengths as well. So we must check that the stored category is both > 0
-    * and within the possible range of categories, making the first check on the
-    * _signed_ value to avoid issues when converting an unsigned one.
-    */
-   size_t selected;
-   long prefscat = gPrefs->Read(wxT("/Prefs/PrefsCategory"), 0L);
-   if (prefscat > 0L )
-      selected = prefscat; // only assign if number will fit
-   else
-      selected = 0;  // use 0 if value can't be assigned
-
-   if (selected >= mCategories->GetPageCount())
-      selected = 0;  // clamp to available range of tabs
-
-   mCategories->SetSelection(selected);
+   if (mUniquePage && !mUniquePage->ShowsApplyButton()) {
+      wxWindow *const applyButton =
+         wxWindow::FindWindowById(wxID_APPLY, GetParent());
+      applyButton->Show(false);
+   }
 
 #if defined(__WXGTK__)
-   mCategories->GetTreeCtrl()->EnsureVisible(mCategories->GetTreeCtrl()->GetRootItem());
+   if (mCategories)
+      mCategories->GetTreeCtrl()->EnsureVisible(mCategories->GetTreeCtrl()->GetRootItem());
 #endif
 
 //   mCategories->SetSizeHints(-1, -1, 790, 600);  // 790 = 800 - (border * 2)
    Layout();
    Fit();
    wxSize sz = GetSize();
+
+   // Collapse nodes only after layout so the tree is wide enough
+   if (mCategories)
+   {
+      int iPage = 0;
+      for (Factories::const_iterator it = factories.begin(), end = factories.end();
+         it != end; ++it, ++iPage)
+         mCategories->ExpandNode(iPage, it->expanded);
+   }
 
    // This ASSERT used to limit us to 800 x 600.
    // However, we think screens have got bigger now, and that was a bit too restrictive.
@@ -207,7 +309,9 @@ PrefsDialog::PrefsDialog(wxWindow * parent)
    // Frankly, this is a hack to work around a bug in wxTreebook, and
    // will have to be revisited if we add another category to mCategories.
    // JKC later added a category and 20 onto the 7.
-   SetSizeHints(sz.x, sz.y + 7 + 20, 800, 600);
+   sz.y += 7 + 20;
+   SetSize(sz);
+   SetMinSize(sz);
 
    // Center after all that resizing, but make sure it doesn't end up
    // off-screen
@@ -218,13 +322,49 @@ PrefsDialog::~PrefsDialog()
 {
 }
 
-void PrefsDialog::OnCancel(wxCommandEvent & WXUNUSED(event))
+int PrefsDialog::ShowModal()
 {
-   for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
-      ((PrefsPanel *) mCategories->GetPage(i))->Cancel();
+   if (mCategories) {
+      /* long is signed, size_t is unsigned. On some platforms they are different
+       * lengths as well. So we must check that the stored category is both > 0
+       * and within the possible range of categories, making the first check on the
+       * _signed_ value to avoid issues when converting an unsigned one.
+       */
+      long selected = GetPreferredPage();
+      if (selected < 0 || size_t(selected) >= mCategories->GetPageCount())
+         selected = 0;  // clamp to available range of tabs
+      mCategories->SetSelection(selected);
+   }
+   else {
+      wxString Temp = mTitlePrefix + mUniquePage->GetLabel();
+      SetTitle(Temp);
+      SetName(Temp);
    }
 
+   return wxDialog::ShowModal();
+}
+
+void PrefsDialog::OnCancel(wxCommandEvent & WXUNUSED(event))
+{
+   RecordExpansionState();
+
+   if (mCategories) {
+      for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
+         ((PrefsPanel *)mCategories->GetPage(i))->Cancel();
+      }
+   }
+   else
+      mUniquePage->Cancel();
+
    EndModal(false);
+}
+
+void PrefsDialog::OnApply(wxCommandEvent & WXUNUSED(event))
+{
+   if (mCategories)
+      static_cast<PrefsPanel*>(mCategories->GetCurrentPage())->Apply();
+   else
+      mUniquePage->Apply();
 }
 
 void PrefsDialog::OnTreeKeyDown(wxTreeEvent & event)
@@ -237,26 +377,37 @@ void PrefsDialog::OnTreeKeyDown(wxTreeEvent & event)
 
 void PrefsDialog::OnOK(wxCommandEvent & WXUNUSED(event))
 {
-   // Validate all pages first
-   for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
-      PrefsPanel *panel = (PrefsPanel *) mCategories->GetPage(i);
+   RecordExpansionState();
 
-      // The dialog doesn't end until all the input is valid
-      if (!panel->Validate()) {
-         mCategories->SetSelection(i);
-         return;
+   // Validate all pages first
+   if (mCategories) {
+      for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
+         PrefsPanel *panel = (PrefsPanel *)mCategories->GetPage(i);
+
+         // The dialog doesn't end until all the input is valid
+         if (!panel->Validate()) {
+            mCategories->SetSelection(i);
+            return;
+         }
       }
    }
-
-   // Now apply the changes
-   for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
-      PrefsPanel *panel = (PrefsPanel *) mCategories->GetPage(i);
-
-      panel->Apply();
+   else {
+      if (!mUniquePage->Validate())
+         return;
    }
 
-   gPrefs->Write(wxT("/Prefs/PrefsCategory"), (long)mCategories->GetSelection());
-   gPrefs->Flush();
+   if (mCategories) {
+      // Now apply the changes
+      for (size_t i = 0; i < mCategories->GetPageCount(); i++) {
+         PrefsPanel *panel = (PrefsPanel *)mCategories->GetPage(i);
+
+         panel->Apply();
+      }
+   }
+   else
+      mUniquePage->Apply();
+
+   SavePreferredPage();
 
 #if USE_PORTMIXER
    if (gAudioIO) {
@@ -290,23 +441,78 @@ void PrefsDialog::OnOK(wxCommandEvent & WXUNUSED(event))
       gAudacityProjects[i]->UpdatePrefs();
    }
 
+   WaveformSettings::defaults().LoadPrefs();
+
    gPrefs->Flush();
    EndModal(true);
 }
 
 void PrefsDialog::SelectPageByName(wxString pageName)
 {
-   size_t n = mCategories->GetPageCount();
+   if (mCategories) {
+      size_t n = mCategories->GetPageCount();
 
-   for (size_t i = 0; i < n; i++) {
-      if (mCategories->GetPageText(i) == pageName) {
-         mCategories->SetSelection(i);
-         return;
+      for (size_t i = 0; i < n; i++) {
+         if (mCategories->GetPageText(i) == pageName) {
+            mCategories->SetSelection(i);
+            return;
+         }
       }
    }
 }
 
-void PrefsDialog::ShowTempDirPage()
+int PrefsDialog::GetSelectedPage() const
 {
-   SelectPageByName(_("Directories"));
+   if (mCategories)
+      return mCategories->GetSelection();
+   else
+      return 0;
+}
+
+GlobalPrefsDialog::GlobalPrefsDialog(wxWindow * parent, Factories &factories)
+   : PrefsDialog(parent, _("Preferences: "), factories)
+{
+}
+
+GlobalPrefsDialog::~GlobalPrefsDialog()
+{
+}
+
+long GlobalPrefsDialog::GetPreferredPage()
+{
+   long prefscat = gPrefs->Read(wxT("/Prefs/PrefsCategory"), 0L);
+   return prefscat;
+}
+
+void GlobalPrefsDialog::SavePreferredPage()
+{
+   gPrefs->Write(wxT("/Prefs/PrefsCategory"), (long)GetSelectedPage());
+   gPrefs->Flush();
+}
+
+void PrefsDialog::RecordExpansionState()
+{
+   // Remember expansion state of the tree control
+   if (mCategories)
+   {
+      int iPage = 0;
+      for (Factories::iterator it = mFactories.begin(), end = mFactories.end();
+         it != end; ++it, ++iPage)
+         it->expanded = mCategories->IsNodeExpanded(iPage);
+   }
+   else
+      mFactories[0].expanded = true;
+}
+
+PrefsPanel::~PrefsPanel()
+{
+}
+
+void PrefsPanel::Cancel()
+{
+}
+
+bool PrefsPanel::ShowsApplyButton()
+{
+   return false;
 }
