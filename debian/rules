@@ -15,6 +15,7 @@ configure_flags := \
 	--with-libtwolame=system \
 	--with-libvamp=system \
 	--with-libvorbis=system \
+	--with-lv2=system \
 	--with-midi=system \
 	--with-portaudio=system \
 	--with-sbsms=system \
