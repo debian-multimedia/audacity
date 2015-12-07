@@ -1,8 +1,20 @@
-audacity (2.1.2~rc1-1) UNRELEASED; urgency=medium
+audacity (2.1.2~rc1-1) experimental; urgency=medium
 
-  * New upstream release.
+  * New upstream release candidate. (Closes: #764075, #806185)
+    - Add wxWidgets 3.0 support.
+  * Enable LV2 support. (Closes: #673616, #767882)
+    - debian/control: Add lv2-dev, liblilv-dev and libsuil-dev to
+      Build-Depends.
+    - debian/rules: Build with --with-lv2=system.
+  * debian/patches:
+    - wxWidgets-3.0.patch, clang-ftbfs.patch,
+      fix-cursor-recapturing-sliders.patch,
+      wxwidgets-clipboard-reenetry-workaround.patch,
+      wxwidgets-effect-dialogs-segfault.patch: Removed (applied upstream).
+    - workaround-wxwidgets-fit-recovery.patch: Refreshed.
+  * debian/rules: Force system copy of portsmf.
 
- -- Sebastian Ramacher <sramacher@debian.org>  Mon, 07 Dec 2015 18:26:49 +0100
+ -- Sebastian Ramacher <sramacher@debian.org>  Mon, 07 Dec 2015 20:27:06 +0100
 
 audacity (2.0.6-2) unstable; urgency=medium
 
