@@ -15,6 +15,7 @@
 
 
 #include "../Audacity.h"
+#include "DeviceToolBar.h"
 
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
@@ -31,7 +32,6 @@
 
 #include "../AudacityApp.h"
 
-#include "DeviceToolBar.h"
 #include "ToolDock.h"
 #include "../TrackPanel.h"
 
@@ -41,6 +41,7 @@
 #include "../ImageManipulation.h"
 #include "../Prefs.h"
 #include "../Project.h"
+#include "../ShuttleGui.h"
 #include "../Theme.h"
 #include "../widgets/Grabber.h"
 #include "../DeviceManager.h"
@@ -75,18 +76,9 @@ void DeviceToolBar::Create(wxWindow *parent)
    ToolBar::Create(parent);
 
    // Simulate a size event to set initial meter placement/size
-#if wxCHECK_VERSION(3, 0, 0)
    wxSizeEvent event(GetSize(), GetId());
    event.SetEventObject(this);
    GetEventHandler()->ProcessEvent(event);
-#else
-   wxSizeEvent dummy;
-   OnSize(dummy);
-#endif
-}
-
-void DeviceToolBar::RecreateTipWindows()
-{
 }
 
 void DeviceToolBar::DeinitChildren()
@@ -197,13 +189,12 @@ void DeviceToolBar::RefillCombos()
 
 void DeviceToolBar::OnFocus(wxFocusEvent &event)
 {
-   wxCommandEvent e(EVT_CAPTURE_KEYBOARD);
-
    if (event.GetEventType() == wxEVT_KILL_FOCUS) {
-      e.SetEventType(EVT_RELEASE_KEYBOARD);
+      AudacityProject::ReleaseKeyboard(this);
    }
-   e.SetEventObject(this);
-   GetParent()->GetEventHandler()->ProcessEvent(e);
+   else {
+      AudacityProject::CaptureKeyboard(this);
+   }
 
    Refresh(false);
 
@@ -806,11 +797,11 @@ void DeviceToolBar::ShowComboDialog(wxChoice *combo, const wxString &title)
                          &inputSources);
       }
       S.EndHorizontalLay();
-      S.AddStandardButtons();
    }
    S.EndVerticalLay();
+   S.AddStandardButtons();
 
-   dlg.SetSize(dlg.GetSizer()->GetMinSize());
+   dlg.GetSizer()->SetSizeHints(&dlg);
    dlg.Center();
 
    if (dlg.ShowModal() == wxID_OK)

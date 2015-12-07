@@ -26,6 +26,7 @@ Provides thread-safe logging based on the wxWidgets log facility.
 #include <wx/settings.h>
 
 #include "../images/AudacityLogoAlpha.xpm"
+#include "Experimental.h"
 
 //
 // AudacityLogger class
@@ -68,21 +69,21 @@ void AudacityLogger::Flush()
    }
 }
 
-void AudacityLogger::DoLogString(const wxChar *str, time_t WXUNUSED(t))
+void AudacityLogger::DoLogText(const wxString & str)
 {
    if (!wxIsMainThread()) {
       wxMutexGuiEnter();
    }
 
-   wxString stamp;
-
-   TimeStamp(&stamp);
-
    if (mBuffer.IsEmpty()) {
+      wxString stamp;
+
+      TimeStamp(&stamp);
+
       mBuffer << stamp << wxT("Audacity ") << AUDACITY_VERSION_STRING << wxT("\n");
    }
 
-   mBuffer << stamp << str << wxT("\n");
+   mBuffer << str << wxT("\n");
 
    mUpdated = true;
 
@@ -288,7 +289,7 @@ void AudacityLogger::OnClose(wxCommandEvent & WXUNUSED(e))
 void AudacityLogger::OnClear(wxCommandEvent & WXUNUSED(e))
 {
    mBuffer = wxEmptyString;
-   DoLogString(wxT("Log Cleared."), 0);
+   DoLogText(wxT("Log Cleared."));
 }
 
 void AudacityLogger::OnSave(wxCommandEvent & WXUNUSED(e))

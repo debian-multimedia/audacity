@@ -28,9 +28,9 @@ internally, not ints, allowing for (external) control of zooming.
 *//*******************************************************************/
 
 #include "../Audacity.h"
+#include "AttachableScrollBar.h"
 
 #include <wx/wxprec.h>
-#include "AttachableScrollBar.h"
 #include "../ViewInfo.h"
 
 
@@ -56,33 +56,33 @@ AttachableScrollBar::~AttachableScrollBar(void)
 // Essentially a float to int conversion.
 void AttachableScrollBar::SetScrollBarFromViewInfo()
 {
+   // fix me
+#if 0
    ViewInfo & mViewInfo = *mpViewInfo;
 
-   mViewInfo.sbarTotal = (int) (mViewInfo.total * mViewInfo.zoom);
-   mViewInfo.sbarScreen = (int) (mViewInfo.screen * mViewInfo.zoom);
-   mViewInfo.sbarH = (int) (mViewInfo.h * mViewInfo.zoom);
+   mViewInfo.sbarTotal = (int) (mViewInfo.GetTotalWidth());
+   mViewInfo.sbarScreen = (int) (mViewInfo.GetScreenWidth());
+   mViewInfo.sbarH = (int) (mViewInfo.GetBeforeScreenWidth());
 
    SetScrollbar(mViewInfo.sbarH, mViewInfo.sbarScreen,
                         mViewInfo.sbarTotal, mViewInfo.sbarScreen, TRUE);
+#endif
 }
 
 // Essentially an int to float conversion.
 void AttachableScrollBar::SetViewInfoFromScrollBar()
 {
+   // fixme
+#if 0
    ViewInfo & mViewInfo = *mpViewInfo;
 
    int hlast = mViewInfo.sbarH;
 
    mViewInfo.sbarH = GetThumbPosition();
 
-   if (mViewInfo.sbarH != hlast) {
-      mViewInfo.h = mViewInfo.sbarH / mViewInfo.zoom;
-
-      if (mViewInfo.h > mViewInfo.total - mViewInfo.screen)
-         mViewInfo.h = mViewInfo.total - mViewInfo.screen;
-      if (mViewInfo.h < 0.0)
-         mViewInfo.h = 0.0;
-   }
+   if (mViewInfo.sbarH != hlast)
+     mViewInfo.SetBeforeScreenWidth(mViewInfo.sbarH);
+#endif
 }
 
 // Used to associated a ViewInfo structure with a scrollbar.

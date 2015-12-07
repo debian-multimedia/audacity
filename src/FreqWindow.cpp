@@ -41,15 +41,9 @@ and in the spectrogram spectral selection.
 
 
 #include "Audacity.h"
+#include "FreqWindow.h"
 
-// For compilers that support precompilation, includes "wx/wx.h".
-#include <wx/wxprec.h>
-
-
-
-#ifdef __BORLANDC__
-#pragma hdrstop
-#endif
+#include <algorithm>
 
 #include <wx/brush.h>
 #include <wx/button.h>
@@ -70,12 +64,12 @@ and in the spectrogram spectral selection.
 
 #include <math.h>
 
-#include "FreqWindow.h"
-
+#include "ShuttleGui.h"
 #include "AColor.h"
 #include "FFT.h"
 #include "Internat.h"
 #include "PitchName.h"
+#include "prefs/GUISettings.h"
 #include "Prefs.h"
 #include "Project.h"
 #include "WaveClip.h"
@@ -84,10 +78,9 @@ and in the spectrogram spectral selection.
 
 #include "FileDialog.h"
 
-#if defined(__WXGTK__)
-#define GSocket GSocketHack
-#include <gtk/gtk.h>
-#endif
+#include "WaveTrack.h"
+
+#include "Experimental.h"
 
 DEFINE_EVENT_TYPE(EVT_FREQWINDOW_RECALC);
 
@@ -262,7 +255,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
 
    gPrefs->Read(wxT("/FreqWindow/FuncChoice"), &mFunc, 3);
    gPrefs->Read(wxT("/FreqWindow/AxisChoice"), &mAxis, 0);
-   gPrefs->Read(wxT("/GUI/EnvdBRange"), &dBRange, ENV_DB_RANGE);
+   gPrefs->Read(ENV_DB_KEY, &dBRange, ENV_DB_RANGE);
    if(dBRange < 90.)
       dBRange = 90.;
 
@@ -293,7 +286,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
          vRuler->ruler.SetLabelEdges(true);
          int w;
          vRuler->ruler.GetMaxSize(&w, NULL);
-         vRuler->SetSize(wxSize(w, 150));  // height needed for wxGTK
+         vRuler->SetMinSize(wxSize(w, 150));  // height needed for wxGTK
 
          S.AddSpace(wxDefaultCoord, 1);
          S.Prop(1);
@@ -305,7 +298,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
       mFreqPlot = new FreqPlot(this);
       mFreqPlot->SetMinSize(wxSize(wxDefaultCoord, FREQ_WINDOW_HEIGHT));
       S.Prop(1);
-      S.AddWindow(mFreqPlot, wxEXPAND | wxALIGN_CENTRE);
+      S.AddWindow(mFreqPlot, wxEXPAND);
 
       S.StartHorizontalLay(wxEXPAND, 0);
       {
@@ -485,7 +478,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    S.AddSpace(5);
 
    mProgress = new FreqGauge(this); //, wxID_ANY, wxST_SIZEGRIP);
-   S.AddWindow(mProgress, wxEXPAND | wxALIGN_BOTTOM);
+   S.AddWindow(mProgress, wxEXPAND);
 
    // Log-frequency axis works for spectrum plots only.
    if (mAlg != SpectrumAnalyst::Spectrum)
@@ -516,7 +509,7 @@ FreqWindow::FreqWindow(wxWindow * parent, wxWindowID id,
    //
    // I guess the only way round it would be to handle key actions
    // ourselves, but we'll leave that for a future date.
-   gtk_widget_set_can_focus(mPanScroller->m_widget, true);
+//   gtk_widget_set_can_focus(mPanScroller->m_widget, true);
 #endif
 }
 
@@ -539,16 +532,19 @@ bool FreqWindow::Show(bool show)
 
    bool shown = IsShown();
 
-   bool res = wxDialog::Show(show);
-
    if (show && !shown)
    {
-      gPrefs->Read(wxT("/GUI/EnvdBRange"), &dBRange, ENV_DB_RANGE);
+      gPrefs->Read(ENV_DB_KEY, &dBRange, ENV_DB_RANGE);
       if(dBRange < 90.)
          dBRange = 90.;
       GetAudio();
-      SendRecalcEvent();
+      // Don't send an event.  We need the recalc right away.
+      // so that mAnalyst is valid when we paint.
+      //SendRecalcEvent();
+      Recalc();
    }
+
+   bool res = wxDialog::Show(show);
 
    return res;
 }
@@ -650,7 +646,7 @@ void FreqWindow::DrawBackground(wxMemoryDC & dc)
 
 void FreqWindow::DrawPlot()
 {
-   if (!mData || mDataLen < mWindowSize) {
+   if (!mData || mDataLen < mWindowSize || mAnalyst->GetProcessedSize() == 0) {
       wxMemoryDC memDC;
 
       vRuler->ruler.SetLog(false);
@@ -866,7 +862,8 @@ void FreqWindow::PlotPaint(wxPaintEvent & event)
    wxPaintDC dc( (wxWindow *) event.GetEventObject() );
 
    dc.DrawBitmap( *mBitmap, 0, 0, true );
-   if (!mData)
+   // Fix for Bug 1226 "Plot Spectrum freezes... if insufficient samples selected"
+   if (!mData || mDataLen < mWindowSize)
       return;
 
    dc.SetFont(mFreqFont);
@@ -1000,7 +997,11 @@ void FreqWindow::Recalc()
    int windowFunc = mFuncChoice->GetSelection();
 
    wxWindow *hadFocus = FindFocus();
-   wxWindowDisabler *blocker = new wxWindowDisabler(mProgress);
+   // In wxMac, the skipped window MUST be a top level window.  I'd originally made it
+   // just the mProgress window with the idea of preventing user interaction with the
+   // controls while the plot was being recalculated.  This doesn't appear to be necessary
+   // so just use the the top level window instead.
+   wxWindowDisabler *blocker = new wxWindowDisabler(this);
    wxYieldIfNeeded();
 
    mAnalyst->Calculate(alg, windowFunc, mWindowSize, mRate,
@@ -1076,7 +1077,7 @@ void FreqWindow::OnExport(wxCommandEvent & WXUNUSED(event))
 
 void FreqWindow::OnReplot(wxCommandEvent & WXUNUSED(event))
 {
-   gPrefs->Read(wxT("/GUI/EnvdBRange"), &dBRange, ENV_DB_RANGE);
+   gPrefs->Read(ENV_DB_KEY, &dBRange, ENV_DB_RANGE);
    if(dBRange < 90.)
       dBRange = 90.;
    GetAudio();

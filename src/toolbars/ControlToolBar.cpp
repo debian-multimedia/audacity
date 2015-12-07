@@ -36,6 +36,7 @@
 
 #include "../Audacity.h"
 #include "../Experimental.h"
+#include "ControlToolBar.h"
 
 // For compilers that support precompilation, includes "wx/wx.h".
 #include <wx/wxprec.h>
@@ -51,7 +52,6 @@
 #endif
 #include <wx/tooltip.h>
 
-#include "ControlToolBar.h"
 #include "TranscriptionToolBar.h"
 #include "MeterToolBar.h"
 
@@ -62,7 +62,7 @@
 #include "../Prefs.h"
 #include "../Project.h"
 #include "../Theme.h"
-#include "../Track.h"
+#include "../WaveTrack.h"
 #include "../widgets/AButton.h"
 #include "../widgets/Meter.h"
 
@@ -647,13 +647,8 @@ int ControlToolBar::PlayPlayRegion(const SelectedRegion &selectedRegion,
       else {
          // msmeyer: Show error message if stream could not be opened
          wxMessageBox(
-#if wxCHECK_VERSION(3,0,0)
             _("Error while opening sound device. "
             "Please check the playback device settings and the project sample rate."),
-#else
-            _("Error while opening sound device. "
-            wxT("Please check the playback device settings and the project sample rate.")),
-#endif
             _("Error"), wxOK | wxICON_EXCLAMATION, this);
       }
    }
@@ -751,7 +746,7 @@ void ControlToolBar::StopPlaying(bool stopStream /* = true*/)
    SetPlay(false);
    SetRecord(false);
 
-   #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+   #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
       gAudioIO->AILADisable();
    #endif
 
@@ -779,6 +774,12 @@ void ControlToolBar::StopPlaying(bool stopStream /* = true*/)
          meter->Clear();
       }
    }
+}
+
+void ControlToolBar::Pause()
+{
+   wxCommandEvent dummy;
+   OnPause(dummy);
 }
 
 void ControlToolBar::OnRecord(wxCommandEvent &evt)
@@ -928,7 +929,7 @@ void ControlToolBar::OnRecord(wxCommandEvent &evt)
       }
 
       //Automated Input Level Adjustment Initialization
-      #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+      #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
          gAudioIO->AILAInitialize();
       #endif
          

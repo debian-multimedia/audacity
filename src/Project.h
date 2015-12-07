@@ -86,6 +86,11 @@ class MixerBoardFrame;
 
 struct AudioIOStartStreamOptions;
 
+class WaveTrackArray;
+class Regions;
+
+class LWSlider;
+
 AudacityProject *CreateNewAudacityProject();
 AUDACITY_DLL_API AudacityProject *GetActiveProject();
 void RedrawAllProjects();
@@ -114,6 +119,11 @@ enum StatusBarField {
    mainStatusBarField = 2,
    rateStatusBarField = 3
 };
+
+////////////////////////////////////////////////////////////
+/// Custom events
+////////////////////////////////////////////////////////////
+DECLARE_EXPORTED_EVENT_TYPE(AUDACITY_DLL_API, EVT_CAPTURE_KEY, -1);
 
 // XML handler for <import> tag
 class ImportXMLTagHandler : public XMLTagHandler
@@ -151,10 +161,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    sampleFormat GetDefaultFormat() { return mDefaultFormat; }
 
-   double GetRate() { return mRate; }
-   double GetZoom() { return mViewInfo.zoom; }
+   double GetRate() const { return mRate; }
+   bool ZoomInAvailable() const { return mViewInfo.ZoomInAvailable(); }
+   bool ZoomOutAvailable() const { return mViewInfo.ZoomOutAvailable(); }
    double GetSel0() { return mViewInfo.selectedRegion.t0(); }
    double GetSel1() { return mViewInfo.selectedRegion.t1(); }
+   const ZoomInfo &GetZoomInfo() const { return mViewInfo; }
 
    Track *GetFirstVisible();
    void UpdateFirstVisible();
@@ -172,7 +184,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    TrackFactory *GetTrackFactory();
    AdornedRulerPanel *GetRulerPanel();
    Tags *GetTags();
-   int GetAudioIOToken();
+   int GetAudioIOToken() const;
+   bool IsAudioActive() const;
    void SetAudioIOToken(int token);
 
    bool IsActive();
@@ -234,7 +247,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    TrackPanel * GetTrackPanel(){return mTrackPanel;}
 
-   bool GetIsEmpty() { return mTracks->IsEmpty(); }
+   bool GetIsEmpty();
 
    bool GetTracksFitVerticallyZoomed() { return mTracksFitVerticallyZoomed; } //lda
    void SetTracksFitVerticallyZoomed(bool flag) { mTracksFitVerticallyZoomed = flag; } //lda
@@ -258,6 +271,12 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    CommandManager *GetCommandManager() { return &mCommandManager; }
 
+   // Keyboard capture
+   static bool HasKeyboardCapture(const wxWindow *handler);
+   static wxWindow *GetKeyboardCaptureHandler();
+   static void CaptureKeyboard(wxWindow *handler);
+   static void ReleaseKeyboard(wxWindow *handler);
+
    void RebuildMenuBar();
    void RebuildOtherMenus();
    void MayStartMonitoring();
@@ -265,7 +284,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // Message Handlers
 
-   void OnMenuEvent(wxMenuEvent & event);
    void OnMenu(wxCommandEvent & event);
    void OnUpdateUI(wxUpdateUIEvent & event);
 
@@ -273,23 +291,20 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void OnMouseEvent(wxMouseEvent & event);
    void OnIconize(wxIconizeEvent &event);
    void OnSize(wxSizeEvent & event);
+   void OnShow(wxShowEvent & event);
    void OnMove(wxMoveEvent & event);
    void OnScroll(wxScrollEvent & event);
    void OnCloseWindow(wxCloseEvent & event);
    void OnTimer(wxTimerEvent & event);
    void OnToolBarUpdate(wxCommandEvent & event);
    void OnOpenAudioFile(wxCommandEvent & event);
-   void OnCaptureKeyboard(wxCommandEvent & event);
-   void OnReleaseKeyboard(wxCommandEvent & event);
    void OnODTaskUpdate(wxCommandEvent & event);
    void OnODTaskComplete(wxCommandEvent & event);
    void OnTrackListUpdated(wxCommandEvent & event);
-   bool HandleKeyDown(wxKeyEvent & event);
-   bool HandleChar(wxKeyEvent & event);
-   bool HandleKeyUp(wxKeyEvent & event);
 
    void HandleResize();
    void UpdateLayout();
+   double GetScreenEndTime() const;
    void ZoomInByFactor( double ZoomFactor );
    void ZoomOutByFactor( double ZoomFactor );
 
@@ -308,12 +323,26 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void SelectNone();
    void SelectAllIfNone();
    void Zoom(double level);
+   void ZoomBy(double multiplier);
    void Rewind(bool shift);
    void SkipEnd(bool shift);
-   void EditByLabel( WaveTrack::EditFunction action, bool bSyncLockedTracks );
-   void EditClipboardByLabel( WaveTrack::EditDestFunction action );
+
+
+   typedef bool (WaveTrack::* EditFunction)(double, double);
+   typedef bool (WaveTrack::* EditDestFunction)(double, double, Track**);
+
+   void EditByLabel(EditFunction action, bool bSyncLockedTracks);
+   void EditClipboardByLabel(EditDestFunction action );
+
    bool IsSyncLocked();
    void SetSyncLock(bool flag);
+
+   void DoTrackMute(Track *pTrack, bool exclusive);
+   void DoTrackSolo(Track *pTrack, bool exclusive);
+   void SetTrackGain(Track * track, LWSlider * slider);
+   void SetTrackPan(Track * track, LWSlider * slider);
+
+   void RemoveTrack(Track * toRemove);
 
    // "exclusive" mute means mute the chosen track and unmute all others.
    void HandleTrackMute(Track *t, const bool exclusive);
@@ -325,7 +354,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // Snap To
 
    void SetSnapTo(int snap);
-   int GetSnapTo();
+   int GetSnapTo() const;
 
    // Selection Format
 
@@ -354,6 +383,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    void SafeDisplayStatusMessage(const wxChar *msg);
 
    double ScrollingLowerBoundTime() const;
+   // How many pixels are covered by the period from lowermost scrollable time, to the given time:
+   wxInt64 PixelWidthBeforeTime(double scrollto) const;
    void SetHorizontalThumb(double scrollto);
 
    // TrackPanel access
@@ -364,11 +395,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    virtual void TP_DisplaySelection();
    virtual void TP_DisplayStatusMessage(wxString msg);
 
-   virtual int TP_GetCurrentTool();
    virtual ToolsToolBar * TP_GetToolsToolBar();
-   virtual ControlToolBar * TP_GetControlToolBar();
 
-   virtual void TP_OnPlayKey();
    virtual void TP_PushState(wxString longDesc, wxString shortDesc,
                              int flags);
    virtual void TP_ModifyState(bool bWantsAutoSave);    // if true, writes auto-save file. Should set only if you really want the state change restored after
@@ -440,10 +468,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    PlayMode mLastPlayMode;
    ViewInfo mViewInfo;
 
-   wxWindow *HasKeyboardCapture();
-   void CaptureKeyboard(wxWindow *h);
-   void ReleaseKeyboard(wxWindow *h);
-
    // Audio IO callback methods
    virtual void OnAudioIORate(int rate);
    virtual void OnAudioIOStartRecording();
@@ -459,6 +483,7 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    void PushState(wxString desc, wxString shortDesc,
                   int flags = PUSH_AUTOSAVE);
+   void RollbackState();
 
  private:
 
@@ -553,6 +578,8 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    // dialog for missing alias warnings
    wxDialog            *mAliasMissingWarningDialog;
 
+   bool mShownOnce;
+
    // Project owned meters
    Meter *mPlaybackMeter;
    Meter *mCaptureMeter;
@@ -585,8 +612,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
    bool mShowId3Dialog; //lda
    bool mEmptyCanBeDirty;
 
-   bool mScrollBeyondZero;
-
    bool mSelectAllOnNone;
 
    bool mIsSyncLocked;
@@ -595,8 +620,6 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // See AudacityProject::OnActivate() for an explanation of this.
    wxWindow *mLastFocusedWindow;
-
-   wxWindow *mKeyboardCaptured;
 
    ImportXMLTagHandler* mImportXMLTagHandler;
 
@@ -639,6 +662,20 @@ class AUDACITY_DLL_API AudacityProject:  public wxFrame,
 
    // Flag that we're recoding.
    bool mIsCapturing;
+
+   // Keyboard capture
+   wxWindow *mKeyboardCaptureHandler;
+
+   double mSeekShort;
+   double mSeekLong;
+
+   wxLongLong mLastSelectionAdjustment;
+
+   // See explanation in OnCloseWindow
+   bool mIsBeingDeleted;
+
+   // CommandManager needs to use private methods
+   friend class CommandManager;
 
    DECLARE_EVENT_TABLE()
 };

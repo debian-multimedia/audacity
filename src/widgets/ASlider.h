@@ -13,10 +13,13 @@
 #ifndef __AUDACITY_SLIDER__
 #define __AUDACITY_SLIDER__
 
+#include "../Experimental.h"
+
 #include <wx/defs.h>
 #include <wx/window.h>
 #include <wx/dialog.h>
 #include <wx/panel.h>
+#include <wx/timer.h>
 
 #if wxUSE_ACCESSIBILITY
 #include <wx/access.h>
@@ -31,6 +34,7 @@ class wxTextCtrl;
 class wxButton;
 
 class Ruler;
+class TipPanel;
 
 //
 // Predefined slider types (mStyle)
@@ -121,6 +125,9 @@ class LWSlider
    void GetScroll(float & line, float & page);
    void SetScroll(float line, float page);
 
+   void ShowTip(bool show);
+   void SetToolTipTemplate(const wxString & tip);
+
    float Get(bool convert = true);
    void Set(float value);
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -135,13 +142,13 @@ class LWSlider
 
    void Move(const wxPoint &newpos);
 
-   void OnPaint(wxDC &dc, bool selected);
+   void AdjustSize(const wxSize & sz);
+
+   void OnPaint(wxDC &dc);
    void OnSize(wxSizeEvent & event);
    void OnMouseEvent(wxMouseEvent & event);
    void OnKeyEvent(wxKeyEvent & event);
    void Refresh();
-
-   void RecreateTipWin();
 
    bool ShowDialog();
    bool ShowDialog(wxPoint pos);
@@ -153,10 +160,12 @@ class LWSlider
 
  private:
 
+   wxString GetTip(float value) const;
+   wxString GetMaxTip() const;
    void FormatPopWin();
    void SetPopWinPosition();
    void CreatePopWin();
-   void Draw();
+   void Draw(wxDC & dc);
 
    bool DoShowDialog(wxPoint pos);
 
@@ -166,11 +175,7 @@ class LWSlider
    float DragPositionToValue(int fromPos, bool shiftDown);
    float ClickPositionToValue(int fromPos, bool shiftDown);
 
-   wxWindow* GetToolTipParent() const;
-
    wxWindow *mParent;
-
-   wxString maxTipLabel; //string with the max num of chars for tip
 
    int mStyle;
    int mOrientation; // wxHORIZONTAL or wxVERTICAL. wxVERTICAL is currently only for DB_SLIDER.
@@ -222,8 +227,9 @@ class LWSlider
 
    wxWindowID mID;
 
-   //since we only need to show one tip at a time, just share one instance over all sliders.
-   static wxWindow* sharedTipPanel;
+   TipPanel *mTipPanel;
+   wxString mTipTemplate;
+   wxTimer mTimer;
 
    Ruler* mpRuler;
 
@@ -262,6 +268,8 @@ class ASlider :public wxPanel
    void GetScroll(float & line, float & page);
    void SetScroll(float line, float page);
 
+   void SetToolTipTemplate(const wxString & tip);
+
    float Get( bool convert = true );
    void Set(float value);
 #ifdef EXPERIMENTAL_MIDI_OUT
@@ -283,8 +291,7 @@ class ASlider :public wxPanel
    void OnSlider(wxCommandEvent &event);
    void OnSetFocus(wxFocusEvent & event);
    void OnKillFocus(wxFocusEvent & event);
-
-   void RecreateTipWin();
+   void OnTimer(wxTimerEvent & event);
 
    // Overrides of the wxWindow functions with the same semantics
    bool Enable(bool enable = true);
@@ -293,6 +300,7 @@ class ASlider :public wxPanel
  private:
    LWSlider *mLWSlider;
    bool mSliderIsFocused;
+   wxTimer mTimer;
 
  protected:
    int mStyle;

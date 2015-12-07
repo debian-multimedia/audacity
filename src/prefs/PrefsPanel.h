@@ -50,15 +50,21 @@ class PrefsPanel:public wxPanel
       SetName(title);      // Provide audible label
    }
 
-   virtual ~PrefsPanel()
-   {
-   }
+   virtual ~PrefsPanel();
 
    virtual bool Apply() = 0;
 
-   virtual void Cancel()
-   {
-   }
+   // If it returns True, the Apply button is added below the panel
+   // Default returns false
+   virtual bool ShowsApplyButton();
+
+   virtual void Cancel();
+};
+
+class PrefsPanelFactory
+{
+public:
+   virtual PrefsPanel *Create(wxWindow *parent) = 0;
 };
 
 #endif

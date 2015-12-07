@@ -75,13 +75,6 @@ void MixerToolBar::Create(wxWindow *parent)
    ToolBar::Create(parent);
 }
 
-void MixerToolBar::RecreateTipWindows()
-{
-   // Hack to make sure they appear on top of other windows
-   mInputSlider->RecreateTipWin();
-   mOutputSlider->RecreateTipWin();
-}
-
 void MixerToolBar::Populate()
 {
    if( mRecordBitmap == NULL )
@@ -139,13 +132,12 @@ void MixerToolBar::Populate()
 //Also from SelectionBar;
 void MixerToolBar::OnFocus(wxFocusEvent &event)
 {
-   wxCommandEvent e(EVT_CAPTURE_KEYBOARD);
-
    if (event.GetEventType() == wxEVT_KILL_FOCUS) {
-      e.SetEventType(EVT_RELEASE_KEYBOARD);
+      AudacityProject::ReleaseKeyboard(this);
    }
-   e.SetEventObject(this);
-   GetParent()->GetEventHandler()->ProcessEvent(e);
+   else {
+      AudacityProject::CaptureKeyboard(this);
+   }
 
    Refresh(false);
 
@@ -294,24 +286,18 @@ void MixerToolBar::AdjustInputGain(int adj)
 
 void MixerToolBar::SetToolTips()
 {
-#if wxUSE_TOOLTIPS
    if (mInputSlider->IsEnabled()) {
-      mInputSlider->SetToolTip(wxString::Format(
-            _("Recording Volume: %.2f"), mInputSliderVolume));
+      mInputSlider->SetToolTipTemplate(_("Recording Volume: %.2f"));
    }
    else {
-      mInputSlider->SetToolTip(
-            _("Recording Volume (Unavailable; use system mixer.)"));
+      mInputSlider->SetToolTipTemplate(_("Recording Volume (Unavailable; use system mixer.)"));
    }
 
    if (mOutputSlider->IsEnabled()) {
-      mOutputSlider->SetToolTip(wxString::Format(
-            _("Playback Volume: %.2f%s"), mOutputSliderVolume, gAudioIO->OutputMixerEmulated() ? _(" (emulated)") : wxT("")));
+      mOutputSlider->SetToolTipTemplate(wxString::Format(
+            _("Playback Volume: %%.2f%s"), gAudioIO->OutputMixerEmulated() ? _(" (emulated)") : wxT("")));
    }
    else {
-      mOutputSlider->SetToolTip(
-            _("Playback Volume (Unavailable; use system mixer.)"));
+      mOutputSlider->SetToolTipTemplate(_("Playback Volume (Unavailable; use system mixer.)"));
    }
-#endif
 }
-

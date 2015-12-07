@@ -15,6 +15,8 @@
 #define NUM_PTS 180
 #define PANELBORDER 1   // only increase from '1' for testing purposes - MJS
 
+#include "../Experimental.h"
+
 #include <wx/button.h>
 #include <wx/panel.h>
 #include <wx/dialog.h>
@@ -35,8 +37,6 @@
 #endif
 
 #include "Effect.h"
-#include "../Envelope.h"
-#include "../WaveTrack.h"
 #include "../xml/XMLTagHandler.h"
 #include "../widgets/Grid.h"
 #include "../widgets/Ruler.h"
@@ -45,6 +45,7 @@
 #define EQUALIZATION_PLUGIN_SYMBOL XO("Equalization")
 
 
+class Envelope;
 class EqualizationPanel;
 
 //
@@ -135,8 +136,10 @@ private:
    void Filter(sampleCount len, float *buffer);
    
    void Flatten();
+   void ForceRecalc();
    void EnvelopeUpdated();
    void EnvelopeUpdated(Envelope *env, bool lin);
+   bool IsLinear();
 
    void LoadCurves(wxString fileName = wxT(""), bool append = false);
    void SaveCurves(wxString fileName = wxT(""));
@@ -223,24 +226,25 @@ private:
    friend class EffectEqualization48x;
 #endif
 
-   wxBoxSizer *szrC;
-   wxBoxSizer *szrG;
-   wxBoxSizer *szrV;
-   wxBoxSizer *szrH;
-   wxBoxSizer *szrI;
-   wxBoxSizer *szrL;
+   wxSizer *szrC;
+   wxSizer *szrG;
+   wxSizer *szrV;
+   wxSizer *szrH;
+   wxSizer *szrI;
+   wxSizer *szrL;
 #ifdef EXPERIMENTAL_EQ_SSE_THREADED
-   wxBoxSizer *szrM;
+   wxSizer *szrM;
 #endif
-   wxFlexGridSizer *szr1;
-   wxBoxSizer *szr2;
-   wxBoxSizer *szr3;
-   wxBoxSizer *szr4;
-   wxBoxSizer *szr5;
+   wxSizer *szr1;
+   wxSizer *szr2;
+   wxSizer *szr3;
+   wxSizer *szr4;
+   wxSizer *szr5;
 
    wxSizerItem *mLeftSpacer;
 
    EqualizationPanel *mPanel;
+   wxPanel *mGraphicPanel;
    wxRadioButton *mDraw;
    wxRadioButton *mGraphic;
    wxCheckBox *mLinFreq;

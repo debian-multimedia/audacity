@@ -39,6 +39,7 @@
 *//******************************************************************/
 
 #include "../Audacity.h"
+#include "Meter.h"
 #include "../AudacityApp.h"
 
 #include <wx/defs.h>
@@ -57,15 +58,15 @@
 
 #include <math.h>
 
-#include "Meter.h"
-
 #include "../AudioIO.h"
 #include "../AColor.h"
 #include "../ImageManipulation.h"
+#include "../prefs/GUISettings.h"
 #include "../Project.h"
 #include "../toolbars/MeterToolBar.h"
 #include "../toolbars/ControlToolBar.h"
 #include "../Prefs.h"
+#include "../ShuttleGui.h"
 
 #include "../Theme.h"
 #include "../AllThemeResources.h"
@@ -366,7 +367,7 @@ Meter::~Meter()
 
 void Meter::UpdatePrefs()
 {
-   mDBRange = gPrefs->Read(wxT("/GUI/EnvdBRange"), ENV_DB_RANGE);
+   mDBRange = gPrefs->Read(ENV_DB_KEY, ENV_DB_RANGE);
 
    mMeterRefreshRate = gPrefs->Read(Key(wxT("RefreshRate")), 30);
    mGradient = gPrefs->Read(Key(wxT("Bars")), wxT("Gradient")) == wxT("Gradient");
@@ -413,7 +414,11 @@ void Meter::OnErase(wxEraseEvent & WXUNUSED(event))
 
 void Meter::OnPaint(wxPaintEvent & WXUNUSED(event))
 {
+#if defined(__WXMAC__)
+   wxPaintDC *paintDC = new wxPaintDC(this);
+#else
    wxDC *paintDC = wxAutoBufferedPaintDCFactory(this);
+#endif
    wxDC & destDC = *paintDC;
 
    if (mLayoutValid == false)
@@ -424,10 +429,11 @@ void Meter::OnPaint(wxPaintEvent & WXUNUSED(event))
       }
    
       // Create a new one using current size and select into the DC
-      mBitmap = new wxBitmap(mWidth, mHeight);
+      mBitmap = new wxBitmap();
+      mBitmap->Create(mWidth, mHeight, destDC);
       wxMemoryDC dc;
       dc.SelectObject(*mBitmap);
-   
+
       // Go calculate all of the layout metrics
       HandleLayout(dc);
    
@@ -445,7 +451,7 @@ void Meter::OnPaint(wxPaintEvent & WXUNUSED(event))
       dc.SetBrush(mBkgndBrush);
       dc.DrawRectangle(0, 0, mWidth, mHeight);
 #endif
-   
+
       // MixerTrackCluster style has no icon or L/R labels
       if (mStyle != MixerTrackCluster)
       {
@@ -864,7 +870,7 @@ static float ToDB(float v, float range)
 {
    double db;
    if (v > 0)
-      db = 20 * log10(fabs(v));
+      db = LINEAR_TO_DB(fabs(v));
    else
       db = -999;
    return ClipZeroToOne((db + range) / range);
@@ -956,7 +962,7 @@ void Meter::OnMeterUpdate(wxTimerEvent & WXUNUSED(event))
 {
    MeterUpdateMsg msg;
    int numChanges = 0;
-#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+#ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
    double maxPeak = 0.0;
    bool discarded = false;
 #endif
@@ -995,7 +1001,7 @@ void Meter::OnMeterUpdate(wxTimerEvent & WXUNUSED(event))
             }
             else {
                double decayAmount = mDecayRate * deltaT;
-               double decayFactor = pow(10.0, -decayAmount/20);
+               double decayFactor = DB_TO_LINEAR(-decayAmount);
                mBar[j].peak = floatMax(msg.peak[j],
                                        mBar[j].peak * decayFactor);
             }
@@ -1024,7 +1030,7 @@ void Meter::OnMeterUpdate(wxTimerEvent & WXUNUSED(event))
          }
 
          mBar[j].tailPeakCount = msg.tailPeakCount[j];
-#ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+#ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
          if (mT > gAudioIO->AILAGetLastDecisionTime()) {
             discarded = false;
             maxPeak = msg.peak[j] > maxPeak ? msg.peak[j] : maxPeak;
@@ -1039,7 +1045,7 @@ void Meter::OnMeterUpdate(wxTimerEvent & WXUNUSED(event))
    } // while
 
    if (numChanges > 0) {
-      #ifdef AUTOMATED_INPUT_LEVEL_ADJUSTMENT
+      #ifdef EXPERIMENTAL_AUTOMATED_INPUT_LEVEL_ADJUSTMENT
          if (gAudioIO->AILAIsActive() && mIsInput && !discarded) {
             gAudioIO->AILAProcess(maxPeak);
             putchar('\n');
@@ -1485,62 +1491,16 @@ void Meter::RepaintBarsNow()
 {
    if (mLayoutValid)
    {
-#if defined(__WXMSW__)
-      wxClientDC clientDC(this);
-      wxBufferedDC dc(&clientDC, *mBitmap);
-#else
-      wxClientDC dc(this);
-#endif
-
+      // Invalidate the bars so they get redrawn
       for (int i = 0; i < mNumBars; i++)
       {
-         DrawMeterBar(dc, &mBar[i]);
+         Refresh(false);
       }
 
-#if defined(__WXMAC__) || defined(__WXGTK__)
-      // Due to compositing or antialiasing on the Mac, we have to make
-      // sure all remnants of the previous ruler text is completely gone.
-      // Otherwise, we get a strange bolding effect.
-      //
-      // Since redrawing the rulers above wipe out most of the ruler, the
-      // only thing that is left is the bits between the bars.
-      if (mStyle == HorizontalStereoCompact)
-      {
-         dc.SetPen(*wxTRANSPARENT_PEN);
-         dc.SetBrush(mBkgndBrush);
-         dc.DrawRectangle(mBar[0].b.GetLeft(),
-                          mBar[0].b.GetBottom() + 1,
-                          mBar[0].b.GetWidth(),
-                          mBar[1].b.GetTop() - mBar[0].b.GetBottom() - 1);
-         AColor::Bevel(dc, false, mBar[0].b);
-         AColor::Bevel(dc, false, mBar[1].b);
-      }
-      else if (mStyle == VerticalStereoCompact)
-      {
-         dc.SetPen(*wxTRANSPARENT_PEN);
-         dc.SetBrush(mBkgndBrush);
-         dc.DrawRectangle(mBar[0].b.GetRight() + 1,
-                          mBar[0].b.GetTop(),
-                          mBar[1].b.GetLeft() - mBar[0].b.GetRight() - 1,
-                          mBar[0].b.GetHeight());
-         AColor::Bevel(dc, false, mBar[0].b);
-         AColor::Bevel(dc, false, mBar[1].b);
-      }
-#endif
+      // Immediate redraw (using wxPaintDC)
+      Update();
 
-#if defined(__WXMSW__) || defined(__WXGTK__)
-      if (mIsFocused)
-      {
-         wxRect r = mIconRect;
-         AColor::DrawFocus(dc, r.Inflate(1, 1));
-      }
-#endif
-
-      // Compact style requires redrawing ruler
-      if (mStyle == HorizontalStereoCompact || mStyle == VerticalStereoCompact)
-      {
-          mRuler.Draw(dc);
-      }
+      return;
    }
 }
 

@@ -40,7 +40,10 @@
 #include "../Experimental.h"
 #include "NoiseReduction.h"
 
+#include "../ShuttleGui.h"
 #include "../Prefs.h"
+
+#include "../WaveTrack.h"
 
 #include <algorithm>
 #include <vector>
@@ -517,7 +520,7 @@ bool EffectNoiseReduction::Settings::PrefsIO(bool read)
          { &Settings::mNoiseGain, wxT("Gain"), 12.0 },
          { &Settings::mAttackTime, wxT("AttackTime"), 0.02 },
          { &Settings::mReleaseTime, wxT("ReleaseTime"), 0.10 },
-         { &Settings::mFreqSmoothingBands, wxT("FreqSmoothing"), 0.0 },
+         { &Settings::mFreqSmoothingBands, wxT("FreqSmoothing"), 3.0 },
 
          // Advanced settings
          { &Settings::mOldSensitivity, wxT("OldSensitivity"), DEFAULT_OLD_SENSITIVITY },
@@ -764,10 +767,10 @@ EffectNoiseReduction::Worker::Worker
    const int nAttackBlocks = 1 + (int)(settings.mAttackTime * sampleRate / mStepSize);
    const int nReleaseBlocks = 1 + (int)(settings.mReleaseTime * sampleRate / mStepSize);
    // Applies to amplitudes, divide by 20:
-   mNoiseAttenFactor = pow(10.0, noiseGain / 20.0);
+   mNoiseAttenFactor = DB_TO_LINEAR(noiseGain);
    // Apply to gain factors which apply to amplitudes, divide by 20:
-   mOneBlockAttack = pow(10.0, (noiseGain / (20.0 * nAttackBlocks)));
-   mOneBlockRelease = pow(10.0, (noiseGain / (20.0 * nReleaseBlocks)));
+   mOneBlockAttack = DB_TO_LINEAR(noiseGain / nAttackBlocks);
+   mOneBlockRelease = DB_TO_LINEAR(noiseGain / nReleaseBlocks);
    // Applies to power, divide by 10:
    mOldSensitivityFactor = pow(10.0, settings.mOldSensitivity / 10.0);
 
@@ -1464,7 +1467,7 @@ const ControlInfo *controlInfo() {
          XO("R&elease time (secs):"), XO("Release time")),
 #endif
          ControlInfo(&EffectNoiseReduction::Settings::mFreqSmoothingBands,
-         0, 6, 6, wxT("%d"), true,
+         0, 12, 12, wxT("%d"), true,
          XO("&Frequency smoothing (bands):"), XO("Frequency smoothing")),
 
 #ifdef ADVANCED_SETTINGS
@@ -1688,13 +1691,6 @@ void EffectNoiseReduction::Dialog::PopulateOrExchange(ShuttleGui & S)
       S.AddVariableText(_(
          "Select all of the audio you want filtered, choose how much noise you want\nfiltered out, and then click 'OK' to reduce noise.\n"));
 
-#if defined(__WXGTK__)
-      // Put everything inside a panel to workaround a problem on Linux where the access key
-      // does not work if it is defined within static text on the first control.
-      S.SetStyle(wxTAB_TRAVERSAL);
-      S.StartPanel();
-#endif
-
       S.StartMultiColumn(3, wxEXPAND);
       S.SetStretchyCol(2);
       {
@@ -1730,10 +1726,6 @@ void EffectNoiseReduction::Dialog::PopulateOrExchange(ShuttleGui & S)
 #endif
       }
       S.EndMultiColumn();
-
-#if defined(__WXGTK__)
-      S.EndPanel();
-#endif
    }
    S.EndStatic();
 
@@ -1741,13 +1733,6 @@ void EffectNoiseReduction::Dialog::PopulateOrExchange(ShuttleGui & S)
 #ifdef ADVANCED_SETTINGS
    S.StartStatic(_("Advanced Settings"));
    {
-#if defined(__WXGTK__)
-      // Put everything inside a panel to workaround a problem on Linux where the access key
-      // does not work if it is defined within static text on the first control.
-      S.SetStyle(wxTAB_TRAVERSAL);
-      S.StartPanel();
-#endif
-
       S.StartMultiColumn(2);
       {
          {
@@ -1817,10 +1802,6 @@ void EffectNoiseReduction::Dialog::PopulateOrExchange(ShuttleGui & S)
          }
       }
       S.EndMultiColumn();
-
-#if defined(__WXGTK__)
-      S.EndPanel();
-#endif
    }
    S.EndStatic();
 #endif

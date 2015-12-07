@@ -433,11 +433,8 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
    AddBuildinfoRow(&informationStr, wxT("PortAudio"),
          _("Audio playback and recording"), wxString(wxT("v19")));
 
-   informationStr += wxT("<tr><td>");  // start new row
-   // wxWidgets version:
-   informationStr += wxVERSION_STRING;
-   informationStr += wxT("</td><td/><td>");
-   informationStr += wxT("</td></tr>\n");   // end of row
+   AddBuildinfoRow(&informationStr, wxT("wxWidgets"),
+         _("Cross-platform GUI library"), wxVERSION_NUM_DOT_STRING_T);
 
    informationStr += wxT("</table>\n");  //end table of libraries
    informationStr += wxT("<h3>");
@@ -542,8 +539,10 @@ void AboutDialog::PopulateInformationPage( ShuttleGui & S )
 
    // Install prefix
    /* i18n-hint: The directory audacity is installed into (on *nix systems) */
+#ifdef __WXGTK__
    AddBuildinfoRow(&informationStr, _("Installation Prefix: "), \
          wxT(INSTALL_PREFIX));
+#endif
 
    // Location of settings
    AddBuildinfoRow(&informationStr,_("Settings folder: "), \

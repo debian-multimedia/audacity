@@ -18,16 +18,18 @@
 #include <wx/arrstr.h>
 #include <wx/window.h>
 
-#include "../ShuttleGui.h"
-
 #include "PrefsPanel.h"
 
-class GUIPrefs:public PrefsPanel
+class ShuttleGui;
+
+class GUIPrefs :public PrefsPanel
 {
  public:
    GUIPrefs(wxWindow * parent);
    ~GUIPrefs();
    virtual bool Apply();
+
+   static void GetRangeChoices(wxArrayString *pChoices, wxArrayString *pCodes);
 
  private:
    void Populate();
@@ -43,4 +45,9 @@ class GUIPrefs:public PrefsPanel
    wxArrayString mRangeChoices;
 };
 
+class GUIPrefsFactory : public PrefsPanelFactory
+{
+public:
+   virtual PrefsPanel *Create(wxWindow *parent);
+};
 #endif

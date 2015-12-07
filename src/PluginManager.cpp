@@ -48,6 +48,8 @@
 
 #include <wx/arrimpl.cpp>
 
+#include "Experimental.h"
+
 WX_DECLARE_STRING_HASH_MAP(wxArrayString, ProviderMap);
 
 // ============================================================================
@@ -535,7 +537,7 @@ void PluginRegistrationDialog::PopulateOrExchange(ShuttleGui &S)
             }
             S.EndHorizontalLay();
 
-            S.StartHorizontalLay(wxALIGN_RIGHT, 0);
+            S.StartHorizontalLay(wxALIGN_NOT | wxALIGN_LEFT, 0);
             {
                wxRadioButton* rb;
                /* i18n-hint: This is before radio buttons selecting which effects to show */
@@ -571,7 +573,7 @@ void PluginRegistrationDialog::PopulateOrExchange(ShuttleGui &S)
          mEffects->InsertColumn(COL_State, _("State"));
          mEffects->InsertColumn(COL_Path, _("Path"));
 
-         S.StartHorizontalLay(wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL | wxEXPAND, 0);
+         S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, 0);
          {
             S.Id(ID_SelectAll).AddButton(_("&Select All"));
             S.Id(ID_ClearAll).AddButton(_("C&lear All"));
@@ -963,9 +965,12 @@ void PluginRegistrationDialog::OnOK(wxCommandEvent & WXUNUSED(evt))
 
    wxString msg;
    msg.Printf(_("Enabling effects:\n\n%s"), last3.c_str());
-   
-   ProgressDialog progress(GetTitle(), msg, pdlgHideStopButton);
-   progress.CenterOnParent();
+
+   // Make sure the progress dialog is deleted before we call EndModal() or
+   // we will leave the project window in an unusable state on OSX.
+   // See bug #1192.
+   ProgressDialog *progress = new ProgressDialog(GetTitle(), msg, pdlgHideStopButton);
+   progress->CenterOnParent();
 
    int i = 0;
    for (ItemDataMap::iterator iter = mItems.begin(); iter != mItems.end(); ++iter)
@@ -976,7 +981,7 @@ void PluginRegistrationDialog::OnOK(wxCommandEvent & WXUNUSED(evt))
       if (item.state == STATE_Enabled && item.plugs[0]->GetPluginType() == PluginTypeStub)
       {
          last3 = last3.AfterFirst(wxT('\n')) + item.path + wxT("\n");
-         int status = progress.Update(++i, enableCount, wxString::Format(_("Enabling effect:\n\n%s"), last3.c_str()));
+         int status = progress->Update(++i, enableCount, wxString::Format(_("Enabling effect:\n\n%s"), last3.c_str()));
          if (!status)
          {
             break;
@@ -1013,6 +1018,8 @@ void PluginRegistrationDialog::OnOK(wxCommandEvent & WXUNUSED(evt))
    }
 
    pm.Save();
+
+   delete progress;
 
    EndModal(wxID_OK);
 }
