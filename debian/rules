@@ -19,6 +19,7 @@ configure_flags := \
 	--with-portaudio=system \
 	--with-sbsms=system \
 	--with-soundtouch=system \
+	--with-portsmf=system \
 	$(NULL)
 
 %:
