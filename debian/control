@@ -71,18 +71,3 @@ Description: fast, cross-platform audio editor (data)
  undo/redo.
  .
  This package contains the architecture-independent data files.
-
-Package: audacity-dbg
-Section: debug
-Priority: extra
-Architecture: any
-Depends: audacity (= ${binary:Version}),
-         ${misc:Depends}
-Description: fast, cross-platform audio editor (debug)
- Audacity is a multi-track audio editor for Linux/Unix, MacOS and
- Windows.  It is designed for easy recording, playing and editing of
- digital audio.  Audacity features digital effects and spectrum
- analysis tools.  Editing is very fast and provides unlimited
- undo/redo.
- .
- This package contains the debugging symbols.

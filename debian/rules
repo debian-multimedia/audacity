@@ -36,6 +36,3 @@ override_dh_auto_install:
 	dh_auto_install
 	# Don't package unnecessary copy of GPL
 	rm debian/tmp/usr/share/doc/audacity/LICENSE.txt
-
-override_dh_strip:
-	dh_strip --dbg-package=audacity-dbg
