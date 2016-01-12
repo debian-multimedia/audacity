@@ -61,8 +61,6 @@ Package: audacity-data
 Architecture: all
 Depends: ${misc:Depends}
 Recommends: audacity
-Breaks: audacity (<= 1.3.6-2)
-Replaces: audacity (<= 1.3.6-2)
 Description: fast, cross-platform audio editor (data)
  Audacity is a multi-track audio editor for Linux/Unix, MacOS and
  Windows.  It is designed for easy recording, playing and editing of
