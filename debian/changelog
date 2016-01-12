@@ -1,8 +1,13 @@
-audacity (2.1.2~rc2-1) UNRELEASED; urgency=medium
+audacity (2.1.2~rc2-1) experimental; urgency=medium
 
-  * New upstream release.
+  * Team upload.
+  * New upstream release candidate.
+  * Migrate to automatic dbg packages
+  * debian/control:
+    - Remove obsolete Breaks+Replaces.
+    - Remove no longer existing ffmpeg -dev packages from B-D.
 
- -- Sebastian Ramacher <sramacher@debian.org>  Tue, 12 Jan 2016 01:04:17 +0100
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 12 Jan 2016 22:27:03 +0100
 
 audacity (2.1.2~rc1-1) experimental; urgency=medium
 
