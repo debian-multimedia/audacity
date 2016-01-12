@@ -1,3 +1,9 @@
+audacity (2.1.2~rc2-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Sebastian Ramacher <sramacher@debian.org>  Tue, 12 Jan 2016 01:04:17 +0100
+
 audacity (2.1.2~rc1-1) experimental; urgency=medium
 
   * New upstream release candidate. (Closes: #764075, #806185)
