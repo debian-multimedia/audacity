@@ -18,9 +18,9 @@ configure_flags := \
 	--with-lv2=system \
 	--with-midi=system \
 	--with-portaudio=system \
+	--with-portsmf=system \
 	--with-sbsms=system \
 	--with-soundtouch=system \
-	--with-portsmf=system \
 	$(NULL)
 
 %:
