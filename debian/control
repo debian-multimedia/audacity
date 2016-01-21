@@ -39,7 +39,7 @@ Build-Depends: autoconf,
 Build-Conflicts: libwxbase2.6-dev,
                  wx2.6-headers
 Homepage: http://audacityteam.org/
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-multimedia/audacity.git
+Vcs-Browser: https://alioth.debian.org/anonscm/git/pkg-multimedia/audacity.git
 Vcs-Git: git://anonscm.debian.org/pkg-multimedia/audacity.git
 
 Package: audacity
