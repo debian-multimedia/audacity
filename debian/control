@@ -38,8 +38,8 @@ Build-Depends: autoconf,
                vamp-plugin-sdk (>= 2.0)
 Build-Conflicts: libwxbase2.6-dev, wx2.6-headers
 Homepage: http://audacityteam.org/
-Vcs-Browser: https://alioth.debian.org/anonscm/git/pkg-multimedia/audacity.git
-Vcs-Git: git://anonscm.debian.org/pkg-multimedia/audacity.git
+Vcs-Browser: https://anonscm.debian.org/cgit/pkg-multimedia/audacity.git
+Vcs-Git: https://anonscm.debian.org/git/pkg-multimedia/audacity.git
 
 Package: audacity
 Architecture: any
