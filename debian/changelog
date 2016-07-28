@@ -1,3 +1,10 @@
+audacity (2.1.2-2) UNRELEASED; urgency=medium
+
+  * Team upload.
+  * Add cherry-pick from upstream to fix FTBFS with gcc-6. (Closes: #811671)
+
+ -- Mateusz Łukasik <mati75@linuxmint.pl>  Thu, 28 Jul 2016 22:24:27 +0200
+
 audacity (2.1.2-1) unstable; urgency=medium
 
   * Team upload.
