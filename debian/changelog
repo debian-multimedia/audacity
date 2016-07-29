@@ -1,7 +1,8 @@
 audacity (2.1.2-2) UNRELEASED; urgency=medium
 
   * Team upload.
-  * Add cherry-pick from upstream to fix FTBFS with gcc-6. (Closes: #811671)
+  * debian/patches:
+    - fix-gcc6-ftbfs.patch - Add to fix FTBFS with gcc-6. (Closes: #811671)
   * debian/control:
     - Bump Standards-Version to 3.9.8. (no changes needed)
   * debian/watch: Update to github.

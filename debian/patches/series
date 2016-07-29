@@ -1,3 +1,3 @@
 fix-minsrc-autoreconf.patch
 workaround-wxwidgets-fit-recovery.patch
-60f23220.patch
+fix-gcc6-ftbfs.patch
